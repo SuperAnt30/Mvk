@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2000
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MvkLauncher", "MvkLauncher\MvkLauncher.csproj", "{CB47FB98-9EED-4DE5-B4B1-EA4D9B00CFEA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MvkClient", "MvkClient\MvkClient.csproj", "{E573DAAA-6AA0-4D0C-979C-57F4CD9D7174}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MvkServer", "MvkServer\MvkServer.csproj", "{5302D908-7001-4EB3-9CB6-16ADCDCE23AC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CB47FB98-9EED-4DE5-B4B1-EA4D9B00CFEA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CB47FB98-9EED-4DE5-B4B1-EA4D9B00CFEA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CB47FB98-9EED-4DE5-B4B1-EA4D9B00CFEA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CB47FB98-9EED-4DE5-B4B1-EA4D9B00CFEA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E573DAAA-6AA0-4D0C-979C-57F4CD9D7174}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E573DAAA-6AA0-4D0C-979C-57F4CD9D7174}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E573DAAA-6AA0-4D0C-979C-57F4CD9D7174}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E573DAAA-6AA0-4D0C-979C-57F4CD9D7174}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5302D908-7001-4EB3-9CB6-16ADCDCE23AC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5302D908-7001-4EB3-9CB6-16ADCDCE23AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5302D908-7001-4EB3-9CB6-16ADCDCE23AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5302D908-7001-4EB3-9CB6-16ADCDCE23AC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8A578E5A-0BDD-4D5B-9A9D-77A5E821F401}
+	EndGlobalSection
+EndGlobal
