@@ -35,27 +35,36 @@
             // openGLControl1
             // 
             this.openGLControl1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.openGLControl1.DrawFPS = true;
-            this.openGLControl1.FrameRate = 64;
+            this.openGLControl1.DrawFPS = false;
             this.openGLControl1.Location = new System.Drawing.Point(0, 0);
             this.openGLControl1.Name = "openGLControl1";
             this.openGLControl1.OpenGLVersion = SharpGL.Version.OpenGLVersion.OpenGL2_1;
             this.openGLControl1.RenderContextType = SharpGL.RenderContextType.NativeWindow;
-            this.openGLControl1.RenderTrigger = SharpGL.RenderTrigger.TimerBased;
-            this.openGLControl1.Size = new System.Drawing.Size(831, 491);
+            this.openGLControl1.RenderTrigger = SharpGL.RenderTrigger.Manual;
+            this.openGLControl1.Size = new System.Drawing.Size(1284, 691);
             this.openGLControl1.TabIndex = 0;
-            this.openGLControl1.OpenGLInitialized += new System.EventHandler(this.openGLControl1_OpenGLInitialized);
-            this.openGLControl1.OpenGLDraw += new SharpGL.RenderEventHandler(this.openGLControl1_OpenGLDraw);
-            this.openGLControl1.Resized += new System.EventHandler(this.openGLControl1_Resized);
+            this.openGLControl1.OpenGLInitialized += new System.EventHandler(this.OpenGLControl1_OpenGLInitialized);
+            this.openGLControl1.OpenGLDraw += new SharpGL.RenderEventHandler(this.OpenGLControl1_OpenGLDraw);
+            this.openGLControl1.Resized += new System.EventHandler(this.OpenGLControl1_Resized);
+            this.openGLControl1.Enter += new System.EventHandler(this.OpenGLControl1_Enter);
+            this.openGLControl1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OpenGLControl1_KeyDown);
+            this.openGLControl1.KeyUp += new System.Windows.Forms.KeyEventHandler(this.OpenGLControl1_KeyUp);
+            this.openGLControl1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.OpenGLControl1_MouseDown);
+            this.openGLControl1.MouseMove += new System.Windows.Forms.MouseEventHandler(this.OpenGLControl1_MouseMove);
+            this.openGLControl1.MouseUp += new System.Windows.Forms.MouseEventHandler(this.OpenGLControl1_MouseUp);
+            this.openGLControl1.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.OpenGLControl1_PreviewKeyDown);
             // 
             // FormLauncher
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(831, 491);
+            this.ClientSize = new System.Drawing.Size(1284, 691);
             this.Controls.Add(this.openGLControl1);
             this.Name = "FormLauncher";
             this.Text = "Малювекi";
+            this.Deactivate += new System.EventHandler(this.FormLauncher_Deactivate);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FormLauncher_FormClosing);
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.FormLauncher_FormClosed);
             this.Load += new System.EventHandler(this.FormLauncher_Load);
             ((System.ComponentModel.ISupportInitialize)(this.openGLControl1)).EndInit();
             this.ResumeLayout(false);

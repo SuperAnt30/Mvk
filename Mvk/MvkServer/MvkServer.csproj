@@ -33,8 +33,21 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Glm\GlmGeometric.cs" />
+    <Compile Include="Glm\GlmMatrix.cs" />
+    <Compile Include="Glm\GlmMatrixTransform.cs" />
+    <Compile Include="Glm\GlmTrigonometric.cs" />
+    <Compile Include="Glm\mat4.cs" />
+    <Compile Include="Glm\vec2.cs" />
+    <Compile Include="Glm\vec2i.cs" />
+    <Compile Include="Glm\vec3.cs" />
+    <Compile Include="Glm\vec3i.cs" />
+    <Compile Include="Glm\vec4.cs" />
     <Compile Include="Server.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Util\Map.cs" />
+    <Compile Include="Util\Mth.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -58,6 +58,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WinApi.cs" />
     <EmbeddedResource Include="FormLauncher.resx">
       <DependentUpon>FormLauncher.cs</DependentUpon>
     </EmbeddedResource>
