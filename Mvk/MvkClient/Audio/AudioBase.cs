@@ -1,6 +1,7 @@
-﻿using MvkServer.Glm;
+﻿using MvkAssets;
+using MvkServer.Glm;
 using System;
-using System.IO;
+using System.Collections;
 
 namespace MvkClient.Audio
 {
@@ -10,9 +11,9 @@ namespace MvkClient.Audio
     public class AudioBase
     {
         /// <summary>
-        /// Карта всех семплов
+        /// Массив всех семплов
         /// </summary>
-        protected AudioMap map = new AudioMap();
+        protected Hashtable items = new Hashtable();
         /// <summary>
         /// Объект источников звука
         /// </summary>
@@ -31,9 +32,17 @@ namespace MvkClient.Audio
 
             // Инициализация источников звука
             sources.Initialize();
+        }
 
-            // Загрузка всех сэмплов
-            LoadSamples();
+        /// <summary>
+        /// Загрузка сэмпла
+        /// </summary>
+        public void InitializeSample(AssetsSample key)
+        {
+            byte[] vs = Assets.GetSample(key);
+            AudioSample sample = new AudioSample();
+            sample.LoadOgg(vs);
+            Set(key, sample);
         }
 
         /// <summary>
@@ -48,11 +57,11 @@ namespace MvkClient.Audio
         /// <summary>
         /// Проиграть звук
         /// </summary>
-        public void PlaySound(string key, vec3 pos, float volume, float pitch)
+        public void PlaySound(AssetsSample key, vec3 pos, float volume, float pitch)
         {
-            if (map.Contains(key))
+            if (items.Contains(key))
             {
-                AudioSample sample = map.Get(key);
+                AudioSample sample = Get(key);
                 if (sample != null && sample.Size > 0)
                 {
                     AudioSource source = sources.GetAudio();
@@ -67,55 +76,29 @@ namespace MvkClient.Audio
         /// <summary>
         /// Проиграть звук
         /// </summary>
-        public void PlaySound(string key)
+        public void PlaySound(AssetsSample key)
         {
             PlaySound(key, new vec3(0), 1f, 1f);
         }
 
         /// <summary>
-        /// Загрузка всех сэмплов
+        /// Добавить или изменить сэмпл
         /// </summary>
-        protected void LoadSamples()
+        protected void Set(AssetsSample key, AudioSample sample)
         {
-            LoadDirectorie("sounds");
-        }
-
-        /// <summary>
-        /// Загрузить директорию
-        /// </summary>
-        protected void LoadDirectorie(string path)
-        {
-            if (Directory.Exists(path))
+            if (items.ContainsKey(key))
             {
-                string[] ar = Directory.GetFiles(path);
-                foreach (string pathF in ar)
-                {
-                    LoadFile(pathF);
-                }
-                ar = Directory.GetDirectories(path);
-                foreach (string pf in ar)
-                {
-                    LoadDirectorie(pf);
-                }
+                items[key] = sample;
+            }
+            else
+            {
+                items.Add(key, sample);
             }
         }
 
         /// <summary>
-        /// Загрузить файл, если правельный то внести в карту звуков
+        /// Получить сэмпл по ключу
         /// </summary>
-        protected void LoadFile(string path)
-        {
-            string ext = Path.GetExtension(path);
-            if (ext == ".ogg")
-            {
-                string fileName = Path.GetFileNameWithoutExtension(path);
-                string dir = Path.GetDirectoryName(path).Replace("\\", ".");
-                string s = (dir + "." + fileName).Substring(7);
-
-                AudioSample sample = new AudioSample();
-                sample.LoadOgg(path);
-                map.Set(s, sample);
-            }
-        }
+        protected AudioSample Get(AssetsSample key) => items.ContainsKey(key) ? items[key] as AudioSample : null;
     }
 }

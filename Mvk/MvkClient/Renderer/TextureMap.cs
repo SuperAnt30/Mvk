@@ -1,4 +1,5 @@
-﻿using MvkClient.Renderer.Font;
+﻿using MvkAssets;
+using MvkClient.Renderer.Font;
 using MvkClient.Util;
 using SharpGL;
 using System.Collections;
@@ -13,32 +14,42 @@ namespace MvkClient.Renderer
         /// <summary>
         /// Массив текстур uint
         /// </summary>
-        protected Hashtable hashtable = new Hashtable();
+        protected Hashtable items = new Hashtable();
 
         /// <summary>
-        /// Индекст для текстуры 
+        /// Первая инициализация текстур
         /// </summary>
-        public void Initialize()
+        public void InitializeOne()
         {
+            // Текстура названия
+            SetTexture(new BufferedImage(AssetsTexture.Title, Assets.GetBitmap(AssetsTexture.Title)));
             // Текстура шрифта
-            BufferedImage font = new BufferedImage(@"textures\font\ascii4.png");
-            SetTexture("font", font);
+            BufferedImage font = new BufferedImage(AssetsTexture.Font, Assets.GetBitmap(AssetsTexture.Font));
+            SetTexture(font);
             FontAdvance.Initialize(font);
+        }
+
+        /// <summary>
+        /// Остальная инициализация текстур по одному
+        /// </summary>
+        public void InitializeKey(BufferedImage buffered)
+        {
+            SetTexture(buffered);// new BufferedImage(Assets.GetBitmap(key)));
         }
 
         /// <summary>
         /// Получить индекс текстуры по ключу
         /// </summary>
         /// <param name="key">ключ текстуры</param>
-        public uint GetData(string key) => hashtable.ContainsKey(key) ? (uint)hashtable[key] : 0;
+        protected uint GetData(AssetsTexture key) => items.ContainsKey(key) ? (uint)items[key] : 0;
 
         /// <summary>
         /// Запустить текстуру
         /// </summary>
         /// <param name="key">ключ текстуры</param>
-        public void BindTexture(string key)
+        public void BindTexture(AssetsTexture key)
         {
-            if (hashtable.ContainsKey(key))
+            if (items.ContainsKey(key))
             {
                 GLWindow.gl.BindTexture(OpenGL.GL_TEXTURE_2D, GetData(key));
             }
@@ -49,20 +60,20 @@ namespace MvkClient.Renderer
         /// </summary>
         /// <param name="key">ключ текстуры</param>
         /// <param name="image">рисунок</param>
-        public uint SetTexture(string key, BufferedImage image)
+        protected uint SetTexture(BufferedImage image)
         {
             OpenGL gl = GLWindow.gl;
 
             uint[] texture = new uint[1];
 
-            if (hashtable.ContainsKey(key))
+            if (items.ContainsKey(image.Key))
             {
-                texture[0] = (uint)hashtable[key];
+                texture[0] = (uint)items[image.Key];
             }
             else
             {
                 gl.GenTextures(1, texture);
-                hashtable.Add(key, texture[0]);
+                items.Add(image.Key, texture[0]);
             }
 
             gl.BindTexture(OpenGL.GL_TEXTURE_2D, texture[0]);

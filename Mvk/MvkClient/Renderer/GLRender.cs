@@ -44,11 +44,6 @@ namespace MvkClient.Renderer
         /// <summary>
         /// Нарисовать прямоугольник, без текстуры
         /// </summary>
-        /// <param name="x1"></param>
-        /// <param name="y1"></param>
-        /// <param name="x2"></param>
-        /// <param name="y2"></param>
-        /// <param name="color"></param>
         public static void Rectangle(float x1, float y1, float x2, float y2, vec4 color)
         {
             gl.Color(color.x, color.y, color.z, color.w);
@@ -56,6 +51,23 @@ namespace MvkClient.Renderer
             gl.Vertex(x1, y2);
             gl.Vertex(x2, y2);
             gl.Vertex(x1, y1);
+            gl.Vertex(x2, y1);
+            gl.End();
+        }
+
+        /// <summary>
+        /// Нарисовать прямоугольник, c текстурой
+        /// </summary>
+        public static void Rectangle(float x1, float y1, float x2, float y2, float u1, float v1, float u2, float v2)
+        {
+            gl.Begin(OpenGL.GL_TRIANGLE_STRIP);
+            gl.TexCoord(u1, v2);
+            gl.Vertex(x1, y2);
+            gl.TexCoord(u2, v2);
+            gl.Vertex(x2, y2);
+            gl.TexCoord(u1, v1);
+            gl.Vertex(x1, y1);
+            gl.TexCoord(u2, v1);
             gl.Vertex(x2, y1);
             gl.End();
         }
@@ -84,6 +96,7 @@ namespace MvkClient.Renderer
         {
             uint list = gl.GenLists(1);
             gl.NewList(list, OpenGL.GL_COMPILE);
+            Debug.DInt = (int)list;
             return list;
         }
 

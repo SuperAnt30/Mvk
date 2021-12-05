@@ -29,10 +29,7 @@ namespace MvkClient.Audio
         /// <summary>
         /// Формат для буффера
         /// </summary>
-        public int AlFormat
-        {
-            get { return Channels == 1 ? Al.AL_FORMAT_MONO16 : Al.AL_FORMAT_STEREO16; }
-        }
+        public int AlFormat => Channels == 1 ? Al.AL_FORMAT_MONO16 : Al.AL_FORMAT_STEREO16;
 
         /// <summary>
         /// Загрузить Wav сэмпл
@@ -54,11 +51,19 @@ namespace MvkClient.Audio
         }
 
         /// <summary>
-        /// Загрузить Ogg сэмпл
+        /// Загрузить Ogg сэмпл с файла по адресу
         /// </summary>
-        public void LoadOgg(string path)
+        public void LoadOgg(string path) => LoadOgg(new VorbisReader(path));
+        /// <summary>
+        /// Загрузить Ogg сэмпл с буфера
+        /// </summary>
+        public void LoadOgg(byte[] buffer) => LoadOgg(new VorbisReader(new MemoryStream(buffer), true));
+
+        /// <summary>
+        /// Загрузить Ogg сэмпл объектом
+        /// </summary>
+        protected void LoadOgg(VorbisReader vorbis)
         {
-            VorbisReader vorbis = new VorbisReader(path);
             float[] buffer = new float[1024];
             List<byte> result = new List<byte>();
             int count;

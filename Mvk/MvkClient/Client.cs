@@ -1,5 +1,7 @@
-﻿using MvkClient.Actions;
+﻿using MvkAssets;
+using MvkClient.Actions;
 using MvkClient.Audio;
+using MvkClient.Gui;
 using MvkClient.Renderer;
 using MvkClient.Util;
 using MvkServer.Glm;
@@ -13,7 +15,7 @@ namespace MvkClient
         /// <summary>
         /// Объект звуков
         /// </summary>
-        protected AudioBase audio = new AudioBase();
+        public AudioBase Sample { get; protected set; } = new AudioBase();
         /// <summary>
         /// Счётчик FPS
         /// </summary>
@@ -25,7 +27,9 @@ namespace MvkClient
         /// <summary>
         /// Загрузчик
         /// </summary>
-        protected LoadingScreenRenderer loadingScreen;
+        protected ScreenLoading loadingScreen;
+
+        protected ScreenMenu menuScreen;
 
         protected bool isLoading = true;
 
@@ -38,9 +42,10 @@ namespace MvkClient
         /// </summary>
         public void Initialize()
         {
-            audio.Initialize();
+            Sample.Initialize();
             glm.Initialized();
-            loadingScreen = new LoadingScreenRenderer();
+            loadingScreen = new ScreenLoading(this);
+            menuScreen = new ScreenMenu(this);
 
             counterFps = new CounterTick();
             counterFps.Tick += CounterFps_Tick;
@@ -59,9 +64,9 @@ namespace MvkClient
             tickerFps.Start();
 
             // Загрузка
-            Loading loading = new Loading();
+            Loading loading = new Loading(this);
             loadingScreen.Start(loading.Count);
-            loading.Tick += (sender, e) => OnThreadSend(new ObjectEventArgs(ObjectKey.LoadTick));
+            loading.Tick += (sender, e) => OnThreadSend(e);
             loading.LoadStart();
         }
 
@@ -72,11 +77,18 @@ namespace MvkClient
         {
             if (e.Key == ObjectKey.LoadTick)
             {
-                if (!loadingScreen.Next())
-                {
-                    // TODO:: запус меню
-                    OnCloseded();
-                }
+                loadingScreen.Next();
+            } else if (e.Key == ObjectKey.LoadTickTexture)
+            {
+                GLWindow.Texture.InitializeKey(e.Tag as BufferedImage);
+                loadingScreen.Next();
+            }
+            else if (e.Key == ObjectKey.LoadingStop)
+            {
+                loadingScreen.Delete();
+                loadingScreen = null;
+                // Запус меню
+                menuScreen.Initialize();
             }
         }
 
@@ -119,6 +131,7 @@ namespace MvkClient
         public void GLInitialize(OpenGL gl)
         {
             GLWindow.Initialize(gl);
+            loadingScreen.Initialize();
         }
 
         /// <summary>
@@ -128,7 +141,9 @@ namespace MvkClient
         {
             GLWindow.DrawBegin();
             counterFps.CalculateFrameRate();
-            loadingScreen.Draw();
+            if (loadingScreen != null) loadingScreen.Draw();
+            else menuScreen.Draw();
+
             GLWindow.DrawEnd();
         }
 
@@ -138,7 +153,8 @@ namespace MvkClient
         public void GLResized(int width, int height)
         {
             GLWindow.Resized(width, height);
-            loadingScreen.Resized();
+            if (loadingScreen != null) loadingScreen.Resized();
+            else menuScreen.Resized();
         }
 
         /// <summary>
@@ -147,7 +163,7 @@ namespace MvkClient
         /// <param name="key">индекс клавиши</param>
         public void KeyDown(int key)
         {
-            Debug.DInt = key;
+            //Debug.DInt = key;
             if (key == 114) // F3
             {
                 Debug.IsDraw = !Debug.IsDraw;
@@ -178,7 +194,7 @@ namespace MvkClient
         /// </summary>
         public void MouseDown(MouseButton button, int x, int y)
         {
-
+            menuScreen.MouseDown(button, x, y);
             //TestSound();
         }
 
@@ -200,6 +216,7 @@ namespace MvkClient
         /// <returns>true - сбросить на центр</returns>
         public bool MouseMove(int x, int y, int deltaX, int deltaY)
         {
+            menuScreen.MouseMove(x, y);
             return false;
         }
 
@@ -216,7 +233,7 @@ namespace MvkClient
 
         public void TestSound()
         {
-            audio.PlaySound("other.door_open");
+            Sample.PlaySound(AssetsSample.MobChickenPlop);
         }
 
         /// <summary>

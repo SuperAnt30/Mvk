@@ -1,4 +1,5 @@
-﻿using MvkServer.Glm;
+﻿using MvkAssets;
+using MvkServer.Glm;
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -23,11 +24,16 @@ namespace MvkClient.Util
         /// Массив байт
         /// </summary>
         public byte[] Buffer { get; protected set; }
+        /// <summary>
+        /// Ключ текстуры
+        /// </summary>
+        public AssetsTexture Key { get; protected set; }
 
-        public BufferedImage(string fileName) : this(new Bitmap(fileName)) { }
+       // public BufferedImage(string fileName) : this(new Bitmap(fileName)) { }
 
-        public BufferedImage(Bitmap bitmap)
+        public BufferedImage(AssetsTexture key, Bitmap bitmap)
         {
+            Key = key;
             Width = bitmap.Width;
             Height = bitmap.Height;
             Buffer = BitmapToByteArray(bitmap);
@@ -56,7 +62,7 @@ namespace MvkClient.Util
             BitmapData bmpdata = null;
             try
             {
-                bmpdata = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, bitmap.PixelFormat);
+                bmpdata = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
                 int numbytes = bmpdata.Stride * bitmap.Height;
                 byte[] bytedata = new byte[numbytes];
                 IntPtr ptr = bmpdata.Scan0;

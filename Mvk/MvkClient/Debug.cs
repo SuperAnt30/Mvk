@@ -12,7 +12,7 @@ namespace MvkClient
         /// <summary>
         /// Выводить ли на экран
         /// </summary>
-        public static bool IsDraw { get; set; } = true;
+        public static bool IsDraw { get; set; } = false;
         /// <summary>
         /// Кадры в секунду
         /// </summary>
@@ -38,20 +38,20 @@ namespace MvkClient
             return ToStringTpsFps() + "\r\nDInt: " + DInt.ToString();
         }
 
-        private static uint list;
+        private static uint dList;
 
         public static void RenderDebug()
         {
             if (IsDraw)
             {
-                GLRender.ListDelete(list);
-                list = FontRenderer.RenderString(10f, 10f, new vec4(.8f, .6f, .2f, 1f), ToStringDebug());
+                GLRender.ListDelete(dList);
+                dList = FontRenderer.RenderText(10f, 10f, new vec4(.8f, .6f, .2f, 1f), ToStringDebug());
             }
         }
 
         public static void DrawDebug()
         {
-            if (IsDraw) GLRender.ListCall(list);
+            if (IsDraw) GLRender.ListCall(dList);
         }
     }
 }

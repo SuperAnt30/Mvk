@@ -1,4 +1,6 @@
-﻿using System;
+﻿using MvkAssets;
+using MvkClient.Util;
+using System;
 
 namespace MvkClient
 {
@@ -10,7 +12,21 @@ namespace MvkClient
         /// <summary>
         /// Количество процессинга
         /// </summary>
-        public int Count { get; protected set; } = 270;
+        public int Count { get; protected set; } = 70;
+        /// <summary>
+        /// Основной объект клиента
+        /// </summary>
+        private Client client;
+
+        public Loading(Client client)
+        {
+            this.client = client;
+            
+            // Определяем максимальное количество для счётчика
+            Count = Enum.GetValues(typeof(AssetsSample)).Length + Enum.GetValues(typeof(AssetsTexture)).Length 
+                - 2 // 2 текстуры загружаются до загрузчика (шрифт и логотип)
+                + 1; // Финишный такт
+        }
 
         /// <summary>
         /// Запуск загрузчика
@@ -19,18 +35,32 @@ namespace MvkClient
         {
             System.Threading.Tasks.Task.Factory.StartNew(() =>
             {
-                for (int i = 0; i < Count; i++)
+                int speed = 400;
+                // Загрузка семплов
+                foreach (AssetsSample key in Enum.GetValues(typeof(AssetsSample)))
                 {
-                    System.Threading.Thread.Sleep(10);
-                    OnTick();
+                    client.Sample.InitializeSample(key);
+                    OnTick(new ObjectEventArgs(ObjectKey.LoadTick));
+                    System.Threading.Thread.Sleep(speed);
                 }
+
+                int i = 0;
+                foreach (AssetsTexture key in Enum.GetValues(typeof(AssetsTexture)))
+                {
+                    i++;
+                    if (i < 3) continue;
+                    OnTick(new ObjectEventArgs(ObjectKey.LoadTickTexture, new BufferedImage(key, Assets.GetBitmap(key))));
+                    System.Threading.Thread.Sleep(speed);
+                }
+                //System.Threading.Thread.Sleep(500); // Тест пауза чтоб увидеть загрузчик
+                OnTick(new ObjectEventArgs(ObjectKey.LoadingStop));
             });
         }
 
         /// <summary>
         /// Событие такта
         /// </summary>
-        public event EventHandler Tick;
-        protected virtual void OnTick() => Tick?.Invoke(this, new EventArgs());
+        public event ObjectEventHandler Tick;
+        protected virtual void OnTick(ObjectEventArgs e) => Tick?.Invoke(this, e);
     }
 }

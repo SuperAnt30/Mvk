@@ -24,6 +24,14 @@
         /// <summary>
         /// Такт загрузки
         /// </summary>
-        LoadTick
+        LoadTick,
+        /// <summary>
+        /// Такт загрузки текстуры
+        /// </summary>
+        LoadTickTexture,
+        /// <summary>
+        /// Закончена загрузка
+        /// </summary>
+        LoadingStop
     }
 }

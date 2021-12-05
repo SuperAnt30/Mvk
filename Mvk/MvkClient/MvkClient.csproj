@@ -61,12 +61,16 @@
     <Compile Include="Audio\Al.cs" />
     <Compile Include="Audio\Alc.cs" />
     <Compile Include="Audio\AudioBase.cs" />
-    <Compile Include="Audio\AudioMap.cs" />
     <Compile Include="Audio\AudioSample.cs" />
     <Compile Include="Audio\AudioSource.cs" />
     <Compile Include="Audio\AudioSources.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="Debug.cs" />
+    <Compile Include="Gui\Control.cs" />
+    <Compile Include="Gui\EnumBackground.cs" />
+    <Compile Include="Gui\ScreenMenu.cs" />
+    <Compile Include="Gui\Button.cs" />
+    <Compile Include="Gui\Screen.cs" />
     <Compile Include="Loading.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Renderer\Font\FontAdvance.cs" />
@@ -75,7 +79,7 @@
     <Compile Include="Renderer\GLRender.cs" />
     <Compile Include="Renderer\GLTest.cs" />
     <Compile Include="Renderer\GLWindow.cs" />
-    <Compile Include="Renderer\LoadingScreenRenderer.cs" />
+    <Compile Include="Gui\ScreenLoading.cs" />
     <Compile Include="Renderer\TextureMap.cs" />
     <Compile Include="Util\BufferedImage.cs" />
     <Compile Include="Util\CounterTick.cs" />
@@ -86,6 +90,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\MvkAssets\MvkAssets.csproj">
+      <Project>{d0236973-b369-4ccb-9205-789a3758071b}</Project>
+      <Name>MvkAssets</Name>
+    </ProjectReference>
     <ProjectReference Include="..\MvkServer\MvkServer.csproj">
       <Project>{5302d908-7001-4eb3-9cb6-16adcdce23ac}</Project>
       <Name>MvkServer</Name>

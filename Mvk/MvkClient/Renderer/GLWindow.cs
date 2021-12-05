@@ -1,4 +1,5 @@
-﻿using MvkClient.Util;
+﻿using MvkAssets;
+using MvkClient.Util;
 using SharpGL;
 using System.Diagnostics;
 
@@ -46,7 +47,7 @@ namespace MvkClient.Renderer
             gl.BlendFunc(OpenGL.GL_SRC_ALPHA, OpenGL.GL_ONE_MINUS_SRC_ALPHA);
 
             Texture = new TextureMap();
-            Texture.Initialize();
+            Texture.InitializeOne();
         }
 
         public static void Resized(int width, int height)
@@ -82,7 +83,7 @@ namespace MvkClient.Renderer
             gl.LoadIdentity();
 
             gl.Enable(OpenGL.GL_TEXTURE_2D);
-            Texture.BindTexture("font");
+            Texture.BindTexture(AssetsTexture.Font);
             Debug.RenderDebug();
             Debug.DrawDebug();
             Debug.SpeedFrame = (float)stopwatch.ElapsedTicks / Ticker.Frequency;
