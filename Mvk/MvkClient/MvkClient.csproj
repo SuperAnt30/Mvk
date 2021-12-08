@@ -66,11 +66,22 @@
     <Compile Include="Audio\AudioSources.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="Debug.cs" />
+    <Compile Include="Gui\Label.cs" />
     <Compile Include="Gui\Control.cs" />
     <Compile Include="Gui\EnumBackground.cs" />
-    <Compile Include="Gui\ScreenMenu.cs" />
+    <Compile Include="Gui\EnumScreenKey.cs" />
+    <Compile Include="Gui\GuiScreen.cs" />
+    <Compile Include="Gui\ScreenInGameMenu.cs" />
+    <Compile Include="Gui\ScreenLoading.cs" />
+    <Compile Include="Gui\ScreenWorldLoading.cs" />
+    <Compile Include="Gui\ScreenMainMenu.cs" />
     <Compile Include="Gui\Button.cs" />
     <Compile Include="Gui\Screen.cs" />
+    <Compile Include="Gui\ScreenYesNo.cs" />
+    <Compile Include="Gui\ScreenSingle.cs" />
+    <Compile Include="Gui\ScreenOptions.cs" />
+    <Compile Include="Gui\Slider.cs" />
+    <Compile Include="TestLoadingWorld.cs" />
     <Compile Include="Loading.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Renderer\Font\FontAdvance.cs" />
@@ -79,10 +90,12 @@
     <Compile Include="Renderer\GLRender.cs" />
     <Compile Include="Renderer\GLTest.cs" />
     <Compile Include="Renderer\GLWindow.cs" />
-    <Compile Include="Gui\ScreenLoading.cs" />
+    <Compile Include="Gui\ScreenBeginLoading.cs" />
     <Compile Include="Renderer\TextureMap.cs" />
+    <Compile Include="Setitings\Setting.cs" />
     <Compile Include="Util\BufferedImage.cs" />
     <Compile Include="Util\CounterTick.cs" />
+    <Compile Include="Gui\ScreenEvent.cs" />
     <Compile Include="Util\ObjectEvent.cs" />
     <Compile Include="Util\Ticker.cs" />
   </ItemGroup>

@@ -1,4 +1,5 @@
-﻿using MvkServer.Glm;
+﻿using MvkAssets;
+using MvkServer.Glm;
 using System;
 
 namespace MvkClient.Renderer.Font
@@ -8,9 +9,9 @@ namespace MvkClient.Renderer.Font
         /// <summary>
         /// Прорисовка символа
         /// </summary>
-        protected static int RenderChar(char letter)
+        protected static int RenderChar(char letter, int size)
         {
-            Symbol symbol = FontAdvance.Get(letter);
+            Symbol symbol = FontAdvance.Get(letter, size);
             if (symbol == null) return 0;
             GLRender.SymbolRender(symbol);
             return symbol.Width;
@@ -19,9 +20,9 @@ namespace MvkClient.Renderer.Font
         /// <summary>
         /// Узнать ширину символа
         /// </summary>
-        protected static int WidthChar(char letter)
+        protected static int WidthChar(char letter, int size)
         {
-            Symbol symbol = FontAdvance.Get(letter);
+            Symbol symbol = FontAdvance.Get(letter, size);
             if (symbol == null) return 0;
             return symbol.Width;
         }
@@ -29,44 +30,35 @@ namespace MvkClient.Renderer.Font
         /// <summary>
         /// Прорисовка текста
         /// </summary>
-        public static uint RenderText(float x, float y, vec4 color, string text)
+        public static void RenderText(float x, float y, vec4 color, string text, FontSize size)
         {
             string[] stringSeparators = new string[] { "\r\n" };
             string[] strs = text.Split(stringSeparators, StringSplitOptions.None);
             int h = 0;
 
-            uint list = GLRender.ListBegin();
+           // uint list = GLRender.ListBegin();
             foreach (string str in strs)
             {
-                RenderString(x, y + h, color, str);
-                //char[] vc = str.ToCharArray();
-                //int w = 0;
-                //for (int i = 0; i < vc.Length; i++)
-                //{
-                //    GLRender.PushMatrix(color, new vec3(x + w, y + h, 0));
-                //    int w0 = RenderChar(vc[i]);
-                //    if (w0 > 0) w += w0 + 2;
-                //    GLRender.PopMatrix();
-                //}
-                h += FontAdvance.VertAdvance + 4;
+                RenderString(x, y + h, color, str, size);
+                h += FontAdvance.VertAdvance[(int)size] + 4;
             }
 
-            GLRender.ListEnd();
-            return list;
+            //GLRender.ListEnd();
+            //return list;
         }
 
         /// <summary>
         /// Прорисовка строки
         /// </summary>
-        public static void RenderString(float x, float y, vec4 color, string text)
+        public static void RenderString(float x, float y, vec4 color, string text, FontSize size)
         {
             char[] vc = text.ToCharArray();
             int w = 0;
             for (int i = 0; i < vc.Length; i++)
             {
                 GLRender.PushMatrix(color, new vec3(x + w, y, 0));
-                int w0 = RenderChar(vc[i]);
-                if (w0 > 0) w += w0 + 2;
+                int w0 = RenderChar(vc[i], (int)size);
+                if (w0 > 0) w += w0 + Assets.StepFont(size);
                 GLRender.PopMatrix();
             }
         }
@@ -74,14 +66,14 @@ namespace MvkClient.Renderer.Font
         /// <summary>
         /// Узнать ширину текста
         /// </summary>
-        public static int WidthString(string text)
+        public static int WidthString(string text, FontSize size)
         {
             char[] vc = text.ToCharArray();
             int w = 0;
             for (int i = 0; i < vc.Length; i++)
             {
-                int w0 = WidthChar(vc[i]);
-                if (w0 > 0) w += w0 + 2;
+                int w0 = WidthChar(vc[i], (int)size);
+                if (w0 > 0) w += w0 + Assets.StepFont(size);
                 GLRender.PopMatrix();
             }
             return w;

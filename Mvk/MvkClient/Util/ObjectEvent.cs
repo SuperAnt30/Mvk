@@ -22,16 +22,20 @@
     public enum ObjectKey
     {
         /// <summary>
-        /// Такт загрузки
+        /// Шаг загрузки
         /// </summary>
-        LoadTick,
+        LoadStep,
         /// <summary>
-        /// Такт загрузки текстуры
+        /// Шаг загрузки текстуры
         /// </summary>
-        LoadTickTexture,
+        LoadStepTexture,
         /// <summary>
-        /// Закончена загрузка
+        /// Закончена основная загрузка
         /// </summary>
-        LoadingStop
+        LoadingStopMain,
+        /// <summary>
+        /// Закончена загрузка мира
+        /// </summary>
+        LoadingStopWorld
     }
 }

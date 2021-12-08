@@ -82,8 +82,6 @@ namespace MvkClient.Renderer
             gl.MatrixMode(OpenGL.GL_MODELVIEW);
             gl.LoadIdentity();
 
-            gl.Enable(OpenGL.GL_TEXTURE_2D);
-            Texture.BindTexture(AssetsTexture.Font);
             Debug.RenderDebug();
             Debug.DrawDebug();
             Debug.SpeedFrame = (float)stopwatch.ElapsedTicks / Ticker.Frequency;

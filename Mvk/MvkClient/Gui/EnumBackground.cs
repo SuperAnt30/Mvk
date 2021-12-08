@@ -14,6 +14,10 @@
         /// </summary>
         Menu,
         /// <summary>
+        /// Фон в главном меню
+        /// </summary>
+        TitleMain,
+        /// <summary>
         /// Фон в игре, инвентарь и прочее
         /// </summary>
         Game

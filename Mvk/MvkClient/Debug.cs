@@ -1,6 +1,8 @@
-﻿using MvkClient.Renderer;
+﻿using MvkAssets;
+using MvkClient.Renderer;
 using MvkClient.Renderer.Font;
 using MvkServer.Glm;
+using SharpGL;
 
 namespace MvkClient
 {
@@ -27,6 +29,7 @@ namespace MvkClient
         public static float Tps { get; set; } = 0;
 
         public static int DInt { get; set; } = 0;
+        public static float DFloat { get; set; } = 0;
 
         protected static string ToStringTpsFps()
         {
@@ -35,7 +38,7 @@ namespace MvkClient
 
         protected static string ToStringDebug()
         {
-            return ToStringTpsFps() + "\r\nDInt: " + DInt.ToString();
+            return ToStringTpsFps() + "\r\nDInt: " + DInt.ToString() + "\r\nDFloat: " + DFloat.ToString();
         }
 
         private static uint dList;
@@ -44,8 +47,13 @@ namespace MvkClient
         {
             if (IsDraw)
             {
+                GLWindow.gl.Enable(OpenGL.GL_TEXTURE_2D);
+                GLWindow.Texture.BindTexture(AssetsTexture.Font12);
                 GLRender.ListDelete(dList);
-                dList = FontRenderer.RenderText(10f, 10f, new vec4(.8f, .6f, .2f, 1f), ToStringDebug());
+                dList = GLRender.ListBegin();
+                //FontRenderer.RenderText(11f, 11f, new vec4(.2f, .2f, .2f, 1f), ToStringDebug(), FontSize.Font12);
+                FontRenderer.RenderText(10f, 10f, new vec4(0.9f, 0.9f, .6f, 1f), ToStringDebug(), FontSize.Font12);
+                GLRender.ListEnd();
             }
         }
 

@@ -24,9 +24,13 @@ namespace MvkClient.Renderer
             // Текстура названия
             SetTexture(new BufferedImage(AssetsTexture.Title, Assets.GetBitmap(AssetsTexture.Title)));
             // Текстура шрифта
-            BufferedImage font = new BufferedImage(AssetsTexture.Font, Assets.GetBitmap(AssetsTexture.Font));
-            SetTexture(font);
-            FontAdvance.Initialize(font);
+            BufferedImage font8 = new BufferedImage(AssetsTexture.Font8, Assets.GetBitmap(AssetsTexture.Font8));
+            BufferedImage font12 = new BufferedImage(AssetsTexture.Font12, Assets.GetBitmap(AssetsTexture.Font12));
+            BufferedImage font16 = new BufferedImage(AssetsTexture.Font16, Assets.GetBitmap(AssetsTexture.Font16));
+            SetTexture(font8);
+            SetTexture(font12);
+            SetTexture(font16);
+            FontAdvance.Initialize(font8, font12, font16);
         }
 
         /// <summary>

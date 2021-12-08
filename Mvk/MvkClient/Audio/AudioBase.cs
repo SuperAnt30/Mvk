@@ -76,10 +76,11 @@ namespace MvkClient.Audio
         /// <summary>
         /// Проиграть звук
         /// </summary>
-        public void PlaySound(AssetsSample key)
-        {
-            PlaySound(key, new vec3(0), 1f, 1f);
-        }
+        public void PlaySound(AssetsSample key) => PlaySound(key, new vec3(0), 1f, 1f);
+        /// <summary>
+        /// Проиграть звук
+        /// </summary>
+        public void PlaySound(AssetsSample key, float volume) => PlaySound(key, new vec3(0), volume, 1f);
 
         /// <summary>
         /// Добавить или изменить сэмпл

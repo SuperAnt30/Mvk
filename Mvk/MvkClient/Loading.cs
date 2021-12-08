@@ -1,4 +1,5 @@
 ﻿using MvkAssets;
+using MvkClient.Setitings;
 using MvkClient.Util;
 using System;
 
@@ -23,8 +24,9 @@ namespace MvkClient
             this.client = client;
             
             // Определяем максимальное количество для счётчика
-            Count = Enum.GetValues(typeof(AssetsSample)).Length + Enum.GetValues(typeof(AssetsTexture)).Length 
-                - 2 // 2 текстуры загружаются до загрузчика (шрифт и логотип)
+            Count = 1 // Загрузка опций
+                + Enum.GetValues(typeof(AssetsSample)).Length + Enum.GetValues(typeof(AssetsTexture)).Length 
+                - 4 // 3 текстуры загружаются до загрузчика (шрифты и логотип)
                 + 1; // Финишный такт
         }
 
@@ -35,12 +37,16 @@ namespace MvkClient
         {
             System.Threading.Tasks.Task.Factory.StartNew(() =>
             {
-                int speed = 400;
+                int speed = 0;// 400;
+                // Опции
+                Setting.Load();
+                OnTick(new ObjectEventArgs(ObjectKey.LoadStep));
+
                 // Загрузка семплов
                 foreach (AssetsSample key in Enum.GetValues(typeof(AssetsSample)))
                 {
                     client.Sample.InitializeSample(key);
-                    OnTick(new ObjectEventArgs(ObjectKey.LoadTick));
+                    OnTick(new ObjectEventArgs(ObjectKey.LoadStep));
                     System.Threading.Thread.Sleep(speed);
                 }
 
@@ -48,12 +54,12 @@ namespace MvkClient
                 foreach (AssetsTexture key in Enum.GetValues(typeof(AssetsTexture)))
                 {
                     i++;
-                    if (i < 3) continue;
-                    OnTick(new ObjectEventArgs(ObjectKey.LoadTickTexture, new BufferedImage(key, Assets.GetBitmap(key))));
+                    if (i < 4) continue;
+                    OnTick(new ObjectEventArgs(ObjectKey.LoadStepTexture, new BufferedImage(key, Assets.GetBitmap(key))));
                     System.Threading.Thread.Sleep(speed);
                 }
-                //System.Threading.Thread.Sleep(500); // Тест пауза чтоб увидеть загрузчик
-                OnTick(new ObjectEventArgs(ObjectKey.LoadingStop));
+                //System.Threading.Thread.Sleep(2000); // Тест пауза чтоб увидеть загрузчик
+                OnTick(new ObjectEventArgs(ObjectKey.LoadingStopMain));
             });
         }
 

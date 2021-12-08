@@ -5,6 +5,7 @@
     /// </summary>
     public enum AssetsSample
     {
+        Click,
         MobChickenPlop
     }
 }

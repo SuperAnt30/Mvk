@@ -16,7 +16,7 @@ namespace MvkClient.Util
         /// <summary>
         /// Значение желаемого тика
         /// </summary>
-        public int WishTick { get; protected set; } = 60;
+        public int WishTick { get; protected set; } = 20;
         /// <summary>
         /// Получает частоту таймера в виде количества тактов в милисекунду
         /// </summary>

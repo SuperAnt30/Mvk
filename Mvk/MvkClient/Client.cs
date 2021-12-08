@@ -1,5 +1,4 @@
-﻿using MvkAssets;
-using MvkClient.Actions;
+﻿using MvkClient.Actions;
 using MvkClient.Audio;
 using MvkClient.Gui;
 using MvkClient.Renderer;
@@ -25,11 +24,9 @@ namespace MvkClient
         /// </summary>
         protected Ticker tickerFps;
         /// <summary>
-        /// Загрузчик
+        /// Screen Gui
         /// </summary>
-        protected ScreenLoading loadingScreen;
-
-        protected ScreenMenu menuScreen;
+        protected GuiScreen screen;
 
         protected bool isLoading = true;
 
@@ -44,8 +41,7 @@ namespace MvkClient
         {
             Sample.Initialize();
             glm.Initialized();
-            loadingScreen = new ScreenLoading(this);
-            menuScreen = new ScreenMenu(this);
+            screen = new GuiScreen(this);
 
             counterFps = new CounterTick();
             counterFps.Tick += CounterFps_Tick;
@@ -65,7 +61,7 @@ namespace MvkClient
 
             // Загрузка
             Loading loading = new Loading(this);
-            loadingScreen.Start(loading.Count);
+            screen.LoadingSetMax(loading.Count);
             loading.Tick += (sender, e) => OnThreadSend(e);
             loading.LoadStart();
         }
@@ -75,20 +71,25 @@ namespace MvkClient
         /// </summary>
         public void ThreadReceive(ObjectEventArgs e)
         {
-            if (e.Key == ObjectKey.LoadTick)
+            if (e.Key == ObjectKey.LoadStep)
             {
-                loadingScreen.Next();
-            } else if (e.Key == ObjectKey.LoadTickTexture)
+                // Шаг для загрузчиков
+                screen.LoadingStep();
+            } else if (e.Key == ObjectKey.LoadStepTexture)
             {
+                // Шаг загрузки текстуры
                 GLWindow.Texture.InitializeKey(e.Tag as BufferedImage);
-                loadingScreen.Next();
+                screen.LoadingStep();
             }
-            else if (e.Key == ObjectKey.LoadingStop)
+            else if (e.Key == ObjectKey.LoadingStopMain)
             {
-                loadingScreen.Delete();
-                loadingScreen = null;
-                // Запус меню
-                menuScreen.Initialize();
+                // Закончена первоночальная загрузка
+                screen.LoadingMainEnd();
+            }
+            else if (e.Key == ObjectKey.LoadingStopWorld)
+            {
+                // Мир загружен
+                LoadedWorld();
             }
         }
 
@@ -131,7 +132,7 @@ namespace MvkClient
         public void GLInitialize(OpenGL gl)
         {
             GLWindow.Initialize(gl);
-            loadingScreen.Initialize();
+            screen.Begin();
         }
 
         /// <summary>
@@ -141,8 +142,10 @@ namespace MvkClient
         {
             GLWindow.DrawBegin();
             counterFps.CalculateFrameRate();
-            if (loadingScreen != null) loadingScreen.Draw();
-            else menuScreen.Draw();
+            // тут игра
+
+            // тут gui
+            screen.DrawScreen();
 
             GLWindow.DrawEnd();
         }
@@ -153,8 +156,7 @@ namespace MvkClient
         public void GLResized(int width, int height)
         {
             GLWindow.Resized(width, height);
-            if (loadingScreen != null) loadingScreen.Resized();
-            else menuScreen.Resized();
+            screen.Resized();
         }
 
         /// <summary>
@@ -178,6 +180,10 @@ namespace MvkClient
                 if (tickerFps.WishTick > 10) tickerFps.SetWishTick(tickerFps.WishTick - 10);
                 Debug.DInt = tickerFps.WishTick;
             }
+            if (key == 27) // Esc
+            {
+                if (screen.IsEmptyScreen()) screen.InGameMenu();
+            }
         }
 
         /// <summary>
@@ -194,8 +200,7 @@ namespace MvkClient
         /// </summary>
         public void MouseDown(MouseButton button, int x, int y)
         {
-            menuScreen.MouseDown(button, x, y);
-            //TestSound();
+            screen.MouseDown(button, x, y);
         }
 
         /// <summary>
@@ -203,7 +208,7 @@ namespace MvkClient
         /// </summary>
         public void MouseUp(MouseButton button, int x, int y)
         {
-
+            screen.MouseUp(button, x, y);
         }
 
         /// <summary>
@@ -216,7 +221,7 @@ namespace MvkClient
         /// <returns>true - сбросить на центр</returns>
         public bool MouseMove(int x, int y, int deltaX, int deltaY)
         {
-            menuScreen.MouseMove(x, y);
+            screen.MouseMove(x, y);
             return false;
         }
 
@@ -231,10 +236,39 @@ namespace MvkClient
 
         #endregion
 
-        public void TestSound()
+        /// <summary>
+        /// Задать желаемый фпс
+        /// </summary>
+        public void SetWishFps(int fps) => tickerFps.SetWishTick(fps);
+        /// <summary>
+        /// Получить желаемый фпс
+        /// </summary>
+        public int GetWishFps() => tickerFps.WishTick;
+
+        /// <summary>
+        /// Загрузить мир
+        /// </summary>
+        /// <param name="slot">Номер слота</param>
+        public void LoadWorld(int slot)
         {
-            Sample.PlaySound(AssetsSample.MobChickenPlop);
+            // Загрузка
+            TestLoadingWorld loading = new TestLoadingWorld(this);
+            screen.LoadingSetMax(loading.Count);
+            loading.Tick += (sender, e) => OnThreadSend(e);
+            loading.LoadStart();
         }
+
+        /// <summary>
+        /// Мир загружен
+        /// </summary>
+        public void LoadedWorld()
+        {
+            screen.LoadingWorldEnd();
+            
+
+        }
+
+        #region Event
 
         /// <summary>
         /// Событие прорисовка кадра
@@ -253,5 +287,7 @@ namespace MvkClient
         /// </summary>
         public event ObjectEventHandler ThreadSend;
         protected virtual void OnThreadSend(ObjectEventArgs e) => ThreadSend?.Invoke(this, e);
+
+        #endregion
     }
 }

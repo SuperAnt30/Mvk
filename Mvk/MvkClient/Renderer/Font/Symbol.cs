@@ -13,9 +13,16 @@ namespace MvkClient.Renderer.Font
         /// Получить массив символов
         /// </summary>
         public static char[] ToArrayKey() => Key.ToCharArray();
+        /// <summary>
+        /// Размер шрифта
+        /// </summary>
+        public int Size { get; protected set; }
 
-
-        public Symbol(char c) => Symb = c;
+        public Symbol(char c, int size)
+        {
+            Symb = c;
+            Size = size;
+        }
 
         public void Initialize(BufferedImage bi)
         {
@@ -35,7 +42,7 @@ namespace MvkClient.Renderer.Font
         /// </summary>
         protected void GetWidth(BufferedImage bi, int index)
         {
-            int advance = FontAdvance.HoriAdvance;
+            int advance = FontAdvance.HoriAdvance[Size];
 
             int x0 = (index & 15) * advance;
             int y0 = (index >> 4) * advance;
@@ -49,7 +56,7 @@ namespace MvkClient.Renderer.Font
                     vec4 col = bi.GetPixel(x, y);
                     if (col.w > 0)
                     {
-                        Width = x - x0;
+                        Width = x - x0 + 1;
                         return;
                     }
                 }

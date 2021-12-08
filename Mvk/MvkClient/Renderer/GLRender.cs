@@ -31,13 +31,13 @@ namespace MvkClient.Renderer
         {
             gl.Begin(OpenGL.GL_TRIANGLE_STRIP);
             gl.TexCoord(symbol.U1, symbol.V2);
-            gl.Vertex(0, FontAdvance.VertAdvance);
+            gl.Vertex(0, FontAdvance.VertAdvance[symbol.Size]);
             gl.TexCoord(symbol.U2, symbol.V2);
-            gl.Vertex(FontAdvance.HoriAdvance, FontAdvance.VertAdvance);
+            gl.Vertex(FontAdvance.HoriAdvance[symbol.Size], FontAdvance.VertAdvance[symbol.Size]);
             gl.TexCoord(symbol.U1, symbol.V1);
             gl.Vertex(0, 0);
             gl.TexCoord(symbol.U2, symbol.V1);
-            gl.Vertex(FontAdvance.HoriAdvance, 0);
+            gl.Vertex(FontAdvance.HoriAdvance[symbol.Size], 0);
             gl.End();
         }
 

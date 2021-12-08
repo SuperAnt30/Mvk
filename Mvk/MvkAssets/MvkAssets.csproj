@@ -57,6 +57,7 @@
     <Compile Include="Assets.cs" />
     <Compile Include="AssetsTexture.cs" />
     <Compile Include="AssetsSample.cs" />
+    <Compile Include="FontSize.cs" />
     <Compile Include="ResourceSound.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -69,7 +70,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\Font.png" />
+    <None Include="Resources\Click.ogg" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -89,6 +90,15 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\OptionsBackground.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Font8.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Font12.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Font16.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

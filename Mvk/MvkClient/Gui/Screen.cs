@@ -1,6 +1,8 @@
 ﻿using MvkAssets;
 using MvkClient.Actions;
 using MvkClient.Renderer;
+using MvkClient.Renderer.Font;
+using MvkClient.Util;
 using MvkServer.Glm;
 using SharpGL;
 using System;
@@ -31,6 +33,7 @@ namespace MvkClient.Gui
         /// </summary>
         public Client ClientMain { get; protected set; }
 
+        protected EnumScreenKey where;
         protected static OpenGL gl;
 
         /// <summary>
@@ -57,9 +60,20 @@ namespace MvkClient.Gui
         protected virtual void Init() { }
 
         /// <summary>
+        /// Инициализация нажатие кнопки
+        /// </summary>
+        protected void InitButtonClick(Button button)
+        {
+            if (button.ScreenKey != EnumScreenKey.None)
+            {
+                button.Click += (sender, e) => OnFinished(button.ScreenKey);
+            }
+        }
+
+        /// <summary>
         /// Изменён размер окна
         /// </summary>
-        public virtual void Resized()
+        public void Resized()
         {
             Width = GLWindow.WindowWidth;
             Height = GLWindow.WindowHeight;
@@ -67,8 +81,13 @@ namespace MvkClient.Gui
             {
                 control.Resized();
             }
+            ResizedScreen();
             RenderList();
         }
+        /// <summary>
+        /// Изменён размер окна
+        /// </summary>
+        protected virtual void ResizedScreen() { }
 
         /// <summary>
         /// Прорисовка
@@ -114,8 +133,43 @@ namespace MvkClient.Gui
             {
                 gl.Enable(OpenGL.GL_TEXTURE_2D);
                 GLWindow.Texture.BindTexture(AssetsTexture.OptionsBackground);
-                gl.Color(.3f, .3f, .3f, 1f);
-                GLRender.Rectangle(0, 0, Width, Height, 0, 0, Width / 64f, Height / 64f);
+                gl.Color(.4f, .4f, .4f, 1f);
+                GLRender.Rectangle(0, 0, Width, Height, 0, 0, Width / 32f, Height / 32f);
+            }
+            else if (background == EnumBackground.TitleMain)
+            {
+                gl.Enable(OpenGL.GL_TEXTURE_2D);
+                GLWindow.Texture.BindTexture(AssetsTexture.Title);
+                gl.Color(1.0f, 1.0f, 1.0f, 1f);
+                float k = Height * 2f / (float)Width;
+                Debug.DFloat = k;
+                if (k > 2f)
+                {
+                    GLRender.Rectangle(0, 0, Width, Height, 0.5f, 0, 1.0f, 0.5f);
+                }
+                else if (k > 1f)
+                {
+                    k = (k - 1.0f) / 2f;
+                    GLRender.Rectangle(0, 0, Width, Height, k, 0, 1.0f, 0.5f);
+                }
+                else
+                {
+                    GLRender.Rectangle(Width - Height, 0, Width, Height, 0.5f, 0, 1.0f, 0.5f);
+                    GLRender.Rectangle(0, 0, Width - Height, Height, 0f, 0, 0.5f, 0.5f);
+                }
+                int w = Width < 1500 ? Width / 2 : 1024;
+                int h = Width < 1500 ? Width / 8 : 256;
+                GLRender.Rectangle(0, 0, w, h, 0f, 0.5f, 1f, 0.75f);
+                GLWindow.Texture.BindTexture(AssetsTexture.Font8);
+                string text = "МаЛЮВеКi 0.0.1";
+                vec4 colorB = new vec4(0.2f, 0.2f, 0.2f, 1f);
+                vec4 color = new vec4(1.0f, 1.0f, 1.0f, 1f);
+                FontRenderer.RenderString(11, Height - 19, colorB, text, FontSize.Font8);
+                FontRenderer.RenderString(10, Height - 20, color, text, FontSize.Font8);
+                text = "SuperAnt";
+                int ws = FontRenderer.WidthString(text, FontSize.Font8) + 10;
+                FontRenderer.RenderString(Width - ws + 1, Height - 19, colorB, text, FontSize.Font8);
+                FontRenderer.RenderString(Width - ws, Height - 20, color, text, FontSize.Font8);
             }
             else
             {
@@ -155,19 +209,23 @@ namespace MvkClient.Gui
         /// <summary>
         /// Нажатие клавиши мышки
         /// </summary>
-        public void MouseDown(MouseButton button, int x, int y)
+        public void MouseDown(MouseButton button, int x, int y) => MouseUpDown(button, x, y, true);
+
+        /// <summary>
+        /// Отпущена клавиша мышки
+        /// </summary>
+        public void MouseUp(MouseButton button, int x, int y) => MouseUpDown(button, x, y, false);
+
+        protected void MouseUpDown(MouseButton button, int x, int y, bool isDown)
         {
-            if (button == MouseButton.Left)
+            bool isRender = false;
+            foreach (Control control in Controls)
             {
-                // Отправляем клик на все контролы
-                bool isRender = false;
-                foreach (Control control in Controls)
-                {
-                    control.MouseClick(x, y);
-                    if (control.IsRender) isRender = true;
-                }
-                if (isRender) RenderList();
+                if (isDown) control.MouseDown(button, x, y);
+                else control.MouseUp(button, x, y);
+                if (control.IsRender) isRender = true;
             }
+            if (isRender) RenderList();
         }
 
         public void Dispose() => Delete();
@@ -178,5 +236,12 @@ namespace MvkClient.Gui
             control.Init(this);
             Controls.Add(control);
         }
+
+        /// <summary>
+        /// Закончен скрин
+        /// </summary>
+        public event ScreenEventHandler Finished;
+        protected virtual void OnFinished(EnumScreenKey key) => OnFinished(new ScreenEventArgs(key));
+        protected virtual void OnFinished(ScreenEventArgs e) => Finished?.Invoke(this, e);
     }
 }

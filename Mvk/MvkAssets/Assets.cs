@@ -26,5 +26,31 @@ namespace MvkAssets
             if (obj.GetType() == typeof(byte[])) return obj as byte[];
             return new byte[0];
         }
+
+        /// <summary>
+        /// Получить текстуру по размеру шрифта
+        /// </summary>
+        public static AssetsTexture ConvertFontToTexture(FontSize size)
+        {
+            switch(size)
+            {
+                case FontSize.Font8: return AssetsTexture.Font8;
+                case FontSize.Font16: return AssetsTexture.Font16;
+                default: return AssetsTexture.Font12;
+            }
+        }
+
+        /// <summary>
+        /// Растояние между буквами в пикселях
+        /// </summary>
+        public static int StepFont(FontSize size)
+        {
+            switch (size)
+            {
+                case FontSize.Font8: return 1;
+                case FontSize.Font16: return 2;
+                default: return 1;
+            }
+        }
     }
 }
