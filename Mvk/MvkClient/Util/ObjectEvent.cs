@@ -36,6 +36,18 @@
         /// <summary>
         /// Закончена загрузка мира
         /// </summary>
-        LoadingStopWorld
+        LoadingStopWorld,
+        /// <summary>
+        /// Количество тактов в загрузчике
+        /// </summary>
+        LoadingCountWorld,
+        /// <summary>
+        /// Сервер остановлен
+        /// </summary>
+        ServerStoped,
+        /// <summary>
+        /// Ошибка
+        /// </summary>
+        Error
     }
 }

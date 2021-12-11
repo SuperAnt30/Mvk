@@ -19,6 +19,10 @@
         /// Текст
         /// </summary>
         public string Text { get; protected set; }
+        /// <summary>
+        /// Вспомогательный объект
+        /// </summary>
+        public object Tag { get; set; }
 
         public ScreenEventArgs(EnumScreenKey key) => Key = key;
         public ScreenEventArgs(EnumScreenKey key, EnumScreenKey where) : this(key) => Where = where;

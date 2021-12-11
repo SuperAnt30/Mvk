@@ -1,6 +1,5 @@
 ﻿using MvkAssets;
 using MvkServer.Glm;
-using System;
 
 namespace MvkClient.Gui
 {

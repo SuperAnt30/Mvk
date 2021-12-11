@@ -48,6 +48,7 @@
             this.openGLControl1.Resized += new System.EventHandler(this.OpenGLControl1_Resized);
             this.openGLControl1.Enter += new System.EventHandler(this.OpenGLControl1_Enter);
             this.openGLControl1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OpenGLControl1_KeyDown);
+            this.openGLControl1.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.openGLControl1_KeyPress);
             this.openGLControl1.KeyUp += new System.Windows.Forms.KeyEventHandler(this.OpenGLControl1_KeyUp);
             this.openGLControl1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.OpenGLControl1_MouseDown);
             this.openGLControl1.MouseMove += new System.Windows.Forms.MouseEventHandler(this.OpenGLControl1_MouseMove);

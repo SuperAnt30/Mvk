@@ -24,6 +24,10 @@ namespace MvkClient.Util
 
         private long interval;
         private long sleepFps;
+        /// <summary>
+        /// Максимальный fps
+        /// </summary>
+        private bool isMax = false;
 
         public Ticker()
         {
@@ -36,9 +40,17 @@ namespace MvkClient.Util
         /// </summary>
         public void SetWishTick(int tick)
         {
-            WishTick = tick;
-            interval = Stopwatch.Frequency / WishTick;
-            sleepFps = interval / Frequency;
+            if (tick > 250)
+            {
+                isMax = true;
+            }
+            else
+            {
+                isMax = false;
+                WishTick = tick;
+                interval = Stopwatch.Frequency / WishTick;
+                sleepFps = interval / Frequency;
+            }
         }
 
         /// <summary>
@@ -66,17 +78,24 @@ namespace MvkClient.Util
             long lastTime = stopwatch.ElapsedTicks;
             while (IsRuningFps)
             {
-                long currentTime = stopwatch.ElapsedTicks;
-                long cl = currentTime - lastTime;
-                if (cl >= interval)
+                if (isMax)
                 {
-                    lastTime = currentTime;
                     OnTick();
-                    currentTime = stopwatch.ElapsedTicks;
-                    cl = (currentTime - lastTime) / Frequency;
-                    // С минус 1 точнее бъёт такт, но нагрузка на проц возрастает
-                    int sleep = (int)(sleepFps - cl);// - 1;
-                    if (sleep > 0) Thread.Sleep(sleep);
+                }
+                else
+                {
+                    long currentTime = stopwatch.ElapsedTicks;
+                    long cl = currentTime - lastTime;
+                    if (cl >= interval)
+                    {
+                        lastTime = currentTime;
+                        OnTick();
+                        currentTime = stopwatch.ElapsedTicks;
+                        cl = (currentTime - lastTime) / Frequency;
+                        // С минус 1 точнее бъёт такт, но нагрузка на проц возрастает
+                        int sleep = (int)(sleepFps - cl);// - 1;
+                        if (sleep > 0) Thread.Sleep(sleep);
+                    }
                 }
             }
             OnCloseded();

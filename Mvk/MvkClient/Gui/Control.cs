@@ -1,7 +1,6 @@
 ﻿using MvkAssets;
 using MvkClient.Actions;
 using MvkClient.Renderer;
-using MvkClient.Setitings;
 using MvkServer.Glm;
 using SharpGL;
 using System;
@@ -10,6 +9,10 @@ namespace MvkClient.Gui
 {
     public class Control
     {
+        /// <summary>
+        /// Нужен ли рендер
+        /// </summary>
+        public bool IsRender { get; protected set; } = true;
         /// <summary>
         /// Ширина
         /// </summary>
@@ -35,21 +38,32 @@ namespace MvkClient.Gui
         /// </summary>
         public object Tag { get; set; }
         /// <summary>
-        /// фокус
+        /// Фокус
         /// </summary>
-        protected bool focus = false;
+        public bool Focus { get; protected set; } = false;
+        /// <summary>
+        /// Текст
+        /// </summary>
+        public string Text { get; protected set; }
+        /// <summary>
+        /// Когда мышь находится на элементе
+        /// </summary>
+        protected bool enter = false;
         /// <summary>
         /// Размер шрифта
         /// </summary>
         protected FontSize size = FontSize.Font12;
 
-        /// <summary>
-        /// Нужен ли рендер
-        /// </summary>
-        public bool IsRender { get; protected set; } = true;
-
         protected Screen screen;
         protected static OpenGL gl;
+
+        protected Control() { }
+        public Control(string text)
+        {
+            Width = 400;
+            Height = 40;
+            Text = text;
+        }
 
         public void Init(Screen screen)
         {
@@ -66,15 +80,22 @@ namespace MvkClient.Gui
         /// Прорисовка контрола
         /// </summary>
         public virtual void Draw() => IsRender = false;
+
+        /// <summary>
+        /// В облости ли мышь курсора
+        /// </summary>
+        protected bool IsRectangleMouse(int x, int y) 
+            => Enabled && x >= Position.x && y >= Position.y && x < Position.x + Width && y < Position.y + Height;
+
         /// <summary>
         /// Перемещение мышки
         /// </summary>
         public virtual void MouseMove(int x, int y)
         {
-            bool b = Enabled && x >= Position.x && y >= Position.y && x < Position.x + Width && y < Position.y + Height;
-            if (focus != b)
+            bool b = IsRectangleMouse(x, y);
+            if (enter != b)
             {
-                focus = b;
+                enter = b;
                 IsRender = true;
             }
         }
@@ -90,9 +111,14 @@ namespace MvkClient.Gui
         public virtual void MouseUp(MouseButton button, int x, int y) { }
 
         /// <summary>
+        /// Нажата клавиша в char формате
+        /// </summary>
+        public virtual void KeyPress(char key) { }
+
+        /// <summary>
         /// Звук клика
         /// </summary>
-        protected void SampleClick() => screen.ClientMain.Sample.PlaySound(AssetsSample.Click, .3f * Setting.ToFloatSoundVolume());
+        protected void SampleClick() => screen.ClientMain.Sample.PlaySound(AssetsSample.Click, .3f);
 
         /// <summary>
         /// Событие клика по кнопке

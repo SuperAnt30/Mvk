@@ -16,11 +16,8 @@ namespace MvkClient.Gui
 
             buttonSingle = new Button(EnumScreenKey.SinglePlayer, "Одиночная игра") { Width = 300 };
             InitButtonClick(buttonSingle);
-            buttonMultiplayere = new Button(EnumScreenKey.Multiplayere, "Сетевая игра")
-            {
-                Enabled = false,
-                Width = 300
-            };
+            buttonMultiplayere = new Button(EnumScreenKey.Multiplayere, "Сетевая игра") { Width = 300 };
+            InitButtonClick(buttonMultiplayere);
             buttonOptions = new Button(EnumScreenKey.Options, "Опции...") { Width = 300 };
             buttonOptions.Click += (sender, e)
                 => OnFinished(new ScreenEventArgs(EnumScreenKey.Options, EnumScreenKey.Main));

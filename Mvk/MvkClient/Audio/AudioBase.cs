@@ -1,4 +1,5 @@
 ﻿using MvkAssets;
+using MvkClient.Setitings;
 using MvkServer.Glm;
 using System;
 using System.Collections;
@@ -59,7 +60,7 @@ namespace MvkClient.Audio
         /// </summary>
         public void PlaySound(AssetsSample key, vec3 pos, float volume, float pitch)
         {
-            if (items.Contains(key))
+            if (Setting.SoundVolume > 0 && items.Contains(key))
             {
                 AudioSample sample = Get(key);
                 if (sample != null && sample.Size > 0)
@@ -68,7 +69,7 @@ namespace MvkClient.Audio
                     if (source != null)
                     {
                         source.Sample(sample);
-                        source.Play(pos, volume, pitch);
+                        source.Play(pos, volume * Setting.ToFloatSoundVolume(), pitch);
                     }
                 }
             }

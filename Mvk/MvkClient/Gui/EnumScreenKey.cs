@@ -22,6 +22,10 @@
         /// </summary>
         Multiplayere,
         /// <summary>
+        /// Соединение
+        /// </summary>
+        Connection,
+        /// <summary>
         /// Опции
         /// </summary>
         Options,
@@ -40,10 +44,10 @@
         /// <summary>
         /// Меню во время игры
         /// </summary>
-        InGameMenu
-
-
-
-
+        InGameMenu,
+        /// <summary>
+        /// Сохранение мира
+        /// </summary>
+        WorldSaving
     }
 }

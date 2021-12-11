@@ -28,9 +28,16 @@ namespace MvkClient.Renderer
         public static int WindowHeight { get; protected set; }
 
         /// <summary>
-        /// Таймер для фиксации времени
+        /// Таймер для фиксации времени прорисовки кадра
         /// </summary>
         protected static Stopwatch stopwatch = new Stopwatch();
+        protected static float speedFrameAll;
+        /// <summary>
+        /// Часы для фиксации секунды
+        /// </summary>
+        protected static Stopwatch stopwatchSecond = new Stopwatch();
+        protected static long timerSecond;
+        protected static int fps;
 
         /// <summary>
         /// Инициализировать, первый запуск OpenGL
@@ -40,6 +47,7 @@ namespace MvkClient.Renderer
             GLWindow.gl = gl;
             GLRender.Initialize();
             stopwatch.Start();
+            stopwatchSecond.Start();
 
             gl.ClearColor(0.3f, 0.3f, 0.3f, 1.0f);
             gl.Enable(OpenGL.GL_DEPTH_TEST);
@@ -61,6 +69,7 @@ namespace MvkClient.Renderer
         /// </summary>
         public static void DrawBegin()
         {
+            fps++;
             stopwatch.Restart();
             //gl.Perspective(70.0f, (float)windowWidth / (float)windowHeight, 0.1f, 512);
 
@@ -75,16 +84,17 @@ namespace MvkClient.Renderer
         /// </summary>
         public static void DrawEnd()
         {
-            gl.MatrixMode(OpenGL.GL_PROJECTION);
-            gl.LoadIdentity();
-            gl.Ortho2D(0, WindowWidth, WindowHeight, 0);
-
-            gl.MatrixMode(OpenGL.GL_MODELVIEW);
-            gl.LoadIdentity();
-
-            Debug.RenderDebug();
+            // Перерасчёт кадров раз в секунду, и среднее время прорисовки кадра
+            if (stopwatchSecond.ElapsedMilliseconds >= timerSecond + 1000)
+            {
+                Debug.SetTpsFps(fps, speedFrameAll / fps);
+                timerSecond += 1000;
+                speedFrameAll = 0;
+                fps = 0;
+            }
+            Debug.RenderDebug(); // Надо вынести в TPS будет
             Debug.DrawDebug();
-            Debug.SpeedFrame = (float)stopwatch.ElapsedTicks / Ticker.Frequency;
+            speedFrameAll += (float)stopwatch.ElapsedTicks / Ticker.Frequency;
         }
     }
 }

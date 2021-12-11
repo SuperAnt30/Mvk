@@ -8,12 +8,14 @@ namespace MvkClient.Gui
     public class ScreenOptions : Screen
     {
         protected Label label;
+        protected Label labelNickname;
         protected Button buttonCancel;
         protected Button buttonDone;
         protected Slider sliderFps;
         protected Slider sliderChunk;
         protected Slider sliderSoundVolume;
         protected Slider sliderMusicVolume;
+        protected TextBox textBoxNickname;
 
         public ScreenOptions(Client client, EnumScreenKey where) : base(client)
         {
@@ -21,11 +23,14 @@ namespace MvkClient.Gui
             if (where == EnumScreenKey.InGameMenu) background = EnumBackground.Game;
 
             label = new Label("Опции", FontSize.Font16);
+            labelNickname = new Label("Имя игрока:", FontSize.Font12) { Width = 160 };
+            textBoxNickname = new TextBox(Setting.Nickname) { Width = 160 };
             sliderFps = new Slider(10, 260, 10, "FPS")
             {
                 Width = 256,
                 Value = Setting.Fps
             };
+            sliderFps.AddParam(260, "Максимум FPS");
             sliderChunk = new Slider(2, 32, 1, "Обзор chunks")
             {
                 Width = 256,
@@ -36,6 +41,7 @@ namespace MvkClient.Gui
                 Width = 256,
                 Value = Setting.SoundVolume
             };
+            sliderSoundVolume.AddParam(0, "Выключен звук");
             sliderMusicVolume = new Slider(0, 100, 1, "Громкость музыки")
             {
                 Width = 256,
@@ -51,6 +57,8 @@ namespace MvkClient.Gui
         protected override void Init()
         {
             AddControls(label);
+            AddControls(labelNickname);
+            AddControls(textBoxNickname);
             AddControls(sliderFps);
             AddControls(sliderChunk);
             AddControls(sliderSoundVolume);
@@ -64,7 +72,9 @@ namespace MvkClient.Gui
         /// </summary>
         protected override void ResizedScreen()
         {
-            label.Position = new vec2i(Width / 2 - 200, Height / 4);
+            label.Position = new vec2i(Width / 2 - 200, Height / 4 - 64);
+            labelNickname.Position = new vec2i(Width / 2 - 158, Height / 4 - 8);
+            textBoxNickname.Position = new vec2i(Width / 2 + 2, Height / 4 - 8);
             sliderSoundVolume.Position = new vec2i(Width / 2 - 258, Height / 4 + 48);
             sliderMusicVolume.Position = new vec2i(Width / 2 + 2, Height / 4 + 48);
             sliderFps.Position = new vec2i(Width / 2 - 258, Height / 4 + 92);
@@ -80,9 +90,9 @@ namespace MvkClient.Gui
             Setting.MusicVolume = sliderMusicVolume.Value;
             Setting.SoundVolume = sliderSoundVolume.Value;
             Setting.Fps = sliderFps.Value;
+            Setting.Nickname = textBoxNickname.Text;
             Setting.Save();
 
-            //ClientMain.SetWishFps(Setting.Fps);
             OnFinished(where);
         }
     }

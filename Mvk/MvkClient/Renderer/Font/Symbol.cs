@@ -13,10 +13,24 @@ namespace MvkClient.Renderer.Font
         /// Получить массив символов
         /// </summary>
         public static char[] ToArrayKey() => Key.ToCharArray();
+
         /// <summary>
         /// Размер шрифта
         /// </summary>
         public int Size { get; protected set; }
+        /// <summary>
+        /// Символ
+        /// </summary>
+        public char Symb { get; protected set; }
+        /// <summary>
+        /// Ширина символа
+        /// </summary>
+        public int Width { get; protected set; } = 4;
+
+        /// <summary>
+        /// Индекс листа символа
+        /// </summary>
+        protected uint dList;
 
         public Symbol(char c, int size)
         {
@@ -29,13 +43,21 @@ namespace MvkClient.Renderer.Font
             int index = Key.IndexOf(Symb) + 32;
             if (index == -1) return;
 
-            U1 = (index & 15) * 0.0625f;
-            U2 = U1 + 0.0625f;
-            V1 = (index >> 4) * 0.0625f;
-            V2 = V1 + 0.0625f;
+            float u1 = (index & 15) * 0.0625f;
+            float u2 = u1 + 0.0625f;
+            float v1 = (index >> 4) * 0.0625f;
+            float v2 = v1 + 0.0625f;
 
             GetWidth(bi, index);
+            dList = GLRender.ListBegin();
+            GLRender.Rectangle(0, 0, FontAdvance.HoriAdvance[Size], FontAdvance.VertAdvance[Size], u1, v1, u2, v2);
+            GLRender.ListEnd();
         }
+
+        /// <summary>
+        /// Прорисовка символа
+        /// </summary>
+        public void Draw() => GLRender.ListCall(dList);
 
         /// <summary>
         /// Получить ширину символа
@@ -62,31 +84,5 @@ namespace MvkClient.Renderer.Font
                 }
             }
         }
-
-        /// <summary>
-        /// Символ
-        /// </summary>
-        public char Symb { get; protected set; }
-        /// <summary>
-        /// Ширина символа
-        /// </summary>
-        public int Width { get; protected set; } = 4;
-
-        /// <summary>
-        /// x
-        /// </summary>
-        public float U1 { get; protected set; } = 0f;
-        /// <summary>
-        /// x
-        /// </summary>
-        public float U2 { get; protected set; } = 0f;
-        /// <summary>
-        /// y
-        /// </summary>
-        public float V1 { get; protected set; } = 0f;
-        /// <summary>
-        /// y
-        /// </summary>
-        public float V2 { get; protected set; } = 0f;
     }
 }

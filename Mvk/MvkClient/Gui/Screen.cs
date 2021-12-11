@@ -2,7 +2,6 @@
 using MvkClient.Actions;
 using MvkClient.Renderer;
 using MvkClient.Renderer.Font;
-using MvkClient.Util;
 using MvkServer.Glm;
 using SharpGL;
 using System;
@@ -92,7 +91,22 @@ namespace MvkClient.Gui
         /// <summary>
         /// Прорисовка
         /// </summary>
-        public void Draw() => GLRender.ListCall(dList);
+        public void Draw()
+        {
+            foreach (Control control in Controls)
+            {
+                if (control.GetType() == typeof(TextBox))
+                {
+                    TextBox textBox = control as TextBox;
+                    if (textBox.Focus)
+                    {
+                        textBox.UpdateCursorCounter();
+                        if (textBox.IsRender) RenderList();
+                    }
+                }
+            }
+            GLRender.ListCall(dList);
+        }
 
         /// <summary>
         /// Рендер листа
@@ -199,8 +213,11 @@ namespace MvkClient.Gui
             bool isRender = false;
             foreach (Control control in Controls)
             {
-                control.MouseMove(x, y);
-                if (control.IsRender) isRender = true;
+                if (control.Visible && control.Enabled)
+                {
+                    control.MouseMove(x, y);
+                    if (control.IsRender) isRender = true;
+                }
             }
 
             if (isRender) RenderList();
@@ -210,7 +227,6 @@ namespace MvkClient.Gui
         /// Нажатие клавиши мышки
         /// </summary>
         public void MouseDown(MouseButton button, int x, int y) => MouseUpDown(button, x, y, true);
-
         /// <summary>
         /// Отпущена клавиша мышки
         /// </summary>
@@ -218,14 +234,29 @@ namespace MvkClient.Gui
 
         protected void MouseUpDown(MouseButton button, int x, int y, bool isDown)
         {
-            bool isRender = false;
             foreach (Control control in Controls)
             {
-                if (isDown) control.MouseDown(button, x, y);
-                else control.MouseUp(button, x, y);
-                if (control.IsRender) isRender = true;
+                if (control.Visible && control.Enabled)
+                {
+                    if (isDown) control.MouseDown(button, x, y);
+                    else control.MouseUp(button, x, y);
+                }
             }
-            if (isRender) RenderList();
+        }
+
+        /// <summary>
+        /// Нажата клавиша в char формате
+        /// </summary>
+        public void KeyPress(char key)
+        {
+            foreach (Control control in Controls)
+            {
+                if (control.Visible && control.Enabled && control.Focus)
+                {
+                    control.KeyPress(key);
+                    break;
+                }
+            }
         }
 
         public void Dispose() => Delete();

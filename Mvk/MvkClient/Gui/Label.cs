@@ -8,18 +8,7 @@ namespace MvkClient.Gui
 {
     public class Label : Control
     {
-        /// <summary>
-        /// Текст
-        /// </summary>
-        protected string text;
-        
-        public Label(string text, FontSize size)
-        {
-            Width = 400;
-            Height = 40;
-            this.size = size;
-            this.text = text;
-        }
+        public Label(string text, FontSize size) : base(text) => this.size = size;
 
         /// <summary>
         /// Прорисовка контрола
@@ -31,14 +20,14 @@ namespace MvkClient.Gui
             gl.Enable(OpenGL.GL_TEXTURE_2D);
             gl.Color(1f, 1f, 1f, 1f);
             GLWindow.Texture.BindTexture(Assets.ConvertFontToTexture(size));
-            int ws = FontRenderer.WidthString(text, size);
+            int ws = FontRenderer.WidthString(Text, size);
             vec4 color = Enabled ? new vec4(1f) : new vec4(.6f, .6f, .6f, 1f);
-            FontRenderer.RenderString(Position.x + (Width - ws) / 2, Position.y + 14, color, text, size);
+            FontRenderer.RenderString(Position.x + (Width - ws) / 2, Position.y + 14, color, Text, size);
         }
 
         /// <summary>
         /// Задать текст
         /// </summary>
-        public void SetText(string text) => this.text = text;
+        public void SetText(string text) => Text = text;
     }
 }

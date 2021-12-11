@@ -37,7 +37,6 @@ namespace MvkClient
         {
             System.Threading.Tasks.Task.Factory.StartNew(() =>
             {
-                int speed = 0;// 400;
                 // Опции
                 Setting.Load();
                 OnTick(new ObjectEventArgs(ObjectKey.LoadStep));
@@ -47,7 +46,6 @@ namespace MvkClient
                 {
                     client.Sample.InitializeSample(key);
                     OnTick(new ObjectEventArgs(ObjectKey.LoadStep));
-                    System.Threading.Thread.Sleep(speed);
                 }
 
                 int i = 0;
@@ -56,7 +54,6 @@ namespace MvkClient
                     i++;
                     if (i < 4) continue;
                     OnTick(new ObjectEventArgs(ObjectKey.LoadStepTexture, new BufferedImage(key, Assets.GetBitmap(key))));
-                    System.Threading.Thread.Sleep(speed);
                 }
                 //System.Threading.Thread.Sleep(2000); // Тест пауза чтоб увидеть загрузчик
                 OnTick(new ObjectEventArgs(ObjectKey.LoadingStopMain));

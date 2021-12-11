@@ -14,32 +14,29 @@ namespace MvkClient
         /// <summary>
         /// Выводить ли на экран
         /// </summary>
-        public static bool IsDraw { get; set; } = false;
-        /// <summary>
-        /// Кадры в секунду
-        /// </summary>
-        public static float Fps { get; set; } = 0;
-        /// <summary>
-        /// Скорость прорисовки кадра в милисекундах
-        /// </summary>
-        public static float SpeedFrame { get; set; } = 0;
-        /// <summary>
-        /// Количество тактов в секунду
-        /// </summary>
-        public static float Tps { get; set; } = 0;
+        public static bool IsDraw { get; set; } = true;
+        
 
         public static int DInt { get; set; } = 0;
         public static float DFloat { get; set; } = 0;
+        public static string DStr { get; set; } = "";
 
-        protected static string ToStringTpsFps()
-        {
-            return string.Format("Speed: {0} fps {1:0.00} mc {2} tps", Fps, SpeedFrame, Tps);
-        }
+        protected static string strTpsFps = "";
+        public static void SetTpsFps(int fps, float speedFrame) => strTpsFps = string.Format("Speed: {0} fps {1:0.00} ms", fps, speedFrame);
+
+        public static string strServer = "";
 
         protected static string ToStringDebug()
         {
-            return ToStringTpsFps() + "\r\nDInt: " + DInt.ToString() + "\r\nDFloat: " + DFloat.ToString();
+            string v = strServer == "" ? "" : "Server " + strServer;
+            return strTpsFps + "\r\n" 
+                + v + "\r\n" 
+                + "DInt: " + DInt.ToString() + "\r\n" 
+                + "DFloat: " + DFloat.ToString() + "\r\n"
+                + "DStr: " + DStr;
         }
+
+        #region Draw
 
         private static uint dList;
 
@@ -47,11 +44,16 @@ namespace MvkClient
         {
             if (IsDraw)
             {
-                GLWindow.gl.Enable(OpenGL.GL_TEXTURE_2D);
-                GLWindow.Texture.BindTexture(AssetsTexture.Font12);
                 GLRender.ListDelete(dList);
                 dList = GLRender.ListBegin();
-                //FontRenderer.RenderText(11f, 11f, new vec4(.2f, .2f, .2f, 1f), ToStringDebug(), FontSize.Font12);
+                GLWindow.gl.MatrixMode(OpenGL.GL_PROJECTION);
+                GLWindow.gl.LoadIdentity();
+                GLWindow.gl.Ortho2D(0, GLWindow.WindowWidth, GLWindow.WindowHeight, 0);
+                GLWindow.gl.MatrixMode(OpenGL.GL_MODELVIEW);
+                GLWindow.gl.LoadIdentity();
+                GLWindow.gl.Enable(OpenGL.GL_TEXTURE_2D);
+                GLWindow.Texture.BindTexture(AssetsTexture.Font12);
+                FontRenderer.RenderText(11f, 11f, new vec4(.2f, .2f, .2f, 1f), ToStringDebug(), FontSize.Font12);
                 FontRenderer.RenderText(10f, 10f, new vec4(0.9f, 0.9f, .6f, 1f), ToStringDebug(), FontSize.Font12);
                 GLRender.ListEnd();
             }
@@ -61,5 +63,7 @@ namespace MvkClient
         {
             if (IsDraw) GLRender.ListCall(dList);
         }
+
+        #endregion
     }
 }

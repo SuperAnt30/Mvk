@@ -72,6 +72,14 @@ namespace MvkClient.Gui
         }
 
         /// <summary>
+        /// Нажата клавиша в char формате
+        /// </summary>
+        public void KeyPress(char key)
+        {
+            if (screen != null) screen.KeyPress(key);
+        }
+
+        /// <summary>
         /// Заменить экран на другое меню
         /// </summary>
         public void Exchange(Screen screenNew)
@@ -87,7 +95,18 @@ namespace MvkClient.Gui
         /// Активация меню во время игры
         /// </summary>
         public void InGameMenu() => Exchange(new ScreenInGameMenu(ClientMain));
-
+        /// <summary>
+        /// Главного меню
+        /// </summary>
+        public void MainMenu() => Exchange(new ScreenMainMenu(ClientMain));
+        /// <summary>
+        /// Сохранение мира
+        /// </summary>
+        public void SavingWorld() => Exchange(new ScreenWorldSaving(ClientMain));
+        /// <summary>
+        /// Окно ошибки
+        /// </summary>
+        public void ScreenError(string text) => Exchange(new ScreenError(ClientMain, text));
         /// <summary>
         /// Удалить экран
         /// </summary>
@@ -133,7 +152,7 @@ namespace MvkClient.Gui
         /// Окончание загрузки, переходим в главное меню
         /// </summary>
         public void LoadingMainEnd() => Exchange(new ScreenMainMenu(ClientMain));
-
+        
         /// <summary>
         /// Окончание загрузки, переходим в главное меню
         /// </summary>
@@ -143,38 +162,23 @@ namespace MvkClient.Gui
 
         private void MenuScreen_Finished(object sender, ScreenEventArgs e)
         {
-            EnumScreenKey key = e.Key;
-            if (key == EnumScreenKey.Options)
+            switch(e.Key)
             {
-                Exchange(new ScreenOptions(ClientMain, e.Where));
+                case EnumScreenKey.Options: Exchange(new ScreenOptions(ClientMain, e.Where)); break;
+                case EnumScreenKey.Main: MainMenu(); break;
+                case EnumScreenKey.SinglePlayer: Exchange(new ScreenSingle(ClientMain, e.Slot)); break;
+                case EnumScreenKey.Multiplayere: Exchange(new ScreenMultiplayere(ClientMain)); break;
+                case EnumScreenKey.Connection: ClientMain.LoadWorldNet(e.Tag.ToString()); break;
+                case EnumScreenKey.YesNo: Exchange(new ScreenYesNo(ClientMain, e.Text, e.Where, e.Slot)); break;
+                case EnumScreenKey.WorldBegin:
+                    // Запуск загрузки мира
+                    Exchange(new ScreenWorldLoading(ClientMain, e.Slot));
+                    ClientMain.LoadWorld(e.Slot);
+                    break;
+                case EnumScreenKey.World: Delete(); break;
+                case EnumScreenKey.InGameMenu: InGameMenu(); break;
+                case EnumScreenKey.WorldSaving: SavingWorld();  break;
             }
-            else if (key == EnumScreenKey.Main)
-            {
-                Exchange(new ScreenMainMenu(ClientMain));
-            }
-            else if (key == EnumScreenKey.SinglePlayer)
-            {
-                Exchange(new ScreenSingle(ClientMain, e.Slot));
-            }
-            else if (key == EnumScreenKey.YesNo)
-            {
-                Exchange(new ScreenYesNo(ClientMain, e.Text, e.Where, e.Slot));
-            }
-            else if (key == EnumScreenKey.WorldBegin)
-            {
-                // Запуск загрузки мира
-                Exchange(new ScreenWorldLoading(ClientMain, e.Slot));
-                ClientMain.LoadWorld(e.Slot);
-            }
-            else if (key == EnumScreenKey.World)
-            {
-                Delete();
-            }
-            else if (key == EnumScreenKey.InGameMenu)
-            {
-                InGameMenu();
-            }
-
         }
     }
 }

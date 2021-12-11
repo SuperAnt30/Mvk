@@ -41,7 +41,7 @@ namespace MvkClient.Gui
 
         private void ButtonExit_Click(object sender, EventArgs e)
         {
-            OnFinished(EnumScreenKey.Main);
+            ClientMain.ExitingWorld();
         }
     }
 }

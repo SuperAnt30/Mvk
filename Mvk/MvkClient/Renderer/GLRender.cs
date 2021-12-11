@@ -27,19 +27,19 @@ namespace MvkClient.Renderer
         /// Прорисовка символа
         /// </summary>
         /// <param name="symbol">объект символа</param>
-        public static void SymbolRender(Symbol symbol)
-        {
-            gl.Begin(OpenGL.GL_TRIANGLE_STRIP);
-            gl.TexCoord(symbol.U1, symbol.V2);
-            gl.Vertex(0, FontAdvance.VertAdvance[symbol.Size]);
-            gl.TexCoord(symbol.U2, symbol.V2);
-            gl.Vertex(FontAdvance.HoriAdvance[symbol.Size], FontAdvance.VertAdvance[symbol.Size]);
-            gl.TexCoord(symbol.U1, symbol.V1);
-            gl.Vertex(0, 0);
-            gl.TexCoord(symbol.U2, symbol.V1);
-            gl.Vertex(FontAdvance.HoriAdvance[symbol.Size], 0);
-            gl.End();
-        }
+        //public static void SymbolRender(Symbol symbol)
+        //{
+        //    gl.Begin(OpenGL.GL_TRIANGLE_STRIP);
+        //    gl.TexCoord(symbol.U1, symbol.V2);
+        //    gl.Vertex(0, FontAdvance.VertAdvance[symbol.Size]);
+        //    gl.TexCoord(symbol.U2, symbol.V2);
+        //    gl.Vertex(FontAdvance.HoriAdvance[symbol.Size], FontAdvance.VertAdvance[symbol.Size]);
+        //    gl.TexCoord(symbol.U1, symbol.V1);
+        //    gl.Vertex(0, 0);
+        //    gl.TexCoord(symbol.U2, symbol.V1);
+        //    gl.Vertex(FontAdvance.HoriAdvance[symbol.Size], 0);
+        //    gl.End();
+        //}
 
         /// <summary>
         /// Нарисовать прямоугольник, без текстуры
@@ -73,44 +73,28 @@ namespace MvkClient.Renderer
         }
 
         /// <summary>
-        /// Сохранить в стек матрицы, придав цвет и перемещение
-        /// </summary>
-        /// <param name="color">цвет</param>
-        /// <param name="trans">перемещение</param>
-        public static void PushMatrix(vec4 color, vec3 trans)
-        {
-            gl.PushMatrix();
-            gl.Color(color.x, color.y, color.z, 1f);
-            gl.Translate(trans.x, trans.y, trans.z);
-        }
-
-        /// <summary>
-        /// Восстановить ранее сохраненное состояние текущего стека матриц
-        /// </summary>
-        public static void PopMatrix() => gl.PopMatrix();
-
-        /// <summary>
         /// Запуск листа
         /// </summary>
         public static uint ListBegin()
         {
             uint list = gl.GenLists(1);
             gl.NewList(list, OpenGL.GL_COMPILE);
-            Debug.DInt = (int)list;
+            //Debug.DInt = (int)list;
             return list;
         }
-
         /// <summary>
         /// Окончание листа
         /// </summary>
         public static void ListEnd() => gl.EndList();
-
         /// <summary>
         /// Вызвать лист
         /// </summary>
         public static void ListCall(uint list) => gl.CallList(list);
-
+        /// <summary>
+        /// Удалить лист
+        /// </summary>
         public static void ListDelete(uint list) => gl.DeleteLists(list, 1);
+
         //gl.Begin(OpenGL.GL_TRIANGLES);
         //gl.TexCoord(x0, y0); gl.Vertex(0, 0, 0);
         //gl.TexCoord(x1, y1); gl.Vertex(s, s, 0);

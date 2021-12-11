@@ -26,6 +26,10 @@ namespace MvkClient.Setitings
         /// Обзор чанков
         /// </summary>
         public static int OverviewChunk { get; set; } = 16;
+        /// <summary>
+        /// Имя игрока
+        /// </summary>
+        public static string Nickname { get; set; } = "Ant";
 
         public static float ToFloatSoundVolume() => SoundVolume / 100f;
         public static float ToFloatMusicVolume() => MusicVolume / 100f;
@@ -57,6 +61,7 @@ namespace MvkClient.Setitings
                         else if (Check(vs, "MusicVolume")) MusicVolume = int.Parse(vs[1]);
                         else if (Check(vs, "Fps")) Fps = int.Parse(vs[1]);
                         else if (Check(vs, "OverviewChunk")) OverviewChunk = int.Parse(vs[1]);
+                        else if (Check(vs, "Nickname")) Nickname = vs[1].ToString();
                     }
                 }
             }
@@ -82,6 +87,7 @@ namespace MvkClient.Setitings
                 file.WriteLine("MusicVolume: " + MusicVolume.ToString());
                 file.WriteLine("Fps: " + Fps.ToString());
                 file.WriteLine("OverviewChunk: " + OverviewChunk.ToString());
+                file.WriteLine("Nickname: " + Nickname.ToString());
                 file.Close();
             }
         }

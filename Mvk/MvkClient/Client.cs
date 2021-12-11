@@ -1,9 +1,11 @@
 ﻿using MvkClient.Actions;
 using MvkClient.Audio;
 using MvkClient.Gui;
+using MvkClient.Network;
 using MvkClient.Renderer;
 using MvkClient.Util;
 using MvkServer.Glm;
+using MvkServer.Network.Packets;
 using SharpGL;
 using System;
 
@@ -16,10 +18,6 @@ namespace MvkClient
         /// </summary>
         public AudioBase Sample { get; protected set; } = new AudioBase();
         /// <summary>
-        /// Счётчик FPS
-        /// </summary>
-        protected CounterTick counterFps;
-        /// <summary>
         /// Тикер Fps
         /// </summary>
         protected Ticker tickerFps;
@@ -27,9 +25,18 @@ namespace MvkClient
         /// Screen Gui
         /// </summary>
         protected GuiScreen screen;
-
-        protected bool isLoading = true;
-
+        /// <summary>
+        /// Сервер в потоке
+        /// </summary>
+        protected ThreadServer server;
+        /// <summary>
+        /// Объект работы с пакетами
+        /// </summary>
+        protected ProcessClientPackets packets;
+        /// <summary>
+        /// Закрывается ли окно
+        /// </summary>
+        protected bool isClosing = false;
 
         #region EventsWindow
 
@@ -42,13 +49,15 @@ namespace MvkClient
             Sample.Initialize();
             glm.Initialized();
             screen = new GuiScreen(this);
-
-            counterFps = new CounterTick();
-            counterFps.Tick += CounterFps_Tick;
+            packets = new ProcessClientPackets(this);
 
             tickerFps = new Ticker();
             tickerFps.Tick += (sender, e) => OnDraw();
             tickerFps.Closeded += (sender, e) => OnCloseded();
+
+            server = new ThreadServer();
+            server.ObjectKeyTick += Server_ObjectKeyTick;
+            server.RecievePacket += (sender, e) => packets.LocalReceivePacket(e.Packet.Bytes);
         }
 
         /// <summary>
@@ -67,40 +76,17 @@ namespace MvkClient
         }
 
         /// <summary>
-        /// Получить события из других пакетов
-        /// </summary>
-        public void ThreadReceive(ObjectEventArgs e)
-        {
-            if (e.Key == ObjectKey.LoadStep)
-            {
-                // Шаг для загрузчиков
-                screen.LoadingStep();
-            } else if (e.Key == ObjectKey.LoadStepTexture)
-            {
-                // Шаг загрузки текстуры
-                GLWindow.Texture.InitializeKey(e.Tag as BufferedImage);
-                screen.LoadingStep();
-            }
-            else if (e.Key == ObjectKey.LoadingStopMain)
-            {
-                // Закончена первоночальная загрузка
-                screen.LoadingMainEnd();
-            }
-            else if (e.Key == ObjectKey.LoadingStopWorld)
-            {
-                // Мир загружен
-                LoadedWorld();
-            }
-        }
-
-        private void CounterFps_Tick(object sender, EventArgs e) => Debug.Fps = counterFps.CountTick;
-
-        /// <summary>
         /// Начало закрытия окна
         /// </summary>
         /// <returns>true - отменить закрытие</returns>
         public bool WindowClosing()
         {
+            isClosing = true;
+            if (server.IsStartWorld)
+            {
+                ExitingWorld();
+                return true;
+            }
             if (tickerFps.IsRuningFps)
             {
                 tickerFps.Stoping();
@@ -141,9 +127,8 @@ namespace MvkClient
         public void GLDraw()
         {
             GLWindow.DrawBegin();
-            counterFps.CalculateFrameRate();
             // тут игра
-
+            //System.Threading.Thread.Sleep(15);
             // тут gui
             screen.DrawScreen();
 
@@ -165,25 +150,23 @@ namespace MvkClient
         /// <param name="key">индекс клавиши</param>
         public void KeyDown(int key)
         {
-            //Debug.DInt = key;
+            server.TrancivePacket(new PacketTest(key.ToString()));
+            Debug.DInt = key;
             if (key == 114) // F3
             {
                 Debug.IsDraw = !Debug.IsDraw;
-            }
-            if (key == 107) // +
-            {
-                if (tickerFps.WishTick < 1000) tickerFps.SetWishTick(tickerFps.WishTick + 10);
-                Debug.DInt = tickerFps.WishTick;
-            }
-            if (key == 109) // -
-            {
-                if (tickerFps.WishTick > 10) tickerFps.SetWishTick(tickerFps.WishTick - 10);
-                Debug.DInt = tickerFps.WishTick;
             }
             if (key == 27) // Esc
             {
                 if (screen.IsEmptyScreen()) screen.InGameMenu();
             }
+        }
+        /// <summary>
+        /// Нажата клавиша в char формате
+        /// </summary>
+        public void KeyPress(char key)
+        {
+            screen.KeyPress(key);
         }
 
         /// <summary>
@@ -246,26 +229,72 @@ namespace MvkClient
         public int GetWishFps() => tickerFps.WishTick;
 
         /// <summary>
+        /// Получить события из других пакетов
+        /// </summary>
+        public void ThreadReceive(ObjectEventArgs e)
+        {
+            switch(e.Key)
+            {
+                case ObjectKey.LoadStep: screen.LoadingStep(); break; // Шаг для загрузчиков
+                case ObjectKey.LoadStepTexture:  // Шаг загрузки текстуры
+                    GLWindow.Texture.InitializeKey(e.Tag as BufferedImage);
+                    screen.LoadingStep();
+                    break;
+                case ObjectKey.LoadingStopMain: screen.LoadingMainEnd(); break; // Закончена первоночальная загрузка
+                case ObjectKey.LoadingStopWorld: LoadedWorld(); break; // Мир загружен
+                case ObjectKey.ServerStoped: // Мир сервера остановлен
+                    if (isClosing) WindowClosing(); else screen.MainMenu();
+                    break;
+                case ObjectKey.Error: screen.ScreenError(e.Tag.ToString()); break;// Ошибка
+            }
+        }
+
+        /// <summary>
+        /// Загрузить сетевой мир
+        /// </summary>
+        /// <param name="ip">адрес</param>
+        public void LoadWorldNet(string ip)
+        {
+            server.StartServerNet(ip);
+        }
+        /// <summary>
         /// Загрузить мир
         /// </summary>
         /// <param name="slot">Номер слота</param>
         public void LoadWorld(int slot)
         {
-            // Загрузка
-            TestLoadingWorld loading = new TestLoadingWorld(this);
-            screen.LoadingSetMax(loading.Count);
-            loading.Tick += (sender, e) => OnThreadSend(e);
-            loading.LoadStart();
+            server.StartServer(slot);
+
+            //TODO:: надо отсюда начать запускать сервер, который создаст мир, и продублирует на клиенте мир.
+            // Продумать tps только на стороне сервера, но должна быть сенхронизация с клиентом
+            // Синхронизация времени раз в секунду
+        }
+
+        private void Server_ObjectKeyTick(object sender, ObjectEventArgs e)
+        {
+            if (e.Key == ObjectKey.LoadingCountWorld)
+            {
+                screen.LoadingSetMax((int)e.Tag);
+            }
+            else
+            {
+                OnThreadSend(e);
+            }
         }
 
         /// <summary>
         /// Мир загружен
         /// </summary>
-        public void LoadedWorld()
-        {
-            screen.LoadingWorldEnd();
-            
+        public void LoadedWorld() => screen.LoadingWorldEnd();
 
+
+        /// <summary>
+        /// Выходим с мира
+        /// </summary>
+        public void ExitingWorld()
+        {
+            screen.SavingWorld();
+            server.ExitingWorld();
         }
 
         #region Event

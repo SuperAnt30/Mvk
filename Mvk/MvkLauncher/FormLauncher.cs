@@ -101,6 +101,10 @@ namespace MvkLauncher
         /// Нажата специальная клавиша
         /// </summary>
         private void OpenGLControl1_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e) => client.KeyDown(e.KeyValue);
+        /// <summary>
+        /// Нажата клавиша в char формате
+        /// </summary>
+        private void openGLControl1_KeyPress(object sender, KeyPressEventArgs e) => client.KeyPress(e.KeyChar);
 
         /// <summary>
         /// Нажатие клавиши мышки

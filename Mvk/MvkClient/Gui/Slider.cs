@@ -4,6 +4,7 @@ using MvkClient.Renderer;
 using MvkClient.Renderer.Font;
 using MvkServer.Glm;
 using SharpGL;
+using System.Collections;
 
 namespace MvkClient.Gui
 {
@@ -26,22 +27,27 @@ namespace MvkClient.Gui
         /// </summary>
         public int Step { get; protected set; }
         /// <summary>
-        /// Текст
+        /// Параметры для текстовки
         /// </summary>
-        protected string text;
-
+        protected Hashtable items = new Hashtable();
+        
         protected float GetIndex() => (float)(Value - Min) / (float)(Max - Min);
         protected int GetSize() => Max - Min;
+
+        /// <summary>
+        /// Задать параметр для текстовки
+        /// </summary>
+        /// <param name="value">значение</param>
+        /// <param name="text">текст при значении</param>
+        public void AddParam(int value, string text) => items.Add(value, text);
+
         /// <summary>
         /// Зажата ли левая клавиша мыши
         /// </summary>
         protected bool IsLeftDown = false;
 
-        public Slider(int min, int max, int step, string text) 
+        public Slider(int min, int max, int step, string text) : base(text)
         {
-            Width = 400;
-            Height = 40;
-            this.text = text;
             Min = min;
             Max = max;
             Step = step;
@@ -80,9 +86,10 @@ namespace MvkClient.Gui
                 GLRender.Rectangle(x + wh, Position.y, x + w, Position.y + Height, 1f - 0.5f * wh2, v1, 1f, v2);
             }
             GLWindow.Texture.BindTexture(Assets.ConvertFontToTexture(size));
-            string s = text + " " + Value;
+            
+            string s = items.ContainsKey(Value) ? items[Value].ToString() : Text + " " + Value;
             int ws = FontRenderer.WidthString(s, size);
-            vec4 color = Enabled ? focus ? new vec4(.8f, .8f, .4f, 1f) : new vec4(.7f, .7f, .7f, 1f) : new vec4(.5f, .5f, .5f, 1f);
+            vec4 color = Enabled ? enter ? new vec4(.8f, .8f, .4f, 1f) : new vec4(.7f, .7f, .7f, 1f) : new vec4(.5f, .5f, .5f, 1f);
             FontRenderer.RenderString(Position.x + (Width - ws) / 2, Position.y + 14, color, s, size);
         }
 
@@ -94,7 +101,7 @@ namespace MvkClient.Gui
             if (button == MouseButton.Left)
             {
                 MouseMove(x, y);
-                if (focus)
+                if (enter)
                 {
                     IsLeftDown = true;
                     CheckMouse(x);

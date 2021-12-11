@@ -61,5 +61,15 @@ namespace MvkServer.Util
         /// </summary>
         public static int Min(int v1, int v2) => v1 > v2 ? v2 : v1;
 
+        /// <summary>
+        /// Получить среднее значение массива лонгов
+        /// </summary>
+        public static float Average(long[] items)
+        {
+            long count = 0;
+            for (int i = 0; i < items.Length; i++) { count += items[i]; }
+            return (float)count / (float)items.Length;
+        }
+
     }
 }
