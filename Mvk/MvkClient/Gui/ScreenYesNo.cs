@@ -15,9 +15,9 @@ namespace MvkClient.Gui
             this.slot = slot;
             this.where = where;
             label = new Label(text, FontSize.Font16);
-            buttonNo = new Button(EnumScreenKey.Main, "Нет") { Width = 198 };
+            buttonNo = new Button(EnumScreenKey.Main, Language.T("gui.no")) { Width = 198 };
             buttonNo.Click += (sender, e) => OnFinished(new ScreenEventArgs(where, EnumScreenKey.YesNo, -1));
-            buttonYes = new Button(EnumScreenKey.Main, "Да") { Width = 198 };
+            buttonYes = new Button(EnumScreenKey.Main, Language.T("gui.yes")) { Width = 198 };
             buttonYes.Click += (sender, e) => OnFinished(new ScreenEventArgs(where, EnumScreenKey.YesNo, slot));
         }
 

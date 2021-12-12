@@ -35,9 +35,8 @@ namespace MvkClient.Gui
             GLRender.Rectangle(Position.x + wh, Position.y, Position.x + Width, Position.y + Height, 1f - 0.5f * wh2, v1, 1f, v2);
 
             GLWindow.Texture.BindTexture(Assets.ConvertFontToTexture(size));
-            int ws = FontRenderer.WidthString(Text, size);
             vec4 color = Enabled ? enter ? new vec4(1f, 1f, .5f, 1f) : new vec4(1f) : new vec4(.5f, .5f, .5f, 1f);
-            FontRenderer.RenderString(Position.x + (Width - ws) / 2, Position.y + 14, color, Text, size);
+            FontRenderer.RenderString(Position.x + GetXAlight(Text, 12), Position.y + 14, color, Text, size);
         }
 
 

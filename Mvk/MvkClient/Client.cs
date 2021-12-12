@@ -67,7 +67,7 @@ namespace MvkClient
         public void WindowLoad()
         {
             tickerFps.Start();
-
+            
             // Загрузка
             Loading loading = new Loading(this);
             screen.LoadingSetMax(loading.Count);

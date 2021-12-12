@@ -14,12 +14,16 @@ namespace MvkClient.Gui
 
         public ScreenMultiplayere(Client client) : base(client)
         {
-            label = new Label("Сетевая игра", FontSize.Font16);
-            labelAddress = new Label("IP адрес:", FontSize.Font12) { Width = 160 };
+            label = new Label(Language.T("gui.multiplayere"), FontSize.Font16);
+            labelAddress = new Label(Language.T("gui.ip"), FontSize.Font12)
+            {
+                Width = 160,
+                Alight = EnumAlight.Right
+            };
             textBoxAddress = new TextBox("127.0.0.1") { Width = 160 };
-            buttonConnect = new Button("Соединится") { Width = 256 };
+            buttonConnect = new Button(Language.T("gui.connect")) { Width = 256 };
             buttonConnect.Click += ButtonConnect_Click;
-            buttonCancel = new Button(EnumScreenKey.Main, "Отмена") { Width = 256 };
+            buttonCancel = new Button(EnumScreenKey.Main, Language.T("gui.cancel")) { Width = 256 };
             InitButtonClick(buttonCancel);
         }
 
@@ -38,7 +42,7 @@ namespace MvkClient.Gui
         protected override void ResizedScreen()
         {
             label.Position = new vec2i(Width / 2 - 200, Height / 4);
-            labelAddress.Position = new vec2i(Width / 2 - 158, Height / 4 + 92);
+            labelAddress.Position = new vec2i(Width / 2 - 162, Height / 4 + 92);
             textBoxAddress.Position = new vec2i(Width / 2 + 2, Height / 4 + 92);
             buttonConnect.Position = new vec2i(Width / 2 - 258, Height / 4 + 192);
             buttonCancel.Position = new vec2i(Width / 2 + 2, Height / 4 + 192);

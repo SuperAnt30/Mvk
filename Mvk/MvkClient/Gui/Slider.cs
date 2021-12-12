@@ -88,9 +88,9 @@ namespace MvkClient.Gui
             GLWindow.Texture.BindTexture(Assets.ConvertFontToTexture(size));
             
             string s = items.ContainsKey(Value) ? items[Value].ToString() : Text + " " + Value;
-            int ws = FontRenderer.WidthString(s, size);
+
             vec4 color = Enabled ? enter ? new vec4(.8f, .8f, .4f, 1f) : new vec4(.7f, .7f, .7f, 1f) : new vec4(.5f, .5f, .5f, 1f);
-            FontRenderer.RenderString(Position.x + (Width - ws) / 2, Position.y + 14, color, s, size);
+            FontRenderer.RenderString(Position.x + GetXAlight(s, 12), Position.y + 14, color, s, size);
         }
 
         /// <summary>

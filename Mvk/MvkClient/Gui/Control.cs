@@ -1,6 +1,7 @@
 ﻿using MvkAssets;
 using MvkClient.Actions;
 using MvkClient.Renderer;
+using MvkClient.Renderer.Font;
 using MvkServer.Glm;
 using SharpGL;
 using System;
@@ -29,6 +30,10 @@ namespace MvkClient.Gui
         /// Видимый
         /// </summary>
         public bool Visible { get; set; } = true;
+        /// <summary>
+        /// Выравнивания
+        /// </summary>
+        public EnumAlight Alight { get; set; } = EnumAlight.Center;
         /// <summary>
         /// Позиция
         /// </summary>
@@ -69,6 +74,15 @@ namespace MvkClient.Gui
         {
             this.screen = screen;
             gl = GLWindow.gl;
+        }
+
+        /// <summary>
+        /// Задать текст
+        /// </summary>
+        public void SetText(string text)
+        {
+            Text = text;
+            IsRender = true;
         }
 
         /// <summary>
@@ -119,6 +133,22 @@ namespace MvkClient.Gui
         /// Звук клика
         /// </summary>
         protected void SampleClick() => screen.ClientMain.Sample.PlaySound(AssetsSample.Click, .3f);
+
+        /// <summary>
+        /// Получить x в зависимости от смещения
+        /// </summary>
+        /// <param name="text">Текст</param>
+        /// <param name="margin">Отступ</param>
+        protected int GetXAlight(string text, int margin)
+        {
+            int x = margin;
+            if (Alight != EnumAlight.Left)
+            {
+                int ws = FontRenderer.WidthString(text, size);
+                x = Alight == EnumAlight.Center ? (Width - ws) / 2 : Width - ws - margin;
+            }
+            return x;
+        }
 
         /// <summary>
         /// Событие клика по кнопке

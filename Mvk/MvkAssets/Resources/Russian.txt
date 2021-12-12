@@ -1,0 +1,27 @@
+gui.singleplayer:Одиночная игра
+gui.multiplayere:Сетевая игра
+gui.options:Настройки
+gui.exit:Выход
+gui.nikname:Имя игрока
+gui.fps:FPS
+gui.maxfps:Максимум FPS
+gui.overview.chunks:Обзор чанков
+gui.volume.sound:Общая громкость
+gui.volume.music:Громкость музыки
+gui.volume.off:Выключен звук
+gui.apply:Применить
+gui.cancel:Отмена
+gui.no:Нет
+gui.yes:Да
+gui.connect:Соединится
+gui.world.empty:- Пусто -
+gui.world.delete:Вы действительно хотите удалить мир?
+gui.saving:Сохранение...
+gui.loading.world:Загрузка мира {0:0.0} %
+gui.ip:IP адрес
+gui.back.game:Вернутся в игру
+gui.exit.world:Выход из мира
+gui.language:Язык
+gui.error:Ошибка
+gui.menu:В меню
+gui.error.server.disconnect:Сервер разорвал соединение

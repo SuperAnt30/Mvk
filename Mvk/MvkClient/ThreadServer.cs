@@ -1,4 +1,5 @@
-﻿using MvkClient.Util;
+﻿using MvkAssets;
+using MvkClient.Util;
 using MvkServer;
 using MvkServer.Network;
 using System.IO;
@@ -40,10 +41,19 @@ namespace MvkClient
             // По сети сервер
             socket = new SocketClient(System.Net.IPAddress.Parse(ip), 32021);
             socket.ReceivePacket += (sender, e) => OnRecievePacket(e);
-            //TODO:: Сделать для ошибки отдельное окно в GUI
+            socket.Receive += Socket_Receive;
             socket.Error += (sender, e) => OnObjectKeyTick(new ObjectEventArgs(ObjectKey.Error, e.GetException().Message));
             socket.Connect();
         }
+
+        private void Socket_Receive(object sender, ServerPacketEventArgs e)
+        {
+            if (e.Packet.Status == StatusNet.Disconnect)
+            {
+                OnObjectKeyTick(new ObjectEventArgs(ObjectKey.Error, Language.T("gui.error.server.disconnect")));
+            }
+        }
+
         /// <summary>
         /// Запуск локального сервера
         /// </summary>

@@ -9,17 +9,16 @@ namespace MvkClient.Gui
     public class ScreenWorldLoading : ScreenLoading
     {
         protected Label label;
-        protected readonly string str = "Загрузка мира {0:0.0} %";
 
         public ScreenWorldLoading(Client client, int slot) : base(client) 
-            => label = new Label(string.Format(str, 0), FontSize.Font16);
+            => label = new Label(string.Format(Language.T("gui.loading.world"), 0), FontSize.Font16);
 
         /// <summary>
         /// Следующий шаг загрузки
         /// </summary>
         public override void Step()
         {
-            label.SetText(string.Format(str, (value + 1f) * 100f / max));
+            label.SetText(string.Format(Language.T("gui.loading.world"), (value + 1f) * 100f / max));
             base.Step();
         }
 

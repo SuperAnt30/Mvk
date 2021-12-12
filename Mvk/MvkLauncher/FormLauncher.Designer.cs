@@ -41,7 +41,7 @@
             this.openGLControl1.OpenGLVersion = SharpGL.Version.OpenGLVersion.OpenGL2_1;
             this.openGLControl1.RenderContextType = SharpGL.RenderContextType.NativeWindow;
             this.openGLControl1.RenderTrigger = SharpGL.RenderTrigger.Manual;
-            this.openGLControl1.Size = new System.Drawing.Size(1284, 691);
+            this.openGLControl1.Size = new System.Drawing.Size(1280, 720);
             this.openGLControl1.TabIndex = 0;
             this.openGLControl1.OpenGLInitialized += new System.EventHandler(this.OpenGLControl1_OpenGLInitialized);
             this.openGLControl1.OpenGLDraw += new SharpGL.RenderEventHandler(this.OpenGLControl1_OpenGLDraw);
@@ -59,7 +59,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1284, 691);
+            this.ClientSize = new System.Drawing.Size(1280, 720);
             this.Controls.Add(this.openGLControl1);
             this.Name = "FormLauncher";
             this.Text = "Малювекi";

@@ -1,0 +1,27 @@
+gui.singleplayer:Singleplayer
+gui.multiplayere:Multiplayere
+gui.options:Options
+gui.exit:Exit
+gui.nikname:Player name
+gui.fps:FPS
+gui.maxfps:Maximum FPS
+gui.overview.chunks:Chunks overview
+gui.volume.sound:Overall volume
+gui.volume.music:Music volume
+gui.volume.off:Sound off
+gui.apply:Apply
+gui.cancel:Cancel
+gui.no:No
+gui.yes:Yes
+gui.connect:Connect
+gui.world.empty:- Empty -
+gui.world.delete:Are you sure you want to delete the world?
+gui.saving:Saving...
+gui.loading.world:Loading the world {0:0.0} %
+gui.ip:IP address
+gui.back.game:Back to the game
+gui.exit.world:Out of the world
+gui.language:Language
+gui.error:Error
+gui.menu:On the menu
+gui.error.server.disconnect:Server dropped connection

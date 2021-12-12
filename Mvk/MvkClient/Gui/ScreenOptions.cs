@@ -9,48 +9,64 @@ namespace MvkClient.Gui
     {
         protected Label label;
         protected Label labelNickname;
+        protected Label labelLanguage;
         protected Button buttonCancel;
         protected Button buttonDone;
+        protected Button buttonLanguage;
         protected Slider sliderFps;
         protected Slider sliderChunk;
         protected Slider sliderSoundVolume;
         protected Slider sliderMusicVolume;
         protected TextBox textBoxNickname;
 
+        protected int cacheLanguage;
+
         public ScreenOptions(Client client, EnumScreenKey where) : base(client)
         {
+            cacheLanguage = Setting.Language;
             this.where = where;
             if (where == EnumScreenKey.InGameMenu) background = EnumBackground.Game;
 
-            label = new Label("Опции", FontSize.Font16);
-            labelNickname = new Label("Имя игрока:", FontSize.Font12) { Width = 160 };
+            label = new Label(Language.T("gui.options"), FontSize.Font16);
+            labelNickname = new Label(Language.T("gui.nikname"), FontSize.Font12)
+            {
+                Width = 160,
+                Alight = EnumAlight.Right
+            };
             textBoxNickname = new TextBox(Setting.Nickname) { Width = 160 };
-            sliderFps = new Slider(10, 260, 10, "FPS")
+            sliderFps = new Slider(10, 260, 10, Language.T("gui.fps"))
             {
                 Width = 256,
                 Value = Setting.Fps
             };
-            sliderFps.AddParam(260, "Максимум FPS");
-            sliderChunk = new Slider(2, 32, 1, "Обзор chunks")
+            sliderFps.AddParam(260, Language.T("gui.maxfps"));
+            sliderChunk = new Slider(2, 32, 1, Language.T("gui.overview.chunks"))
             {
                 Width = 256,
                 Value = Setting.OverviewChunk
             };
-            sliderSoundVolume = new Slider(0, 100, 1, "Общая громкость")
+            sliderSoundVolume = new Slider(0, 100, 1, Language.T("gui.volume.sound"))
             {
                 Width = 256,
                 Value = Setting.SoundVolume
             };
-            sliderSoundVolume.AddParam(0, "Выключен звук");
-            sliderMusicVolume = new Slider(0, 100, 1, "Громкость музыки")
+            sliderSoundVolume.AddParam(0, Language.T("gui.volume.off"));
+            sliderMusicVolume = new Slider(0, 100, 1, Language.T("gui.volume.music"))
             {
                 Width = 256,
                 Value = Setting.MusicVolume,
                 Enabled = false
             };
-            buttonDone = new Button("Применить") { Width = 256 };
+            labelLanguage = new Label(Language.T("gui.language"), FontSize.Font12)
+            {
+                Width = 160,
+                Alight = EnumAlight.Right
+            };
+            buttonLanguage = new Button(Language.GetName(cacheLanguage)) { Width = 160 };
+            buttonLanguage.Click += ButtonLanguage_Click;
+            buttonDone = new Button(Language.T("gui.apply")) { Width = 256 };
             buttonDone.Click += ButtonDone_Click;
-            buttonCancel = new Button(where, "Отмена") { Width = 256 };
+            buttonCancel = new Button(where, Language.T("gui.cancel")) { Width = 256 };
             InitButtonClick(buttonCancel);
         }
 
@@ -58,6 +74,7 @@ namespace MvkClient.Gui
         {
             AddControls(label);
             AddControls(labelNickname);
+            AddControls(labelLanguage);
             AddControls(textBoxNickname);
             AddControls(sliderFps);
             AddControls(sliderChunk);
@@ -65,6 +82,7 @@ namespace MvkClient.Gui
             AddControls(sliderMusicVolume);
             AddControls(buttonDone);
             AddControls(buttonCancel);
+            AddControls(buttonLanguage);
         }
         
         /// <summary>
@@ -73,14 +91,22 @@ namespace MvkClient.Gui
         protected override void ResizedScreen()
         {
             label.Position = new vec2i(Width / 2 - 200, Height / 4 - 64);
-            labelNickname.Position = new vec2i(Width / 2 - 158, Height / 4 - 8);
+            labelNickname.Position = new vec2i(Width / 2 - 162, Height / 4 - 8);
             textBoxNickname.Position = new vec2i(Width / 2 + 2, Height / 4 - 8);
             sliderSoundVolume.Position = new vec2i(Width / 2 - 258, Height / 4 + 48);
             sliderMusicVolume.Position = new vec2i(Width / 2 + 2, Height / 4 + 48);
             sliderFps.Position = new vec2i(Width / 2 - 258, Height / 4 + 92);
             sliderChunk.Position = new vec2i(Width / 2 + 2, Height / 4 + 92);
+            labelLanguage.Position = new vec2i(Width / 2 - 162, Height / 4 + 136);
+            buttonLanguage.Position = new vec2i(Width / 2 + 2, Height / 4 + 136);
             buttonDone.Position = new vec2i(Width / 2 - 258, Height / 4 + 192);
             buttonCancel.Position = new vec2i(Width / 2 + 2, Height / 4 + 192);
+        }
+
+        private void ButtonLanguage_Click(object sender, EventArgs e)
+        {
+            cacheLanguage = Language.Next(cacheLanguage);
+            buttonLanguage.SetText(Language.GetName(cacheLanguage));
         }
 
         private void ButtonDone_Click(object sender, EventArgs e)
@@ -91,7 +117,9 @@ namespace MvkClient.Gui
             Setting.SoundVolume = sliderSoundVolume.Value;
             Setting.Fps = sliderFps.Value;
             Setting.Nickname = textBoxNickname.Text;
+            Setting.Language = cacheLanguage;
             Setting.Save();
+            Language.SetLanguage((AssetsLanguage)cacheLanguage);
 
             OnFinished(where);
         }

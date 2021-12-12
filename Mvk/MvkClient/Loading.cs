@@ -22,6 +22,7 @@ namespace MvkClient
         public Loading(Client client)
         {
             this.client = client;
+
             
             // Определяем максимальное количество для счётчика
             Count = 1 // Загрузка опций
@@ -39,6 +40,7 @@ namespace MvkClient
             {
                 // Опции
                 Setting.Load();
+                Language.SetLanguage((AssetsLanguage)Setting.Language);
                 OnTick(new ObjectEventArgs(ObjectKey.LoadStep));
 
                 // Загрузка семплов

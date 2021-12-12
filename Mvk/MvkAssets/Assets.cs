@@ -41,6 +41,16 @@ namespace MvkAssets
         }
 
         /// <summary>
+        /// Получить текстовый файл языков
+        /// </summary>
+        public static string GetLanguage(AssetsLanguage key)
+        {
+            object obj = ResourceLanguage.ResourceManager.GetObject(key.ToString(), ResourceLanguage.Culture);
+            if (obj != null && obj.GetType() == typeof(string)) return obj.ToString();
+            return "";
+        }
+
+        /// <summary>
         /// Растояние между буквами в пикселях
         /// </summary>
         public static int StepFont(FontSize size)

@@ -9,7 +9,7 @@ namespace MvkClient.Gui
 
         public ScreenWorldSaving(Client client) : base(client)
         {
-            label = new Label("Сохранение...", FontSize.Font16);
+            label = new Label(Language.T("gui.saving"), FontSize.Font16);
         }
 
         protected override void Init()

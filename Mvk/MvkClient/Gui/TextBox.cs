@@ -71,6 +71,7 @@ namespace MvkClient.Gui
                 else if(!enter && Focus) 
                 {
                     // Потерять фокус
+                    isVisibleCursor = false;
                     Focus = false;
                     IsRender = true;
                 }

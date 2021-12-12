@@ -1,4 +1,5 @@
-﻿using MvkServer.Glm;
+﻿using MvkAssets;
+using MvkServer.Glm;
 using System;
 
 namespace MvkClient.Gui
@@ -14,14 +15,14 @@ namespace MvkClient.Gui
         {
             background = EnumBackground.TitleMain;
 
-            buttonSingle = new Button(EnumScreenKey.SinglePlayer, "Одиночная игра") { Width = 300 };
+            buttonSingle = new Button(EnumScreenKey.SinglePlayer, Language.T("gui.singleplayer")) { Width = 300 };
             InitButtonClick(buttonSingle);
-            buttonMultiplayere = new Button(EnumScreenKey.Multiplayere, "Сетевая игра") { Width = 300 };
+            buttonMultiplayere = new Button(EnumScreenKey.Multiplayere, Language.T("gui.multiplayere")) { Width = 300 };
             InitButtonClick(buttonMultiplayere);
-            buttonOptions = new Button(EnumScreenKey.Options, "Опции...") { Width = 300 };
+            buttonOptions = new Button(EnumScreenKey.Options, Language.T("gui.options")) { Width = 300 };
             buttonOptions.Click += (sender, e)
                 => OnFinished(new ScreenEventArgs(EnumScreenKey.Options, EnumScreenKey.Main));
-            buttonExit = new Button("Выход") { Width = 300 };
+            buttonExit = new Button(Language.T("gui.exit")) { Width = 300 };
             buttonExit.Click += ButtonExit_Click;
 
         }

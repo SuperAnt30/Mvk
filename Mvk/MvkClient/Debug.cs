@@ -14,7 +14,7 @@ namespace MvkClient
         /// <summary>
         /// Выводить ли на экран
         /// </summary>
-        public static bool IsDraw { get; set; } = true;
+        public static bool IsDraw { get; set; } = false;
         
 
         public static int DInt { get; set; } = 0;

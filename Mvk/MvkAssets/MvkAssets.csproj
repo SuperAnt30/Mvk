@@ -42,6 +42,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="ResourceLanguage.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>ResourceLanguage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Include="ResourceSound.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>ResourceSound.Designer.cs</LastGenOutput>
@@ -57,7 +61,14 @@
     <Compile Include="Assets.cs" />
     <Compile Include="AssetsTexture.cs" />
     <Compile Include="AssetsSample.cs" />
+    <Compile Include="AssetsLanguage.cs" />
     <Compile Include="FontSize.cs" />
+    <Compile Include="Language.cs" />
+    <Compile Include="ResourceLanguage.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>ResourceLanguage.resx</DependentUpon>
+    </Compile>
     <Compile Include="ResourceSound.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -99,6 +110,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\Font16.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Russian.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\English.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
