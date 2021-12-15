@@ -4,7 +4,7 @@ using System;
 
 namespace MvkClient.Gui
 {
-    public class ScreenMultiplayere : Screen
+    public class ScreenMultiplayer : Screen
     {
         protected Label label;
         protected Label labelAddress;
@@ -12,9 +12,9 @@ namespace MvkClient.Gui
         protected Button buttonConnect;
         protected Button buttonCancel;
 
-        public ScreenMultiplayere(Client client) : base(client)
+        public ScreenMultiplayer(Client client) : base(client)
         {
-            label = new Label(Language.T("gui.multiplayere"), FontSize.Font16);
+            label = new Label(Language.T("gui.multiplayer"), FontSize.Font16);
             labelAddress = new Label(Language.T("gui.ip"), FontSize.Font12)
             {
                 Width = 160,

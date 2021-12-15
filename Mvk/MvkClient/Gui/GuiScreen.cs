@@ -102,7 +102,7 @@ namespace MvkClient.Gui
         /// <summary>
         /// Сохранение мира
         /// </summary>
-        public void SavingWorld() => Exchange(new ScreenWorldSaving(ClientMain));
+        public void ScreenProcess(string text) => Exchange(new ScreenProcess(ClientMain, text));
         /// <summary>
         /// Окно ошибки
         /// </summary>
@@ -117,6 +117,11 @@ namespace MvkClient.Gui
             // Задать фпс
             ClientMain.SetWishFps(Setting.Fps);
         }
+
+        /// <summary>
+        /// Убрать Gui, переход в режим игры
+        /// </summary>
+        public void GameMode() => Delete();
 
         #region Loading
 
@@ -153,10 +158,7 @@ namespace MvkClient.Gui
         /// </summary>
         public void LoadingMainEnd() => Exchange(new ScreenMainMenu(ClientMain));
         
-        /// <summary>
-        /// Окончание загрузки, переходим в главное меню
-        /// </summary>
-        public void LoadingWorldEnd() => Delete();
+        
 
         #endregion
 
@@ -167,7 +169,7 @@ namespace MvkClient.Gui
                 case EnumScreenKey.Options: Exchange(new ScreenOptions(ClientMain, e.Where)); break;
                 case EnumScreenKey.Main: MainMenu(); break;
                 case EnumScreenKey.SinglePlayer: Exchange(new ScreenSingle(ClientMain, e.Slot)); break;
-                case EnumScreenKey.Multiplayere: Exchange(new ScreenMultiplayere(ClientMain)); break;
+                case EnumScreenKey.Multiplayer: Exchange(new ScreenMultiplayer(ClientMain)); break;
                 case EnumScreenKey.Connection: ClientMain.LoadWorldNet(e.Tag.ToString()); break;
                 case EnumScreenKey.YesNo: Exchange(new ScreenYesNo(ClientMain, e.Text, e.Where, e.Slot)); break;
                 case EnumScreenKey.WorldBegin:
@@ -177,7 +179,6 @@ namespace MvkClient.Gui
                     break;
                 case EnumScreenKey.World: Delete(); break;
                 case EnumScreenKey.InGameMenu: InGameMenu(); break;
-                case EnumScreenKey.WorldSaving: SavingWorld();  break;
             }
         }
     }

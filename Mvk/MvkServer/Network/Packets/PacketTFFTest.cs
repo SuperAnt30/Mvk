@@ -1,11 +1,10 @@
 ﻿namespace MvkServer.Network.Packets
 {
-    public struct PacketTest : IPacket
+    public struct PacketTFFTest : IPacket
     {
-        public byte Id { get { return 1; } }
         public string Name;
 
-        public PacketTest(string name) => Name = name;
+        public PacketTFFTest(string name) => Name = name;
 
         public void ReadPacket(StreamBase stream)
         {

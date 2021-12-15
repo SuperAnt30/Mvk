@@ -213,11 +213,8 @@ namespace MvkClient.Gui
             bool isRender = false;
             foreach (Control control in Controls)
             {
-                if (control.Visible && control.Enabled)
-                {
-                    control.MouseMove(x, y);
-                    if (control.IsRender) isRender = true;
-                }
+                if (control.Visible && control.Enabled) control.MouseMove(x, y);
+                if (control.IsRender) isRender = true;
             }
 
             if (isRender) RenderList();

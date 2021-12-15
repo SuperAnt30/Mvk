@@ -13,6 +13,7 @@ namespace MvkClient.Gui
         protected Button buttonCancel;
         protected Button buttonDone;
         protected Button buttonLanguage;
+        protected Button buttonNet;
         protected Slider sliderFps;
         protected Slider sliderChunk;
         protected Slider sliderSoundVolume;
@@ -25,7 +26,6 @@ namespace MvkClient.Gui
         {
             cacheLanguage = Setting.Language;
             this.where = where;
-            if (where == EnumScreenKey.InGameMenu) background = EnumBackground.Game;
 
             label = new Label(Language.T("gui.options"), FontSize.Font16);
             labelNickname = new Label(Language.T("gui.nikname"), FontSize.Font12)
@@ -34,6 +34,7 @@ namespace MvkClient.Gui
                 Alight = EnumAlight.Right
             };
             textBoxNickname = new TextBox(Setting.Nickname) { Width = 160 };
+            
             sliderFps = new Slider(10, 260, 10, Language.T("gui.fps"))
             {
                 Width = 256,
@@ -64,10 +65,18 @@ namespace MvkClient.Gui
             };
             buttonLanguage = new Button(Language.GetName(cacheLanguage)) { Width = 160 };
             buttonLanguage.Click += ButtonLanguage_Click;
+            buttonNet = new Button(Language.T("gui.net")) { Width = 160 };
+            buttonNet.Click += ButtonNet_Click;
             buttonDone = new Button(Language.T("gui.apply")) { Width = 256 };
             buttonDone.Click += ButtonDone_Click;
             buttonCancel = new Button(where, Language.T("gui.cancel")) { Width = 256 };
             InitButtonClick(buttonCancel);
+
+            if (where == EnumScreenKey.InGameMenu)
+            {
+                background = EnumBackground.Game;
+                textBoxNickname.Enabled = false;
+            }
         }
 
         protected override void Init()
@@ -83,6 +92,15 @@ namespace MvkClient.Gui
             AddControls(buttonDone);
             AddControls(buttonCancel);
             AddControls(buttonLanguage);
+            if (ClientMain.IsServerLocalRun())
+            {
+                if (ClientMain.IsOpenNet())
+                {
+                    buttonNet.Enabled = false;
+                    buttonNet.SetText(Language.T("gui.net.on"));
+                }
+                AddControls(buttonNet);
+            }
         }
         
         /// <summary>
@@ -90,23 +108,34 @@ namespace MvkClient.Gui
         /// </summary>
         protected override void ResizedScreen()
         {
-            label.Position = new vec2i(Width / 2 - 200, Height / 4 - 64);
-            labelNickname.Position = new vec2i(Width / 2 - 162, Height / 4 - 8);
-            textBoxNickname.Position = new vec2i(Width / 2 + 2, Height / 4 - 8);
-            sliderSoundVolume.Position = new vec2i(Width / 2 - 258, Height / 4 + 48);
-            sliderMusicVolume.Position = new vec2i(Width / 2 + 2, Height / 4 + 48);
-            sliderFps.Position = new vec2i(Width / 2 - 258, Height / 4 + 92);
-            sliderChunk.Position = new vec2i(Width / 2 + 2, Height / 4 + 92);
-            labelLanguage.Position = new vec2i(Width / 2 - 162, Height / 4 + 136);
-            buttonLanguage.Position = new vec2i(Width / 2 + 2, Height / 4 + 136);
-            buttonDone.Position = new vec2i(Width / 2 - 258, Height / 4 + 192);
-            buttonCancel.Position = new vec2i(Width / 2 + 2, Height / 4 + 192);
+            label.Position = new vec2i(Width / 2 - 200, 72);
+            labelNickname.Position = new vec2i(Width / 2 - 162, 120);
+            textBoxNickname.Position = new vec2i(Width / 2 + 2, 120);
+            sliderSoundVolume.Position = new vec2i(Width / 2 - 258, 164);
+            sliderMusicVolume.Position = new vec2i(Width / 2 + 2, 164);
+            sliderFps.Position = new vec2i(Width / 2 - 258, 208);
+            sliderChunk.Position = new vec2i(Width / 2 + 2, 208);
+            labelLanguage.Position = new vec2i(Width / 2 - 162, 252);
+            buttonLanguage.Position = new vec2i(Width / 2 + 2, 252);
+            buttonNet.Position = new vec2i(Width / 2 + 2, 296);
+            buttonDone.Position = new vec2i(Width / 2 - 258, 400);
+            buttonCancel.Position = new vec2i(Width / 2 + 2, 400);
         }
 
         private void ButtonLanguage_Click(object sender, EventArgs e)
         {
             cacheLanguage = Language.Next(cacheLanguage);
             buttonLanguage.SetText(Language.GetName(cacheLanguage));
+        }
+
+        private void ButtonNet_Click(object sender, EventArgs e)
+        {
+            if (where == EnumScreenKey.InGameMenu)
+            {
+                buttonNet.Enabled = false;
+                buttonNet.SetText(Language.T("gui.net.on"));
+                ClientMain.OpenNet();
+            }
         }
 
         private void ButtonDone_Click(object sender, EventArgs e)

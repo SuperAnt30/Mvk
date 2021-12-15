@@ -58,7 +58,7 @@ namespace MvkClient
                     OnTick(new ObjectEventArgs(ObjectKey.LoadStepTexture, new BufferedImage(key, Assets.GetBitmap(key))));
                 }
                 //System.Threading.Thread.Sleep(2000); // Тест пауза чтоб увидеть загрузчик
-                OnTick(new ObjectEventArgs(ObjectKey.LoadingStopMain));
+                OnTick(new ObjectEventArgs(ObjectKey.LoadedMain));
             });
         }
 

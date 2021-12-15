@@ -7,7 +7,7 @@ namespace MvkClient.Gui
     public class ScreenMainMenu : Screen
     {
         protected Button buttonSingle;
-        protected Button buttonMultiplayere;
+        protected Button buttonMultiplayer;
         protected Button buttonOptions;
         protected Button buttonExit;
 
@@ -17,8 +17,8 @@ namespace MvkClient.Gui
 
             buttonSingle = new Button(EnumScreenKey.SinglePlayer, Language.T("gui.singleplayer")) { Width = 300 };
             InitButtonClick(buttonSingle);
-            buttonMultiplayere = new Button(EnumScreenKey.Multiplayere, Language.T("gui.multiplayere")) { Width = 300 };
-            InitButtonClick(buttonMultiplayere);
+            buttonMultiplayer = new Button(EnumScreenKey.Multiplayer, Language.T("gui.multiplayer")) { Width = 300 };
+            InitButtonClick(buttonMultiplayer);
             buttonOptions = new Button(EnumScreenKey.Options, Language.T("gui.options")) { Width = 300 };
             buttonOptions.Click += (sender, e)
                 => OnFinished(new ScreenEventArgs(EnumScreenKey.Options, EnumScreenKey.Main));
@@ -30,7 +30,7 @@ namespace MvkClient.Gui
         protected override void Init()
         {
             AddControls(buttonSingle);
-            AddControls(buttonMultiplayere);
+            AddControls(buttonMultiplayer);
             AddControls(buttonOptions);
             AddControls(buttonExit);
         }
@@ -41,7 +41,7 @@ namespace MvkClient.Gui
         protected override void ResizedScreen()
         {
             buttonSingle.Position = new vec2i(100, Height / 4 + 92);
-            buttonMultiplayere.Position = new vec2i(100, Height / 4 + 136);
+            buttonMultiplayer.Position = new vec2i(100, Height / 4 + 136);
             buttonOptions.Position = new vec2i(100, Height / 4 + 180);
             buttonExit.Position = new vec2i(100, Height / 4 + 240);
         }

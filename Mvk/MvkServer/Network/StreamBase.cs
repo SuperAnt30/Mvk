@@ -1,30 +1,31 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text;
 
 namespace MvkServer.Network
 {
-    public class StreamBase : Stream
+    public class StreamBase: IDisposable
     {
         public Stream BaseStream { get; protected set; }
 
         public StreamBase(Stream stream) => BaseStream = stream;
 
-        public override long Position
-        {
-            get { return BaseStream.Position; }
-            set { BaseStream.Position = value; }
-        }
+        public void Dispose() => BaseStream.Dispose();
 
-        public override bool CanRead => BaseStream.CanRead;
-        public override bool CanSeek => BaseStream.CanSeek;
-        public override bool CanWrite => BaseStream.CanWrite;
-        public override long Length => BaseStream.Length;
-        public override void Flush() => BaseStream.Flush();
-        public override long Seek(long offset, SeekOrigin origin) => BaseStream.Seek(offset, origin);
-        public override void SetLength(long value) => BaseStream.SetLength(value);
-        public override int Read(byte[] buffer, int offset, int count) => BaseStream.Read(buffer, offset, count);
-        public override void Write(byte[] buffer, int offset, int count) => BaseStream.Write(buffer, offset, count);
+        protected int Read(byte[] buffer, int offset, int count) => BaseStream.Read(buffer, offset, count);
+        protected void Write(byte[] buffer, int offset, int count) => BaseStream.Write(buffer, offset, count);
 
+        #region Read
+
+        /// <summary>
+        /// Прочесть логический тип (0..1) 1 байт
+        /// </summary>
+        public bool ReadBool() => ReadByte() != 0;
+
+        /// <summary>
+        /// Прочесть массив байт
+        /// </summary>
+        /// <param name="count">количество байт</param>
         public byte[] ReadBytes(int count)
         {
             byte[] b = new byte[count];
@@ -34,84 +35,152 @@ namespace MvkServer.Network
             }
             return b;
         }
-        public byte ReadInt8()
+        /// <summary>
+        /// Прочесть тип byte (0..255) 1 байт
+        /// </summary>
+        public byte ReadByte()
         {
             int value = BaseStream.ReadByte();
-            if (value == -1)
-                throw new EndOfStreamException();
+            if (value == -1) throw new EndOfStreamException();
             return (byte)value;
         }
+        /// <summary>
+        /// Прочесть тип ushort (0..65535) 2 байта
+        /// </summary>
+        public ushort ReadUShort() => (ushort)((ReadByte() << 8) | ReadByte());
+        /// <summary>
+        /// Прочесть тип uint (0..4 294 967 295) 4 байта
+        /// </summary>
+        public uint ReadUInt() => (uint)((ReadByte() << 24) | (ReadByte() << 16) | (ReadByte() << 8) | ReadByte());
+        /// <summary>
+        /// Прочесть тип uint (0..18 446 744 073 709 551 615) 8 байт
+        /// </summary>
+        public ulong ReadULong() => (ulong)((ReadByte() << 56) | (ReadByte() << 48) | (ReadByte() << 40) | (ReadByte() << 32)
+            | (ReadByte() << 24) | (ReadByte() << 16) | (ReadByte() << 8) | ReadByte());
+        /// <summary>
+        /// Прочесть тип sbyte (-128..127) 1 байт
+        /// </summary>
+        public sbyte ReadSByte() => (sbyte)ReadByte();
+        /// <summary>
+        /// Прочесть тип short (-32768..32767) 2 байта
+        /// </summary>
+        public short ReadShort() => (short)ReadUShort();
+        /// <summary>
+        /// Прочесть тип int (-2 147 483 648..2 147 483 647) 4 байта
+        /// </summary>
+        public int ReadInt() => (int)ReadUInt();
+        /// <summary>
+        /// Прочесть тип int (–9 223 372 036 854 775 808..9 223 372 036 854 775 807) 8 байт
+        /// </summary>
+        public long ReadLong() => (long)ReadULong();
 
-        public void WriteInt8(byte value)
+        /// <summary>
+        /// Прочесть строку в UTF-16
+        /// </summary>
+        public string ReadString()
         {
-            WriteByte(value);
+            Encoding stringEncoding = Encoding.BigEndianUnicode;
+            short length = ReadShort();
+            if (length == 0) return string.Empty;
+            // TODO::попробовать! было ранее другая методика ReadArray
+            var data = ReadBytes(length * 2);// ReadArray(length * 2);
+            return stringEncoding.GetString(data);
         }
 
-        public int ReadInt32()
+        /// <summary>
+        /// Прочесть тип float (точность 0,0001) 4 байта
+        /// </summary>
+        public float ReadFloat() => ReadInt() / 10000f;
+
+        #endregion
+
+        #region Write
+
+        /// <summary>
+        /// Записать логический тип (0..1) 1 байт
+        /// </summary>
+        public void WriteBool(bool value) => WriteByte(value ? (byte)1 : (byte)0);
+
+        /// <summary>
+        /// Записать массив байт
+        /// </summary>
+        public void WriteBytes(byte[] value) => Write(value, 0, value.Length);
+
+        /// <summary>
+        /// Записать тип byte (0..255) 1 байт
+        /// </summary>
+        public void WriteByte(byte value) => BaseStream.WriteByte(value);
+        /// <summary>
+        /// Записать тип ushort (0..65535) 2 байта
+        /// </summary>
+        public void WriteUShort(ushort value) => Write(new[]
         {
-            return (int)ReadUInt32();
+            (byte)((value & 0xFF00) >> 8),
+            (byte)(value & 0xFF)
+        }, 0, 2);
+        /// <summary>
+        /// Записать тип uint (0..4 294 967 295) 4 байта
+        /// </summary>
+        public void WriteUInt(uint value) => Write(new[]
+        {
+            (byte)((value & 0xFF000000) >> 24),
+            (byte)((value & 0xFF0000) >> 16),
+            (byte)((value & 0xFF00) >> 8),
+            (byte)(value & 0xFF)
+        }, 0, 4);
+        /// <summary>
+        /// Записать тип ulong (0..18 446 744 073 709 551 615) 8 байт
+        /// </summary>
+        public void WriteULong(ulong value) => Write(new[]
+        {
+            (byte)((value & 0xFF00000000000000) >> 56),
+            (byte)((value & 0xFF000000000000) >> 48),
+            (byte)((value & 0xFF0000000000) >> 40),
+            (byte)((value & 0xFF00000000) >> 32),
+            (byte)((value & 0xFF000000) >> 24),
+            (byte)((value & 0xFF0000) >> 16),
+            (byte)((value & 0xFF00) >> 8),
+            (byte)(value & 0xFF)
+        }, 0, 8);
+        /// <summary>
+        /// Записать тип sbyte (-128..127) 1 байт
+        /// </summary>
+        public void WriteSByte(sbyte value) => WriteByte((byte)value);
+        /// <summary>
+        /// Записать тип short (-32768..32767) 2 байта
+        /// </summary>
+        public void WriteShort(short value) => WriteUShort((ushort)value);
+        /// <summary>
+        /// Записать тип int (-2 147 483 648..2 147 483 647) 4 байта
+        /// </summary>
+        public void WriteInt(int value) => WriteUInt((uint)value);
+        /// <summary>
+        /// Записать тип long (–9 223 372 036 854 775 808..9 223 372 036 854 775 807) 8 байт
+        /// </summary>
+        public void WriteLong(long value) => WriteULong((ulong)value);
+
+        /// <summary>
+        /// Записать строку в UTF-16
+        /// </summary>
+        public void WriteString(string value)
+        {
+            Encoding stringEncoding = Encoding.BigEndianUnicode;
+            WriteShort((short)value.Length);
+            if (value.Length > 0) WriteBytes(stringEncoding.GetBytes(value));
         }
 
-        public void WriteInt32(int value)
-        {
-            WriteUInt32((uint)value);
-        }
+        /// <summary>
+        /// Записать тип float (точность 0,0001) 4 байта
+        /// </summary>
+        public void WriteFloat(float value) => WriteInt((int)(value * 10000));
 
-        public byte ReadUInt8()
-        {
-            int value = BaseStream.ReadByte();
-            if (value == -1)
-                throw new EndOfStreamException();
-            return (byte)value;
-        }
+        #endregion
 
-        public ushort ReadUInt16()
-        {
-            return (ushort)(
-                (ReadUInt8() << 8) |
-                ReadUInt8());
-        }
-
-        public void WriteUInt16(ushort value)
-        {
-            Write(new[]
-                {
-                    (byte)((value & 0xFF00) >> 8),
-                    (byte)(value & 0xFF)
-                }, 0, 2);
-        }
-
-        public short ReadInt16()
-        {
-            return (short)ReadUInt16();
-        }
-
-        public void WriteInt16(short value)
-        {
-            WriteUInt16((ushort)value);
-        }
-
-        public uint ReadUInt32()
-        {
-            return (uint)(
-                (ReadUInt8() << 24) |
-                (ReadUInt8() << 16) |
-                (ReadUInt8() << 8) |
-                ReadUInt8());
-        }
-
-        public void WriteUInt32(uint value)
-        {
-            Write(new[]
-                {
-                    (byte)((value & 0xFF000000) >> 24),
-                    (byte)((value & 0xFF0000) >> 16),
-                    (byte)((value & 0xFF00) >> 8),
-                    (byte)(value & 0xFF)
-                }, 0, 4);
-        }
-
-        public byte[] ReadUInt8Array(int length)
+        /// <summary>
+        /// Другая методика загрузки массива байт, альтернатива ReadBytes
+        /// </summary>
+        [Obsolete("Проверить, альтернатива ReadBytes")]
+        protected byte[] ReadArray(int length)
         {
             var result = new byte[length];
             if (length == 0) return result;
@@ -119,33 +188,10 @@ namespace MvkServer.Network
             while (true)
             {
                 n -= Read(result, length - n, n);
-                if (n == 0)
-                    break;
+                if (n == 0) break;
                 System.Threading.Thread.Sleep(1);
             }
             return result;
-        }
-
-        public void WriteUInt8Array(byte[] value)
-        {
-            Write(value, 0, value.Length);
-        }
-
-        public string ReadString()
-        {
-            Encoding stringEncoding = Encoding.BigEndianUnicode;
-            short length = ReadInt16();
-            if (length == 0) return string.Empty;
-            var data = ReadUInt8Array(length * 2);
-            return stringEncoding.GetString(data);
-        }
-
-        public void WriteString(string value)
-        {
-            Encoding stringEncoding = Encoding.BigEndianUnicode;
-            WriteInt16((short)value.Length);
-            if (value.Length > 0)
-                WriteUInt8Array(stringEncoding.GetBytes(value));
         }
     }
 }

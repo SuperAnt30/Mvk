@@ -2,8 +2,10 @@
 using MvkClient.Util;
 using MvkServer;
 using MvkServer.Network;
+using MvkServer.Util;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace MvkClient
 {
@@ -30,26 +32,48 @@ namespace MvkClient
         public bool IsStartWorld { get; protected set; } = false;
 
         /// <summary>
+        /// Открыть сеть
+        /// </summary>
+        public void OpenNet()
+        {
+            if (IsLoacl && IsStartWorld)
+            {
+                server.RunNet();
+            }
+        }
+        /// <summary>
+        /// Открыта ли сеть
+        /// </summary>
+        public bool IsOpenNet() => (IsLoacl && IsStartWorld) ? server.IsRunNet() : false;
+
+        /// <summary>
         /// Запуск по сети
         /// </summary>
         public void StartServerNet(string ip)
         {
             IsStartWorld = true;
             IsLoacl = false;
-            OnObjectKeyTick(new ObjectEventArgs(ObjectKey.LoadingStopWorld));
 
             // По сети сервер
             socket = new SocketClient(System.Net.IPAddress.Parse(ip), 32021);
             socket.ReceivePacket += (sender, e) => OnRecievePacket(e);
             socket.Receive += Socket_Receive;
             socket.Error += (sender, e) => OnObjectKeyTick(new ObjectEventArgs(ObjectKey.Error, e.GetException().Message));
-            socket.Connect();
+
+            //Task.Factory.StartNew(() =>
+            //{
+            //    Thread.Sleep(500);
+            //    socket.Connect();
+            //});
+            Task.Factory.StartNew(socket.Connect);
+            //OnObjectKeyTick(new ObjectEventArgs(ObjectKey.LoadingStopWorld));
         }
 
         private void Socket_Receive(object sender, ServerPacketEventArgs e)
         {
             if (e.Packet.Status == StatusNet.Disconnect)
             {
+                //Logger.Log("gui.error.server.disconnect player={0}", server.PlayersManager.GetPlayer(e.Packet.WorkSocket).Name);
                 OnObjectKeyTick(new ObjectEventArgs(ObjectKey.Error, Language.T("gui.error.server.disconnect")));
             }
         }
@@ -61,15 +85,16 @@ namespace MvkClient
         {
             // Локальный сервер
             IsStartWorld = true;
+            Logger.Log("server.runing slot={0}", slot);
             server = new Server();
             IsLoacl = true;
             server.LoadingTick += (sender, e) => OnObjectKeyTick(new ObjectEventArgs(ObjectKey.LoadStep));
-            server.LoadingEnd += (sender, e) => OnObjectKeyTick(new ObjectEventArgs(ObjectKey.LoadingStopWorld));
-            server.Stoped += (sender, e) => ThreadServerStoped();
+            server.LoadingEnd += (sender, e) => OnObjectKeyTick(new ObjectEventArgs(ObjectKey.LoadedWorld));
+            server.Stoped += (sender, e) => ThreadServerStoped("");
             server.RecievePacket += (sender, e) => OnRecievePacket(e);
             server.LogDebug += (sender, e) => Debug.strServer = e.Text;
             int count = server.Initialize();
-            OnObjectKeyTick(new ObjectEventArgs(ObjectKey.LoadingCountWorld, count));
+            OnObjectKeyTick(new ObjectEventArgs(ObjectKey.LoadCountWorld, count));
             Thread myThread = new Thread(server.ServerLoop);
             myThread.Start();
         }
@@ -85,7 +110,7 @@ namespace MvkClient
                 {
                     using (StreamBase stream = new StreamBase(writeStream))
                     {
-                        writeStream.WriteByte(packet.Id);
+                        writeStream.WriteByte(ProcessPackets.GetId(packet));
                         packet.WritePacket(stream);
                         byte[] buffer = writeStream.ToArray();
                         if (IsLoacl)
@@ -104,7 +129,7 @@ namespace MvkClient
         /// <summary>
         /// Выходим с мира
         /// </summary>
-        public void ExitingWorld()
+        public void ExitingWorld(string errorNet)
         {
             if (IsLoacl)
             {
@@ -118,18 +143,17 @@ namespace MvkClient
                 // Но это без доп потока, по этому надо быстро делать, без задержек
 
                 // отправляем событие остановки
-                ThreadServerStoped();
+                ThreadServerStoped(errorNet);
             }
         }
 
         /// <summary>
         /// Остановка 
         /// </summary>
-        protected void ThreadServerStoped()
+        protected void ThreadServerStoped(string errorNet)
         {
-            //if (server != null) server = null;
             IsStartWorld = false;
-            OnObjectKeyTick(new ObjectEventArgs(ObjectKey.ServerStoped));
+            OnObjectKeyTick(new ObjectEventArgs(ObjectKey.ServerStoped, errorNet));
         }
 
         #region Event

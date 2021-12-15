@@ -1,13 +1,13 @@
-﻿using MvkServer.Network;
+﻿using MvkClient.Setitings;
+using MvkServer.Network;
 using MvkServer.Network.Packets;
-using System.IO;
 
 namespace MvkClient.Network
 {
     /// <summary>
     /// Обработка клиентсиких пакетов для сервером
     /// </summary>
-    public class ProcessClientPackets
+    public class ProcessClientPackets : ProcessPackets
     {
         /// <summary>
         /// Основной клиент
@@ -16,34 +16,42 @@ namespace MvkClient.Network
 
         public ProcessClientPackets(Client client) => ClientMain = client;
 
-        public void LocalReceivePacket(byte[] buffer)
+        protected override void ReceivePacketClient(IPacket packet)
         {
-            int id = buffer[0];
-            IPacket packet = null;
-            switch (id)
+            switch(GetId(packet))
             {
-                case 1: packet = new PacketTest(); break;
-            }
-            if (packet == null) return;
-            using (MemoryStream readStream = new MemoryStream(buffer, 1, buffer.Length - 1))
-            {
-                using (StreamBase stream = new StreamBase(readStream))
-                {
-                    packet.ReadPacket(stream);
-                    ReceivePacketNext(packet);
-                }
-            }
-        }
-
-        protected void ReceivePacketNext(IPacket packet)
-        {
-            switch (packet.Id)
-            {
-                case 1:
-                    PacketTest p1 = (PacketTest)packet;
+                case 0x10: Packet10((PacketS10Connection)packet); break;
+                case 0x12: Packet12((PacketS12Success)packet); break;
+                case 0xFF:
+                    PacketTFFTest p1 = (PacketTFFTest)packet;
                     Debug.DStr = p1.Name;
                     break;
             }
+        }
+
+        /// <summary>
+        /// Пакет связи
+        /// </summary>
+        protected void Packet10(PacketS10Connection packet)
+        {
+            if (packet.IsConnect())
+            {
+                // connect
+                ClientMain.TrancivePacket(new PacketC11LoginStart(Setting.Nickname));
+            }
+            else
+            {
+                // disconnect с причиной
+                ClientMain.ExitingWorld(packet.GetCause());
+            }
+        }
+        /// <summary>
+        /// Пакет успеха связи
+        /// </summary>
+        protected void Packet12(PacketS12Success packet)
+        {
+            string uuid = packet.GetUuid();
+            ClientMain.GameMode();
         }
     }
 }

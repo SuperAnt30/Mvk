@@ -216,18 +216,18 @@ namespace MvkServer.Network
             OnReceive(new ServerPacketEventArgs(sp));
         }
 
-        /// <summary>
-        /// Получить список клиентов
-        /// </summary>
-        public Socket[] Clients()
-        {
-            Socket[] list = new Socket[clients.Count];
-            for (int i = 0; i < clients.Count; i++)
-            {
-                list[i] = clients[i].WorkSocket;
-            }
-            return list;
-        }
+        ///// <summary>
+        ///// Получить список клиентов
+        ///// </summary>
+        //public Socket[] Clients()
+        //{
+        //    Socket[] list = new Socket[clients.Count];
+        //    for (int i = 0; i < clients.Count; i++)
+        //    {
+        //        list[i] = clients[i].WorkSocket;
+        //    }
+        //    return list;
+        //}
 
         #region Event
 

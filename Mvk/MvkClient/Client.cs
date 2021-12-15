@@ -1,11 +1,15 @@
-﻿using MvkClient.Actions;
+﻿using MvkAssets;
+using MvkClient.Actions;
 using MvkClient.Audio;
 using MvkClient.Gui;
 using MvkClient.Network;
 using MvkClient.Renderer;
+using MvkClient.Setitings;
 using MvkClient.Util;
 using MvkServer.Glm;
+using MvkServer.Network;
 using MvkServer.Network.Packets;
+using MvkServer.Util;
 using SharpGL;
 using System;
 
@@ -48,6 +52,7 @@ namespace MvkClient
         {
             Sample.Initialize();
             glm.Initialized();
+            Logger.Initialized();
             screen = new GuiScreen(this);
             packets = new ProcessClientPackets(this);
 
@@ -57,7 +62,7 @@ namespace MvkClient
 
             server = new ThreadServer();
             server.ObjectKeyTick += Server_ObjectKeyTick;
-            server.RecievePacket += (sender, e) => packets.LocalReceivePacket(e.Packet.Bytes);
+            server.RecievePacket += (sender, e) => packets.ReceiveBufferClient(e.Packet.Bytes);
         }
 
         /// <summary>
@@ -84,7 +89,7 @@ namespace MvkClient
             isClosing = true;
             if (server.IsStartWorld)
             {
-                ExitingWorld();
+                ExitingWorld("");
                 return true;
             }
             if (tickerFps.IsRuningFps)
@@ -150,7 +155,7 @@ namespace MvkClient
         /// <param name="key">индекс клавиши</param>
         public void KeyDown(int key)
         {
-            server.TrancivePacket(new PacketTest(key.ToString()));
+            server.TrancivePacket(new PacketTFFTest(key.ToString()));
             Debug.DInt = key;
             if (key == 114) // F3
             {
@@ -240,10 +245,14 @@ namespace MvkClient
                     GLWindow.Texture.InitializeKey(e.Tag as BufferedImage);
                     screen.LoadingStep();
                     break;
-                case ObjectKey.LoadingStopMain: screen.LoadingMainEnd(); break; // Закончена первоночальная загрузка
-                case ObjectKey.LoadingStopWorld: LoadedWorld(); break; // Мир загружен
+                case ObjectKey.LoadedMain: screen.LoadingMainEnd(); break; // Закончена первоночальная загрузка
+                case ObjectKey.LoadedWorld: LoadedWorld(); break; // Мир загружен
                 case ObjectKey.ServerStoped: // Мир сервера остановлен
-                    if (isClosing) WindowClosing(); else screen.MainMenu();
+                    if (e.Tag == null || e.Tag.ToString() == "")
+                    {
+                        if (isClosing) WindowClosing(); else screen.MainMenu();
+                    }
+                    else screen.ScreenError(e.Tag.ToString()); // выход с ошибкой
                     break;
                 case ObjectKey.Error: screen.ScreenError(e.Tag.ToString()); break;// Ошибка
             }
@@ -255,6 +264,7 @@ namespace MvkClient
         /// <param name="ip">адрес</param>
         public void LoadWorldNet(string ip)
         {
+            screen.ScreenProcess(Language.T("gui.process"));
             server.StartServerNet(ip);
         }
         /// <summary>
@@ -272,7 +282,7 @@ namespace MvkClient
 
         private void Server_ObjectKeyTick(object sender, ObjectEventArgs e)
         {
-            if (e.Key == ObjectKey.LoadingCountWorld)
+            if (e.Key == ObjectKey.LoadCountWorld)
             {
                 screen.LoadingSetMax((int)e.Tag);
             }
@@ -283,19 +293,48 @@ namespace MvkClient
         }
 
         /// <summary>
-        /// Мир загружен
+        /// Мир загружен один игрок
         /// </summary>
-        public void LoadedWorld() => screen.LoadingWorldEnd();
-
+        public void LoadedWorld()
+        {
+            // ставим экран загрузки
+            screen.ScreenProcess(Language.T("gui.process"));
+        }
 
         /// <summary>
-        /// Выходим с мира
+        /// Выход с мира
         /// </summary>
-        public void ExitingWorld()
+        /// <param name="error">ошибка</param>
+        public void ExitingWorld(string error)
         {
-            screen.SavingWorld();
-            server.ExitingWorld();
+            // ставим экран сохранения
+            screen.ScreenProcess(Language.T("gui.saving"));
+            // отправялем на сервер, выход мира, с возможной ошибкой
+            server.ExitingWorld(error);
         }
+
+        /// <summary>
+        /// Убрать Gui, переход в режим игры
+        /// </summary>
+        public void GameMode() => screen.GameMode();
+
+        /// <summary>
+        /// Отправить пакет на сервер
+        /// </summary>
+        public void TrancivePacket(IPacket packet) => server.TrancivePacket(packet);
+
+        /// <summary>
+        /// Запущен ли локальный сервер
+        /// </summary>
+        public bool IsServerLocalRun() => server.IsLoacl ? server.IsStartWorld : false;
+        /// <summary>
+        /// Открыта ли сеть
+        /// </summary>
+        public bool IsOpenNet() => server.IsOpenNet();
+        /// <summary>
+        /// Открыть сеть
+        /// </summary>
+        public void OpenNet() => server.OpenNet();
 
         #region Event
 

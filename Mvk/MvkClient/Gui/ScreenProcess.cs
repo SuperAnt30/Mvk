@@ -3,13 +3,13 @@ using MvkServer.Glm;
 
 namespace MvkClient.Gui
 {
-    public class ScreenWorldSaving : Screen
+    public class ScreenProcess : Screen
     {
         protected Label label;
 
-        public ScreenWorldSaving(Client client) : base(client)
+        public ScreenProcess(Client client, string text) : base(client)
         {
-            label = new Label(Language.T("gui.saving"), FontSize.Font16);
+            label = new Label(text, FontSize.Font16);
         }
 
         protected override void Init()

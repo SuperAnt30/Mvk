@@ -1,7 +1,7 @@
 gui.singleplayer:Singleplayer
-gui.multiplayere:Multiplayere
+gui.multiplayer:Multiplayer
 gui.options:Options
-gui.exit:Exit
+gui.exit:Quit
 gui.nikname:Player name
 gui.fps:FPS
 gui.maxfps:Maximum FPS
@@ -17,6 +17,7 @@ gui.connect:Connect
 gui.world.empty:- Empty -
 gui.world.delete:Are you sure you want to delete the world?
 gui.saving:Saving...
+gui.process:Process...
 gui.loading.world:Loading the world {0:0.0} %
 gui.ip:IP address
 gui.back.game:Back to the game

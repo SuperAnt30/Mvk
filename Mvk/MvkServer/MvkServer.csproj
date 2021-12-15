@@ -33,6 +33,9 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Entity\EntityBase.cs" />
+    <Compile Include="Entity\Player\EntityPlayer.cs" />
+    <Compile Include="Entity\Player\EntityPlayerServer.cs" />
     <Compile Include="Glm\GlmGeometric.cs" />
     <Compile Include="Glm\GlmMatrix.cs" />
     <Compile Include="Glm\GlmMatrixTransform.cs" />
@@ -43,9 +46,14 @@
     <Compile Include="Glm\vec3.cs" />
     <Compile Include="Glm\vec3i.cs" />
     <Compile Include="Glm\vec4.cs" />
+    <Compile Include="Management\PlayerManager.cs" />
     <Compile Include="Network\IPacket.cs" />
     <Compile Include="Network\ITransfer.cs" />
-    <Compile Include="Network\Packets\PacketTest.cs" />
+    <Compile Include="Network\Packets\PacketC11LoginStart.cs" />
+    <Compile Include="Network\Packets\PacketS10Connection.cs" />
+    <Compile Include="Network\Packets\PacketS12Success.cs" />
+    <Compile Include="Network\Packets\PacketTFFTest.cs" />
+    <Compile Include="Network\ProcessPackets.cs" />
     <Compile Include="Network\ProcessServerPackets.cs" />
     <Compile Include="Network\ReceivingBytes.cs" />
     <Compile Include="Network\ReceivingBytesCollection.cs" />
@@ -60,6 +68,8 @@
     <Compile Include="Network\StreamBase.cs" />
     <Compile Include="Server.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ServerHeir.cs" />
+    <Compile Include="Util\Logger.cs" />
     <Compile Include="Util\StringEvent.cs" />
     <Compile Include="Util\Map.cs" />
     <Compile Include="Util\Mth.cs" />

@@ -1,6 +1,5 @@
 ﻿using MvkAssets;
 using MvkServer.Glm;
-using System;
 
 namespace MvkClient.Gui
 {
@@ -20,7 +19,7 @@ namespace MvkClient.Gui
             buttonOptions.Click += (sender, e) 
                 => OnFinished(new ScreenEventArgs(EnumScreenKey.Options, EnumScreenKey.InGameMenu));
             buttonExit = new Button(Language.T("gui.exit.world"));
-            buttonExit.Click += ButtonExit_Click;
+            buttonExit.Click += (sender, e) => ClientMain.ExitingWorld("");
         }
 
         protected override void Init()
@@ -38,11 +37,6 @@ namespace MvkClient.Gui
             buttonBack.Position = new vec2i(Width / 2 - 200, Height / 4 + 48);
             buttonOptions.Position = new vec2i(Width / 2 - 200, Height / 4 + 92);
             buttonExit.Position = new vec2i(Width / 2 - 200, Height / 4 + 192);
-        }
-
-        private void ButtonExit_Click(object sender, EventArgs e)
-        {
-            ClientMain.ExitingWorld();
         }
     }
 }

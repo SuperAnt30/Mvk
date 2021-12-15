@@ -32,15 +32,15 @@
         /// <summary>
         /// Закончена основная загрузка
         /// </summary>
-        LoadingStopMain,
+        LoadedMain,
         /// <summary>
         /// Закончена загрузка мира
         /// </summary>
-        LoadingStopWorld,
+        LoadedWorld,
         /// <summary>
         /// Количество тактов в загрузчике
         /// </summary>
-        LoadingCountWorld,
+        LoadCountWorld,
         /// <summary>
         /// Сервер остановлен
         /// </summary>

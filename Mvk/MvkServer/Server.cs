@@ -1,4 +1,6 @@
-﻿using MvkServer.Network;
+﻿using MvkServer.Management;
+using MvkServer.Network;
+using MvkServer.Network.Packets;
 using MvkServer.Util;
 using System;
 using System.Diagnostics;
@@ -26,6 +28,11 @@ namespace MvkServer
         /// Увеличивается каждый тик 
         /// </summary>
         public int TickCounter { get; protected set; } = 0;
+        /// <summary>
+        /// Объект клиентов
+        /// </summary>
+        public PlayerManager PlayersManager { get; protected set; }
+
         /// <summary>
         /// Устанавливается при появлении предупреждения «Не могу угнаться», которое срабатывает снова через 15 секунд. 
         /// </summary>
@@ -56,6 +63,7 @@ namespace MvkServer
         /// Объект работы с пакетами
         /// </summary>
         protected ProcessServerPackets packets;
+        
         /// <summary>
         /// test
         /// </summary>
@@ -68,6 +76,7 @@ namespace MvkServer
         public int Initialize()
         {
             packets = new ProcessServerPackets(this);
+            PlayersManager = new PlayerManager(this);
             frequencyMs = Stopwatch.Frequency / 1000;
             stopwatchTps.Start();
             return countLoading;
@@ -89,7 +98,21 @@ namespace MvkServer
             {
                 server = new SocketServer(32021);
                 server.ReceivePacket += (sender, e) => LocalReceivePacket(e.Packet.WorkSocket, e.Packet.Bytes);
+                server.Receive += Server_Receive;
                 server.Run();
+            }
+        }
+
+        private void Server_Receive(object sender, ServerPacketEventArgs e)
+        {
+            if (e.Packet.Status == StatusNet.Disconnect)
+            {
+                PlayersManager.PlayerRemove(e.Packet.WorkSocket);
+            }
+            else if (e.Packet.Status == StatusNet.Connect)
+            {
+                // Отправляем игроку пинг
+                ResponsePacket(e.Packet.WorkSocket, new PacketS10Connection(""));
             }
         }
 
@@ -99,13 +122,13 @@ namespace MvkServer
         public void LocalReceivePacket(Socket socket, byte[] buffer)
         {
             tickRx++;
-            packets.LocalReceivePacket(socket, buffer);
+            packets.ReceiveBufferServer(socket, buffer);
         }
 
         /// <summary>
         /// Обновить количество клиентов
         /// </summary>
-        public void UpCountClients() => strNet = IsRunNet() ? "net[" + (server.Clients().Length + 1) + "]" : "";
+        public void UpCountClients() => strNet = IsRunNet() ? "net[" + PlayersManager.PlayerCount() + "]" : "";
 
         /// <summary>
         /// Отправить пакет клиенту
@@ -116,7 +139,7 @@ namespace MvkServer
             {
                 using (StreamBase stream = new StreamBase(writeStream))
                 {
-                    writeStream.WriteByte(packet.Id);
+                    writeStream.WriteByte(ProcessPackets.GetId(packet));
                     packet.WritePacket(stream);
                     byte[] buffer = writeStream.ToArray();
                     tickTx++;
@@ -151,6 +174,10 @@ namespace MvkServer
                 StartServer();
                 long currentTime = stopwatchTps.ElapsedMilliseconds;
                 long cacheTime = 0;
+                Logger.Log("server.runed");
+
+                // Отправляем основному игроку пинг
+                ResponsePacket(null, new PacketS10Connection(""));
 
                 // Рабочий цикл сервера
                 while (ServerRunning)
@@ -165,6 +192,7 @@ namespace MvkServer
                     {
                         // Не успеваю!Изменилось ли системное время, или сервер перегружен?
                         // Отставание на {differenceTime} мс, пропуск тиков({differenceTime / 50}) 
+                        Logger.Log("Не успеваю! Отставание на {0} мс, пропуск тиков({1}", differenceTime, differenceTime / 50);
                         differenceTime = 2000;
                         timeOfLastWarning = currentTime;
                     }
@@ -205,6 +233,8 @@ namespace MvkServer
 
         protected void StartServer()
         {
+            ServerRunning = true;
+
             // Тут запуск чанков для старта
             int speed = 5;
             for (int i = 0; i < countLoading; i++)
@@ -213,8 +243,7 @@ namespace MvkServer
                 Thread.Sleep(speed);
             }
             Thread.Sleep(5); // Тест пауза чтоб увидеть загрузчик
-            // TODO:: вынести в опции открытия игры по сети
-            RunNet();
+
             OnLoadingEnd();
         }
 
@@ -223,11 +252,16 @@ namespace MvkServer
         /// </summary>
         protected void StopServer()
         {
+            Logger.Log("server.stoping");
+            // Нужен корректный пассыл клиентам, типа пока-пока
+            PlayersManager.PlayerClear();
+
             // тут будет сохранение мира
-            Thread.Sleep(50);
+            Thread.Sleep(100);
             if (server != null) server.Stop();
             OnLogDebug("");
             ServerStopped = true;
+            Logger.Log("server.stoped");
             OnStoped();
         }
 
@@ -250,6 +284,13 @@ namespace MvkServer
             if (TickCounter % 20 == 0)
             {
                 UpCountClients();
+
+                //this.serverConfigManager.sendPacketToAllPlayersInDimension(new S03PacketTimeUpdate(
+                //var4.getTotalWorldTime(), 
+                //var4.getWorldTime(), 
+                //var4.getGameRules().getGameRuleBooleanValue("doDaylightCycle")),
+
+                //var4.provider.getDimensionId());
             }
 
             long differenceTime = stopwatchTps.ElapsedTicks - realTime;
@@ -265,6 +306,8 @@ namespace MvkServer
 
             // фиксируем время выполнения такта
             tickTimeArray[TickCounter % 4] = differenceTime;
+
+            PlayersManager.UpdatePlayerInstances();
         }
 
         protected string ToStringDebugTps()

@@ -1,5 +1,5 @@
 gui.singleplayer:Одиночная игра
-gui.multiplayere:Сетевая игра
+gui.multiplayer:Сетевая игра
 gui.options:Настройки
 gui.exit:Выход
 gui.nikname:Имя игрока
@@ -17,6 +17,7 @@ gui.connect:Соединится
 gui.world.empty:- Пусто -
 gui.world.delete:Вы действительно хотите удалить мир?
 gui.saving:Сохранение...
+gui.process:Процесс...
 gui.loading.world:Загрузка мира {0:0.0} %
 gui.ip:IP адрес
 gui.back.game:Вернутся в игру
@@ -25,3 +26,5 @@ gui.language:Язык
 gui.error:Ошибка
 gui.menu:В меню
 gui.error.server.disconnect:Сервер разорвал соединение
+gui.net:Открыть сеть
+gui.net.on:Сеть открыта

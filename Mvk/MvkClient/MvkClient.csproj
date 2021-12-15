@@ -74,12 +74,12 @@
     <Compile Include="Gui\GuiScreen.cs" />
     <Compile Include="Gui\ScreenInGameMenu.cs" />
     <Compile Include="Gui\ScreenLoading.cs" />
-    <Compile Include="Gui\ScreenMultiplayere.cs" />
+    <Compile Include="Gui\ScreenMultiplayer.cs" />
     <Compile Include="Gui\ScreenWorldLoading.cs" />
     <Compile Include="Gui\ScreenMainMenu.cs" />
     <Compile Include="Gui\Button.cs" />
     <Compile Include="Gui\Screen.cs" />
-    <Compile Include="Gui\ScreenWorldSaving.cs" />
+    <Compile Include="Gui\ScreenProcess.cs" />
     <Compile Include="Gui\ScreenError.cs" />
     <Compile Include="Gui\ScreenYesNo.cs" />
     <Compile Include="Gui\ScreenSingle.cs" />

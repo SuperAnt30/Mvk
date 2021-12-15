@@ -20,7 +20,7 @@
         /// <summary>
         /// Сетевая игра
         /// </summary>
-        Multiplayere,
+        Multiplayer,
         /// <summary>
         /// Соединение
         /// </summary>
@@ -44,10 +44,6 @@
         /// <summary>
         /// Меню во время игры
         /// </summary>
-        InGameMenu,
-        /// <summary>
-        /// Сохранение мира
-        /// </summary>
-        WorldSaving
+        InGameMenu
     }
 }
