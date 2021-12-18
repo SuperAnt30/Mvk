@@ -4,12 +4,11 @@ using MvkClient.Audio;
 using MvkClient.Gui;
 using MvkClient.Network;
 using MvkClient.Renderer;
-using MvkClient.Setitings;
 using MvkClient.Util;
+using MvkClient.World;
 using MvkServer.Glm;
 using MvkServer.Network;
 using MvkServer.Network.Packets;
-using MvkServer.Util;
 using SharpGL;
 using System;
 
@@ -17,6 +16,10 @@ namespace MvkClient
 {
     public class Client
     {
+        /// <summary>
+        /// Клиентский объект мира
+        /// </summary>
+        public WorldClient World { get; protected set; }
         /// <summary>
         /// Объект звуков
         /// </summary>
@@ -26,13 +29,17 @@ namespace MvkClient
         /// </summary>
         protected Ticker tickerFps;
         /// <summary>
+        /// Тикер Fps
+        /// </summary>
+        protected Ticker tickerTps;
+        /// <summary>
         /// Screen Gui
         /// </summary>
         protected GuiScreen screen;
         /// <summary>
-        /// Сервер в потоке
+        /// Локальный сервер
         /// </summary>
-        protected ThreadServer server;
+        protected LocalServer locServer;
         /// <summary>
         /// Объект работы с пакетами
         /// </summary>
@@ -41,6 +48,10 @@ namespace MvkClient
         /// Закрывается ли окно
         /// </summary>
         protected bool isClosing = false;
+        /// <summary>
+        /// Увеличивается каждый тик 
+        /// </summary>
+        public uint TickCounter { get; protected set; } = 0;
 
         #region EventsWindow
 
@@ -52,7 +63,6 @@ namespace MvkClient
         {
             Sample.Initialize();
             glm.Initialized();
-            Logger.Initialized();
             screen = new GuiScreen(this);
             packets = new ProcessClientPackets(this);
 
@@ -60,10 +70,17 @@ namespace MvkClient
             tickerFps.Tick += (sender, e) => OnDraw();
             tickerFps.Closeded += (sender, e) => OnCloseded();
 
-            server = new ThreadServer();
-            server.ObjectKeyTick += Server_ObjectKeyTick;
-            server.RecievePacket += (sender, e) => packets.ReceiveBufferClient(e.Packet.Bytes);
+            tickerTps = new Ticker();
+            tickerTps.SetWishTick(20);
+            tickerTps.Tick += TickerTps_Tick;
+            //tickerTps.Closeded += (sender, e) => OnCloseded();
+
+            locServer = new LocalServer();
+            locServer.ObjectKeyTick += Server_ObjectKeyTick;
+            locServer.RecievePacket += (sender, e) => packets.ReceiveBufferClient(e.Packet.Bytes);
         }
+
+        
 
         /// <summary>
         /// Загружено окно
@@ -87,12 +104,12 @@ namespace MvkClient
         public bool WindowClosing()
         {
             isClosing = true;
-            if (server.IsStartWorld)
+            if (locServer.IsStartWorld)
             {
                 ExitingWorld("");
                 return true;
             }
-            if (tickerFps.IsRuningFps)
+            if (tickerFps.IsRuning)
             {
                 tickerFps.Stoping();
                 return true;
@@ -155,7 +172,7 @@ namespace MvkClient
         /// <param name="key">индекс клавиши</param>
         public void KeyDown(int key)
         {
-            server.TrancivePacket(new PacketTFFTest(key.ToString()));
+            locServer.TrancivePacket(new PacketTFFTest(key.ToString()));
             Debug.DInt = key;
             if (key == 114) // F3
             {
@@ -246,7 +263,6 @@ namespace MvkClient
                     screen.LoadingStep();
                     break;
                 case ObjectKey.LoadedMain: screen.LoadingMainEnd(); break; // Закончена первоночальная загрузка
-                case ObjectKey.LoadedWorld: LoadedWorld(); break; // Мир загружен
                 case ObjectKey.ServerStoped: // Мир сервера остановлен
                     if (e.Tag == null || e.Tag.ToString() == "")
                     {
@@ -265,7 +281,8 @@ namespace MvkClient
         public void LoadWorldNet(string ip)
         {
             screen.ScreenProcess(Language.T("gui.process"));
-            server.StartServerNet(ip);
+            locServer.StartServerNet(ip);
+            World = new WorldClient(this);
         }
         /// <summary>
         /// Загрузить мир
@@ -273,8 +290,8 @@ namespace MvkClient
         /// <param name="slot">Номер слота</param>
         public void LoadWorld(int slot)
         {
-            server.StartServer(slot);
-
+            locServer.StartServer(slot);
+            World = new WorldClient(this);
             //TODO:: надо отсюда начать запускать сервер, который создаст мир, и продублирует на клиенте мир.
             // Продумать tps только на стороне сервера, но должна быть сенхронизация с клиентом
             // Синхронизация времени раз в секунду
@@ -307,34 +324,65 @@ namespace MvkClient
         /// <param name="error">ошибка</param>
         public void ExitingWorld(string error)
         {
+            tickerTps.Stoping();
+            StringDebugTps();
             // ставим экран сохранения
             screen.ScreenProcess(Language.T("gui.saving"));
             // отправялем на сервер, выход мира, с возможной ошибкой
-            server.ExitingWorld(error);
+            locServer.ExitingWorld(error);
+            World = null;
         }
 
         /// <summary>
         /// Убрать Gui, переход в режим игры
         /// </summary>
-        public void GameMode() => screen.GameMode();
+        public void GameMode(uint timer)
+        {
+            TickCounter = timer;
+            screen.GameMode();
+            tickerTps.Start();
+        }
 
         /// <summary>
         /// Отправить пакет на сервер
         /// </summary>
-        public void TrancivePacket(IPacket packet) => server.TrancivePacket(packet);
+        public void TrancivePacket(IPacket packet) => locServer.TrancivePacket(packet);
 
         /// <summary>
         /// Запущен ли локальный сервер
         /// </summary>
-        public bool IsServerLocalRun() => server.IsLoacl ? server.IsStartWorld : false;
+        public bool IsServerLocalRun() => locServer.IsLoacl ? locServer.IsStartWorld : false;
         /// <summary>
         /// Открыта ли сеть
         /// </summary>
-        public bool IsOpenNet() => server.IsOpenNet();
+        public bool IsOpenNet() => locServer.IsOpenNet();
         /// <summary>
         /// Открыть сеть
         /// </summary>
-        public void OpenNet() => server.OpenNet();
+        public void OpenNet() => locServer.OpenNet();
+
+        /// <summary>
+        /// Дебага, формируется по запросу
+        /// </summary>
+        protected void StringDebugTps() => Debug.strClient = (!tickerTps.IsRuning || World == null) ? "" : World.ToStringDebug();
+
+        /// <summary>
+        /// Изменить таймер
+        /// </summary>
+        //public void SetTickCounter(uint timer) => TickCounter = timer;
+
+        /// <summary>
+        /// Локальный ТПС 20
+        /// </summary>
+        private void TickerTps_Tick(object sender, EventArgs e)
+        {
+            TickCounter++;
+
+            World.Tick();
+            StringDebugTps();
+        }
+
+
 
         #region Event
 

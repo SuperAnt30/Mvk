@@ -13,6 +13,10 @@ namespace MvkServer.Network
         /// </summary>
         protected byte[] BytesCache { get; set; } = new byte[0];
         /// <summary>
+        /// Массив байт если остаток пакета меньше 5 байт
+        /// </summary>
+        protected byte[] BytesCache5 { get; set; } = new byte[0];
+        /// <summary>
         /// Длинна пакета 
         /// </summary>
         protected int BodyLength { get; set; } = 0;
@@ -21,6 +25,7 @@ namespace MvkServer.Network
         /// </summary>
         protected int BodyFactLength { get; set; } = 0;
 
+        int indexRun2;
         public ReceivingBytes(Socket workSocket) : base(workSocket) { }
 
         /// <summary>
@@ -35,6 +40,13 @@ namespace MvkServer.Network
 
                 if (BodyLength == 0)
                 {
+                    if (BytesCache5.Length > 0)
+                    {
+                        // склейка двух массивов BytesCache5 + dataPacket 
+                        dataPacket = JoinAr(BytesCache5, dataPacket);
+                        BytesCache5 = new byte[0];
+                    }
+
                     if (dataPacket[0] == 1)
                     {
                         // Начало пакета
@@ -75,6 +87,7 @@ namespace MvkServer.Network
                 if (indexRun == 0)
                 {
                     int begin = BodyFactLength;
+
                     for (int i = 0; i < lengthPacket; i++)
                     {
                         BytesCache[i + begin] = dataPacket[i];
@@ -103,6 +116,23 @@ namespace MvkServer.Network
                     // Обнуляем глобальные переменные
                     BytesCache = new byte[0];
                     BodyLength = 0;
+
+                    indexRun2 = lengthPacket + indexRun;
+                    if (indexRun2 < dataPacket.Length)
+                    {
+                        // не прерывный пакет
+                        byte[] vs = DivisionAr(dataPacket, indexRun2, dataPacket.Length - indexRun2);
+                        if (vs.Length < 5)
+                        {
+                            // Если остался хвостик фиксируем для след пакета
+                            BytesCache5 = vs;
+                        }
+                        else
+                        {
+                            // Обрабатываем следующий пакет
+                            Receiving(vs);
+                        }
+                    }
                 }
                 else
                 {
@@ -146,6 +176,17 @@ namespace MvkServer.Network
         {
             byte[] ret = new byte[indexLength];
             Array.Copy(first, indexStart, ret, 0, indexLength);
+            return ret;
+        }
+
+        /// <summary>
+        /// Объеденить два массива
+        /// </summary>
+        public static byte[] JoinAr(byte[] first, byte[] second)
+        {
+            byte[] ret = new byte[first.Length + second.Length];
+            first.CopyTo(ret, 0);
+            second.CopyTo(ret, first.Length);
             return ret;
         }
     }

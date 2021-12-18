@@ -98,12 +98,13 @@
     <Compile Include="Gui\ScreenBeginLoading.cs" />
     <Compile Include="Renderer\TextureMap.cs" />
     <Compile Include="Setitings\Setting.cs" />
-    <Compile Include="ThreadServer.cs" />
+    <Compile Include="LocalServer.cs" />
     <Compile Include="Util\BufferedImage.cs" />
     <Compile Include="Util\CounterTick.cs" />
     <Compile Include="Gui\ScreenEvent.cs" />
     <Compile Include="Util\ObjectEvent.cs" />
     <Compile Include="Util\Ticker.cs" />
+    <Compile Include="World\WorldClient.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

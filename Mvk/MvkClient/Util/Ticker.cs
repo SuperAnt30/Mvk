@@ -12,7 +12,7 @@ namespace MvkClient.Util
         /// <summary>
         /// Запущен ли поток
         /// </summary>
-        public bool IsRuningFps { get; protected set; } = false;
+        public bool IsRuning { get; protected set; } = false;
         /// <summary>
         /// Значение желаемого тика
         /// </summary>
@@ -23,7 +23,7 @@ namespace MvkClient.Util
         public static long Frequency { get; protected set; } = 10000;
 
         private long interval;
-        private long sleepFps;
+        private long sleep;
         /// <summary>
         /// Максимальный fps
         /// </summary>
@@ -49,7 +49,7 @@ namespace MvkClient.Util
                 isMax = false;
                 WishTick = tick;
                 interval = Stopwatch.Frequency / WishTick;
-                sleepFps = interval / Frequency;
+                sleep = interval / Frequency;
             }
         }
 
@@ -59,14 +59,14 @@ namespace MvkClient.Util
         public void Start()
         {
             Thread myThread = new Thread(RunThreadTick);
-            IsRuningFps = true;
+            IsRuning = true;
             myThread.Start();
         }
 
         /// <summary>
         /// Останавливаем
         /// </summary>
-        public void Stoping() => IsRuningFps = false;
+        public void Stoping() => IsRuning = false;
 
         /// <summary>
         /// Метод запуска для отдельного потока, такты
@@ -76,7 +76,7 @@ namespace MvkClient.Util
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
             long lastTime = stopwatch.ElapsedTicks;
-            while (IsRuningFps)
+            while (IsRuning)
             {
                 if (isMax)
                 {
@@ -93,7 +93,7 @@ namespace MvkClient.Util
                         currentTime = stopwatch.ElapsedTicks;
                         cl = (currentTime - lastTime) / Frequency;
                         // С минус 1 точнее бъёт такт, но нагрузка на проц возрастает
-                        int sleep = (int)(sleepFps - cl);// - 1;
+                        int sleep = (int)(this.sleep - cl);// - 1;
                         if (sleep > 0) Thread.Sleep(sleep);
                     }
                 }

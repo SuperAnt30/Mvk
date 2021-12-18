@@ -34,10 +34,6 @@
         /// </summary>
         LoadedMain,
         /// <summary>
-        /// Закончена загрузка мира
-        /// </summary>
-        LoadedWorld,
-        /// <summary>
         /// Количество тактов в загрузчике
         /// </summary>
         LoadCountWorld,

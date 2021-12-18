@@ -28,3 +28,4 @@ gui.menu:В меню
 gui.error.server.disconnect:Сервер разорвал соединение
 gui.net:Открыть сеть
 gui.net.on:Сеть открыта
+world.player.duplicate:Игрок с таким именем уже в игре!

@@ -212,22 +212,9 @@ namespace MvkServer.Network
         {
             ServerPacket sp = new ServerPacket(socket, status);
             clients.Remove(socket);
-            socket.Send(new byte[] { 0 });
+            try { socket.Send(new byte[] { 0 }); } catch { } // защита от вылета сервера
             OnReceive(new ServerPacketEventArgs(sp));
         }
-
-        ///// <summary>
-        ///// Получить список клиентов
-        ///// </summary>
-        //public Socket[] Clients()
-        //{
-        //    Socket[] list = new Socket[clients.Count];
-        //    for (int i = 0; i < clients.Count; i++)
-        //    {
-        //        list[i] = clients[i].WorkSocket;
-        //    }
-        //    return list;
-        //}
 
         #region Event
 

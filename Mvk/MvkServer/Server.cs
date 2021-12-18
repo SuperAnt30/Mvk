@@ -1,7 +1,10 @@
-﻿using MvkServer.Management;
+﻿using MvkServer.Entity.Player;
+using MvkServer.Glm;
+using MvkServer.Management;
 using MvkServer.Network;
 using MvkServer.Network.Packets;
 using MvkServer.Util;
+using MvkServer.World;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -12,6 +15,10 @@ namespace MvkServer
 {
     public class Server
     {
+        /// <summary>
+        /// Объект лога
+        /// </summary>
+        public Logger Log { get; protected set; }
         /// <summary>
         /// Указывает, запущен сервер или нет. Установите значение false, чтобы инициировать завершение работы. 
         /// </summary>
@@ -27,11 +34,11 @@ namespace MvkServer
         /// <summary>
         /// Увеличивается каждый тик 
         /// </summary>
-        public int TickCounter { get; protected set; } = 0;
+        public uint TickCounter { get; protected set; } = 0;
         /// <summary>
-        /// Объект клиентов
+        /// Серверный объект мира
         /// </summary>
-        public PlayerManager PlayersManager { get; protected set; }
+        public WorldServer World { get; protected set; }
 
         /// <summary>
         /// Устанавливается при появлении предупреждения «Не могу угнаться», которое срабатывает снова через 15 секунд. 
@@ -63,23 +70,21 @@ namespace MvkServer
         /// Объект работы с пакетами
         /// </summary>
         protected ProcessServerPackets packets;
-        
-        /// <summary>
-        /// test
-        /// </summary>
-        protected int countLoading = 64;
 
         /// <summary>
         /// Инициализация
         /// </summary>
         /// <returns>вёрнуть цифру тактов загрузки</returns>
-        public int Initialize()
+        public void Initialize(int slot)
         {
+            Log = new Logger();
+            Log.Log("server.runing slot={0}", slot);
+            World = new WorldServer(this);
             packets = new ProcessServerPackets(this);
-            PlayersManager = new PlayerManager(this);
             frequencyMs = Stopwatch.Frequency / 1000;
             stopwatchTps.Start();
-            return countLoading;
+            // Отправляем основному игроку пинг
+            ResponsePacket(null, new PacketS10Connection(""));
         }
 
         #region Net
@@ -100,6 +105,7 @@ namespace MvkServer
                 server.ReceivePacket += (sender, e) => LocalReceivePacket(e.Packet.WorkSocket, e.Packet.Bytes);
                 server.Receive += Server_Receive;
                 server.Run();
+                Log.Log("server.run.net");
             }
         }
 
@@ -107,7 +113,7 @@ namespace MvkServer
         {
             if (e.Packet.Status == StatusNet.Disconnect)
             {
-                PlayersManager.PlayerRemove(e.Packet.WorkSocket);
+                World.Players.PlayerRemove(e.Packet.WorkSocket);
             }
             else if (e.Packet.Status == StatusNet.Connect)
             {
@@ -128,7 +134,7 @@ namespace MvkServer
         /// <summary>
         /// Обновить количество клиентов
         /// </summary>
-        public void UpCountClients() => strNet = IsRunNet() ? "net[" + PlayersManager.PlayerCount() + "]" : "";
+        public void UpCountClients() => strNet = IsRunNet() ? "net[" + World.Players.PlayerCount + "]" : "";
 
         /// <summary>
         /// Отправить пакет клиенту
@@ -159,6 +165,10 @@ namespace MvkServer
 
         #endregion
 
+        
+
+        
+
         /// <summary>
         /// Запрос остановки сервера
         /// </summary>
@@ -174,10 +184,9 @@ namespace MvkServer
                 StartServer();
                 long currentTime = stopwatchTps.ElapsedMilliseconds;
                 long cacheTime = 0;
-                Logger.Log("server.runed");
+                Log.Log("server.runed");
 
-                // Отправляем основному игроку пинг
-                ResponsePacket(null, new PacketS10Connection(""));
+                World.Players.LoginStart();
 
                 // Рабочий цикл сервера
                 while (ServerRunning)
@@ -192,7 +201,7 @@ namespace MvkServer
                     {
                         // Не успеваю!Изменилось ли системное время, или сервер перегружен?
                         // Отставание на {differenceTime} мс, пропуск тиков({differenceTime / 50}) 
-                        Logger.Log("Не успеваю! Отставание на {0} мс, пропуск тиков({1}", differenceTime, differenceTime / 50);
+                        Log.Log("Не успеваю! Отставание на {0} мс, пропуск тиков({1}", differenceTime, differenceTime / 50);
                         differenceTime = 2000;
                         timeOfLastWarning = currentTime;
                     }
@@ -231,20 +240,37 @@ namespace MvkServer
             }
         }
 
+
+        private const int SIZE_LOAD = 12;
+        /// <summary>
+        /// Запустить сервер в отдельном потоке
+        /// </summary>
+        public void StartServerThread()
+        {
+            OnLoadStepCount((SIZE_LOAD + SIZE_LOAD + 1) * (SIZE_LOAD + SIZE_LOAD + 1));
+            Thread myThread = new Thread(ServerLoop);
+            myThread.Start();
+        }
+
         protected void StartServer()
         {
             ServerRunning = true;
 
-            // Тут запуск чанков для старта
-            int speed = 5;
-            for (int i = 0; i < countLoading; i++)
-            {
-                OnLoadingTick();
-                Thread.Sleep(speed);
-            }
-            Thread.Sleep(5); // Тест пауза чтоб увидеть загрузчик
+            EntityPlayerServer entityPlayer = World.Players.GetEntityPlayerMain();
+            vec2i pos = entityPlayer != null ? entityPlayer.HitBox.ChunkPos : new vec2i(0, 0);
+            
 
-            OnLoadingEnd();
+            // Запуск чанков для старта
+            for (int x = -SIZE_LOAD; x <= SIZE_LOAD; x++)
+            {
+                for (int z = -SIZE_LOAD; z <= SIZE_LOAD; z++)
+                {
+                    //TheWorldServer.theChunkProviderServer.loadChunk(pos.x + x, pos.y + z);
+                    World.ChunkPr.LoadGenChunk(new vec2i(x, z));
+                    //Thread.Sleep(1);
+                    OnLoadingTick();
+                }
+            }
         }
 
         /// <summary>
@@ -252,16 +278,17 @@ namespace MvkServer
         /// </summary>
         protected void StopServer()
         {
-            Logger.Log("server.stoping");
-            // Нужен корректный пассыл клиентам, типа пока-пока
-            PlayersManager.PlayerClear();
+            Log.Log("server.stoping");
+
+            World.Players.PlayerClear();
 
             // тут будет сохранение мира
-            Thread.Sleep(100);
+            //Thread.Sleep(100);
             if (server != null) server.Stop();
             OnLogDebug("");
             ServerStopped = true;
-            Logger.Log("server.stoped");
+            Log.Log("server.stoped");
+            Log.Close();
             OnStoped();
         }
 
@@ -307,16 +334,23 @@ namespace MvkServer
             // фиксируем время выполнения такта
             tickTimeArray[TickCounter % 4] = differenceTime;
 
-            PlayersManager.UpdatePlayerInstances();
+            World.Tick();
+
+            World.Players.UpdatePlayerInstances();
         }
 
+        /// <summary>
+        /// Строка для дебага, формируется по запросу
+        /// </summary>
         protected string ToStringDebugTps()
         {
+            //TODO:: дебаг для сервера
             // Среднее время выполнения 4 тактов, должно быть меньше 50
             float averageTime = Mth.Average(tickTimeArray) / frequencyMs;
             // TPS за последние 4 тактов (1/5 сек), должен быть 20
             float tps = averageTime > 50f ? 50f / averageTime * 20f : 20f;
-            return string.Format("tps {0:0.00} tick {1:0.00} ms Rx {2} Tx {3} {4}", tps, averageTime, tickRx, tickTx, strNet);
+            return string.Format("tps {0:0.00} tick {1:0.00} ms Rx {2} Tx {3} {4}\r\n{5}", 
+                tps, averageTime, tickRx, tickTx, strNet, World.ToStringDebug());
         }
 
         #region Event
@@ -327,10 +361,10 @@ namespace MvkServer
         public event EventHandler LoadingTick;
         protected virtual void OnLoadingTick() => LoadingTick?.Invoke(this, new EventArgs());
         /// <summary>
-        /// Событие окончания загрузки
+        /// Событие количество шигов загрузки
         /// </summary>
-        public event EventHandler LoadingEnd;
-        protected virtual void OnLoadingEnd() => LoadingEnd?.Invoke(this, new EventArgs());
+        public event IntEventHandler LoadStepCount;
+        protected virtual void OnLoadStepCount(int count) => LoadStepCount?.Invoke(this, new IntEventArgs(count));
         /// <summary>
         /// Событие остановки сервера
         /// </summary>

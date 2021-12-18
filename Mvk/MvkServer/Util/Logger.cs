@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace MvkServer.Util
@@ -8,11 +9,16 @@ namespace MvkServer.Util
     /// </summary>
     public class Logger
     {
-        protected static string fileName;
+        protected string fileName;
+        protected Stopwatch stopwatch;
+        protected long time;
+        protected string log;
+        protected string path = "Logs" + Path.DirectorySeparatorChar;
 
-        public static void Initialized()
+        public Logger()
         {
-            string path = ToPath();
+            stopwatch = new Stopwatch();
+            stopwatch.Start();
             string sd = DateTime.Now.ToString("yyyy-MM-dd");
             int i = 1;
 
@@ -22,25 +28,31 @@ namespace MvkServer.Util
                 fileName = string.Format("{0}-{1}.txt", sd, i);
                 if (!File.Exists(path + fileName)) break;
                 i++;
-                //fileName = string.Format("{0}.txt", DateTime.Now.ToString("yyyy-MM-dd_HHmm"));
             }
-            
         }
 
-        public static void Log(string logMessage, params object[] args)
+        public void Log(string logMessage, params object[] args)
         {
-            CheckPath(ToPath());
-            using (StreamWriter w = File.AppendText(ToPath() + fileName))
+            log += $"[{DateTime.Now.ToLongTimeString()}] " + string.Format(logMessage, args) + "\r\n";
+            if (time < stopwatch.ElapsedMilliseconds)
             {
-                w.Write($"[{DateTime.Now.ToLongTimeString()}]");
-                w.WriteLine(" " + string.Format(logMessage, args));
+                Save(log);
+                log = "";
+                // Таймер, чтоб чаще раз 5 секунд не записывать
+                time = stopwatch.ElapsedMilliseconds + 5000;
             }
         }
 
-        /// <summary>
-        /// Путь к директории мира с именем
-        /// </summary>
-        public static string ToPath() => "Logs" + Path.DirectorySeparatorChar;
+        protected void Save(string log)
+        {
+            if (log != "")
+            {
+                using (StreamWriter w = File.AppendText(path + fileName))
+                {
+                    w.WriteAsync(log);
+                }
+            }
+        }
 
         /// <summary>
         /// Проверка пути, если нет, то создаём
@@ -52,5 +64,9 @@ namespace MvkServer.Util
                 Directory.CreateDirectory(path);
             }
         }
+        /// <summary>
+        /// Закрыть лог
+        /// </summary>
+        public void Close() => Save(log);
     }
 }

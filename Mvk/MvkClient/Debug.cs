@@ -25,12 +25,14 @@ namespace MvkClient
         public static void SetTpsFps(int fps, float speedFrame) => strTpsFps = string.Format("Speed: {0} fps {1:0.00} ms", fps, speedFrame);
 
         public static string strServer = "";
+        public static string strClient = "";
 
         protected static string ToStringDebug()
         {
-            string v = strServer == "" ? "" : "Server " + strServer;
+            string s = strServer == "" ? "" : "Server " + strServer + "\r\n";
+            string c = strClient == "" ? "" : "Client " + strClient + "\r\n";
             return strTpsFps + "\r\n" 
-                + v + "\r\n" 
+                + s + c 
                 + "DInt: " + DInt.ToString() + "\r\n" 
                 + "DFloat: " + DFloat.ToString() + "\r\n"
                 + "DStr: " + DStr;

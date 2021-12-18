@@ -5,16 +5,18 @@ namespace MvkServer.Network.Packets
     public struct PacketS12Success : IPacket
     {
         private string uuid;
-        public vec3i Pos;
+        public vec3 Pos;
         public float Yaw;
         public float Pitch;
+        public uint Timer;
 
         public PacketS12Success(string uuid)
         {
             this.uuid = uuid;
-            Pos = new vec3i(0, 64, 0);
+            Pos = new vec3(0f, 64f, 0f);
             Yaw = 0;
             Pitch = 0;
+            Timer = 0;
         }
 
         /// <summary>
@@ -25,19 +27,21 @@ namespace MvkServer.Network.Packets
         public void ReadPacket(StreamBase stream)
         {
             uuid = stream.ReadString();
-            Pos = new vec3i(stream.ReadInt(), stream.ReadByte(), stream.ReadInt());
+            Pos = new vec3(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat());
             Yaw = stream.ReadFloat();
             Pitch = stream.ReadFloat();
+            Timer = stream.ReadUInt();
         }
 
         public void WritePacket(StreamBase stream)
         {
             stream.WriteString(uuid);
-            stream.WriteInt(Pos.x);
-            stream.WriteByte((byte)Pos.y);
-            stream.WriteInt(Pos.z);
+            stream.WriteFloat(Pos.x);
+            stream.WriteFloat(Pos.y);
+            stream.WriteFloat(Pos.z);
             stream.WriteFloat(Yaw);
             stream.WriteFloat(Pitch);
+            stream.WriteUInt(Timer);
         }
     }
 }

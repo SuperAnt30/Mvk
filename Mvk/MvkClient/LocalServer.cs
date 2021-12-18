@@ -2,17 +2,15 @@
 using MvkClient.Util;
 using MvkServer;
 using MvkServer.Network;
-using MvkServer.Util;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace MvkClient
 {
     /// <summary>
-    /// Объект отдельного потока сервера или сокета к серверу
+    /// Объект локального сервера который может открыт быть для сети
     /// </summary>
-    public class ThreadServer
+    public class LocalServer
     {
         /// <summary>
         /// Объект сервера если по сети
@@ -66,14 +64,13 @@ namespace MvkClient
             //    socket.Connect();
             //});
             Task.Factory.StartNew(socket.Connect);
-            //OnObjectKeyTick(new ObjectEventArgs(ObjectKey.LoadingStopWorld));
         }
 
         private void Socket_Receive(object sender, ServerPacketEventArgs e)
         {
             if (e.Packet.Status == StatusNet.Disconnect)
             {
-                //Logger.Log("gui.error.server.disconnect player={0}", server.PlayersManager.GetPlayer(e.Packet.WorkSocket).Name);
+                //Logger.Log("gui.error.clint.disconnect player={0}", server.PlayersManager.GetPlayer(e.Packet.WorkSocket).Name);
                 OnObjectKeyTick(new ObjectEventArgs(ObjectKey.Error, Language.T("gui.error.server.disconnect")));
             }
         }
@@ -85,18 +82,14 @@ namespace MvkClient
         {
             // Локальный сервер
             IsStartWorld = true;
-            Logger.Log("server.runing slot={0}", slot);
             server = new Server();
             IsLoacl = true;
             server.LoadingTick += (sender, e) => OnObjectKeyTick(new ObjectEventArgs(ObjectKey.LoadStep));
-            server.LoadingEnd += (sender, e) => OnObjectKeyTick(new ObjectEventArgs(ObjectKey.LoadedWorld));
+            server.LoadStepCount += (sender, e) => OnObjectKeyTick(new ObjectEventArgs(ObjectKey.LoadCountWorld, e.Number));
             server.Stoped += (sender, e) => ThreadServerStoped("");
             server.RecievePacket += (sender, e) => OnRecievePacket(e);
             server.LogDebug += (sender, e) => Debug.strServer = e.Text;
-            int count = server.Initialize();
-            OnObjectKeyTick(new ObjectEventArgs(ObjectKey.LoadCountWorld, count));
-            Thread myThread = new Thread(server.ServerLoop);
-            myThread.Start();
+            server.Initialize(slot);
         }
 
         /// <summary>
