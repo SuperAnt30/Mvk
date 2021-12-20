@@ -22,9 +22,9 @@ namespace MvkLauncher
             client.ThreadSend += Client_ThreadSend;
         }
 
-        private void Client_ThreadSend(object sender, ObjectEventArgs e)
+        private void Client_ThreadSend(object sender, ObjectKeyEventArgs e)
         {
-            if (InvokeRequired) Invoke(new ObjectEventHandler(Client_ThreadSend), sender, e);
+            if (InvokeRequired) Invoke(new ObjectKeyEventHandler(Client_ThreadSend), sender, e);
             else client.ThreadReceive(e);
         }
 

@@ -41,13 +41,13 @@ namespace MvkClient
                 // Опции
                 Setting.Load();
                 Language.SetLanguage((AssetsLanguage)Setting.Language);
-                OnTick(new ObjectEventArgs(ObjectKey.LoadStep));
+                OnTick(new ObjectKeyEventArgs(ObjectKey.LoadStep));
 
                 // Загрузка семплов
                 foreach (AssetsSample key in Enum.GetValues(typeof(AssetsSample)))
                 {
                     client.Sample.InitializeSample(key);
-                    OnTick(new ObjectEventArgs(ObjectKey.LoadStep));
+                    OnTick(new ObjectKeyEventArgs(ObjectKey.LoadStep));
                 }
 
                 int i = 0;
@@ -55,17 +55,17 @@ namespace MvkClient
                 {
                     i++;
                     if (i < 4) continue;
-                    OnTick(new ObjectEventArgs(ObjectKey.LoadStepTexture, new BufferedImage(key, Assets.GetBitmap(key))));
+                    OnTick(new ObjectKeyEventArgs(ObjectKey.LoadStepTexture, new BufferedImage(key, Assets.GetBitmap(key))));
                 }
                 //System.Threading.Thread.Sleep(2000); // Тест пауза чтоб увидеть загрузчик
-                OnTick(new ObjectEventArgs(ObjectKey.LoadedMain));
+                OnTick(new ObjectKeyEventArgs(ObjectKey.LoadedMain));
             });
         }
 
         /// <summary>
         /// Событие такта
         /// </summary>
-        public event ObjectEventHandler Tick;
-        protected virtual void OnTick(ObjectEventArgs e) => Tick?.Invoke(this, e);
+        public event ObjectKeyEventHandler Tick;
+        protected virtual void OnTick(ObjectKeyEventArgs e) => Tick?.Invoke(this, e);
     }
 }

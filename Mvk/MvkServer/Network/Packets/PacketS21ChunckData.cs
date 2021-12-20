@@ -7,18 +7,22 @@ namespace MvkServer.Network.Packets
     {
         private vec2i pos;
         private byte[] buffer;
+        private int height;
+        private bool remove;
 
         public PacketS21ChunckData(ChunkBase chunk)
         {
             pos = chunk.Position;
-
+            remove = false;
             //TODO:: Надо додумать передовать не весь чанк, где только небо не брать в работу
             //и по параметру псевдо чанков
+            // height определяем максимальную высоту
+            height = 6;
 
             // 16 * 16 * 16 * 3 * 16
-            buffer = new byte[196608];
+            buffer = new byte[height * 12288];
             int i = 0;
-            for (int sy = 0; sy < 16; sy++)
+            for (int sy = 0; sy < height; sy++)
             {
                 for (int y = 0; y < 16; y++)
                 {
@@ -36,26 +40,52 @@ namespace MvkServer.Network.Packets
             }
         }
 
+        public PacketS21ChunckData(vec2i pos)
+        {
+            this.pos = pos;
+            remove = true;
+            height = 0;
+            buffer = new byte[0];
+        }
+
         /// <summary>
         /// Буффер псевдо чанка
         /// </summary>
         public byte[] GetBuffer() => buffer;
         /// <summary>
-        /// Высота
+        /// Позиция
         /// </summary>
         public vec2i GetPos() => pos;
+        /// <summary>
+        /// Высота
+        /// </summary>
+        public int GetHeight() => height;
+        /// <summary>
+        /// Удалить чанк
+        /// </summary>
+        public bool IsRemoved() => remove;
 
         public void ReadPacket(StreamBase stream)
         {
+            remove = stream.ReadBool();
             pos = new vec2i(stream.ReadInt(), stream.ReadInt());
-            buffer = stream.ReadBytes(196608);
+            if (!remove)
+            {
+                height = stream.ReadByte();
+                buffer = stream.ReadBytes(height * 12288);
+            }
         }
 
         public void WritePacket(StreamBase stream)
         {
+            stream.WriteBool(remove);
             stream.WriteInt(pos.x);
             stream.WriteInt(pos.y);
-            stream.WriteBytes(buffer);
+            if (!remove)
+            {
+                stream.WriteByte((byte)height);
+                stream.WriteBytes(buffer);
+            }
         }
     }
 }

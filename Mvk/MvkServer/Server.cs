@@ -1,6 +1,5 @@
 ﻿using MvkServer.Entity.Player;
 using MvkServer.Glm;
-using MvkServer.Management;
 using MvkServer.Network;
 using MvkServer.Network.Packets;
 using MvkServer.Util;
@@ -181,7 +180,7 @@ namespace MvkServer
         {
             try
             {
-                StartServer();
+                StartServerLoop();
                 long currentTime = stopwatchTps.ElapsedMilliseconds;
                 long cacheTime = 0;
                 Log.Log("server.runed");
@@ -201,7 +200,7 @@ namespace MvkServer
                     {
                         // Не успеваю!Изменилось ли системное время, или сервер перегружен?
                         // Отставание на {differenceTime} мс, пропуск тиков({differenceTime / 50}) 
-                        Log.Log("Не успеваю! Отставание на {0} мс, пропуск тиков({1}", differenceTime, differenceTime / 50);
+                        Log.Log("Не успеваю! Отставание на {0} мс, пропуск тиков {1}", differenceTime, differenceTime / 50);
                         differenceTime = 2000;
                         timeOfLastWarning = currentTime;
                     }
@@ -236,47 +235,45 @@ namespace MvkServer
             }
             finally
             {
-                StopServer();
+                StopServerLoop();
             }
         }
 
-
-        private const int SIZE_LOAD = 12;
         /// <summary>
         /// Запустить сервер в отдельном потоке
         /// </summary>
-        public void StartServerThread()
+        public void StartServer()
         {
-            OnLoadStepCount((SIZE_LOAD + SIZE_LOAD + 1) * (SIZE_LOAD + SIZE_LOAD + 1));
             Thread myThread = new Thread(ServerLoop);
             myThread.Start();
         }
 
-        protected void StartServer()
+        protected void StartServerLoop()
         {
             ServerRunning = true;
 
             EntityPlayerServer entityPlayer = World.Players.GetEntityPlayerMain();
             vec2i pos = entityPlayer != null ? entityPlayer.HitBox.ChunkPos : new vec2i(0, 0);
-            
+            int radius = entityPlayer.OverviewChunk;
+
+            OnLoadStepCount((radius + radius + 1) * (radius + radius + 1));
 
             // Запуск чанков для старта
-            for (int x = -SIZE_LOAD; x <= SIZE_LOAD; x++)
+            for (int x = -radius; x <= radius; x++)
             {
-                for (int z = -SIZE_LOAD; z <= SIZE_LOAD; z++)
+                for (int z = -radius; z <= radius; z++)
                 {
-                    //TheWorldServer.theChunkProviderServer.loadChunk(pos.x + x, pos.y + z);
-                    World.ChunkPr.LoadGenChunk(new vec2i(x, z));
-                    //Thread.Sleep(1);
+                    World.ChunkPr.LoadGenChunk(new vec2i(pos.x + x, pos.y + z));
                     OnLoadingTick();
                 }
             }
+            return;
         }
 
         /// <summary>
         /// Сохраняет все необходимые данные для подготовки к остановке сервера
         /// </summary>
-        protected void StopServer()
+        protected void StopServerLoop()
         {
             Log.Log("server.stoping");
 
@@ -320,6 +317,18 @@ namespace MvkServer
                 //var4.provider.getDimensionId());
             }
 
+            try
+            {
+                World.Tick();
+                World.Players.UpdatePlayerInstances();
+            }
+            catch (Exception e)
+            {
+                Log.Error("Server.Tick {0}", e.Message);
+                throw;
+            }
+
+            // ---------------
             long differenceTime = stopwatchTps.ElapsedTicks - realTime;
 
             // Прошла 1/5 секунда, или 4 такта
@@ -327,16 +336,21 @@ namespace MvkServer
             {
                 // лог статистика за это время
                 OnLogDebug(ToStringDebugTps());
+
+                // TODO::отладка чанков
+                DebugChunk chunks = new DebugChunk()
+                {
+                    listChunkServer = World.ChunkPr.GetList(),
+                    listChunkPlayers = World.Players.GetList()
+                };
+                OnLogDebugCh(chunks);
+
                 tickRx = 0;
                 tickTx = 0;
             }
 
             // фиксируем время выполнения такта
             tickTimeArray[TickCounter % 4] = differenceTime;
-
-            World.Tick();
-
-            World.Players.UpdatePlayerInstances();
         }
 
         /// <summary>
@@ -375,6 +389,12 @@ namespace MvkServer
         /// </summary>
         public event StringEventHandler LogDebug;
         protected virtual void OnLogDebug(string text) => LogDebug?.Invoke(this, new StringEventArgs(text));
+        /// <summary>
+        /// Событие лог для дебага листа чанков
+        /// </summary>
+        public event ObjectEventHandler LogDebugCh;
+        // TODO::отладка чанков
+        protected virtual void OnLogDebugCh(DebugChunk list) => LogDebugCh?.Invoke(this, new ObjectEventArgs(list));
 
         /// <summary>
         /// Событие получить от сервера пакет

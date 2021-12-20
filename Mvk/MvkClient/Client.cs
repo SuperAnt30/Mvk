@@ -9,6 +9,7 @@ using MvkClient.World;
 using MvkServer.Glm;
 using MvkServer.Network;
 using MvkServer.Network.Packets;
+using MvkServer.Util;
 using SharpGL;
 using System;
 
@@ -52,6 +53,7 @@ namespace MvkClient
         /// Увеличивается каждый тик 
         /// </summary>
         public uint TickCounter { get; protected set; } = 0;
+        
 
         #region EventsWindow
 
@@ -172,7 +174,7 @@ namespace MvkClient
         /// <param name="key">индекс клавиши</param>
         public void KeyDown(int key)
         {
-            locServer.TrancivePacket(new PacketTFFTest(key.ToString()));
+            //locServer.TrancivePacket(new PacketTFFTest(key.ToString()));
             Debug.DInt = key;
             if (key == 114) // F3
             {
@@ -181,6 +183,22 @@ namespace MvkClient
             if (key == 27) // Esc
             {
                 if (screen.IsEmptyScreen()) screen.InGameMenu();
+            }
+            if (IsGamePlay)
+            {
+                int step = 16;
+                vec3 pos = World.Player.HitBox.Position;
+                if (key == 37) pos += new vec3(-step, 0, 0);
+                else if (key == 39) pos += new vec3(step, 0, 0);
+                else if (key == 38) pos += new vec3(0, 0, step);
+                else if (key == 40) pos += new vec3(0, 0, -step);
+
+                if (!pos.Equals(World.Player.HitBox.Position))
+                {
+                    World.Player.HitBox.SetPos(pos);
+                    TrancivePacket(new PacketC20Player(pos));
+                }
+                
             }
         }
         /// <summary>
@@ -253,7 +271,7 @@ namespace MvkClient
         /// <summary>
         /// Получить события из других пакетов
         /// </summary>
-        public void ThreadReceive(ObjectEventArgs e)
+        public void ThreadReceive(ObjectKeyEventArgs e)
         {
             switch(e.Key)
             {
@@ -292,12 +310,13 @@ namespace MvkClient
         {
             locServer.StartServer(slot);
             World = new WorldClient(this);
+
             //TODO:: надо отсюда начать запускать сервер, который создаст мир, и продублирует на клиенте мир.
             // Продумать tps только на стороне сервера, но должна быть сенхронизация с клиентом
             // Синхронизация времени раз в секунду
         }
 
-        private void Server_ObjectKeyTick(object sender, ObjectEventArgs e)
+        private void Server_ObjectKeyTick(object sender, ObjectKeyEventArgs e)
         {
             if (e.Key == ObjectKey.LoadCountWorld)
             {
@@ -343,6 +362,8 @@ namespace MvkClient
             tickerTps.Start();
         }
 
+        
+
         /// <summary>
         /// Отправить пакет на сервер
         /// </summary>
@@ -360,11 +381,15 @@ namespace MvkClient
         /// Открыть сеть
         /// </summary>
         public void OpenNet() => locServer.OpenNet();
+        /// <summary>
+        /// Режим игры
+        /// </summary>
+        public bool IsGamePlay => tickerTps.IsRuning;
 
         /// <summary>
         /// Дебага, формируется по запросу
         /// </summary>
-        protected void StringDebugTps() => Debug.strClient = (!tickerTps.IsRuning || World == null) ? "" : World.ToStringDebug();
+        protected void StringDebugTps() => Debug.strClient = (!IsGamePlay || World == null) ? "" : World.ToStringDebug();
 
         /// <summary>
         /// Изменить таймер
@@ -379,6 +404,15 @@ namespace MvkClient
             TickCounter++;
 
             World.Tick();
+
+            if (TickCounter % 4 == 0)
+            {
+                // TODO::отладка чанков
+                // лог статистика за это время
+                DebugChunk list = Debug.ListChunks;
+                list.listChunkPlayer = World.ChunkPr.GetList();
+                Debug.ListChunks = list;
+            }
             StringDebugTps();
         }
 
@@ -401,8 +435,8 @@ namespace MvkClient
         /// <summary>
         /// Из потока в основной поток
         /// </summary>
-        public event ObjectEventHandler ThreadSend;
-        protected virtual void OnThreadSend(ObjectEventArgs e) => ThreadSend?.Invoke(this, e);
+        public event ObjectKeyEventHandler ThreadSend;
+        protected virtual void OnThreadSend(ObjectKeyEventArgs e) => ThreadSend?.Invoke(this, e);
 
         #endregion
     }

@@ -16,6 +16,8 @@ namespace MvkServer.World
         /// </summary>
         public PlayerManager Players { get; protected set; }
 
+
+
         public WorldServer(Server server) : base()
         {
             ServerMain = server;
@@ -37,7 +39,7 @@ namespace MvkServer.World
         /// </summary>
         public override string ToStringDebug()
         {
-            return string.Format("Ch {0} Pl {1}", ChunkPr.Count, Players.PlayerCount);
+            return string.Format("Ch {0}-{2} Pl {1}", ChunkPr.Count, Players.PlayerCount, Players.chunkCoordPlayers.Count);
         }
     }
 }

@@ -56,7 +56,7 @@ namespace MvkClient
             socket = new SocketClient(System.Net.IPAddress.Parse(ip), 32021);
             socket.ReceivePacket += (sender, e) => OnRecievePacket(e);
             socket.Receive += Socket_Receive;
-            socket.Error += (sender, e) => OnObjectKeyTick(new ObjectEventArgs(ObjectKey.Error, e.GetException().Message));
+            socket.Error += (sender, e) => OnObjectKeyTick(new ObjectKeyEventArgs(ObjectKey.Error, e.GetException().Message));
 
             //Task.Factory.StartNew(() =>
             //{
@@ -71,7 +71,7 @@ namespace MvkClient
             if (e.Packet.Status == StatusNet.Disconnect)
             {
                 //Logger.Log("gui.error.clint.disconnect player={0}", server.PlayersManager.GetPlayer(e.Packet.WorkSocket).Name);
-                OnObjectKeyTick(new ObjectEventArgs(ObjectKey.Error, Language.T("gui.error.server.disconnect")));
+                OnObjectKeyTick(new ObjectKeyEventArgs(ObjectKey.Error, Language.T("gui.error.server.disconnect")));
             }
         }
 
@@ -84,11 +84,18 @@ namespace MvkClient
             IsStartWorld = true;
             server = new Server();
             IsLoacl = true;
-            server.LoadingTick += (sender, e) => OnObjectKeyTick(new ObjectEventArgs(ObjectKey.LoadStep));
-            server.LoadStepCount += (sender, e) => OnObjectKeyTick(new ObjectEventArgs(ObjectKey.LoadCountWorld, e.Number));
+            server.LoadingTick += (sender, e) => OnObjectKeyTick(new ObjectKeyEventArgs(ObjectKey.LoadStep));
+            server.LoadStepCount += (sender, e) => OnObjectKeyTick(new ObjectKeyEventArgs(ObjectKey.LoadCountWorld, e.Number));
             server.Stoped += (sender, e) => ThreadServerStoped("");
             server.RecievePacket += (sender, e) => OnRecievePacket(e);
             server.LogDebug += (sender, e) => Debug.strServer = e.Text;
+            server.LogDebugCh += (sender, e) =>
+            {
+                // TODO::отладка чанков
+                MvkServer.Util.DebugChunk list = (MvkServer.Util.DebugChunk)e.Tag;
+                list.listChunkPlayer = Debug.ListChunks.listChunkPlayer;
+                Debug.ListChunks = list;
+            };
             server.Initialize(slot);
         }
 
@@ -132,7 +139,7 @@ namespace MvkClient
             {
                 // Игра по сети
                 socket.Disconnect();
-                // TODO:: Тут разрыв сокета если надо, в лог инфу
+                // TODO:: Тут разрыв сокета если надо, в лог инфу клиента
                 // Но это без доп потока, по этому надо быстро делать, без задержек
 
                 // отправляем событие остановки
@@ -146,7 +153,7 @@ namespace MvkClient
         protected void ThreadServerStoped(string errorNet)
         {
             IsStartWorld = false;
-            OnObjectKeyTick(new ObjectEventArgs(ObjectKey.ServerStoped, errorNet));
+            OnObjectKeyTick(new ObjectKeyEventArgs(ObjectKey.ServerStoped, errorNet));
         }
 
         #region Event
@@ -154,8 +161,8 @@ namespace MvkClient
         /// <summary>
         /// Событие такта для объекта с ключом
         /// </summary>
-        public event ObjectEventHandler ObjectKeyTick;
-        protected virtual void OnObjectKeyTick(ObjectEventArgs e) => ObjectKeyTick?.Invoke(this, e);
+        public event ObjectKeyEventHandler ObjectKeyTick;
+        protected virtual void OnObjectKeyTick(ObjectKeyEventArgs e) => ObjectKeyTick?.Invoke(this, e);
 
         /// <summary>
         /// Событие получить от сервера пакет

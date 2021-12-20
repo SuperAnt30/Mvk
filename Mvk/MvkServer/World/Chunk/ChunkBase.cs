@@ -74,10 +74,10 @@ namespace MvkServer.World.Chunk
         /// <summary>
         /// Задать чанк байтами
         /// </summary>
-        public void SetBinary(byte[] buffer)
+        public void SetBinary(byte[] buffer, int height)
         {
             int i = 0;
-            for (int sy = 0; sy < 16; sy++)
+            for (int sy = 0; sy < height; sy++)
             {
                 for (int y = 0; y < 16; y++)
                 {

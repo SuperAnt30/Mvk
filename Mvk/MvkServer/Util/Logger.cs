@@ -43,6 +43,11 @@ namespace MvkServer.Util
             }
         }
 
+        public void Error(string logMessage, params object[] args)
+        {
+            Log("[ERROR] " + logMessage, args);
+        }
+
         protected void Save(string log)
         {
             if (log != "")

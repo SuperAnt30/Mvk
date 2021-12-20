@@ -1,4 +1,5 @@
 ﻿using MvkAssets;
+using MvkClient.Setitings;
 using MvkServer.Glm;
 using System;
 
@@ -20,7 +21,7 @@ namespace MvkClient.Gui
                 Width = 160,
                 Alight = EnumAlight.Right
             };
-            textBoxAddress = new TextBox("127.0.0.1") { Width = 160 };
+            textBoxAddress = new TextBox(Setting.IpAddress) { Width = 160 };
             buttonConnect = new Button(Language.T("gui.connect")) { Width = 256 };
             buttonConnect.Click += ButtonConnect_Click;
             buttonCancel = new Button(EnumScreenKey.Main, Language.T("gui.cancel")) { Width = 256 };
@@ -48,7 +49,11 @@ namespace MvkClient.Gui
             buttonCancel.Position = new vec2i(Width / 2 + 2, Height / 4 + 192);
         }
 
-        private void ButtonConnect_Click(object sender, EventArgs e) 
-            => OnFinished(new ScreenEventArgs(EnumScreenKey.Connection) { Tag = textBoxAddress.Text });
+        private void ButtonConnect_Click(object sender, EventArgs e)
+        {
+            Setting.IpAddress = textBoxAddress.Text;
+            Setting.Save();
+            OnFinished(new ScreenEventArgs(EnumScreenKey.Connection) { Tag = textBoxAddress.Text });
+        }
     }
 }

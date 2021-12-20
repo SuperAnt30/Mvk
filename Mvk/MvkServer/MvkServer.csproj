@@ -47,6 +47,9 @@
     <Compile Include="Glm\vec3.cs" />
     <Compile Include="Glm\vec3i.cs" />
     <Compile Include="Glm\vec4.cs" />
+    <Compile Include="Util\DebugChunk.cs" />
+    <Compile Include="Util\ObjectEvent.cs" />
+    <Compile Include="World\Chunk\ChunkCoordPlayers.cs" />
     <Compile Include="Management\PlayerManager.cs" />
     <Compile Include="Network\IPacket.cs" />
     <Compile Include="Network\ITransfer.cs" />

@@ -27,6 +27,10 @@ namespace MvkServer.Entity
         /// На каком стоим блоке
         /// </summary>
         public vec3i BlockPosDown { get; protected set; } = new vec3i();
+        /// <summary>
+        /// В каком чанке было обработка чанков
+        /// </summary>
+        public vec2i ChunkPosManaged { get; protected set; } = new vec2i();
 
         /// <summary>
         /// Задать позицию
@@ -42,6 +46,10 @@ namespace MvkServer.Entity
                 ChunkY = (BlockPos.y) >> 4;
             }
         }
+        /// <summary>
+        /// Задать новое положение чанка, после обработки
+        /// </summary>
+        public void UpChunkPosManaged() => ChunkPosManaged = ChunkPos;
 
     }
 }

@@ -1,4 +1,5 @@
 ﻿using MvkServer.Glm;
+using System.Collections.Generic;
 
 namespace MvkServer.World.Chunk
 {
@@ -40,6 +41,12 @@ namespace MvkServer.World.Chunk
             ChunkDefault = new ChunkBase(worldIn, new vec2i(0));
             world = worldIn;
         }
+
+        /// <summary>
+        /// Для дебага
+        /// </summary>
+        public List<vec2i> GetList() => chunkMapping.GetList();
+        // TODO::отладка чанков
 
         /// <summary>
         /// Выгрузить чанк

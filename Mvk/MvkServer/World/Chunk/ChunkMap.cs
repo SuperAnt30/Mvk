@@ -1,5 +1,6 @@
 ﻿using MvkServer.Glm;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace MvkServer.World.Chunk
 {
@@ -66,5 +67,20 @@ namespace MvkServer.World.Chunk
         /// Получить количество
         /// </summary>
         public int Count => map.Count;
+
+        /// <summary>
+        /// Для дебага
+        /// </summary>
+        public List<vec2i> GetList()
+        {
+            // TODO::отладка чанков
+            List<vec2i> list = new List<vec2i>();
+            Hashtable ht = map.Clone() as Hashtable;
+            foreach (vec2i pos in ht.Keys)
+            {
+                list.Add(pos);
+            }
+            return list;
+        }
     }
 }

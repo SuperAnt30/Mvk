@@ -1,7 +1,7 @@
 ﻿namespace MvkClient.Util
 {
-    public delegate void ObjectEventHandler(object sender, ObjectEventArgs e);
-    public class ObjectEventArgs
+    public delegate void ObjectKeyEventHandler(object sender, ObjectKeyEventArgs e);
+    public class ObjectKeyEventArgs
     {
         /// <summary>
         /// Вспомогательный объект при необходимости
@@ -12,8 +12,8 @@
         /// </summary>
         public ObjectKey Key { get; protected set; }
 
-        public ObjectEventArgs(ObjectKey key) => Key = key;
-        public ObjectEventArgs(ObjectKey key, object obj) : this(key) => Tag = obj;
+        public ObjectKeyEventArgs(ObjectKey key) => Key = key;
+        public ObjectKeyEventArgs(ObjectKey key, object obj) : this(key) => Tag = obj;
     }
 
     /// <summary>

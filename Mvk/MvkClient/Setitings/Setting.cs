@@ -34,6 +34,11 @@ namespace MvkClient.Setitings
         /// Язык
         /// </summary>
         public static int Language { get; set; } = 1;
+        /// <summary>
+        /// IP адрес сервера
+        /// </summary>
+        public static string IpAddress { get; set; } = "127.0.0.1";
+
 
         public static float ToFloatSoundVolume() => SoundVolume / 100f;
         public static float ToFloatMusicVolume() => MusicVolume / 100f;
@@ -67,6 +72,7 @@ namespace MvkClient.Setitings
                         else if (Check(vs, "OverviewChunk")) OverviewChunk = int.Parse(vs[1]);
                         else if (Check(vs, "Nickname")) Nickname = vs[1].ToString();
                         else if (Check(vs, "Language")) Language = int.Parse(vs[1]);
+                        else if (Check(vs, "IpAddress")) IpAddress = vs[1].ToString();
                     }
                 }
             }
@@ -94,6 +100,7 @@ namespace MvkClient.Setitings
                 file.WriteLine("OverviewChunk: " + OverviewChunk.ToString());
                 file.WriteLine("Nickname: " + Nickname.ToString());
                 file.WriteLine("Language: " + Language.ToString());
+                file.WriteLine("IpAddress: " + IpAddress.ToString());
                 file.Close();
             }
         }

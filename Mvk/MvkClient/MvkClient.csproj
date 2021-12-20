@@ -22,6 +22,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -102,7 +103,7 @@
     <Compile Include="Util\BufferedImage.cs" />
     <Compile Include="Util\CounterTick.cs" />
     <Compile Include="Gui\ScreenEvent.cs" />
-    <Compile Include="Util\ObjectEvent.cs" />
+    <Compile Include="Util\ObjectKeyEvent.cs" />
     <Compile Include="Util\Ticker.cs" />
     <Compile Include="World\WorldClient.cs" />
   </ItemGroup>

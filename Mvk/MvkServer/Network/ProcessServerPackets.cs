@@ -2,6 +2,7 @@
 using MvkServer.Glm;
 using MvkServer.Network.Packets;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace MvkServer.Network
 {
@@ -17,35 +18,35 @@ namespace MvkServer.Network
 
         public ProcessServerPackets(Server server) => ServerMain = server;
 
-        protected Socket socketCache;
-
         protected override void ReceivePacketServer(Socket socket, IPacket packet)
         {
-            socketCache = socket;
-            switch (GetId(packet))
+            Task.Factory.StartNew(() =>
             {
-                case 0x11: Packet11((PacketC11LoginStart)packet); break;
-                case 0x20: Packet20((PacketC20Player)packet); break;
-                case 0xFF:
-                    ServerMain.ResponsePacket(socket, new PacketTFFTest("Получил тест: " + ((PacketTFFTest)packet).Name));
-                    break;
-            }
+                switch (GetId(packet))
+                {
+                    case 0x11: Packet11(socket, (PacketC11LoginStart)packet); break;
+                    case 0x20: Packet20(socket, (PacketC20Player)packet); break;
+                    case 0xFF:
+                        ServerMain.ResponsePacket(socket, new PacketTFFTest("Получил тест: " + ((PacketTFFTest)packet).Name));
+                        break;
+                }
+            });
         }
 
         /// <summary>
         /// Пакет проверки логина
         /// </summary>
-        protected void Packet11(PacketC11LoginStart packet)
+        protected void Packet11(Socket socket, PacketC11LoginStart packet)
         {
-            ServerMain.World.Players.LoginStart(new EntityPlayerServer(ServerMain, socketCache, packet.GetName()));
+            ServerMain.World.Players.LoginStart(new EntityPlayerServer(ServerMain, socket, packet.GetName(), packet.GetOverviewChunk()));
         }
 
         /// <summary>
         /// Пакет положения игрока
         /// </summary>
-        protected void Packet20(PacketC20Player packet)
+        protected void Packet20(Socket socket, PacketC20Player packet)
         {
-            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socketCache);
+            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
             if (entityPlayer != null)
             {
                 vec2i ch = entityPlayer.HitBox.ChunkPos;
