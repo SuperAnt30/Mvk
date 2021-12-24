@@ -44,6 +44,10 @@
         /// <summary>
         /// Ошибка
         /// </summary>
-        Error
+        Error,
+        /// <summary>
+        /// Рендер отладки
+        /// </summary>
+        RenderDebug
     }
 }

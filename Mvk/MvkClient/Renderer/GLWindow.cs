@@ -1,5 +1,9 @@
-﻿using MvkAssets;
+﻿using MvkClient.Gui;
+using MvkClient.Renderer.Shaders;
 using MvkClient.Util;
+using MvkClient.World;
+using MvkServer.Entity.Player;
+using MvkServer.Glm;
 using SharpGL;
 using System.Diagnostics;
 
@@ -26,18 +30,22 @@ namespace MvkClient.Renderer
         /// Высота окна
         /// </summary>
         public static int WindowHeight { get; protected set; }
+        /// <summary>
+        /// Объект шейдоров
+        /// </summary>
+        public static ShaderItems Shaders { get; protected set; } = new ShaderItems();
 
         /// <summary>
         /// Таймер для фиксации времени прорисовки кадра
         /// </summary>
-        protected static Stopwatch stopwatch = new Stopwatch();
-        protected static float speedFrameAll;
+        private static Stopwatch stopwatch = new Stopwatch();
+        private static float speedFrameAll;
         /// <summary>
         /// Часы для фиксации секунды
         /// </summary>
-        protected static Stopwatch stopwatchSecond = new Stopwatch();
-        protected static long timerSecond;
-        protected static int fps;
+        private static Stopwatch stopwatchSecond = new Stopwatch();
+        private static long timerSecond;
+        private static int fps;
 
         /// <summary>
         /// Инициализировать, первый запуск OpenGL
@@ -56,6 +64,8 @@ namespace MvkClient.Renderer
 
             Texture = new TextureMap();
             Texture.InitializeOne();
+
+            Shaders.Create(gl);
         }
 
         public static void Resized(int width, int height)
@@ -65,12 +75,29 @@ namespace MvkClient.Renderer
         }
 
         /// <summary>
+        /// Прорисовка каждого кадра
+        /// </summary>
+        /// <param name="screen">объект GUI</param>
+        public static void Draw(Client client)
+        {
+            DrawBegin();
+            // тут мир
+            if (client.World != null) client.World.WorldRender.Draw();
+            // тут gui
+            client.Screen.DrawScreen();
+            DrawEnd();
+        }
+
+        #region Draw
+
+        /// <summary>
         /// Перед прорисовка каждого кадра OpenGL
         /// </summary>
-        public static void DrawBegin()
+        private static void DrawBegin()
         {
             fps++;
             stopwatch.Restart();
+            Debug.CountMesh = 0;
             //gl.Perspective(70.0f, (float)windowWidth / (float)windowHeight, 0.1f, 512);
 
             // Включает Буфер глубины 
@@ -82,7 +109,7 @@ namespace MvkClient.Renderer
         /// <summary>
         /// После прорисовки каждого кадра OpenGL
         /// </summary>
-        public static void DrawEnd()
+        private static void DrawEnd()
         {
             // Перерасчёт кадров раз в секунду, и среднее время прорисовки кадра
             if (stopwatchSecond.ElapsedMilliseconds >= timerSecond + 1000)
@@ -92,9 +119,10 @@ namespace MvkClient.Renderer
                 speedFrameAll = 0;
                 fps = 0;
             }
-            Debug.RenderDebug(); // Надо вынести в TPS будет
             Debug.DrawDebug();
             speedFrameAll += (float)stopwatch.ElapsedTicks / Ticker.Frequency;
         }
+
+        #endregion
     }
 }

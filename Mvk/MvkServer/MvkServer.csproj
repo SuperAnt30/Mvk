@@ -34,6 +34,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Entity\EntityBase.cs" />
+    <Compile Include="MvkGlobal.cs" />
+    <Compile Include="Util\MapList.cs" />
     <Compile Include="Entity\HitBoxEntity.cs" />
     <Compile Include="Entity\Player\EntityPlayer.cs" />
     <Compile Include="Entity\Player\EntityPlayerServer.cs" />
@@ -47,6 +49,7 @@
     <Compile Include="Glm\vec3.cs" />
     <Compile Include="Glm\vec3i.cs" />
     <Compile Include="Glm\vec4.cs" />
+    <Compile Include="Network\Packets\PacketC13ClientSetting.cs" />
     <Compile Include="Util\DebugChunk.cs" />
     <Compile Include="Util\ObjectEvent.cs" />
     <Compile Include="World\Chunk\ChunkCoordPlayers.cs" />
@@ -84,6 +87,7 @@
     <Compile Include="World\Block\EnumSkyBlock.cs" />
     <Compile Include="World\Chunk\ChunkBase.cs" />
     <Compile Include="World\Chunk\ChunkMap.cs" />
+    <Compile Include="World\Chunk\ChunkProviderServer.cs" />
     <Compile Include="World\Chunk\ChunkProvider.cs" />
     <Compile Include="World\Chunk\ChunkStorage.cs" />
     <Compile Include="World\WorldBase.cs" />

@@ -1,4 +1,5 @@
 ﻿using MvkServer.Management;
+using MvkServer.World.Chunk;
 
 namespace MvkServer.World
 {
@@ -15,12 +16,15 @@ namespace MvkServer.World
         /// Объект клиентов
         /// </summary>
         public PlayerManager Players { get; protected set; }
+        /// <summary>
+        /// Посредник серверного чанка
+        /// </summary>
+        public ChunkProviderServer ChunkPrServ => ChunkPr as ChunkProviderServer;
 
-
-
-        public WorldServer(Server server) : base()
+        public WorldServer(Server server)
         {
             ServerMain = server;
+            ChunkPr = new ChunkProviderServer(this);
             Players = new PlayerManager(this);
         }
 
@@ -31,7 +35,7 @@ namespace MvkServer.World
         {
             base.Tick();
 
-            //ChunkPr.UnloadQueuedChunks();
+            ChunkPrServ.UnloadQueuedChunks();
         }
 
         /// <summary>

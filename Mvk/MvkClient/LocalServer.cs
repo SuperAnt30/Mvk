@@ -2,6 +2,7 @@
 using MvkClient.Util;
 using MvkServer;
 using MvkServer.Network;
+using MvkServer.Util;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -91,10 +92,14 @@ namespace MvkClient
             server.LogDebug += (sender, e) => Debug.strServer = e.Text;
             server.LogDebugCh += (sender, e) =>
             {
-                // TODO::отладка чанков
-                MvkServer.Util.DebugChunk list = (MvkServer.Util.DebugChunk)e.Tag;
-                list.listChunkPlayer = Debug.ListChunks.listChunkPlayer;
-                Debug.ListChunks = list;
+                if (MvkGlobal.IS_DRAW_DEBUG_CHUNK)
+                {
+                    // отладка чанков
+                    DebugChunk list = (DebugChunk)e.Tag;
+                    Debug.ListChunks.listChunkServer = list.listChunkServer;
+                    Debug.ListChunks.listChunkPlayers = list.listChunkPlayers;
+                    Debug.ListChunks.isRender = true;
+                }
             };
             server.Initialize(slot);
         }
@@ -154,6 +159,17 @@ namespace MvkClient
         {
             IsStartWorld = false;
             OnObjectKeyTick(new ObjectKeyEventArgs(ObjectKey.ServerStoped, errorNet));
+        }
+
+        /// <summary>
+        /// Задать паузу для одиночной игры
+        /// </summary>
+        public void SetGamePauseSingle(bool value)
+        {
+            if (server != null && IsLoacl)
+            {
+                server.SetGamePauseSingle(value);
+            }
         }
 
         #region Event

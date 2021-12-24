@@ -1,4 +1,5 @@
 ﻿using MvkServer.Glm;
+using System;
 
 namespace MvkServer.World.Chunk
 {
@@ -28,6 +29,21 @@ namespace MvkServer.World.Chunk
         /// </summary>
         //protected EnumBiome[,] eBiomes = new EnumBiome[16, 16];
 
+        /// <summary>
+        /// Статус готовности чанка 0-4
+        /// 0 - генерация
+        /// 1 - объект на этом чанке
+        /// 2 - объект на соседнем чанке (карта высот)
+        /// 3 - боковое освещение
+        /// 4 - готов может и не надо, хватит 3 
+        /// </summary>    
+        public int DoneStatus { get; set; } = 0;
+
+        /// <summary>
+        /// Последнее обновление чанка в тактах
+        /// </summary>
+        protected long updateTime;
+
         protected ChunkBase() { }
         public ChunkBase(WorldBase worldIn, vec2i pos)
         {
@@ -37,9 +53,9 @@ namespace MvkServer.World.Chunk
         }
 
         /// <summary>
-        /// Загружен чанк
+        /// Загружен чанк или сгенерирован
         /// </summary>
-        public void ChunkLoad()
+        public void ChunkLoadGen()
         {
             //TODO:: Тест
             
@@ -94,5 +110,14 @@ namespace MvkServer.World.Chunk
             IsChunkLoaded = true;
         }
 
+        /// <summary>
+        /// Обновить время использования чанка
+        /// </summary>
+        public void UpdateTime() => updateTime = DateTime.Now.Ticks;
+
+        /// <summary>
+        /// Старый ли чанк (больше 10 сек)
+        /// </summary>
+        public bool IsOldTime() => DateTime.Now.Ticks - updateTime > 100000000;
     }
 }

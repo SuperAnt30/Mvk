@@ -14,6 +14,7 @@ namespace MvkServer
 {
     public class Server
     {
+        
         /// <summary>
         /// Объект лога
         /// </summary>
@@ -69,6 +70,10 @@ namespace MvkServer
         /// Объект работы с пакетами
         /// </summary>
         protected ProcessServerPackets packets;
+        /// <summary>
+        /// Пауза в игре, только для одиночной версии
+        /// </summary>
+        protected bool isGamePaused = false;
 
         /// <summary>
         /// Инициализация
@@ -89,7 +94,7 @@ namespace MvkServer
         #region Net
 
         /// <summary>
-        /// Получить истину запущен ли сервер
+        /// Получить истину запущен ли сетевой сервер
         /// </summary>
         public bool IsRunNet() => server != null && server.IsConnected;
 
@@ -104,6 +109,7 @@ namespace MvkServer
                 server.ReceivePacket += (sender, e) => LocalReceivePacket(e.Packet.WorkSocket, e.Packet.Bytes);
                 server.Receive += Server_Receive;
                 server.Run();
+                isGamePaused = false;
                 Log.Log("server.run.net");
             }
         }
@@ -221,7 +227,7 @@ namespace MvkServer
                         while (cacheTime > 50)
                         {
                             cacheTime -= 50;
-                            Tick();
+                            if (!isGamePaused) Tick();
                         }
                     }
 
@@ -254,8 +260,8 @@ namespace MvkServer
 
             EntityPlayerServer entityPlayer = World.Players.GetEntityPlayerMain();
             vec2i pos = entityPlayer != null ? entityPlayer.HitBox.ChunkPos : new vec2i(0, 0);
-            int radius = entityPlayer.OverviewChunk;
 
+            int radius = MvkGlobal.OVERVIEW_CHUNK_START;
             OnLoadStepCount((radius + radius + 1) * (radius + radius + 1));
 
             // Запуск чанков для старта
@@ -263,7 +269,7 @@ namespace MvkServer
             {
                 for (int z = -radius; z <= radius; z++)
                 {
-                    World.ChunkPr.LoadGenChunk(new vec2i(pos.x + x, pos.y + z));
+                    World.ChunkPr.LoadChunk(new vec2i(pos.x + x, pos.y + z));
                     OnLoadingTick();
                 }
             }
@@ -337,13 +343,17 @@ namespace MvkServer
                 // лог статистика за это время
                 OnLogDebug(ToStringDebugTps());
 
-                // TODO::отладка чанков
-                DebugChunk chunks = new DebugChunk()
+                if (MvkGlobal.IS_DRAW_DEBUG_CHUNK)
                 {
-                    listChunkServer = World.ChunkPr.GetList(),
-                    listChunkPlayers = World.Players.GetList()
-                };
-                OnLogDebugCh(chunks);
+                    // отладка чанков
+                    DebugChunk chunks = new DebugChunk()
+                    {
+                        listChunkServer = World.ChunkPr.GetListDebug(),
+                        listChunkPlayers = World.Players.GetListDebug(),
+                        isRender = true
+                    };
+                    OnLogDebugCh(chunks);
+                }
 
                 tickRx = 0;
                 tickTx = 0;
@@ -352,6 +362,11 @@ namespace MvkServer
             // фиксируем время выполнения такта
             tickTimeArray[TickCounter % 4] = differenceTime;
         }
+
+        /// <summary>
+        /// Задать паузу для одиночной игры
+        /// </summary>
+        public void SetGamePauseSingle(bool value) => isGamePaused = !IsRunNet() && value;
 
         /// <summary>
         /// Строка для дебага, формируется по запросу
@@ -363,8 +378,8 @@ namespace MvkServer
             float averageTime = Mth.Average(tickTimeArray) / frequencyMs;
             // TPS за последние 4 тактов (1/5 сек), должен быть 20
             float tps = averageTime > 50f ? 50f / averageTime * 20f : 20f;
-            return string.Format("tps {0:0.00} tick {1:0.00} ms Rx {2} Tx {3} {4}\r\n{5}", 
-                tps, averageTime, tickRx, tickTx, strNet, World.ToStringDebug());
+            return string.Format("tps {0:0.00} tick {1:0.00} ms Rx {2} Tx {3} {4}{6}\r\n{5}", 
+                tps, averageTime, tickRx, tickTx, strNet, World.ToStringDebug(), isGamePaused ? "PAUSE" : "");
         }
 
         #region Event
@@ -393,7 +408,6 @@ namespace MvkServer
         /// Событие лог для дебага листа чанков
         /// </summary>
         public event ObjectEventHandler LogDebugCh;
-        // TODO::отладка чанков
         protected virtual void OnLogDebugCh(DebugChunk list) => LogDebugCh?.Invoke(this, new ObjectEventArgs(list));
 
         /// <summary>

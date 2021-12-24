@@ -21,6 +21,7 @@ namespace MvkServer.Network
                 case 0x10: return new PacketS10Connection();
                 case 0x11: return new PacketC11LoginStart();
                 case 0x12: return new PacketS12Success();
+                case 0x13: return new PacketC13ClientSetting();
                 case 0x20: return new PacketC20Player();
                 case 0x21: return new PacketS21ChunckData();
                 case 0xFF: return new PacketTFFTest();

@@ -1,6 +1,7 @@
-﻿using MvkServer.Glm;
+﻿using MvkServer.Entity.Player;
+using MvkServer.Glm;
+using MvkServer.Util;
 using System.Collections;
-using System.Collections.Generic;
 
 namespace MvkServer.World.Chunk
 {
@@ -16,13 +17,15 @@ namespace MvkServer.World.Chunk
         /// </summary>
         public void Set(ChunkBase chunk)
         {
-            if (map.ContainsKey(chunk.Position))
+            chunk.UpdateTime();
+            Hashtable mapThreadSafe = Hashtable.Synchronized(map);
+            if (mapThreadSafe.ContainsKey(chunk.Position))
             {
-                map[chunk.Position] = chunk;
+                mapThreadSafe[chunk.Position] = chunk;
             }
             else
             {
-                map.Add(chunk.Position, chunk);
+                mapThreadSafe.Add(chunk.Position, chunk);
             }
         }
 
@@ -31,9 +34,10 @@ namespace MvkServer.World.Chunk
         /// </summary>
         public ChunkBase Get(vec2i pos)
         {
-            if (map.ContainsKey(pos))
+            Hashtable mapThreadSafe = Hashtable.Synchronized(map);
+            if (mapThreadSafe.ContainsKey(pos))
             {
-                return map[pos] as ChunkBase;
+                return mapThreadSafe[pos] as ChunkBase;
             }
             return null;
         }
@@ -57,9 +61,43 @@ namespace MvkServer.World.Chunk
         /// </summary>
         public void Remove(vec2i pos)
         {
-            if (map.ContainsKey(pos))
+            Hashtable mapThreadSafe = Hashtable.Synchronized(map);
+            if (mapThreadSafe.ContainsKey(pos))
             {
-                map.Remove(pos);
+                mapThreadSafe.Remove(pos);
+            }
+        }
+
+        /// <summary>
+        /// Добавить в список мусор удаляющих чанков для сервера!
+        /// </summary>
+        public void DroopedChunkStatusMin(MapList droppedChunks, Hashtable playersClone)
+        {
+            Hashtable ht = map.Clone() as Hashtable;
+            foreach (ChunkBase chunk in ht.Values)
+            {
+                if (chunk.DoneStatus < 4 && chunk.IsOldTime())
+                {
+                    droppedChunks.Add(chunk.Position);
+                }
+                else
+                {
+                    bool b = false;
+                    foreach (EntityPlayerServer player in playersClone.Values)
+                    {
+                        vec2i min = player.HitBox.ChunkPosManaged - player.OverviewChunk;
+                        vec2i max = player.HitBox.ChunkPosManaged + player.OverviewChunk;
+                        if (chunk.Position.x >= min.x && chunk.Position.x <= max.x && chunk.Position.y >= min.y && chunk.Position.y <= max.y)
+                        {
+                            b = true;
+                            break;
+                        }
+                    }
+                    if (!b)
+                    {
+                        droppedChunks.Add(chunk.Position);
+                    }
+                }
             }
         }
 
@@ -69,18 +107,8 @@ namespace MvkServer.World.Chunk
         public int Count => map.Count;
 
         /// <summary>
-        /// Для дебага
+        /// Получить клон карты
         /// </summary>
-        public List<vec2i> GetList()
-        {
-            // TODO::отладка чанков
-            List<vec2i> list = new List<vec2i>();
-            Hashtable ht = map.Clone() as Hashtable;
-            foreach (vec2i pos in ht.Keys)
-            {
-                list.Add(pos);
-            }
-            return list;
-        }
+        public Hashtable CloneMap() => map.Clone() as Hashtable;
     }
 }

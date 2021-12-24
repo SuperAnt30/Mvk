@@ -6,10 +6,10 @@ using MvkClient.Network;
 using MvkClient.Renderer;
 using MvkClient.Util;
 using MvkClient.World;
+using MvkServer;
 using MvkServer.Glm;
 using MvkServer.Network;
 using MvkServer.Network.Packets;
-using MvkServer.Util;
 using SharpGL;
 using System;
 
@@ -26,6 +26,15 @@ namespace MvkClient
         /// </summary>
         public AudioBase Sample { get; protected set; } = new AudioBase();
         /// <summary>
+        /// Увеличивается каждый тик 
+        /// </summary>
+        public uint TickCounter { get; protected set; } = 0;
+        /// <summary>
+        /// Screen Gui
+        /// </summary>
+        public GuiScreen Screen { get; private set; }
+
+        /// <summary>
         /// Тикер Fps
         /// </summary>
         protected Ticker tickerFps;
@@ -33,10 +42,6 @@ namespace MvkClient
         /// Тикер Fps
         /// </summary>
         protected Ticker tickerTps;
-        /// <summary>
-        /// Screen Gui
-        /// </summary>
-        protected GuiScreen screen;
         /// <summary>
         /// Локальный сервер
         /// </summary>
@@ -50,10 +55,9 @@ namespace MvkClient
         /// </summary>
         protected bool isClosing = false;
         /// <summary>
-        /// Увеличивается каждый тик 
+        /// Пауза в игре
         /// </summary>
-        public uint TickCounter { get; protected set; } = 0;
-        
+        protected bool isGamePaused = false;
 
         #region EventsWindow
 
@@ -65,24 +69,22 @@ namespace MvkClient
         {
             Sample.Initialize();
             glm.Initialized();
-            screen = new GuiScreen(this);
+            Screen = new GuiScreen(this);
+            Screen.Changed += Screen_Changed;
             packets = new ProcessClientPackets(this);
 
             tickerFps = new Ticker();
-            tickerFps.Tick += (sender, e) => OnDraw();
+            tickerFps.Tick += TickerFps_Tick;
             tickerFps.Closeded += (sender, e) => OnCloseded();
 
             tickerTps = new Ticker();
             tickerTps.SetWishTick(20);
             tickerTps.Tick += TickerTps_Tick;
-            //tickerTps.Closeded += (sender, e) => OnCloseded();
 
             locServer = new LocalServer();
             locServer.ObjectKeyTick += Server_ObjectKeyTick;
             locServer.RecievePacket += (sender, e) => packets.ReceiveBufferClient(e.Packet.Bytes);
         }
-
-        
 
         /// <summary>
         /// Загружено окно
@@ -94,7 +96,7 @@ namespace MvkClient
             
             // Загрузка
             Loading loading = new Loading(this);
-            screen.LoadingSetMax(loading.Count);
+            Screen.LoadingSetMax(loading.Count);
             loading.Tick += (sender, e) => OnThreadSend(e);
             loading.LoadStart();
         }
@@ -142,22 +144,13 @@ namespace MvkClient
         public void GLInitialize(OpenGL gl)
         {
             GLWindow.Initialize(gl);
-            screen.Begin();
+            Screen.Begin();
         }
 
         /// <summary>
         /// Прорисовка каждого кадра
         /// </summary>
-        public void GLDraw()
-        {
-            GLWindow.DrawBegin();
-            // тут игра
-            //System.Threading.Thread.Sleep(15);
-            // тут gui
-            screen.DrawScreen();
-
-            GLWindow.DrawEnd();
-        }
+        public void GLDraw() => GLWindow.Draw(this);
 
         /// <summary>
         /// Изменён размер окна
@@ -165,7 +158,7 @@ namespace MvkClient
         public void GLResized(int width, int height)
         {
             GLWindow.Resized(width, height);
-            screen.Resized();
+            Screen.Resized();
         }
 
         /// <summary>
@@ -180,25 +173,28 @@ namespace MvkClient
             {
                 Debug.IsDraw = !Debug.IsDraw;
             }
-            if (key == 27) // Esc
+            
+            if (IsGamePlayAction())
             {
-                if (screen.IsEmptyScreen()) screen.InGameMenu();
-            }
-            if (IsGamePlay)
-            {
-                int step = 16;
-                vec3 pos = World.Player.HitBox.Position;
-                if (key == 37) pos += new vec3(-step, 0, 0);
-                else if (key == 39) pos += new vec3(step, 0, 0);
-                else if (key == 38) pos += new vec3(0, 0, step);
-                else if (key == 40) pos += new vec3(0, 0, -step);
-
-                if (!pos.Equals(World.Player.HitBox.Position))
+                if (key == 27) // Esc
                 {
-                    World.Player.HitBox.SetPos(pos);
-                    TrancivePacket(new PacketC20Player(pos));
+                    Screen.InGameMenu();
                 }
-                
+                else
+                {
+                    int step = 16;
+                    vec3 pos = World.Player.HitBox.Position;
+                    if (key == 37) pos += new vec3(-step, 0, 0);
+                    else if (key == 39) pos += new vec3(step, 0, 0);
+                    else if (key == 38) pos += new vec3(0, 0, step);
+                    else if (key == 40) pos += new vec3(0, 0, -step);
+
+                    if (!pos.Equals(World.Player.HitBox.Position))
+                    {
+                        World.Player.HitBox.SetPos(pos);
+                        TrancivePacket(new PacketC20Player(pos));
+                    }
+                }
             }
         }
         /// <summary>
@@ -206,7 +202,7 @@ namespace MvkClient
         /// </summary>
         public void KeyPress(char key)
         {
-            screen.KeyPress(key);
+            Screen.KeyPress(key);
         }
 
         /// <summary>
@@ -223,7 +219,7 @@ namespace MvkClient
         /// </summary>
         public void MouseDown(MouseButton button, int x, int y)
         {
-            screen.MouseDown(button, x, y);
+            Screen.MouseDown(button, x, y);
         }
 
         /// <summary>
@@ -231,7 +227,7 @@ namespace MvkClient
         /// </summary>
         public void MouseUp(MouseButton button, int x, int y)
         {
-            screen.MouseUp(button, x, y);
+            Screen.MouseUp(button, x, y);
         }
 
         /// <summary>
@@ -244,7 +240,7 @@ namespace MvkClient
         /// <returns>true - сбросить на центр</returns>
         public bool MouseMove(int x, int y, int deltaX, int deltaY)
         {
-            screen.MouseMove(x, y);
+            Screen.MouseMove(x, y);
             return false;
         }
 
@@ -275,20 +271,21 @@ namespace MvkClient
         {
             switch(e.Key)
             {
-                case ObjectKey.LoadStep: screen.LoadingStep(); break; // Шаг для загрузчиков
+                case ObjectKey.LoadStep: Screen.LoadingStep(); break; // Шаг для загрузчиков
                 case ObjectKey.LoadStepTexture:  // Шаг загрузки текстуры
                     GLWindow.Texture.InitializeKey(e.Tag as BufferedImage);
-                    screen.LoadingStep();
+                    Screen.LoadingStep();
                     break;
-                case ObjectKey.LoadedMain: screen.LoadingMainEnd(); break; // Закончена первоночальная загрузка
+                case ObjectKey.LoadedMain: Screen.LoadingMainEnd(); break; // Закончена первоночальная загрузка
                 case ObjectKey.ServerStoped: // Мир сервера остановлен
                     if (e.Tag == null || e.Tag.ToString() == "")
                     {
-                        if (isClosing) WindowClosing(); else screen.MainMenu();
+                        if (isClosing) WindowClosing(); else Screen.MainMenu();
                     }
-                    else screen.ScreenError(e.Tag.ToString()); // выход с ошибкой
+                    else Screen.ScreenError(e.Tag.ToString()); // выход с ошибкой
                     break;
-                case ObjectKey.Error: screen.ScreenError(e.Tag.ToString()); break;// Ошибка
+                case ObjectKey.Error: Screen.ScreenError(e.Tag.ToString()); break;// Ошибка
+                case ObjectKey.RenderDebug: Debug.RenderDebug(); break;
             }
         }
 
@@ -298,7 +295,7 @@ namespace MvkClient
         /// <param name="ip">адрес</param>
         public void LoadWorldNet(string ip)
         {
-            screen.ScreenProcess(Language.T("gui.process"));
+            Screen.ScreenProcess(Language.T("gui.process"));
             locServer.StartServerNet(ip);
             World = new WorldClient(this);
         }
@@ -320,7 +317,7 @@ namespace MvkClient
         {
             if (e.Key == ObjectKey.LoadCountWorld)
             {
-                screen.LoadingSetMax((int)e.Tag);
+                Screen.LoadingSetMax((int)e.Tag);
             }
             else
             {
@@ -334,7 +331,7 @@ namespace MvkClient
         public void LoadedWorld()
         {
             // ставим экран загрузки
-            screen.ScreenProcess(Language.T("gui.process"));
+            Screen.ScreenProcess(Language.T("gui.process"));
         }
 
         /// <summary>
@@ -346,19 +343,19 @@ namespace MvkClient
             tickerTps.Stoping();
             StringDebugTps();
             // ставим экран сохранения
-            screen.ScreenProcess(Language.T("gui.saving"));
+            Screen.ScreenProcess(Language.T("gui.saving"));
             // отправялем на сервер, выход мира, с возможной ошибкой
             locServer.ExitingWorld(error);
             World = null;
         }
 
         /// <summary>
-        /// Убрать Gui, переход в режим игры
+        /// Убрать Gui, переход в режим игры при старте
         /// </summary>
-        public void GameMode(uint timer)
+        public void GameModeBegin(uint timer)
         {
             TickCounter = timer;
-            screen.GameMode();
+            Screen.GameMode();
             tickerTps.Start();
         }
 
@@ -385,6 +382,10 @@ namespace MvkClient
         /// Режим игры
         /// </summary>
         public bool IsGamePlay => tickerTps.IsRuning;
+        /// <summary>
+        /// Режим игры, режим активного управления 3d
+        /// </summary>
+        public bool IsGamePlayAction() => IsGamePlay && Screen.IsEmptyScreen();
 
         /// <summary>
         /// Дебага, формируется по запросу
@@ -397,26 +398,59 @@ namespace MvkClient
         //public void SetTickCounter(uint timer) => TickCounter = timer;
 
         /// <summary>
+        /// Такт каждого ФПС
+        /// </summary>
+        private void TickerFps_Tick(object sender, EventArgs e)
+        {
+            if (!Screen.IsEmptyScreen())
+            {
+                // GUI что-то есть
+                OnThreadSend(new ObjectKeyEventArgs(ObjectKey.RenderDebug));
+            }
+            OnDraw();
+        }
+
+        /// <summary>
         /// Локальный ТПС 20
         /// </summary>
         private void TickerTps_Tick(object sender, EventArgs e)
         {
-            TickCounter++;
-
-            World.Tick();
-
-            if (TickCounter % 4 == 0)
+            if (!isGamePaused)
             {
-                // TODO::отладка чанков
-                // лог статистика за это время
-                DebugChunk list = Debug.ListChunks;
-                list.listChunkPlayer = World.ChunkPr.GetList();
-                Debug.ListChunks = list;
+                TickCounter++;
+
+                World.Tick();
+
+                if (TickCounter % 4 == 0)
+                {
+                    // лог статистика за это время
+
+                    if (MvkGlobal.IS_DRAW_DEBUG_CHUNK)
+                    {
+                        // отладка чанков
+                        Debug.ListChunks.listChunkPlayer = World.ChunkPr.GetListDebug();
+                        Debug.ListChunks.isRender = true;
+                    }
+                }
             }
+            
             StringDebugTps();
+            if (Screen.IsEmptyScreen())
+            {
+                // GUI нет
+                OnThreadSend(new ObjectKeyEventArgs(ObjectKey.RenderDebug));
+            }
         }
 
-
+        /// <summary>
+        /// Изменён GUI скрин
+        /// </summary>
+        private void Screen_Changed(object sender, EventArgs e)
+        {
+            // определить паузу
+            isGamePaused = IsGamePlay && Screen.IsScreenPause() && !locServer.IsOpenNet();
+            locServer.SetGamePauseSingle(isGamePaused);
+        }
 
         #region Event
 

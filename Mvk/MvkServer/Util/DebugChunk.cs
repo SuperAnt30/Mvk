@@ -3,11 +3,14 @@ using System.Collections.Generic;
 
 namespace MvkServer.Util
 {
-    public struct DebugChunk
+    /// <summary>
+    /// Объект для отладки чанков
+    /// </summary>
+    public class DebugChunk
     {
-        // TODO::отладка чанков
-        public List<vec2i> listChunkServer;
-        public List<vec2i> listChunkPlayers;
-        public List<vec2i> listChunkPlayer;
+        public List<vec3i> listChunkServer = new List<vec3i>();
+        public List<vec2i> listChunkPlayers = new List<vec2i>();
+        public List<vec3i> listChunkPlayer = new List<vec3i>();
+        public bool isRender;
     }
 }

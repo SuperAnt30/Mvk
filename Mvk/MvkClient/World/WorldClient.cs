@@ -1,4 +1,7 @@
-﻿using MvkServer.Entity.Player;
+﻿using MvkClient.Entity;
+using MvkClient.Renderer;
+using MvkClient.Setitings;
+using MvkServer;
 using MvkServer.World;
 
 namespace MvkClient.World
@@ -16,11 +19,28 @@ namespace MvkClient.World
         /// <summary>
         /// Объект клиента
         /// </summary>
-        public EntityPlayer Player { get; protected set; } = new EntityPlayer();
+        public EntityPlayerClient Player { get; protected set; } = new EntityPlayerClient();
 
-        public WorldClient(Client client) : base()
+        /// <summary>
+        /// Посредник клиентоского чанка
+        /// </summary>
+        public ChunkProviderClient ChunkPrClient => ChunkPr as ChunkProviderClient;
+
+        /// <summary>
+        /// Мир для рендера и прорисовки
+        /// </summary>
+        public WorldRenderer WorldRender { get; protected set; }
+
+        /// <summary>
+        /// фиксатор чистки мира
+        /// </summary>
+        protected uint previousTotalWorldTime;
+
+        public WorldClient(Client client)
         {
+            ChunkPr = new ChunkProviderClient(this);
             ClientMain = client;
+            WorldRender = new WorldRenderer(this);
         }
 
         /// <summary>
@@ -29,6 +49,14 @@ namespace MvkClient.World
         public override void Tick()
         {
             base.Tick();
+            uint time = ClientMain.TickCounter;
+
+            if (time - previousTotalWorldTime > MvkGlobal.CHUNK_CLEANING_TIME)
+            {
+                previousTotalWorldTime = time;
+                // + 2 к обзору для кэша из-за клона обработки, разных потоков
+                ChunkPrClient.FixOverviewChunk(Player, Setting.OverviewChunk + 2); 
+            }
         }
 
         /// <summary>

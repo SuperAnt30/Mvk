@@ -1,6 +1,7 @@
 ﻿using MvkAssets;
 using MvkClient.Setitings;
 using MvkServer.Glm;
+using MvkServer.Network.Packets;
 using System;
 
 namespace MvkClient.Gui
@@ -141,6 +142,14 @@ namespace MvkClient.Gui
         private void ButtonDone_Click(object sender, EventArgs e)
         {
             // Сохранение настроек
+
+            if (where == EnumScreenKey.InGameMenu && Setting.OverviewChunk != sliderChunk.Value)
+            {
+                // Отправить запрос серверу на смену опций
+                ClientMain.World.ChunkPr.ClearAllChunks();
+                ClientMain.TrancivePacket(new PacketC13ClientSetting(sliderChunk.Value));
+            }
+
             Setting.OverviewChunk = sliderChunk.Value;
             Setting.MusicVolume = sliderMusicVolume.Value;
             Setting.SoundVolume = sliderSoundVolume.Value;

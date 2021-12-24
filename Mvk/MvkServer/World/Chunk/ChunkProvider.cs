@@ -1,4 +1,6 @@
 ﻿using MvkServer.Glm;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace MvkServer.World.Chunk
@@ -6,55 +8,25 @@ namespace MvkServer.World.Chunk
     /// <summary>
     /// Объект который хранит и отвечает за кэш чанков
     /// </summary>
-    public class ChunkProvider
+    public abstract class ChunkProvider
     {
-
-        /**
-         * В этот объект разделён на Server и Client
-         * для загрузки, выгрузки и получения чанков
-         * по сути тут хранится весь кэш чанков
-         */
-
-
-        // Chunk.func_177439_a = Файл принимает пакеты с сервера байт массив, пакет псевдочанка 16*16*16
-
-
-            
-        /// <summary>
-        /// Чанк по умолчанию, если нет ни одного в списке
-        /// </summary>
-        public ChunkBase ChunkDefault { get; protected set; }
-
         /// <summary>
         /// Список чанков
         /// </summary>
         protected ChunkMap chunkMapping = new ChunkMap();
-
+        
         /// <summary>
         /// Сылка на объект мира
         /// </summary>
         protected WorldBase world;
-
-
-        public ChunkProvider(WorldBase worldIn)
-        {
-            ChunkDefault = new ChunkBase(worldIn, new vec2i(0));
-            world = worldIn;
-        }
-
-        /// <summary>
-        /// Для дебага
-        /// </summary>
-        public List<vec2i> GetList() => chunkMapping.GetList();
-        // TODO::отладка чанков
 
         /// <summary>
         /// Выгрузить чанк
         /// </summary>
         public void UnloadChunk(vec2i pos)
         {
-            ChunkBase chunk = ProvideChunk(pos);
-            if (chunk.IsChunkLoaded)
+            ChunkBase chunk = GetChunk(pos);
+            if (chunk != null && chunk.IsChunkLoaded)
             {
                 chunk.ChunkUnload();
             }
@@ -62,37 +34,19 @@ namespace MvkServer.World.Chunk
         }
 
         /// <summary>
+        /// Очистить все чанки, ТОЛЬКО для клиента
+        /// </summary>
+        public virtual void ClearAllChunks() { }
+
+        /// <summary>
         /// удалить чанк без сохранения
         /// </summary>
-        public void RemoveChunk(vec2i pos)
-        {
-            chunkMapping.Remove(pos);
-        }
+        public virtual void RemoveChunk(vec2i pos) { }
 
         /// <summary>
-        /// Загрузить чанк
+        /// Загрузить чанк для сервера
         /// </summary>
-        public ChunkBase LoadGenChunk(vec2i pos)
-        {
-            ChunkBase chunk = new ChunkBase(world, pos);
-            chunkMapping.Set(chunk);
-            chunk.ChunkLoad();
-            return chunk;
-        }
-
-        /// <summary>
-        /// Загрузить, если нет такого создаём
-        /// </summary>
-        public ChunkBase LoadNewChunk(vec2i pos)
-        {
-            if (chunkMapping.Contains(pos))
-            {
-                return chunkMapping.Get(pos);
-            }
-            ChunkBase chunk = new ChunkBase(world, pos);
-            chunkMapping.Set(chunk);
-            return chunk;
-        }
+        public virtual ChunkBase LoadChunk(vec2i pos) => null;
 
         /// <summary>
         /// Проверить наличие чанка в массиве
@@ -101,8 +55,8 @@ namespace MvkServer.World.Chunk
         {
             if (chunkMapping.Contains(pos))
             {
-                ChunkBase chunk = ProvideChunk(pos);
-                return chunk.IsChunkLoaded;
+                ChunkBase chunk = GetChunk(pos);
+                return chunk != null && chunk.IsChunkLoaded;
             }
             return false;
         }
@@ -110,16 +64,26 @@ namespace MvkServer.World.Chunk
         /// <summary>
         /// Получить чанк по координатам чанка
         /// </summary>
-        public ChunkBase ProvideChunk(vec2i pos)
-        {
-            ChunkBase chunk = chunkMapping.Get(pos);
-            return chunk ?? ChunkDefault;
-        }
+        public ChunkBase GetChunk(vec2i pos) => chunkMapping.Get(pos);
 
         /// <summary>
         /// Количество чанков в кэше
         /// </summary>
         public int Count => chunkMapping.Count;
 
+        /// <summary>
+        /// Список чанков для отладки
+        /// </summary>
+        [Obsolete("Список чанков только для отладки")]
+        public List<vec3i> GetListDebug()
+        {
+            Hashtable ht = chunkMapping.CloneMap();
+            List<vec3i> list = new List<vec3i>();
+            foreach (ChunkBase chunk in ht.Values)
+            {
+                list.Add(new vec3i(chunk.Position.x, chunk.DoneStatus, chunk.Position.y));
+            }
+            return list;
+        }
     }
 }

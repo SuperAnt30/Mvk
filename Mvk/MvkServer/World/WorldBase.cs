@@ -1,5 +1,4 @@
 ﻿using MvkServer.World.Chunk;
-using System;
 
 namespace MvkServer.World
 {
@@ -16,11 +15,6 @@ namespace MvkServer.World
         /// Список сущностей
         /// </summary>
         //public Hashtable Entities { get; protected set; }
-
-        public WorldBase()
-        {
-            ChunkPr = new ChunkProvider(this);
-        }
 
         /// <summary>
         /// Обработка каждый тик

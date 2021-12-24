@@ -25,6 +25,7 @@ namespace MvkServer.Network
                 switch (GetId(packet))
                 {
                     case 0x11: Packet11(socket, (PacketC11LoginStart)packet); break;
+                    case 0x13: Packet13(socket, (PacketC13ClientSetting)packet); break;
                     case 0x20: Packet20(socket, (PacketC20Player)packet); break;
                     case 0xFF:
                         ServerMain.ResponsePacket(socket, new PacketTFFTest("Получил тест: " + ((PacketTFFTest)packet).Name));
@@ -38,7 +39,15 @@ namespace MvkServer.Network
         /// </summary>
         protected void Packet11(Socket socket, PacketC11LoginStart packet)
         {
-            ServerMain.World.Players.LoginStart(new EntityPlayerServer(ServerMain, socket, packet.GetName(), packet.GetOverviewChunk()));
+            ServerMain.World.Players.LoginStart(new EntityPlayerServer(ServerMain, socket, packet.GetName()));
+        }
+
+        /// <summary>
+        /// Пакет настроек клиента
+        /// </summary>
+        protected void Packet13(Socket socket, PacketC13ClientSetting packet)
+        {
+            ServerMain.World.Players.ClientSetting(socket, packet);
         }
 
         /// <summary>
@@ -51,11 +60,6 @@ namespace MvkServer.Network
             {
                 vec2i ch = entityPlayer.HitBox.ChunkPos;
                 entityPlayer.HitBox.SetPos(packet.GetPos());
-
-                if (!ch.Equals(entityPlayer.HitBox.ChunkPos))
-                {
-                    ServerMain.World.Players.UpdateMountedMovingPlayer(entityPlayer);
-                }
             }
         }
     }

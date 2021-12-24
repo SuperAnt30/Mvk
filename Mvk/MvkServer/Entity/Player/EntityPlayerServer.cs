@@ -1,8 +1,8 @@
 ﻿using MvkServer.Glm;
 using MvkServer.Network.Packets;
+using MvkServer.Util;
 using MvkServer.World.Chunk;
 using System;
-using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
@@ -25,24 +25,28 @@ namespace MvkServer.Entity.Player
         /// <summary>
         /// Обзор чанков
         /// </summary>
-        public int OverviewChunk { get; protected set; }
+        public int OverviewChunk { get; protected set; } = MvkGlobal.OVERVIEW_CHUNK_START;
 
         /// <summary>
-        /// Cписок, содержащий все чанки которые нужны клиенту согласно его обзору
+        /// Cписок, содержащий все чанки которые нужны клиенту согласно его обзору для загрузки
         /// </summary>
-        public List<vec2i> LoadedChunks { get; protected set; } = new List<vec2i>();
+        public MapList LoadedChunks { get; protected set; } = new MapList();
 
         // должен быть список чанков которые может видеть игрок
         // должен быть список чанков которые надо догрузить игроку
 
-        public EntityPlayerServer(Server server, Socket socket, string name, int overviewChunk)
+        public EntityPlayerServer(Server server, Socket socket, string name)
         {
             ServerMain = server;
             SocketClient = socket;
             Name = name;
             UUID = GetHash(name);
-            OverviewChunk = overviewChunk;
         }
+
+        /// <summary>
+        /// Задать обзор чанков у клиента
+        /// </summary>
+        public void SetOverviewChunk(int overviewChunk) => OverviewChunk = overviewChunk;
 
         /// <summary>
         /// Получить хэш по строке
@@ -60,33 +64,26 @@ namespace MvkServer.Entity.Player
         public override void Update() // Пока не знаю где вызывать EntityPlayerMP.onUpdate()
         {
             // по LoadedChunks надо отправлять запрос пакета для сервера для чанков, при этом не более 10 чанков за раз
-            if (LoadedChunks.Count > 0)
+            try
             {
-                try
+                int i = 0;
+                while (LoadedChunks.Count > 0 && i < 10)
                 {
-                    int i = 0;
-                    List<vec2i> list = LoadedChunks.GetRange(0, LoadedChunks.Count);
+                    vec2i pos = LoadedChunks.FirstRemove();
+                    ChunkBase chunk = ServerMain.World.ChunkPr.LoadChunk(pos);
 
-                    foreach (vec2i pos in list)
+                    if (chunk != null)
                     {
-                        LoadedChunks.Remove(pos);
-                        ChunkBase chunk = ServerMain.World.ChunkPr.LoadGenChunk(pos);
-
-                        if (chunk != null)
-                        {
-                            ServerMain.ResponsePacket(SocketClient, new PacketS21ChunckData(chunk));
-                            if (i > 10) break;
-                            i++;
-                        }
+                        ServerMain.ResponsePacket(SocketClient, new PacketS21ChunckData(chunk));
+                        i++;
                     }
                 }
-                catch (Exception e)
-                {
-                    ServerMain.Log.Error("EntityPlayerServer.Update {0}", e.Message);
-                    throw;
-                }
+            }
+            catch (Exception e)
+            {
+                ServerMain.Log.Error("EntityPlayerServer.Update {0}", e.Message);
+                throw;
             }
         }
-
     }
 }

@@ -1,5 +1,6 @@
 ﻿using MvkClient.Actions;
 using MvkClient.Setitings;
+using System;
 
 namespace MvkClient.Gui
 {
@@ -25,6 +26,11 @@ namespace MvkClient.Gui
         /// Пустой ли скрин
         /// </summary>
         public bool IsEmptyScreen() => screen == null;
+        /// <summary>
+        /// Является ли скрин меню, для паузы
+        /// </summary>
+        public bool IsScreenPause() 
+            => screen != null && (screen.GetType() == typeof(ScreenInGameMenu) || screen.GetType() == typeof(ScreenOptions));
 
         /// <summary>
         /// Изменён размер окна
@@ -89,6 +95,7 @@ namespace MvkClient.Gui
             screen = screenNew;
             screen.Finished += MenuScreen_Finished;
             screen.Initialize();
+            OnChanged();
         }
 
         /// <summary>
@@ -114,6 +121,7 @@ namespace MvkClient.Gui
         {
             screen.Delete();
             screen = null;
+            OnChanged();
             // Задать фпс
             ClientMain.SetWishFps(Setting.Fps);
         }
@@ -181,5 +189,15 @@ namespace MvkClient.Gui
                 case EnumScreenKey.InGameMenu: InGameMenu(); break;
             }
         }
+
+        #region Event
+
+        /// <summary>
+        /// Событие изменён скрин
+        /// </summary>
+        public event EventHandler Changed;
+        protected virtual void OnChanged() => Changed?.Invoke(this, new EventArgs());
+
+        #endregion
     }
 }

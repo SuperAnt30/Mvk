@@ -51,10 +51,17 @@ namespace MvkClient.Renderer
         /// Запустить текстуру
         /// </summary>
         /// <param name="key">ключ текстуры</param>
-        public void BindTexture(AssetsTexture key)
+        public void BindTexture(AssetsTexture key) => BindTexture(key, 0);
+        /// <summary>
+        /// Запустить текстуру
+        /// </summary>
+        /// <param name="key">ключ текстуры</param>
+        /// <param name="texture">OpenGL.GL_TEXTURE0 + texture</param>
+        public void BindTexture(AssetsTexture key, uint texture)
         {
             if (items.ContainsKey(key))
             {
+                GLWindow.gl.ActiveTexture(OpenGL.GL_TEXTURE0 + texture);
                 GLWindow.gl.BindTexture(OpenGL.GL_TEXTURE_2D, GetData(key));
             }
         }

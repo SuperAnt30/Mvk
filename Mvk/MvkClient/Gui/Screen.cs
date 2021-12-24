@@ -31,7 +31,9 @@ namespace MvkClient.Gui
         /// Основной клиент
         /// </summary>
         public Client ClientMain { get; protected set; }
-
+        /// <summary>
+        /// Откуда зашёл
+        /// </summary>
         protected EnumScreenKey where;
         protected static OpenGL gl;
 

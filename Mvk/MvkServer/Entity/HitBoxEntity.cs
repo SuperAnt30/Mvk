@@ -1,4 +1,5 @@
 ﻿using MvkServer.Glm;
+using MvkServer.Util;
 
 namespace MvkServer.Entity
 {
@@ -51,5 +52,12 @@ namespace MvkServer.Entity
         /// </summary>
         public void UpChunkPosManaged() => ChunkPosManaged = ChunkPos;
 
+        public void SetChunkPosManaged(vec2i pos) => ChunkPosManaged = pos;
+
+        /// <summary>
+        /// Проверка смещения чанка на выбранное положение
+        /// </summary>
+        public bool CheckPosManaged(int bias) 
+            => Mth.Abs(ChunkPos.x - ChunkPosManaged.x) >= bias || Mth.Abs(ChunkPos.y - ChunkPosManaged.y) >= bias;
     }
 }
