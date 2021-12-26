@@ -1,4 +1,5 @@
-﻿using MvkClient.Setitings;
+﻿using MvkClient.Renderer.Chunk;
+using MvkClient.Setitings;
 using MvkServer.Network;
 using MvkServer.Network.Packets;
 using MvkServer.World.Chunk;
@@ -67,8 +68,7 @@ namespace MvkClient.Network
             ClientMain.TrancivePacket(new PacketC13ClientSetting(Setting.OverviewChunk));
 
             ClientMain.World.Player.SetUUID(Setting.Nickname, packet.GetUuid());
-            ClientMain.World.Player.HitBox.SetPos(packet.Pos);
-            ClientMain.World.Player.SetRotation(packet.Yaw, packet.Pitch);
+            ClientMain.World.Player.SetMove(packet.Pos, packet.Yaw, packet.Pitch);
 
             // Отправляем пакет местоположения игрока, для загрузки клиентских чанков
             ClientMain.TrancivePacket(new PacketC20Player(ClientMain.World.Player.HitBox.Position));
@@ -78,14 +78,15 @@ namespace MvkClient.Network
 
         protected void Packet21(PacketS21ChunckData packet)
         {
-            ChunkBase chunk = ClientMain.World.ChunkPr.LoadChunk(packet.GetPos());
             if (packet.IsRemoved())
             {
                 ClientMain.World.ChunkPr.UnloadChunk(packet.GetPos());
             }
             else
             {
+                ChunkRender chunk = ClientMain.World.ChunkPrClient.GetChunkRender(packet.GetPos(), true);
                 chunk.SetBinary(packet.GetBuffer(), packet.GetHeight());
+                chunk.ModifiedToRender();
             }
         }
     }

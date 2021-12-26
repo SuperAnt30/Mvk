@@ -148,6 +148,7 @@ namespace MvkClient.Gui
                 // Отправить запрос серверу на смену опций
                 ClientMain.World.ChunkPr.ClearAllChunks();
                 ClientMain.TrancivePacket(new PacketC13ClientSetting(sliderChunk.Value));
+                ClientMain.World.Player.SetOverviewChunk(sliderChunk.Value);
             }
 
             Setting.OverviewChunk = sliderChunk.Value;

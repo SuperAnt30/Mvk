@@ -35,6 +35,9 @@
   <ItemGroup>
     <Compile Include="Entity\EntityBase.cs" />
     <Compile Include="MvkGlobal.cs" />
+    <Compile Include="Util\ArrayStatic.cs" />
+    <Compile Include="Util\BlockPos.cs" />
+    <Compile Include="Util\EnumFacing.cs" />
     <Compile Include="Util\MapList.cs" />
     <Compile Include="Entity\HitBoxEntity.cs" />
     <Compile Include="Entity\Player\EntityPlayer.cs" />
@@ -52,6 +55,16 @@
     <Compile Include="Network\Packets\PacketC13ClientSetting.cs" />
     <Compile Include="Util\DebugChunk.cs" />
     <Compile Include="Util\ObjectEvent.cs" />
+    <Compile Include="Util\Pole.cs" />
+    <Compile Include="World\Block\BlockBase.cs" />
+    <Compile Include="World\Block\Blocks.cs" />
+    <Compile Include="World\Block\Box.cs" />
+    <Compile Include="World\Block\Face.cs" />
+    <Compile Include="World\Block\Items\BlockAir.cs" />
+    <Compile Include="World\Block\Items\BlockCobblestone.cs" />
+    <Compile Include="World\Block\Items\BlockDirt.cs" />
+    <Compile Include="World\Block\Items\BlockTurf.cs" />
+    <Compile Include="World\Block\Items\BlockStone.cs" />
     <Compile Include="World\Chunk\ChunkCoordPlayers.cs" />
     <Compile Include="Management\PlayerManager.cs" />
     <Compile Include="Network\IPacket.cs" />

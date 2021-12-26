@@ -56,8 +56,9 @@ namespace MvkServer.World.Chunk
             List<EntityPlayerServer> list = players.GetRange(0, players.Count);
             foreach (EntityPlayerServer entityPlayer in list)
             {
-                vec2i min = entityPlayer.HitBox.ChunkPosManaged - entityPlayer.OverviewChunk;
-                vec2i max = entityPlayer.HitBox.ChunkPosManaged + entityPlayer.OverviewChunk;
+                int radius = entityPlayer.OverviewChunk + 1;
+                vec2i min = entityPlayer.HitBox.ChunkPosManaged - radius;
+                vec2i max = entityPlayer.HitBox.ChunkPosManaged + radius;
                 if (Position.x < min.x || Position.x > max.x || Position.y < min.y || Position.y > max.y)
                 {
                     RemovePlayer(entityPlayer);

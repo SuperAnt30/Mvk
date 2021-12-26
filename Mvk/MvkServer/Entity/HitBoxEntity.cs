@@ -36,7 +36,7 @@ namespace MvkServer.Entity
         /// <summary>
         /// Задать позицию
         /// </summary>
-        public void SetPos(vec3 pos)
+        public bool SetPos(vec3 pos)
         {
             if (!Position.Equals(pos))
             {
@@ -45,7 +45,9 @@ namespace MvkServer.Entity
                 BlockPosDown = new vec3i(new vec3(pos.x, pos.y - 1, pos.z));
                 ChunkPos = new vec2i((BlockPos.x) >> 4, (BlockPos.z) >> 4);
                 ChunkY = (BlockPos.y) >> 4;
+                return true;
             }
+            return false;
         }
         /// <summary>
         /// Задать новое положение чанка, после обработки

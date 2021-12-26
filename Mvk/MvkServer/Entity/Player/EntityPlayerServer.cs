@@ -22,10 +22,6 @@ namespace MvkServer.Entity.Player
         /// Основной сервер
         /// </summary>
         public Server ServerMain { get; protected set; }
-        /// <summary>
-        /// Обзор чанков
-        /// </summary>
-        public int OverviewChunk { get; protected set; } = MvkGlobal.OVERVIEW_CHUNK_START;
 
         /// <summary>
         /// Cписок, содержащий все чанки которые нужны клиенту согласно его обзору для загрузки
@@ -42,11 +38,6 @@ namespace MvkServer.Entity.Player
             Name = name;
             UUID = GetHash(name);
         }
-
-        /// <summary>
-        /// Задать обзор чанков у клиента
-        /// </summary>
-        public void SetOverviewChunk(int overviewChunk) => OverviewChunk = overviewChunk;
 
         /// <summary>
         /// Получить хэш по строке
@@ -70,7 +61,7 @@ namespace MvkServer.Entity.Player
                 while (LoadedChunks.Count > 0 && i < 10)
                 {
                     vec2i pos = LoadedChunks.FirstRemove();
-                    ChunkBase chunk = ServerMain.World.ChunkPr.LoadChunk(pos);
+                    ChunkBase chunk = ServerMain.World.ChunkPrServ.LoadChunk(pos);
 
                     if (chunk != null)
                     {

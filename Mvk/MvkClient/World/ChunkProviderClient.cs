@@ -1,4 +1,5 @@
-﻿using MvkServer.Entity.Player;
+﻿using MvkClient.Renderer.Chunk;
+using MvkServer.Entity.Player;
 using MvkServer.Glm;
 using MvkServer.World.Chunk;
 using System.Collections;
@@ -25,14 +26,14 @@ namespace MvkClient.World
         /// <summary>
         /// Загрузить, если нет такого создаём для клиента
         /// </summary>
-        public override ChunkBase LoadChunk(vec2i pos)
+        public ChunkRender GetChunkRender(vec2i pos, bool isCreate)
         {
-            if (chunkMapping.Contains(pos))
+            if (!(chunkMapping.Get(pos) is ChunkRender chunk))
             {
-                return chunkMapping.Get(pos);
+                chunk = new ChunkRender((WorldClient)world, pos);
+                chunkMapping.Set(chunk);
+                return chunk;
             }
-            ChunkBase chunk = new ChunkBase(world, pos);
-            chunkMapping.Set(chunk);
             return chunk;
         }
 
@@ -40,10 +41,11 @@ namespace MvkClient.World
         /// Перепроверить чанки игроков в попадание в обзоре, если нет, убрать
         /// для клиента
         /// </summary>
-        public void FixOverviewChunk(EntityPlayer entity, int overviewChunk)
+        public void FixOverviewChunk(EntityPlayer entity)
         {
-            vec2i min = entity.HitBox.ChunkPos - overviewChunk;
-            vec2i max = entity.HitBox.ChunkPos + overviewChunk;
+            // + 2 к обзору для кэша из-за клона обработки, разных потоков
+            vec2i min = entity.HitBox.ChunkPos - (entity.OverviewChunk + 2);
+            vec2i max = entity.HitBox.ChunkPos + (entity.OverviewChunk + 2);
 
             Hashtable ht = chunkMapping.CloneMap();
             foreach (ChunkBase chunk in ht.Values)

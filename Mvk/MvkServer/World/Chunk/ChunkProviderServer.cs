@@ -10,14 +10,6 @@ namespace MvkServer.World.Chunk
     public class ChunkProviderServer : ChunkProvider
     {
         /// <summary>
-        /// Область в один блок без центра, 8 блоков
-        /// </summary>
-        public static vec2i[] areaOne8 = new vec2i[] {
-            new vec2i(0, 1), new vec2i(1, 1), new vec2i(1, 0), new vec2i(1, -1),
-            new vec2i(0, -1), new vec2i(-1, -1), new vec2i(-1, 0), new vec2i(-1, 1)
-        };
-
-        /// <summary>
         /// Список чанков которые надо выгрузить
         /// </summary>
         public MapList DroppedChunks { get; protected set; } = new MapList();
@@ -27,7 +19,7 @@ namespace MvkServer.World.Chunk
         /// <summary>
         /// Загрузить чанк
         /// </summary>
-        public override ChunkBase LoadChunk(vec2i pos) => GetStatusChunk(pos, 4);
+        public ChunkBase LoadChunk(vec2i pos) => GetStatusChunk(pos, 4);
 
         /// <summary>
         /// Получить чанк по статусу, если статуса не хватает, догружаем рядом лежащие пока не получим нужный статус
@@ -47,7 +39,7 @@ namespace MvkServer.World.Chunk
             {
                 for (int i = 0; i < 8; i++)
                 {
-                    GetStatusChunk(pos + areaOne8[i], status - 1);
+                    GetStatusChunk(pos + ArrayStatic.areaOne8[i], status - 1);
                 }
                 //System.Threading.Thread.Sleep(1);
                 chunk.DoneStatus = status;

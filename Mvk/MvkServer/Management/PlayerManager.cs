@@ -57,9 +57,9 @@ namespace MvkServer.Management
             {
                 // TODO::Тут проверяем место положение персонажа, и заносим при запуске
                 Random random = new Random();
-                entityPlayer.HitBox.SetPos(new vec3(random.Next(-16, 16), 82, random.Next(-16, 16)));
+                entityPlayer.HitBox.SetPos(new vec3(random.Next(-16, 16), 40, random.Next(-16, 16)));
                 entityPlayer.HitBox.UpChunkPosManaged();
-                entityPlayer.SetRotation(0.1f, 0f);
+                entityPlayer.SetRotation(-0.9f, -.8f);
                 AddMountedMovingPlayer(entityPlayer);
                 players.Add(entityPlayer.UUID, entityPlayer);
                 FilterChunkLoadQueue(entityPlayer);
@@ -232,7 +232,7 @@ namespace MvkServer.Management
         /// </summary>
         protected void AddMountedMovingPlayer(EntityPlayerServer entityPlayer)
         {
-            int radius = entityPlayer.OverviewChunk;
+            int radius = entityPlayer.OverviewChunk + 1;
             int chx = entityPlayer.HitBox.ChunkPosManaged.x;
             int chz = entityPlayer.HitBox.ChunkPosManaged.y;
             for (int x = chx - radius; x <= chx + radius; x++)
@@ -248,7 +248,7 @@ namespace MvkServer.Management
         /// </summary>
         protected void RemoveMountedMovingPlayer(EntityPlayerServer entityPlayer)
         {
-            int radius = entityPlayer.OverviewChunk;
+            int radius = entityPlayer.OverviewChunk + 1;
             int chx = entityPlayer.HitBox.ChunkPosManaged.x;
             int chz = entityPlayer.HitBox.ChunkPosManaged.y;
             for (int x = chx - radius; x <= chx + radius; x++)
@@ -282,7 +282,7 @@ namespace MvkServer.Management
             // Проверяем смещение чанка на выбранный параметр, если есть начинаем обработку
             if (entityPlayer.HitBox.CheckPosManaged(2))
             {
-                int radius = entityPlayer.OverviewChunk;
+                int radius = entityPlayer.OverviewChunk + 1;
                 int chx = entityPlayer.HitBox.ChunkPos.x;
                 int chz = entityPlayer.HitBox.ChunkPos.y;
                 int chmx = entityPlayer.HitBox.ChunkPosManaged.x;
@@ -329,7 +329,7 @@ namespace MvkServer.Management
             Hashtable map = entityPlayer.LoadedChunks.CloneMap();
             int i = 0;
 
-            int radius = entityPlayer.OverviewChunk;
+            int radius = entityPlayer.OverviewChunk + 1;
             int chx = entityPlayer.HitBox.ChunkPos.x;
             int chz = entityPlayer.HitBox.ChunkPos.y;
             int x = 0;

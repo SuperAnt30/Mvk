@@ -1,7 +1,11 @@
-﻿using MvkClient.Entity;
+﻿using MvkClient.Actions;
+using MvkClient.Entity;
 using MvkClient.Renderer;
+using MvkClient.Renderer.Chunk;
 using MvkClient.Setitings;
 using MvkServer;
+using MvkServer.Glm;
+using MvkServer.Util;
 using MvkServer.World;
 
 namespace MvkClient.World
@@ -15,21 +19,23 @@ namespace MvkClient.World
         /// Основной клиент
         /// </summary>
         public Client ClientMain { get; protected set; }
-
         /// <summary>
         /// Объект клиента
         /// </summary>
         public EntityPlayerClient Player { get; protected set; } = new EntityPlayerClient();
-
         /// <summary>
         /// Посредник клиентоского чанка
         /// </summary>
         public ChunkProviderClient ChunkPrClient => ChunkPr as ChunkProviderClient;
-
         /// <summary>
         /// Мир для рендера и прорисовки
         /// </summary>
         public WorldRenderer WorldRender { get; protected set; }
+        /// <summary>
+        /// Объект управления клавиатурой
+        /// </summary>
+        public KeyboardLife KeyLife { get; protected set; }
+
 
         /// <summary>
         /// фиксатор чистки мира
@@ -41,6 +47,8 @@ namespace MvkClient.World
             ChunkPr = new ChunkProviderClient(this);
             ClientMain = client;
             WorldRender = new WorldRenderer(this);
+            KeyLife = new KeyboardLife(this);
+            Player.SetOverviewChunk(Setting.OverviewChunk);
         }
 
         /// <summary>
@@ -54,9 +62,22 @@ namespace MvkClient.World
             if (time - previousTotalWorldTime > MvkGlobal.CHUNK_CLEANING_TIME)
             {
                 previousTotalWorldTime = time;
-                // + 2 к обзору для кэша из-за клона обработки, разных потоков
-                ChunkPrClient.FixOverviewChunk(Player, Setting.OverviewChunk + 2); 
+                ChunkPrClient.FixOverviewChunk(Player); 
             }
+        }
+
+        /// <summary>
+        /// Проверить загружены ли все ближ лижащие чанки
+        /// </summary>
+        /// <param name="pos">позиция чанка</param>
+        public bool IsChunksSquareLoaded(vec2i pos)
+        {
+            for (int i = 0; i < ArrayStatic.areaOne9.Length; i++)
+            {
+                ChunkRender chunk = ChunkPrClient.GetChunkRender(pos + ArrayStatic.areaOne9[i], false);
+                if (chunk == null || !chunk.IsChunkLoaded) return false;
+            }
+            return true; 
         }
 
         /// <summary>

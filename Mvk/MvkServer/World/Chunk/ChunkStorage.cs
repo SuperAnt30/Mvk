@@ -23,10 +23,7 @@ namespace MvkServer.World.Chunk
         /// </summary>
         protected byte[,,] light = new byte[16, 16, 16];
 
-        public ChunkStorage(int y)
-        {
-            YBase = y;
-        }
+        public ChunkStorage(int y) => YBase = y;
 
         #region Прямой доступ к данным для бинарника
 
@@ -52,7 +49,7 @@ namespace MvkServer.World.Chunk
         #endregion
 
         /// <summary>
-        /// Получить тип блок
+        /// Получить тип блок по координатам XYZ 0..15 
         /// </summary>
         public EnumBlock GetEBlock(int x, int y, int z) => (EnumBlock)(data[y, x, z] & 0xFFF);
 

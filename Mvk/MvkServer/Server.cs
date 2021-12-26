@@ -269,7 +269,7 @@ namespace MvkServer
             {
                 for (int z = -radius; z <= radius; z++)
                 {
-                    World.ChunkPr.LoadChunk(new vec2i(pos.x + x, pos.y + z));
+                    World.ChunkPrServ.LoadChunk(new vec2i(pos.x + x, pos.y + z));
                     OnLoadingTick();
                 }
             }
@@ -366,7 +366,11 @@ namespace MvkServer
         /// <summary>
         /// Задать паузу для одиночной игры
         /// </summary>
-        public void SetGamePauseSingle(bool value) => isGamePaused = !IsRunNet() && value;
+        public void SetGamePauseSingle(bool value)
+        {
+            isGamePaused = !IsRunNet() && value;
+            OnLogDebug(ToStringDebugTps());
+        }
 
         /// <summary>
         /// Строка для дебага, формируется по запросу

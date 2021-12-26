@@ -15,15 +15,19 @@ namespace MvkClient
         /// <summary>
         /// Выводить ли на экран
         /// </summary>
-        public static bool IsDraw { get; set; } = false;
+        public static bool IsDraw = false;
         /// <summary>
         /// Количество мешей
         /// </summary>
-        public static long CountMesh { get; set; } = 0;
+        public static long CountMesh = 0;
+        /// <summary>
+        /// Количество полигонов блоков
+        /// </summary>
+        public static int CountPoligon = 0;
 
-        public static int DInt { get; set; } = 0;
-        public static float DFloat { get; set; } = 0;
-        public static string DStr { get; set; } = "";
+        public static int DInt = 0;
+        public static float DFloat = 0;
+        public static string DStr = "";
 
         protected static string strTpsFps = "";
         public static void SetTpsFps(int fps, float speedFrame) => strTpsFps = string.Format("Speed: {0} fps {1:0.00} ms", fps, speedFrame);
@@ -45,7 +49,7 @@ namespace MvkClient
             string c = strClient == "" ? "" : "Client " + strClient + "\r\n";
             return strTpsFps + "\r\n" 
                 + s + c 
-                + string.Format("Mesh: {0}\r\nint: {1} float: {2:0.00} string: {3}", CountMesh, DInt, DFloat, DStr);
+                + string.Format("Mesh: {0} Poligons:{4}\r\nint: {1} float: {2:0.00} string: {3}", CountMesh, DInt, DFloat, DStr, CountPoligon);
         }
 
         #region Draw

@@ -9,19 +9,21 @@
 
 layout(location = 0) in vec3 v_position;
 layout(location = 1) in vec2 v_texCoord;
-layout(location = 2) in vec4 v_color;
+layout(location = 2) in vec3 v_color;
+layout(location = 3) in vec2 v_light;
 
 out vec4 a_color;
 out vec2 a_texCoord;
-out vec4 a_position;
 
-uniform mat4 projview;
+uniform mat4 projection;
+uniform mat4 lookat;
 
 void main()
 {
-    a_color = v_color;
+    gl_Position = projection * lookat * vec4(v_position, 1.0);
+//    a_color = vec4(1.0, 1.0, 1.0, 1.0);
+    a_color = vec4(v_color, 1.0);
 	a_texCoord = v_texCoord;
-	gl_Position = projview * vec4(v_position, 1.0f);
 }";
         protected override string _FragmentShaderSource { get; } = @"#version 330 core
  
@@ -31,7 +33,8 @@ out vec4 f_color;
 
 uniform sampler2D u_texture0;
 
-void main(){
+void main()
+{
 	f_color = a_color * texture(u_texture0, a_texCoord);
 }";
     }

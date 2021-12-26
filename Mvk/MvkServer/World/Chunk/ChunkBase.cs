@@ -1,4 +1,6 @@
 ﻿using MvkServer.Glm;
+using MvkServer.Util;
+using MvkServer.World.Block;
 using System;
 
 namespace MvkServer.World.Chunk
@@ -57,7 +59,7 @@ namespace MvkServer.World.Chunk
         /// </summary>
         public void ChunkLoadGen()
         {
-            //TODO:: Тест
+            //TODO:: Тест генерации
             
             for (int y0 = 0; y0 < 24; y0++)
             {
@@ -67,10 +69,16 @@ namespace MvkServer.World.Chunk
                 {
                     for (int z = 0; z < 16; z++)
                     {
-                        StorageArrays[sy].SetEBlock(x, y, z, Block.EnumBlock.Stone);
+                        StorageArrays[sy].SetEBlock(x, y, z, (y0 == 23) ? EnumBlock.Turf : EnumBlock.Stone);
                     }
                 }
             }
+            StorageArrays[1].SetEBlock(0, 8, 0, EnumBlock.Stone);
+            StorageArrays[1].SetEBlock(0, 9, 0, EnumBlock.Stone);
+            StorageArrays[1].SetEBlock(0, 10, 0, EnumBlock.Cobblestone);
+            StorageArrays[1].SetEBlock(0, 11, 0, EnumBlock.Dirt);
+            StorageArrays[1].SetEBlock(0, 12, 0, EnumBlock.Turf);
+            StorageArrays[1].SetEBlock(1, 7, 0, EnumBlock.Dirt);
 
             IsChunkLoaded = true;// LoadinData();
             // Продумать, для клиента запрос для сервера данных чанка, 
@@ -119,5 +127,24 @@ namespace MvkServer.World.Chunk
         /// Старый ли чанк (больше 10 сек)
         /// </summary>
         public bool IsOldTime() => DateTime.Now.Ticks - updateTime > 100000000;
+
+
+        /// <summary>
+        /// Получить блок по координатам чанка XZ 0..15, Y 0..255
+        /// </summary>
+        public BlockBase GetBlock0(vec3i pos)
+        {
+            EnumBlock eblock = GetEBlock(pos);
+            return Blocks.GetBlock(eblock, new BlockPos(Position.x << 4 | pos.x, pos.y, Position.y << 4 | pos.z));
+        }
+
+        /// <summary>
+        /// Получить тип блок по координатам чанка XZ 0..15, Y 0..255
+        /// </summary>
+        public EnumBlock GetEBlock(vec3i pos)
+        {
+            if (pos.x >> 4 == 0 && pos.z >> 4 == 0) return StorageArrays[pos.y >> 4].GetEBlock(pos.x, pos.y & 15, pos.z);
+            return EnumBlock.Air;
+        }
     }
 }

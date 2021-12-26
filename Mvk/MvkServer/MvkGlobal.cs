@@ -19,7 +19,8 @@
         /// <summary>
         /// Визуальная отладка прогрузки чанков
         /// </summary>
-        public const bool IS_DRAW_DEBUG_CHUNK = true;
+        //public const bool IS_DRAW_DEBUG_CHUNK = true;
+        public const bool IS_DRAW_DEBUG_CHUNK = false;
 
     }
 }

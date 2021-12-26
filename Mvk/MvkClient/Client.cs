@@ -58,6 +58,7 @@ namespace MvkClient
         /// Пауза в игре
         /// </summary>
         protected bool isGamePaused = false;
+        
 
         #region EventsWindow
 
@@ -159,6 +160,7 @@ namespace MvkClient
         {
             GLWindow.Resized(width, height);
             Screen.Resized();
+            if (IsGamePlay) World.Player.UpProjection();
         }
 
         /// <summary>
@@ -182,18 +184,28 @@ namespace MvkClient
                 }
                 else
                 {
-                    int step = 16;
-                    vec3 pos = World.Player.HitBox.Position;
-                    if (key == 37) pos += new vec3(-step, 0, 0);
-                    else if (key == 39) pos += new vec3(step, 0, 0);
-                    else if (key == 38) pos += new vec3(0, 0, step);
-                    else if (key == 40) pos += new vec3(0, 0, -step);
-
-                    if (!pos.Equals(World.Player.HitBox.Position))
+                    switch(key)
                     {
-                        World.Player.HitBox.SetPos(pos);
-                        TrancivePacket(new PacketC20Player(pos));
+                        case 65: World.KeyLife.Left(); break;
+                        case 68: World.KeyLife.Right(); break;
+                        case 87: World.KeyLife.Forward(); break;
+                        case 83: World.KeyLife.Back(); break;
+                        case 32: World.KeyLife.Up(); break;
+                        case 16: World.KeyLife.Down(); break;
                     }
+                    
+                    //int step = 1;
+                    //vec3 pos = World.Player.HitBox.Position;
+                    //if (key == 37) pos += new vec3(-step, 0, 0);
+                    //else if (key == 39) pos += new vec3(step, 0, 0);
+                    //else if (key == 38) pos += new vec3(0, 0, step);
+                    //else if (key == 40) pos += new vec3(0, 0, -step);
+
+                    //if (!pos.Equals(World.Player.HitBox.Position))
+                    //{
+                    //    World.Player.SetMove(pos);
+                    //    TrancivePacket(new PacketC20Player(pos));
+                    //}
                 }
             }
         }
@@ -211,7 +223,11 @@ namespace MvkClient
         /// <param name="key">индекс клавиши</param>
         public void KeyUp(int key)
         {
-
+            if (key == 65 || key == 68) World.KeyLife.CancelHorizontal();
+            else if (key == 87 || key == 83) World.KeyLife.CancelVertical();
+            else if (key == 32) World.KeyLife.CancelUp();
+            else if (key == 16) World.KeyLife.CancelDown();
+            //else if (keys == Keys.ControlKey) KeyMove.CancelSprinting();
         }
 
         /// <summary>
@@ -240,6 +256,11 @@ namespace MvkClient
         /// <returns>true - сбросить на центр</returns>
         public bool MouseMove(int x, int y, int deltaX, int deltaY)
         {
+            if (IsGamePlayAction())
+            {
+                World.Player.MouseMove(deltaX, deltaY);
+                return true;
+            }
             Screen.MouseMove(x, y);
             return false;
         }

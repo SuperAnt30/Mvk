@@ -9,7 +9,22 @@
         /// Воздух
         /// </summary>
         Air = 0,
-        Stone = 375
+        /// <summary>
+        /// Камень
+        /// </summary>
+        Stone = 1,
+        /// <summary>
+        /// Булыжник
+        /// </summary>
+        Cobblestone = 2,
+        /// <summary>
+        /// Земля
+        /// </summary>
+        Dirt = 3,
+        /// <summary>
+        /// Дёрн
+        /// </summary>
+        Turf = 4
 
 
     }

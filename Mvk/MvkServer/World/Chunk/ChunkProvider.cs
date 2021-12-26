@@ -44,11 +44,6 @@ namespace MvkServer.World.Chunk
         public virtual void RemoveChunk(vec2i pos) { }
 
         /// <summary>
-        /// Загрузить чанк для сервера
-        /// </summary>
-        public virtual ChunkBase LoadChunk(vec2i pos) => null;
-
-        /// <summary>
         /// Проверить наличие чанка в массиве
         /// </summary>
         public bool IsChunk(vec2i pos)

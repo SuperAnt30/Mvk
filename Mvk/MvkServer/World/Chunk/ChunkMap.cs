@@ -85,8 +85,9 @@ namespace MvkServer.World.Chunk
                     bool b = false;
                     foreach (EntityPlayerServer player in playersClone.Values)
                     {
-                        vec2i min = player.HitBox.ChunkPosManaged - player.OverviewChunk;
-                        vec2i max = player.HitBox.ChunkPosManaged + player.OverviewChunk;
+                        int radius = player.OverviewChunk + 1;
+                        vec2i min = player.HitBox.ChunkPosManaged - radius;
+                        vec2i max = player.HitBox.ChunkPosManaged + radius;
                         if (chunk.Position.x >= min.x && chunk.Position.x <= max.x && chunk.Position.y >= min.y && chunk.Position.y <= max.y)
                         {
                             b = true;
