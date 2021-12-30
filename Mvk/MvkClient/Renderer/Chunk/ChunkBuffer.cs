@@ -38,6 +38,8 @@
             IsModifiedRender = false;
         }
 
+        
+
         /// <summary>
         /// Строка
         /// </summary>

@@ -22,7 +22,7 @@ namespace MvkClient.World
         /// <summary>
         /// Объект клиента
         /// </summary>
-        public EntityPlayerClient Player { get; protected set; } = new EntityPlayerClient();
+        public EntityPlayerClient Player { get; protected set; }
         /// <summary>
         /// Посредник клиентоского чанка
         /// </summary>
@@ -48,7 +48,8 @@ namespace MvkClient.World
             ClientMain = client;
             WorldRender = new WorldRenderer(this);
             KeyLife = new KeyboardLife(this);
-            Player.SetOverviewChunk(Setting.OverviewChunk);
+            Player = new EntityPlayerClient(this);
+            Player.SetOverviewChunk(Setting.OverviewChunk, 0);
         }
 
         /// <summary>
@@ -62,30 +63,39 @@ namespace MvkClient.World
             if (time - previousTotalWorldTime > MvkGlobal.CHUNK_CLEANING_TIME)
             {
                 previousTotalWorldTime = time;
-                ChunkPrClient.FixOverviewChunk(Player); 
+                ChunkPrClient.FixOverviewChunk(Player);
             }
+
+            Player.Update();
         }
 
         /// <summary>
-        /// Проверить загружены ли все ближ лижащие чанки
+        /// Проверить загружены ли все ближ лижащие чанки кроме центра
         /// </summary>
         /// <param name="pos">позиция чанка</param>
         public bool IsChunksSquareLoaded(vec2i pos)
         {
-            for (int i = 0; i < ArrayStatic.areaOne9.Length; i++)
+            for (int i = 0; i < ArrayStatic.AreaOne8.Length; i++)
             {
-                ChunkRender chunk = ChunkPrClient.GetChunkRender(pos + ArrayStatic.areaOne9[i], false);
+                ChunkRender chunk = ChunkPrClient.GetChunkRender(pos + ArrayStatic.AreaOne8[i], false);
                 if (chunk == null || !chunk.IsChunkLoaded) return false;
             }
             return true; 
         }
 
         /// <summary>
+        /// Остановка мира, удаляем все элементы
+        /// </summary>
+        public void StopWorldDelete()
+        {
+            ChunkPrClient.ClearAllChunks();
+        }
+        /// <summary>
         /// Строка для дебага
         /// </summary>
         public override string ToStringDebug()
         {
-            return string.Format("t {2} Ch {0}\r\nXYZ {1}", ChunkPr.Count, Player.HitBox.Position, ClientMain.TickCounter / 20);
+            return string.Format("t {2} Ch {0} ChDel {3}\r\nXYZ {1}", ChunkPr.Count, Player.Position, ClientMain.TickCounter / 20, ChunkPrClient.RemoteMeshChunks.Count);
         }
     }
 }

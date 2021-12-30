@@ -3,6 +3,7 @@ using MvkServer.Entity.Player;
 using MvkServer.Glm;
 using MvkServer.World.Chunk;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace MvkClient.World
 {
@@ -11,17 +12,29 @@ namespace MvkClient.World
     /// </summary>
     public class ChunkProviderClient : ChunkProvider
     {
+        /// <summary>
+        /// Список чанков Для удаления сетки основного потока
+        /// </summary>
+        public List<ChunkRender> RemoteMeshChunks { get; protected set; } = new List<ChunkRender>();
+
         public ChunkProviderClient(WorldClient worldIn) => world = worldIn;
 
         /// <summary>
         /// Очистить все чанки, ТОЛЬКО для клиента
         /// </summary>
-        public override void ClearAllChunks() => chunkMapping.Clear();
+        public void ClearAllChunks()
+        {
+            Hashtable ht = chunkMapping.CloneMap();
+            foreach (ChunkRender chunk in ht.Values)
+            {
+                UnloadChunk(chunk);
+            }
+        }
 
         /// <summary>
         /// удалить чанк без сохранения
         /// </summary>
-        public override void RemoveChunk(vec2i pos) => chunkMapping.Remove(pos);
+        //public override void RemoveChunk(vec2i pos) => chunkMapping.Remove(pos);
 
         /// <summary>
         /// Загрузить, если нет такого создаём для клиента
@@ -30,11 +43,37 @@ namespace MvkClient.World
         {
             if (!(chunkMapping.Get(pos) is ChunkRender chunk))
             {
-                chunk = new ChunkRender((WorldClient)world, pos);
-                chunkMapping.Set(chunk);
-                return chunk;
+                if (isCreate)
+                {
+                    chunk = new ChunkRender((WorldClient)world, pos);
+                    chunkMapping.Set(chunk);
+                    return chunk;
+                }
+                return null;
             }
             return chunk;
+        }
+
+        /// <summary>
+        /// Выгрузить чанк
+        /// </summary>
+        public void UnloadChunk(vec2i pos) => UnloadChunk((ChunkRender)GetChunk(pos));
+        /// <summary>
+        /// Выгрузить чанк
+        /// </summary>
+        public void UnloadChunk(ChunkRender chunk)
+        {
+            if (chunk != null)
+            {
+                if (chunk.IsChunkLoaded)
+                {
+                    chunk.ChunkUnload();
+                    // заносим в массив чистки чанков по сетки для основного потока
+                    RemoteMeshChunks.Add(chunk);
+                }
+                // TODO:: Из-за этого тормозит у меня дома!!! Комп разгрузил и вроде лучше
+                chunkMapping.Remove(chunk.Position);
+            }
         }
 
         /// <summary>
@@ -43,16 +82,17 @@ namespace MvkClient.World
         /// </summary>
         public void FixOverviewChunk(EntityPlayer entity)
         {
-            // + 2 к обзору для кэша из-за клона обработки, разных потоков
-            vec2i min = entity.HitBox.ChunkPos - (entity.OverviewChunk + 2);
-            vec2i max = entity.HitBox.ChunkPos + (entity.OverviewChunk + 2);
+            // дополнительно к обзору для кэша из-за клона обработки, разных потоков
+            int additional = 6;
+            vec2i min = entity.ChunkPos - (entity.OverviewChunk + additional);
+            vec2i max = entity.ChunkPos + (entity.OverviewChunk + additional);
 
             Hashtable ht = chunkMapping.CloneMap();
-            foreach (ChunkBase chunk in ht.Values)
+            foreach (ChunkRender chunk in ht.Values)
             {
                 if (chunk.Position.x < min.x || chunk.Position.x > max.x || chunk.Position.y < min.y || chunk.Position.y > max.y)
                 {
-                    chunkMapping.Remove(chunk.Position);
+                    UnloadChunk(chunk);
                 }
             }
         }

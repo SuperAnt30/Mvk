@@ -54,11 +54,13 @@ namespace MvkServer.Entity.Player
         /// </summary>
         public override void Update() // Пока не знаю где вызывать EntityPlayerMP.onUpdate()
         {
+            base.Update();
             // по LoadedChunks надо отправлять запрос пакета для сервера для чанков, при этом не более 10 чанков за раз
             try
             {
                 int i = 0;
-                while (LoadedChunks.Count > 0 && i < 10)
+                // TODO::сколько паетов передавать по сети
+                while (LoadedChunks.Count > 0 && i < 12)
                 {
                     vec2i pos = LoadedChunks.FirstRemove();
                     ChunkBase chunk = ServerMain.World.ChunkPrServ.LoadChunk(pos);

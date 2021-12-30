@@ -18,21 +18,36 @@ namespace MvkServer.World.Chunk
         public void Set(ChunkBase chunk)
         {
             chunk.UpdateTime();
+            //try
+            //{
+            //    map.Add(chunk.Position, chunk);
+            //}
+            //catch
+            //{
+            //    map[chunk.Position] = chunk;
+            //}
             Hashtable mapThreadSafe = Hashtable.Synchronized(map);
-            if (mapThreadSafe.ContainsKey(chunk.Position))
+            //if (mapThreadSafe.ContainsKey(chunk.Position))
+            //{
+            //    mapThreadSafe[chunk.Position] = chunk;
+            //}
+            //else
             {
-                mapThreadSafe[chunk.Position] = chunk;
-            }
-            else
-            {
-                mapThreadSafe.Add(chunk.Position, chunk);
+                try
+                {
+                    mapThreadSafe.Add(chunk.Position, chunk);
+                }
+                catch
+                {
+                    mapThreadSafe[chunk.Position] = chunk;
+                }
             }
         }
 
         /// <summary>
         /// Получить чанк с массива
         /// </summary>
-        public ChunkBase Get(vec2i pos)
+            public ChunkBase Get(vec2i pos)
         {
             Hashtable mapThreadSafe = Hashtable.Synchronized(map);
             if (mapThreadSafe.ContainsKey(pos))
@@ -61,11 +76,12 @@ namespace MvkServer.World.Chunk
         /// </summary>
         public void Remove(vec2i pos)
         {
-            Hashtable mapThreadSafe = Hashtable.Synchronized(map);
-            if (mapThreadSafe.ContainsKey(pos))
-            {
-                mapThreadSafe.Remove(pos);
-            }
+            map.Remove(pos);
+            //Hashtable mapThreadSafe = Hashtable.Synchronized(map);
+            //if (mapThreadSafe.ContainsKey(pos))
+            //{
+            //    mapThreadSafe.Remove(pos);
+            //}
         }
 
         /// <summary>
@@ -86,8 +102,8 @@ namespace MvkServer.World.Chunk
                     foreach (EntityPlayerServer player in playersClone.Values)
                     {
                         int radius = player.OverviewChunk + 1;
-                        vec2i min = player.HitBox.ChunkPosManaged - radius;
-                        vec2i max = player.HitBox.ChunkPosManaged + radius;
+                        vec2i min = player.ChunkPosManaged - radius;
+                        vec2i max = player.ChunkPosManaged + radius;
                         if (chunk.Position.x >= min.x && chunk.Position.x <= max.x && chunk.Position.y >= min.y && chunk.Position.y <= max.y)
                         {
                             b = true;

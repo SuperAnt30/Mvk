@@ -7,7 +7,7 @@ namespace MvkClient.Renderer
     /// <summary>
     /// Объект создания сетки буфера, прорисовки и удаления
     /// </summary>
-    public class RenderMesh : IDisposable
+    public abstract class RenderMesh : IDisposable
     {
         protected Mesh mesh;
         /// <summary>
@@ -20,15 +20,15 @@ namespace MvkClient.Renderer
         /// <summary>
         /// Сгенерировать
         /// </summary>
-        public virtual void Render(List<float> buffer)
+        public virtual void BindBuffer(List<float> buffer)
         {
-            Render(buffer.ToArray());
+            BindBuffer(buffer.ToArray());
         }
 
         /// <summary>
         /// Сгенерировать
         /// </summary>
-        public virtual void Render(float[] buffer)
+        public virtual void BindBuffer(float[] buffer)
         {
 
             if (mesh != null)
@@ -66,7 +66,7 @@ namespace MvkClient.Renderer
         /// <summary>
         /// Удалить
         /// </summary>
-        public void Delete()
+        public virtual void Delete()
         {
             CountPoligon = 0;
             if (mesh != null) mesh.Delete();

@@ -26,6 +26,7 @@ namespace MvkClient
         public static int CountPoligon = 0;
 
         public static int DInt = 0;
+        public static long DLong = 0;
         public static float DFloat = 0;
         public static string DStr = "";
 
@@ -49,7 +50,7 @@ namespace MvkClient
             string c = strClient == "" ? "" : "Client " + strClient + "\r\n";
             return strTpsFps + "\r\n" 
                 + s + c 
-                + string.Format("Mesh: {0} Poligons:{4}\r\nint: {1} float: {2:0.00} string: {3}", CountMesh, DInt, DFloat, DStr, CountPoligon);
+                + string.Format("Mesh: {0} Poligons:{4}\r\nint: {1} float: {2:0.00} string: {3} long: {5}", CountMesh, DInt, DFloat, DStr, CountPoligon, DLong);
         }
 
         #region Draw

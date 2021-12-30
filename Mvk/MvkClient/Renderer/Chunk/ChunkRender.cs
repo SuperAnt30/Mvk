@@ -15,15 +15,11 @@ namespace MvkClient.Renderer.Chunk
         /// <summary>
         /// Сетка чанка сплошных блоков
         /// </summary>
-        public ChunkMesh MeshDense { get; protected set; } = new ChunkMesh();
+        public ChunkMesh[] MeshDense { get; protected set; } = new ChunkMesh[16];
         /// <summary>
         /// Сетка чанка альфа блоков
         /// </summary>
         public ChunkMesh MeshAlpha { get; protected set; } = new ChunkMesh();
-        /// <summary>
-        /// Данные буферов псевдо чанков
-        /// </summary>
-        public ChunkBuffer[] BufferArrays { get; protected set; } = new ChunkBuffer[16];
         /// <summary>
         /// Нужен ли рендер
         /// </summary>
@@ -40,7 +36,7 @@ namespace MvkClient.Renderer.Chunk
             for (int y = 0; y < StorageArrays.Length; y++)
             {
                 StorageArrays[y] = new ChunkStorage(y);
-                BufferArrays[y] = new ChunkBuffer(y);
+                MeshDense[y] = new ChunkMesh();
             }
         }
 
@@ -52,15 +48,18 @@ namespace MvkClient.Renderer.Chunk
         /// <summary>
         /// Количество полигонов
         /// </summary>
-        public int CountPoligon => MeshAlpha.CountPoligon + MeshDense.CountPoligon;
+        public int CountPoligon => 0;// MeshAlpha.CountPoligon + MeshDense.CountPoligon;
 
         /// <summary>
         /// Удалить сетки
         /// </summary>
-        public void Delete()
+        public void MeshDelete()
         {
             MeshAlpha.Delete();
-            MeshDense.Delete();
+            for (int y = 0; y < MeshDense.Length; y++)
+            {
+                MeshDense[y].Delete();
+            }
         }
 
         /// <summary>
@@ -73,9 +72,8 @@ namespace MvkClient.Renderer.Chunk
             int yMax = 15; 
             for (int i = 0; i <= yMax; i++)
             {
-                if (BufferArrays[i].IsModifiedRender)
+                if (MeshDense[i].IsModifiedRender)
                 {
-                   // BufferArrays[i].Alphas.Clear();
                     int y0 = i * 16;
                     // буфер блоков
                     List<float> bufferCache = new List<float>();
@@ -90,8 +88,9 @@ namespace MvkClient.Renderer.Chunk
                                 if (block == null) continue;
 
                                 BlockRender blockRender = new BlockRender(this, block);
-                                float[] buffer = blockRender.RenderMesh();
-                                bufferCache.AddRange(buffer);
+                                //float[] buffer = blockRender.RenderMesh();
+                                //bufferCache.AddRange(buffer);
+                                bufferCache.AddRange(blockRender.RenderMesh());
                                 //if (block.IsAlphe)
                                 //{
                                 //    if (buffer.Length > 0)
@@ -113,52 +112,27 @@ namespace MvkClient.Renderer.Chunk
                             }
                         }
                     }
-                    BufferArrays[i].RenderDone(bufferCache.ToArray());
+                    MeshDense[i].SetBuffer(bufferCache.ToArray());
                     bufferCache.Clear();
                 }
             }
-            // Должен быть в основном потоке где графика!
-            bufferDense = GlueBuffer();
-            //MeshDense.Render();
+        }
+
+        public bool Draw(bool isBufferToRender)
+        {
+            bool b = false;
+            for (int i = 15; i >= 0; i--)
+            {
+                if (isBufferToRender && BindBuffer(i)) b = true;
+                // прорисовка
+                MeshDense[i].Draw();
+            }
+            return b;
         }
 
         /// <summary>
         /// Занести буфер в рендер если это требуется
         /// </summary>
-        public void BufferToRender()
-        {
-            if (bufferDense.Length > 0)
-            {
-                MeshDense.Render(bufferDense);
-                bufferDense = new float[0];
-            }
-        }
-
-        /// <summary>
-        /// Склейка сетки
-        /// </summary>
-        protected float[] GlueBuffer()
-        {
-            // TODO:: 2021.12.24 модернезировать после запуска, аналого как в пакетах!!!
-            int count = BufferArrays.Length;
-            int countAll = 0;
-            for (int i = 0; i < count; i++)
-            {
-                countAll += BufferArrays[i].Buffer.Length;
-            }
-
-            float[] buffer = new float[countAll];
-            countAll = 0;
-            for (int i = 0; i < count; i++)
-            {
-                for (int j = 0; j < BufferArrays[i].Buffer.Length; j++)
-                {
-                    buffer[countAll] = BufferArrays[i].Buffer[j];
-                    countAll++;
-                }
-            }
-            return buffer;
-        }
-
+        protected bool BindBuffer(int y) => MeshDense[y].BindBuffer();
     }
 }

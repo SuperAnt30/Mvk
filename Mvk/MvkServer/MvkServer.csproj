@@ -34,12 +34,17 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Entity\EntityBase.cs" />
+    <Compile Include="Entity\EntityLiving.cs" />
+    <Compile Include="Entity\HitBox.cs" />
+    <Compile Include="Entity\Interpolis.cs" />
+    <Compile Include="Entity\Moving.cs" />
+    <Compile Include="Entity\MovingDirection.cs" />
     <Compile Include="MvkGlobal.cs" />
+    <Compile Include="Util\ArrayDistance.cs" />
     <Compile Include="Util\ArrayStatic.cs" />
     <Compile Include="Util\BlockPos.cs" />
     <Compile Include="Util\EnumFacing.cs" />
     <Compile Include="Util\MapList.cs" />
-    <Compile Include="Entity\HitBoxEntity.cs" />
     <Compile Include="Entity\Player\EntityPlayer.cs" />
     <Compile Include="Entity\Player\EntityPlayerServer.cs" />
     <Compile Include="Glm\GlmGeometric.cs" />

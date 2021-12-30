@@ -1,4 +1,5 @@
 ﻿using MvkServer.World.Block;
+using System;
 
 namespace MvkServer.World.Chunk
 {
@@ -95,6 +96,23 @@ namespace MvkServer.World.Chunk
             }
 
             this.light[y, x, z] = (byte)(b << 4 | s);
+        }
+
+        /// <summary>
+        /// Удалить данные
+        /// </summary>
+        public void Delete()
+        {
+            data = null;
+            light = null;
+        }
+        /// <summary>
+        /// Очистить
+        /// </summary>
+        public void Clear()
+        {
+            data = new ushort[16, 16, 16];
+            light = new byte[16, 16, 16];
         }
     }
 }

@@ -8,13 +8,13 @@
         /// <summary>
         /// При загрузке мира, сколько загружается обзор мира
         /// </summary>
-        public const int OVERVIEW_CHUNK_START = 2;
+        public const int OVERVIEW_CHUNK_START = 12;
 
         /// <summary>
         /// Время чистки чанков на сервере и клиенте, в тактах
         /// 6000 = 5 min
         /// </summary>
-        public const int CHUNK_CLEANING_TIME = 100; // 6000;
+        public const int CHUNK_CLEANING_TIME = 400; // 6000;
 
         /// <summary>
         /// Визуальная отладка прогрузки чанков

@@ -41,36 +41,34 @@ namespace MvkClient.Renderer
 
             GLWindow.Texture.BindTexture(AssetsTexture.Atlas);
 
-            // Временно! рендер прямо в кадрах
-            int radius = World.Player.OverviewChunk;
-            int chx = World.Player.HitBox.ChunkPos.x;
-            int chz = World.Player.HitBox.ChunkPos.y;
-            for (int x = chx - radius; x <= chx + radius; x++)
+
+            RemoteMeshChunks();
+
+            long time = Client.Time();
+            ChunkRender[] listFC = World.Player.ChunkFC;
+            int countRender = 10;
+            for (int i = 0; i < listFC.Length;  i++)
             {
-                for (int z = chz - radius; z <= chz + radius; z++)
+                bool fast = Client.Time() - time <= 10;
+                ChunkRender chunk = listFC[i];
+                if (chunk.IsModifiedToRender && fast && countRender > 0)
                 {
-                    ChunkRender chunk = World.ChunkPrClient.GetChunkRender(new vec2i(x, z), true);
-                    if (chunk.IsModifiedToRender)
+                    // в отдельном потоке рендер
+                    vec2i pos = new vec2i(listFC[i].Position);
+                    countRender--;
+                    Task.Factory.StartNew(() =>
                     {
-                        // в отдельном потоке рендер
-                        vec2i pos = new vec2i(x, z);
-                        Task.Factory.StartNew(() =>
+                        if (World.IsChunksSquareLoaded(pos))
                         {
-                            if (World.IsChunksSquareLoaded(pos))
-                            {
-                                //Debug.DInt++;
-                                chunk.Render();
-                                //Debug.CountPoligon += chunk.CountPoligon;
-                            }
-                        });
-                    }
-                    else
-                    {
-                        // после рендера если был заливаем буфер
-                        chunk.BufferToRender();
-                        // прорисовка
-                        chunk.MeshDense.Draw();
-                    }
+                            //Debug.DInt++;
+                            chunk.Render();
+                            //Debug.CountPoligon += chunk.CountPoligon;
+                        }
+                    });
+                }
+                else
+                {
+                    chunk.Draw(fast);
                 }
             }
 
@@ -78,6 +76,26 @@ namespace MvkClient.Renderer
 
             //GLWindow.gl.Enable(OpenGL.GL_CULL_FACE);
             //GLWindow.gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_FILL);
+        }
+
+        /// <summary>
+        /// Чистка сетки опенгл
+        /// </summary>
+        protected void RemoteMeshChunks()
+        {
+            long time = Client.Time();
+            long timeNew = time;
+            // 4 мc на чистку чанков
+            while(World.ChunkPrClient.RemoteMeshChunks.Count > 0 && timeNew - time < 5)
+            {
+                if (World.ChunkPrClient.RemoteMeshChunks[0] != null 
+                    && !World.ChunkPrClient.RemoteMeshChunks[0].IsChunkLoaded)
+                {
+                    World.ChunkPrClient.RemoteMeshChunks[0].MeshDelete();
+                }
+                World.ChunkPrClient.RemoteMeshChunks.RemoveAt(0);
+                timeNew = Client.Time();
+            }
         }
     }
 }

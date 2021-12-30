@@ -1,7 +1,4 @@
 ﻿using MvkClient.World;
-using MvkServer.Glm;
-using MvkServer.Network.Packets;
-using System;
 
 namespace MvkClient.Actions
 {
@@ -46,84 +43,82 @@ namespace MvkClient.Actions
 
         public KeyboardLife(WorldClient world) => World = world;
 
-        protected void Test(vec3 bias)
-        {
-            vec3 pos = World.Player.HitBox.Position + bias;
-            if (!pos.Equals(World.Player.HitBox.Position))
-            {
-                World.Player.SetMove(pos);
-                World.ClientMain.TrancivePacket(new PacketC20Player(pos));
-            }
-        }
-
         /// <summary>
         /// Вперёд
         /// </summary>
         public void Forward()
         {
-            //if (!IsForward)
-                Test(World.Player.Front);
-            IsForward = true;
-            //World.Player.StepForward();
-            OnMoveChanged();
+            if (!IsForward)
+            {
+                World.Player.Mov.Forward();
+                IsForward = true;
+            }
         }
         /// <summary>
         /// Назад
         /// </summary>
         public void Back()
         {
-            if (!IsBack) Test(World.Player.Front * -1);
-            IsBack = true;
-           // PlCamera.StepBack();
-            OnMoveChanged();
+            if (!IsBack)
+            {
+                World.Player.Mov.Back();
+                IsBack = true;
+            }
         }
         /// <summary>
         /// Влево
         /// </summary>
         public void Left()
         {
-            if (!IsLeft) Test(World.Player.Right * -1);
-            IsLeft = true;
-           // PlCamera.StepLeft();
-            OnMoveChanged();
+            if (!IsLeft)
+            {
+                World.Player.Mov.Left();
+                IsLeft = true;
+            }
         }
         /// <summary>
         /// Вправо
         /// </summary>
         public void Right()
         {
-            if (!IsRight) Test(World.Player.Right);
-            IsRight = true;
-           // PlCamera.StepRight();
-            OnMoveChanged();
+            if (!IsRight)
+            {
+                World.Player.Mov.Right();
+                IsRight = true;
+            }
         }
         /// <summary>
         /// Вниз
         /// </summary>
         public void Down()
         {
-            if (!IsDown) Test(World.Player.Up * -1);
-            IsDown = true;
-          //  PlCamera.Down();
-            OnMoveChanged();
+            if (!IsDown)
+            {
+                World.Player.Mov.Down();
+                IsDown = true;
+            }
         }
         /// <summary>
         /// Вверх
         /// </summary>
         public void Up()
         {
-            if (!IsUp) Test(World.Player.Up);
-            IsUp = true;
-          //  PlCamera.Jamp();
-            OnMoveChanged();
+            if (!IsUp)
+            {
+                World.Player.Mov.Up();
+                IsUp = true;
+            }
         }
         /// <summary>
         /// Ускорения
         /// </summary>
         public void Sprinting()
         {
-            IsSprinting = true;
-           // PlCamera.Sprinting();
+            if (!IsSprinting)
+            {
+                World.Player.Mov.SprintingBegin();
+                IsSprinting = true;
+            }
         }
         /// <summary>
         /// Отмена вперёд и назад
@@ -132,7 +127,7 @@ namespace MvkClient.Actions
         {
             IsForward = false;
             IsBack = false;
-           // PlCamera.KeyUpVertical();
+            World.Player.Mov.VerticalCancel();
         }
         /// <summary>
         /// Отмена лева и права
@@ -141,15 +136,16 @@ namespace MvkClient.Actions
         {
             IsRight = false;
             IsLeft = false;
-          //  PlCamera.KeyUpHorizontal();
+            World.Player.Mov.HorizontalCancel();
         }
         /// <summary>
         /// Вниз отмена
         /// </summary>
         public void CancelDown()
         {
+            IsUp = false;
             IsDown = false;
-           // PlCamera.KeyUpSneaking();
+            World.Player.Mov.HeightCancel();
         }
         /// <summary>
         /// Вверх отмена
@@ -157,7 +153,8 @@ namespace MvkClient.Actions
         public void CancelUp()
         {
             IsUp = false;
-           // PlCamera.KeyUpJamp();
+            IsDown = false;
+            World.Player.Mov.HeightCancel();
         }
         /// <summary>
         /// Ускорения отмена
@@ -165,7 +162,7 @@ namespace MvkClient.Actions
         public void CancelSprinting()
         {
             IsSprinting = false;
-          //  PlCamera.KeyUpSprinting();
+            World.Player.Mov.SprintingCancel();
         }
 
         /// <summary>
@@ -179,22 +176,5 @@ namespace MvkClient.Actions
             if (IsUp) CancelUp();
             if (IsSprinting) CancelSprinting();
         }
-
-        #region Event
-
-        /// <summary>
-        /// Событие движение WASD
-        /// </summary>
-        public event EventHandler MoveChanged;
-
-        /// <summary>
-        /// Изменена движение WASD
-        /// </summary>
-        protected void OnMoveChanged()
-        {
-            MoveChanged?.Invoke(this, new EventArgs());
-        }
-
-        #endregion
     }
 }

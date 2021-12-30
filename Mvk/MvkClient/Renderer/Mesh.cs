@@ -42,7 +42,6 @@ namespace MvkClient.Renderer
             gl.GenBuffers(1, vbo);
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, vbo[0]);
             gl.BufferData(OpenGL.GL_ARRAY_BUFFER, vertices, OpenGL.GL_STATIC_DRAW);
-
             // attributes
             int stride = vertexSize * sizeof(float);
             int offset = 0;

@@ -2,6 +2,7 @@
 using MvkClient.Setitings;
 using MvkServer.Glm;
 using MvkServer.Network.Packets;
+using MvkServer.Util;
 using System;
 
 namespace MvkClient.Gui
@@ -146,9 +147,9 @@ namespace MvkClient.Gui
             if (where == EnumScreenKey.InGameMenu && Setting.OverviewChunk != sliderChunk.Value)
             {
                 // Отправить запрос серверу на смену опций
-                ClientMain.World.ChunkPr.ClearAllChunks();
+                ClientMain.World.ChunkPrClient.ClearAllChunks();
                 ClientMain.TrancivePacket(new PacketC13ClientSetting(sliderChunk.Value));
-                ClientMain.World.Player.SetOverviewChunk(sliderChunk.Value);
+                ClientMain.World.Player.SetOverviewChunk(sliderChunk.Value, 0);
             }
 
             Setting.OverviewChunk = sliderChunk.Value;

@@ -182,7 +182,7 @@ namespace MvkServer.Network
         /// <summary>
         /// Объеденить два массива
         /// </summary>
-        public static byte[] JoinAr(byte[] first, byte[] second)
+        protected byte[] JoinAr(byte[] first, byte[] second)
         {
             byte[] ret = new byte[first.Length + second.Length];
             first.CopyTo(ret, 0);

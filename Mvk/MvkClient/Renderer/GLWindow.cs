@@ -40,10 +40,6 @@ namespace MvkClient.Renderer
         /// </summary>
         private static Stopwatch stopwatch = new Stopwatch();
         private static float speedFrameAll;
-        /// <summary>
-        /// Часы для фиксации секунды
-        /// </summary>
-        private static Stopwatch stopwatchSecond = new Stopwatch();
         private static long timerSecond;
         private static int fps;
 
@@ -55,7 +51,6 @@ namespace MvkClient.Renderer
             GLWindow.gl = gl;
             GLRender.Initialize();
             stopwatch.Start();
-            stopwatchSecond.Start();
 
             gl.ClearColor(0.3f, 0.3f, 0.3f, 1.0f);
             gl.Enable(OpenGL.GL_DEPTH_TEST);
@@ -112,7 +107,7 @@ namespace MvkClient.Renderer
         private static void DrawEnd()
         {
             // Перерасчёт кадров раз в секунду, и среднее время прорисовки кадра
-            if (stopwatchSecond.ElapsedMilliseconds >= timerSecond + 1000)
+            if (Client.Time() >= timerSecond + 1000)
             {
                 Debug.SetTpsFps(fps, speedFrameAll / fps);
                 timerSecond += 1000;

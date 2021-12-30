@@ -58,8 +58,8 @@ namespace MvkServer.Network
             EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
             if (entityPlayer != null)
             {
-                vec2i ch = entityPlayer.HitBox.ChunkPos;
-                entityPlayer.HitBox.SetPos(packet.GetPos());
+                vec2i ch = entityPlayer.ChunkPos;
+                entityPlayer.SetPosition(packet.GetPos());
             }
         }
     }

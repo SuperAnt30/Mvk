@@ -71,7 +71,7 @@ namespace MvkClient.Network
             ClientMain.World.Player.SetMove(packet.Pos, packet.Yaw, packet.Pitch);
 
             // Отправляем пакет местоположения игрока, для загрузки клиентских чанков
-            ClientMain.TrancivePacket(new PacketC20Player(ClientMain.World.Player.HitBox.Position));
+            ClientMain.TrancivePacket(new PacketC20Player(ClientMain.World.Player.Position));
 
             ClientMain.GameModeBegin(packet.Timer);
         }
@@ -80,7 +80,7 @@ namespace MvkClient.Network
         {
             if (packet.IsRemoved())
             {
-                ClientMain.World.ChunkPr.UnloadChunk(packet.GetPos());
+                ClientMain.World.ChunkPrClient.UnloadChunk(packet.GetPos());
             }
             else
             {

@@ -9,9 +9,9 @@ using MvkClient.World;
 using MvkServer;
 using MvkServer.Glm;
 using MvkServer.Network;
-using MvkServer.Network.Packets;
 using SharpGL;
 using System;
+using System.Diagnostics;
 
 namespace MvkClient
 {
@@ -58,7 +58,10 @@ namespace MvkClient
         /// Пауза в игре
         /// </summary>
         protected bool isGamePaused = false;
-        
+        /// <summary>
+        /// Объект времени с момента запуска проекта
+        /// </summary>
+        private static Stopwatch stopwatch = new Stopwatch();
 
         #region EventsWindow
 
@@ -144,6 +147,7 @@ namespace MvkClient
         /// </summary>
         public void GLInitialize(OpenGL gl)
         {
+            stopwatch.Start();
             GLWindow.Initialize(gl);
             Screen.Begin();
         }
@@ -192,6 +196,7 @@ namespace MvkClient
                         case 83: World.KeyLife.Back(); break;
                         case 32: World.KeyLife.Up(); break;
                         case 16: World.KeyLife.Down(); break;
+                        case 17: World.KeyLife.Sprinting(); break;
                     }
                     
                     //int step = 1;
@@ -227,6 +232,7 @@ namespace MvkClient
             else if (key == 87 || key == 83) World.KeyLife.CancelVertical();
             else if (key == 32) World.KeyLife.CancelUp();
             else if (key == 16) World.KeyLife.CancelDown();
+            else if (key == 17) World.KeyLife.CancelSprinting();
             //else if (keys == Keys.ControlKey) KeyMove.CancelSprinting();
         }
 
@@ -367,6 +373,7 @@ namespace MvkClient
             Screen.ScreenProcess(Language.T("gui.saving"));
             // отправялем на сервер, выход мира, с возможной ошибкой
             locServer.ExitingWorld(error);
+            World.StopWorldDelete();
             World = null;
         }
 
@@ -472,6 +479,11 @@ namespace MvkClient
             isGamePaused = IsGamePlay && Screen.IsScreenPause() && !locServer.IsOpenNet();
             locServer.SetGamePauseSingle(isGamePaused);
         }
+
+        /// <summary>
+        /// Получить время в милисекундах с момента запуска проекта
+        /// </summary>
+        public static long Time() => stopwatch.ElapsedMilliseconds;
 
         #region Event
 

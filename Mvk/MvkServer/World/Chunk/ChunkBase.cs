@@ -51,7 +51,10 @@ namespace MvkServer.World.Chunk
         {
             World = worldIn;
             Position = pos;
-            for (int y = 0; y < StorageArrays.Length; y++) StorageArrays[y] = new ChunkStorage(y);
+            for (int y = 0; y < StorageArrays.Length; y++)
+            {
+                StorageArrays[y] = new ChunkStorage(y);
+            }
         }
 
         /// <summary>
@@ -59,8 +62,9 @@ namespace MvkServer.World.Chunk
         /// </summary>
         public void ChunkLoadGen()
         {
+            StorageArraysClear();
             //TODO:: Тест генерации
-            
+
             for (int y0 = 0; y0 < 24; y0++)
             {
                 int sy = y0 >> 4;
@@ -93,6 +97,20 @@ namespace MvkServer.World.Chunk
             IsChunkLoaded = false;
             // Продумать, для клиента просто удалить, для сервера записать и удалить
             //Save();
+            for (int y = 0; y < StorageArrays.Length; y++)
+            {
+                StorageArrays[y].Delete();
+            }
+        }
+        /// <summary>
+        /// Очистить данные чанков
+        /// </summary>
+        protected void StorageArraysClear()
+        {
+            for (int y = 0; y < StorageArrays.Length; y++)
+            {
+                StorageArrays[y].Clear();
+            }
         }
 
         /// <summary>
@@ -103,6 +121,7 @@ namespace MvkServer.World.Chunk
             int i = 0;
             for (int sy = 0; sy < height; sy++)
             {
+                StorageArrays[sy].Clear();
                 for (int y = 0; y < 16; y++)
                 {
                     for (int x = 0; x < 16; x++)

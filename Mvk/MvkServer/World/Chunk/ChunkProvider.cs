@@ -21,24 +21,6 @@ namespace MvkServer.World.Chunk
         protected WorldBase world;
 
         /// <summary>
-        /// Выгрузить чанк
-        /// </summary>
-        public void UnloadChunk(vec2i pos)
-        {
-            ChunkBase chunk = GetChunk(pos);
-            if (chunk != null && chunk.IsChunkLoaded)
-            {
-                chunk.ChunkUnload();
-            }
-            chunkMapping.Remove(pos);
-        }
-
-        /// <summary>
-        /// Очистить все чанки, ТОЛЬКО для клиента
-        /// </summary>
-        public virtual void ClearAllChunks() { }
-
-        /// <summary>
         /// удалить чанк без сохранения
         /// </summary>
         public virtual void RemoveChunk(vec2i pos) { }

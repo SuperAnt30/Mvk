@@ -57,8 +57,8 @@ namespace MvkServer.Management
             {
                 // TODO::Тут проверяем место положение персонажа, и заносим при запуске
                 Random random = new Random();
-                entityPlayer.HitBox.SetPos(new vec3(random.Next(-16, 16), 40, random.Next(-16, 16)));
-                entityPlayer.HitBox.UpChunkPosManaged();
+                entityPlayer.SetPosition(new vec3(random.Next(-16, 16), 40, random.Next(-16, 16)));
+                entityPlayer.SetChunkPosManaged(entityPlayer.ChunkPos);
                 entityPlayer.SetRotation(-0.9f, -.8f);
                 AddMountedMovingPlayer(entityPlayer);
                 players.Add(entityPlayer.UUID, entityPlayer);
@@ -192,7 +192,7 @@ namespace MvkServer.Management
         {
             PacketS12Success packet = new PacketS12Success(player.UUID)
             {
-                Pos = player.HitBox.Position,
+                Pos = player.Position,
                 Yaw = player.RotationYaw,
                 Pitch = player.RotationPitch,
                 Timer = World.ServerMain.TickCounter
@@ -219,7 +219,7 @@ namespace MvkServer.Management
             if (player != null)
             {
                 RemoveMountedMovingPlayer(player);
-                player.SetOverviewChunk(packet.GetOverviewChunk());
+                player.SetOverviewChunk(packet.GetOverviewChunk(), 1);
                 AddMountedMovingPlayer(player);
                 FilterChunkLoadQueue(player);
             }
@@ -233,8 +233,8 @@ namespace MvkServer.Management
         protected void AddMountedMovingPlayer(EntityPlayerServer entityPlayer)
         {
             int radius = entityPlayer.OverviewChunk + 1;
-            int chx = entityPlayer.HitBox.ChunkPosManaged.x;
-            int chz = entityPlayer.HitBox.ChunkPosManaged.y;
+            int chx = entityPlayer.ChunkPosManaged.x;
+            int chz = entityPlayer.ChunkPosManaged.y;
             for (int x = chx - radius; x <= chx + radius; x++)
             {
                 for (int z = chz - radius; z <= chz + radius; z++)
@@ -249,8 +249,8 @@ namespace MvkServer.Management
         protected void RemoveMountedMovingPlayer(EntityPlayerServer entityPlayer)
         {
             int radius = entityPlayer.OverviewChunk + 1;
-            int chx = entityPlayer.HitBox.ChunkPosManaged.x;
-            int chz = entityPlayer.HitBox.ChunkPosManaged.y;
+            int chx = entityPlayer.ChunkPosManaged.x;
+            int chz = entityPlayer.ChunkPosManaged.y;
             for (int x = chx - radius; x <= chx + radius; x++)
             {
                 for (int z = chz - radius; z <= chz + radius; z++)
@@ -280,13 +280,13 @@ namespace MvkServer.Management
         protected void UpdateMountedMovingPlayer(EntityPlayerServer entityPlayer)
         {
             // Проверяем смещение чанка на выбранный параметр, если есть начинаем обработку
-            if (entityPlayer.HitBox.CheckPosManaged(2))
+            if (entityPlayer.CheckPosManaged(2))
             {
                 int radius = entityPlayer.OverviewChunk + 1;
-                int chx = entityPlayer.HitBox.ChunkPos.x;
-                int chz = entityPlayer.HitBox.ChunkPos.y;
-                int chmx = entityPlayer.HitBox.ChunkPosManaged.x;
-                int chmz = entityPlayer.HitBox.ChunkPosManaged.y;
+                int chx = entityPlayer.ChunkPos.x;
+                int chz = entityPlayer.ChunkPos.y;
+                int chmx = entityPlayer.ChunkPosManaged.x;
+                int chmz = entityPlayer.ChunkPosManaged.y;
                 int dx = chx - chmx;
                 int dz = chz - chmz;
 
@@ -314,8 +314,8 @@ namespace MvkServer.Management
                     }
                 }
 
+                entityPlayer.SetChunkPosManaged(new vec2i(chmx + dx, chmz + dz));
                 FilterChunkLoadQueue(entityPlayer);
-                entityPlayer.HitBox.SetChunkPosManaged(new vec2i(chmx + dx, chmz + dz));
             }
         }
 
@@ -325,49 +325,65 @@ namespace MvkServer.Management
         /// </summary>
         protected void FilterChunkLoadQueue(EntityPlayerServer entityPlayer)
         {
-
             Hashtable map = entityPlayer.LoadedChunks.CloneMap();
-            int i = 0;
-
-            int radius = entityPlayer.OverviewChunk + 1;
-            int chx = entityPlayer.HitBox.ChunkPos.x;
-            int chz = entityPlayer.HitBox.ChunkPos.y;
-            int x = 0;
-            int z = 0;
-            vec2i pos = entityPlayer.HitBox.ChunkPos;
             entityPlayer.LoadedChunks.Clear();
 
-            if (map.ContainsKey(pos)) entityPlayer.LoadedChunks.Add(pos);
-
-            int k = 0;
-            int r;
-            for (r = 1; r <= radius * 2; r++)
+            if (entityPlayer.DistSqrt != null)
             {
-                for (int i2 = 0; i2 < 2; i2++)
+                for (int d = 0; d < entityPlayer.DistSqrt.Length; d++)
                 {
-                    int[] vecxz = xzDirectionsConst[i++ % 4];
-
-                    for (int i3 = 0; i3 < r; i3++)
+                    vec2i pos = entityPlayer.DistSqrt[d] + entityPlayer.ChunkPosManaged;
+                    World.ChunkPrServ.DroppedChunks.Remove(pos);
+                    if (map.ContainsKey(pos))
                     {
-                        x += vecxz[0];
-                        z += vecxz[1];
-                        pos = new vec2i(chx + x, chz + z);
-                        k++;
-                        if (map.ContainsKey(pos)) entityPlayer.LoadedChunks.Add(pos);
+                        entityPlayer.LoadedChunks.Add(pos);
                     }
                 }
             }
 
-            i %= 4;
+            // Методика как в майне, но не кругом, а квадратом
+            //Hashtable map = entityPlayer.LoadedChunks.CloneMap();
+            //int i = 0;
 
-            for (r = 0; r < radius * 2; ++r)
-            {
-                x += xzDirectionsConst[i][0];
-                z += xzDirectionsConst[i][1];
-                pos = new vec2i(chx + x, chz + z);
+            //int radius = entityPlayer.OverviewChunk + 1;
+            //int chx = entityPlayer.ChunkPos.x;
+            //int chz = entityPlayer.ChunkPos.y;
+            //int x = 0;
+            //int z = 0;
+            //vec2i pos = entityPlayer.ChunkPos;
+            //entityPlayer.LoadedChunks.Clear();
 
-                if (map.ContainsKey(pos)) entityPlayer.LoadedChunks.Add(pos);
-            }
+            //if (map.ContainsKey(pos)) entityPlayer.LoadedChunks.Add(pos);
+
+            //int k = 0;
+            //int r;
+            //for (r = 1; r <= radius * 2; r++)
+            //{
+            //    for (int i2 = 0; i2 < 2; i2++)
+            //    {
+            //        int[] vecxz = xzDirectionsConst[i++ % 4];
+
+            //        for (int i3 = 0; i3 < r; i3++)
+            //        {
+            //            x += vecxz[0];
+            //            z += vecxz[1];
+            //            pos = new vec2i(chx + x, chz + z);
+            //            k++;
+            //            if (map.ContainsKey(pos)) entityPlayer.LoadedChunks.Add(pos);
+            //        }
+            //    }
+            //}
+
+            //i %= 4;
+
+            //for (r = 0; r < radius * 2; ++r)
+            //{
+            //    x += xzDirectionsConst[i][0];
+            //    z += xzDirectionsConst[i][1];
+            //    pos = new vec2i(chx + x, chz + z);
+
+            //    if (map.ContainsKey(pos)) entityPlayer.LoadedChunks.Add(pos);
+            //}
         }
 
         #endregion
@@ -384,7 +400,7 @@ namespace MvkServer.Management
                 try
                 {
                     // Проверяем смещение чанка на выбранный параметр, если есть начинаем обработку
-                    if (player.HitBox.CheckPosManaged(2))
+                    if (player.CheckPosManaged(2))
                     {
                         World.Players.UpdateMountedMovingPlayer(player);
                     }
