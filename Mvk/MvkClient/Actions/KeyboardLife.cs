@@ -3,39 +3,10 @@
 namespace MvkClient.Actions
 {
     /// <summary>
-    /// Объект хранящий нажатие клавиш перемещения
+    /// Объект нажатие клавиш перемещения
     /// </summary>
     public class KeyboardLife
     {
-        /// <summary>
-        /// Нажата ли клавиша идти вперёд
-        /// </summary>
-        public bool IsForward { get; protected set; } = false;
-        /// <summary>
-        /// Нажата ли клавиша идти вперёд
-        /// </summary>
-        public bool IsBack { get; protected set; } = false;
-        /// <summary>
-        /// Нажата ли клавиша идти влево
-        /// </summary>
-        public bool IsLeft { get; protected set; } = false;
-        /// <summary>
-        /// Нажата ли клавиша идти вправо
-        /// </summary>
-        public bool IsRight { get; protected set; } = false;
-        /// <summary>
-        /// Нажата ли клавиша вниз
-        /// </summary>
-        public bool IsDown { get; protected set; } = false;
-        /// <summary>
-        /// Нажата ли клавиша вверх
-        /// </summary>
-        public bool IsUp { get; protected set; } = false;
-        /// <summary>
-        /// Нажата ли клавища ускорения
-        /// </summary>
-        public bool IsSprinting { get; protected set; } = false;
-
         /// <summary>
         /// Клиентский объект мира
         /// </summary>
@@ -46,135 +17,57 @@ namespace MvkClient.Actions
         /// <summary>
         /// Вперёд
         /// </summary>
-        public void Forward()
-        {
-            if (!IsForward)
-            {
-                World.Player.Mov.Forward();
-                IsForward = true;
-            }
-        }
+        public void Forward() => World.Player.Mov.Forward();
         /// <summary>
         /// Назад
         /// </summary>
-        public void Back()
-        {
-            if (!IsBack)
-            {
-                World.Player.Mov.Back();
-                IsBack = true;
-            }
-        }
+        public void Back() => World.Player.Mov.Back();
         /// <summary>
         /// Влево
         /// </summary>
-        public void Left()
-        {
-            if (!IsLeft)
-            {
-                World.Player.Mov.Left();
-                IsLeft = true;
-            }
-        }
+        public void Left() => World.Player.Mov.Left();
         /// <summary>
         /// Вправо
         /// </summary>
-        public void Right()
-        {
-            if (!IsRight)
-            {
-                World.Player.Mov.Right();
-                IsRight = true;
-            }
-        }
+        public void Right() => World.Player.Mov.Right();
         /// <summary>
-        /// Вниз
+        /// Вниз || присесть
         /// </summary>
-        public void Down()
-        {
-            if (!IsDown)
-            {
-                World.Player.Mov.Down();
-                IsDown = true;
-            }
-        }
+        public void Down() => World.Player.Mov.Down();
         /// <summary>
-        /// Вверх
+        /// Вверх || прыжок
         /// </summary>
-        public void Up()
-        {
-            if (!IsUp)
-            {
-                World.Player.Mov.Up();
-                IsUp = true;
-            }
-        }
+        public void Up() => World.Player.Mov.Up();
         /// <summary>
         /// Ускорения
         /// </summary>
-        public void Sprinting()
-        {
-            if (!IsSprinting)
-            {
-                World.Player.Mov.SprintingBegin();
-                IsSprinting = true;
-            }
-        }
+        public void Sprinting() => World.Player.Mov.SprintingBegin();
         /// <summary>
         /// Отмена вперёд и назад
         /// </summary>
-        public void CancelVertical()
-        {
-            IsForward = false;
-            IsBack = false;
-            World.Player.Mov.VerticalCancel();
-        }
+        public void CancelVertical() => World.Player.Mov.VerticalCancel();
         /// <summary>
         /// Отмена лева и права
         /// </summary>
-        public void CancelHorizontal()
-        {
-            IsRight = false;
-            IsLeft = false;
-            World.Player.Mov.HorizontalCancel();
-        }
+        public void CancelHorizontal() => World.Player.Mov.HorizontalCancel();
         /// <summary>
-        /// Вниз отмена
+        /// Отмена вверх вниз
         /// </summary>
-        public void CancelDown()
-        {
-            IsUp = false;
-            IsDown = false;
-            World.Player.Mov.HeightCancel();
-        }
-        /// <summary>
-        /// Вверх отмена
-        /// </summary>
-        public void CancelUp()
-        {
-            IsUp = false;
-            IsDown = false;
-            World.Player.Mov.HeightCancel();
-        }
+        public void CancelUpDown() => World.Player.Mov.HeightCancel();
         /// <summary>
         /// Ускорения отмена
         /// </summary>
-        public void CancelSprinting()
-        {
-            IsSprinting = false;
-            World.Player.Mov.SprintingCancel();
-        }
+        public void CancelSprinting() => World.Player.Mov.SprintingCancel();
 
         /// <summary>
         /// Принудительно отключить нажатие перемещения
         /// </summary>
         public void CancelAll()
         {
-            if (IsRight || IsLeft) CancelHorizontal();
-            if (IsForward || IsBack) CancelVertical();
-            if (IsDown) CancelDown();
-            if (IsUp) CancelUp();
-            if (IsSprinting) CancelSprinting();
+            CancelHorizontal();
+            CancelVertical();
+            CancelUpDown();
+            CancelSprinting();
         }
     }
 }

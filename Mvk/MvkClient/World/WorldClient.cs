@@ -3,10 +3,12 @@ using MvkClient.Entity;
 using MvkClient.Renderer;
 using MvkClient.Renderer.Chunk;
 using MvkClient.Setitings;
+using MvkClient.Util;
 using MvkServer;
 using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World;
+using System.Diagnostics;
 
 namespace MvkClient.World
 {
@@ -36,16 +38,22 @@ namespace MvkClient.World
         /// </summary>
         public KeyboardLife KeyLife { get; protected set; }
 
-
+        /// <summary>
+        /// Объект времени c последнего тпс
+        /// </summary>
+        protected Stopwatch stopwatchTps = new Stopwatch();
         /// <summary>
         /// фиксатор чистки мира
         /// </summary>
         protected uint previousTotalWorldTime;
 
+       
+
         public WorldClient(Client client)
         {
             ChunkPr = new ChunkProviderClient(this);
             ClientMain = client;
+            stopwatchTps.Start();
             WorldRender = new WorldRenderer(this);
             KeyLife = new KeyboardLife(this);
             Player = new EntityPlayerClient(this);
@@ -58,6 +66,7 @@ namespace MvkClient.World
         public override void Tick()
         {
             base.Tick();
+            stopwatchTps.Restart();
             uint time = ClientMain.TickCounter;
 
             if (time - previousTotalWorldTime > MvkGlobal.CHUNK_CLEANING_TIME)
@@ -75,9 +84,9 @@ namespace MvkClient.World
         /// <param name="pos">позиция чанка</param>
         public bool IsChunksSquareLoaded(vec2i pos)
         {
-            for (int i = 0; i < ArrayStatic.AreaOne8.Length; i++)
+            for (int i = 0; i < MvkStatic.AreaOne8.Length; i++)
             {
-                ChunkRender chunk = ChunkPrClient.GetChunkRender(pos + ArrayStatic.AreaOne8[i], false);
+                ChunkRender chunk = ChunkPrClient.GetChunkRender(pos + MvkStatic.AreaOne8[i], false);
                 if (chunk == null || !chunk.IsChunkLoaded) return false;
             }
             return true; 
@@ -90,6 +99,19 @@ namespace MvkClient.World
         {
             ChunkPrClient.ClearAllChunks();
         }
+
+        /// <summary>
+        /// Получить коэффициент времени от прошлого TPS клиента в диапазоне 0 .. 1
+        /// где 0 это финиш, 1 начало
+        /// </summary>
+        public float TimeIndex()
+        {
+            float f = stopwatchTps.ElapsedTicks / (float)MvkStatic.TimerFrequencyTps;
+            if (f > 1f) return 1f;
+            if (f < 0) return 0;
+            return f;
+        }
+
         /// <summary>
         /// Строка для дебага
         /// </summary>

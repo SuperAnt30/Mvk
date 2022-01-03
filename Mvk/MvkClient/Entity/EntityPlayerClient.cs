@@ -55,13 +55,19 @@ namespace MvkClient.Entity
         {
             SetPosition(pos);
             SetRotation(yaw, pitch);
-            UpLookAt();
+            //UpLookAt();
         }
         /// <summary>
         /// Задать перемещение игрока
         /// </summary>
         /// <param name="pos"></param>
         public void SetMove(vec3 pos) => SetMove(pos, RotationYaw, RotationPitch);
+        public void SetMovePerv(vec3 pos)
+        {
+            PervPosition = pos;
+            UpLookAt();
+        }
+        public void SetLast(vec3 pos) => LastTickPosition = pos;
         /// <summary>
         /// Обновить матрицу камеры
         /// </summary>
@@ -73,8 +79,8 @@ namespace MvkClient.Entity
             Front = new vec3(rotation * new vec4(0, 0, -1, 1));
             Right = new vec3(rotation * new vec4(1, 0, 0, 1));
             Up = new vec3(rotation * new vec4(0, 1, 0, 1));
-            LookAt = glm.lookAt(Position, Position + Front, Up).to_array();
-
+            LookAt = glm.lookAt(PervPosition, PervPosition + Front, Up).to_array();
+            
             // TODO::InitFrustumCulling возможно надо как-то поставить затычку, чтоб был интервал, не чаще 15 мс между
             InitFrustumCulling();
         }
@@ -150,6 +156,7 @@ namespace MvkClient.Entity
             if (!Motion.Equals(new vec3(0)))
             {
                 vec3 pos = Position + Motion;
+                //World.Player.PervPosition.SetMove(pos)
                 World.Player.SetMove(pos);
                 World.ClientMain.TrancivePacket(new PacketC20Player(pos));
             }

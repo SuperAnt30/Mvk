@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MvkServer.Util;
+using System;
 using System.Diagnostics;
 using System.Threading;
 
@@ -17,10 +18,7 @@ namespace MvkClient.Util
         /// Значение желаемого тика
         /// </summary>
         public int WishTick { get; protected set; } = 20;
-        /// <summary>
-        /// Получает частоту таймера в виде количества тактов в милисекунду
-        /// </summary>
-        public static long Frequency { get; protected set; } = 10000;
+        
 
         private long interval;
         private long sleep;
@@ -29,11 +27,7 @@ namespace MvkClient.Util
         /// </summary>
         private bool isMax = false;
 
-        public Ticker()
-        {
-            Frequency = Stopwatch.Frequency / 1000;
-            SetWishTick(WishTick);
-        }
+        public Ticker() => SetWishTick(WishTick);
 
         /// <summary>
         /// Задать желаемый фпс
@@ -49,7 +43,7 @@ namespace MvkClient.Util
                 isMax = false;
                 WishTick = tick;
                 interval = Stopwatch.Frequency / WishTick;
-                sleep = interval / Frequency;
+                sleep = interval / MvkStatic.TimerFrequency;
             }
         }
 
@@ -91,7 +85,7 @@ namespace MvkClient.Util
                         lastTime = currentTime;
                         OnTick();
                         currentTime = stopwatch.ElapsedTicks;
-                        cl = (currentTime - lastTime) / Frequency;
+                        cl = (currentTime - lastTime) / MvkStatic.TimerFrequency;
                         // С минус 1 точнее бъёт такт, но нагрузка на проц возрастает
                         int sleep = (int)(this.sleep - cl);// - 1;
                         if (sleep > 0) Thread.Sleep(sleep);

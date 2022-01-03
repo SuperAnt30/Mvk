@@ -28,6 +28,15 @@ namespace MvkClient.Renderer
         /// </summary>
         public void Draw()
         {
+            // Перерасчёт расположение игрока если было смещение, согласно индексу времени
+            if (!World.Player.Position.Equals(World.Player.LastTickPosition))
+            {
+                // идёт плавное перемещение
+                float index = World.TimeIndex();
+                vec3 vp = (World.Player.Position - World.Player.LastTickPosition) * index;
+                World.Player.SetMovePerv(World.Player.Position + vp);
+            }
+
             //GLWindow.gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_LINE);
             //GLWindow.gl.Disable(OpenGL.GL_CULL_FACE);
 
@@ -49,7 +58,7 @@ namespace MvkClient.Renderer
             int countRender = 10;
             for (int i = 0; i < listFC.Length;  i++)
             {
-                bool fast = Client.Time() - time <= 10;
+                bool fast = Client.Time() - time <= 10 || countRender == 10;
                 ChunkRender chunk = listFC[i];
                 if (chunk.IsModifiedToRender && fast && countRender > 0)
                 {

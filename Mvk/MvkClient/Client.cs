@@ -9,6 +9,7 @@ using MvkClient.World;
 using MvkServer;
 using MvkServer.Glm;
 using MvkServer.Network;
+using MvkServer.Util;
 using SharpGL;
 using System;
 using System.Diagnostics;
@@ -73,6 +74,7 @@ namespace MvkClient
         {
             Sample.Initialize();
             glm.Initialized();
+            MvkStatic.Initialized();
             Screen = new GuiScreen(this);
             Screen.Changed += Screen_Changed;
             packets = new ProcessClientPackets(this);
@@ -198,19 +200,6 @@ namespace MvkClient
                         case 16: World.KeyLife.Down(); break;
                         case 17: World.KeyLife.Sprinting(); break;
                     }
-                    
-                    //int step = 1;
-                    //vec3 pos = World.Player.HitBox.Position;
-                    //if (key == 37) pos += new vec3(-step, 0, 0);
-                    //else if (key == 39) pos += new vec3(step, 0, 0);
-                    //else if (key == 38) pos += new vec3(0, 0, step);
-                    //else if (key == 40) pos += new vec3(0, 0, -step);
-
-                    //if (!pos.Equals(World.Player.HitBox.Position))
-                    //{
-                    //    World.Player.SetMove(pos);
-                    //    TrancivePacket(new PacketC20Player(pos));
-                    //}
                 }
             }
         }
@@ -230,10 +219,8 @@ namespace MvkClient
         {
             if (key == 65 || key == 68) World.KeyLife.CancelHorizontal();
             else if (key == 87 || key == 83) World.KeyLife.CancelVertical();
-            else if (key == 32) World.KeyLife.CancelUp();
-            else if (key == 16) World.KeyLife.CancelDown();
+            else if (key == 32 || key == 16) World.KeyLife.CancelUpDown();
             else if (key == 17) World.KeyLife.CancelSprinting();
-            //else if (keys == Keys.ControlKey) KeyMove.CancelSprinting();
         }
 
         /// <summary>

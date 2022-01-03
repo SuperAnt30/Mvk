@@ -63,12 +63,12 @@ namespace MvkServer.Entity
         /// </summary>
         public bool IsJumping { get; protected set; } = false;
 
-        //#region PervLast
+        #region PervLast
 
-        ///// <summary>
-        ///// Прошлое 
-        ///// </summary>
-        //public vec3 PervPosition { get; protected set; }
+        /// <summary>
+        /// Прошлое 
+        /// </summary>
+        public vec3 PervPosition { get; protected set; }
         ///// <summary>
         ///// Поворот вокруг своей оси
         ///// </summary>
@@ -77,12 +77,12 @@ namespace MvkServer.Entity
         ///// Поворот вверх вниз
         ///// </summary>
         //public float PervRotationPitch { get; protected set; }
-        ///// <summary>
-        ///// Координата объекта на предыдущем тике, используемая для расчета позиции во время процедур рендеринга
-        ///// </summary>
-        //public vec3 LastTickPosition { get; protected set; }
+        /// <summary>
+        /// Координата объекта на предыдущем тике, используемая для расчета позиции во время процедур рендеринга
+        /// </summary>
+        public vec3 LastTickPosition { get; protected set; }
 
-        //#endregion
+        #endregion
 
         /// <summary>
         /// Задать вращение
@@ -126,7 +126,7 @@ namespace MvkServer.Entity
         /// </summary>
         public virtual void Update()
         {
-            
+            LastTickPosition = Position;
         }
     }
 }

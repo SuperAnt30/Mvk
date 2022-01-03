@@ -40,7 +40,7 @@ namespace MvkServer.Entity.Player
         public void SetOverviewChunk(int overviewChunk, int plusDistSqrt)
         {
             OverviewChunk = overviewChunk;
-            DistSqrt = ArrayStatic.GetSqrt(overviewChunk + plusDistSqrt);
+            DistSqrt = MvkStatic.GetSqrt(overviewChunk + plusDistSqrt);
         }
     }
 }

@@ -1,13 +1,14 @@
 ﻿using MvkServer.Glm;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace MvkServer.Util
 {
     /// <summary>
-    /// Статические переменные из массивов
+    /// Статические переменные
     /// Многие формируются при открытии проекта
     /// </summary>
-    public class ArrayStatic
+    public class MvkStatic
     {
         /// <summary>
         /// Область в один блок без центра, 8 блоков
@@ -35,6 +36,15 @@ namespace MvkServer.Util
         public static float[] Xy { get; protected set; } = new float[17];
 
         /// <summary>
+        /// Получает частоту таймера в виде количества тактов в милисекунду
+        /// </summary>
+        public static long TimerFrequency { get; protected set; }
+        /// <summary>
+        /// Получает частоту таймера в виде количества тактов в один TPS
+        /// </summary>
+        public static long TimerFrequencyTps { get; protected set; }
+
+        /// <summary>
         /// Инициализация, запускаем при старте
         /// </summary>
         public static void Initialized()
@@ -44,6 +54,8 @@ namespace MvkServer.Util
                 Uv[i] = (float)i * 0.00390625f;
                 Xy[i] = (float)i * 0.0625f;
             }
+            TimerFrequency = Stopwatch.Frequency / 1000;
+            TimerFrequencyTps = Stopwatch.Frequency / 20;
         }
 
         /// <summary>

@@ -41,7 +41,7 @@
     <Compile Include="Entity\MovingDirection.cs" />
     <Compile Include="MvkGlobal.cs" />
     <Compile Include="Util\ArrayDistance.cs" />
-    <Compile Include="Util\ArrayStatic.cs" />
+    <Compile Include="Util\MvkStatic.cs" />
     <Compile Include="Util\BlockPos.cs" />
     <Compile Include="Util\EnumFacing.cs" />
     <Compile Include="Util\MapList.cs" />

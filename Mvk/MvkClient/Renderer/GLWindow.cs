@@ -4,6 +4,7 @@ using MvkClient.Util;
 using MvkClient.World;
 using MvkServer.Entity.Player;
 using MvkServer.Glm;
+using MvkServer.Util;
 using SharpGL;
 using System.Diagnostics;
 
@@ -115,7 +116,7 @@ namespace MvkClient.Renderer
                 fps = 0;
             }
             Debug.DrawDebug();
-            speedFrameAll += (float)stopwatch.ElapsedTicks / Ticker.Frequency;
+            speedFrameAll += (float)stopwatch.ElapsedTicks / MvkStatic.TimerFrequency;
         }
 
         #endregion

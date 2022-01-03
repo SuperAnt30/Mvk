@@ -39,7 +39,7 @@ namespace MvkServer.World.Chunk
             {
                 for (int i = 0; i < 8; i++)
                 {
-                    GetStatusChunk(pos + ArrayStatic.AreaOne8[i], status - 1);
+                    GetStatusChunk(pos + MvkStatic.AreaOne8[i], status - 1);
                 }
                 //System.Threading.Thread.Sleep(1);
                 chunk.DoneStatus = status;

@@ -36,13 +36,14 @@ namespace MvkServer.Entity
         public override void Update()
         {
             base.Update();
+            Mov.Update();
 
             float h = Mov.Horizontal;
             float v = Mov.Vertical;
             float j = Mov.Height;
             if (Mov.Sprinting > 0 && v > 0)
             {
-                v *= 10f;
+                v *= 2.78f; // 100км/ч
             }
             MotionAngle(j, v, h);
         }

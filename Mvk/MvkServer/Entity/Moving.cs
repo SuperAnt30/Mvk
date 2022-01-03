@@ -10,6 +10,7 @@
         /// Перемещение вперёд назад
         /// </summary>
         public float Vertical { get; protected set; } = 0;
+        protected bool vertBegin = true;
         /// <summary>
         /// Перемещение вверх или вниз, прыжок или присел
         /// </summary>
@@ -24,9 +25,11 @@
         /// </summary>
         public bool Forward()
         {
-            if (Vertical != 1f)
+            vertBegin = true;
+            if (Vertical <= 0)
             {
-                Vertical = 1f;
+                
+                Vertical = .1f;
                 return true;
             }
             return false;
@@ -36,9 +39,10 @@
         /// </summary>
         public bool Back()
         {
-            if (Vertical != -1f)
+            vertBegin = true;
+            if (Vertical >= 0)
             {
-                Vertical = -1f;
+                Vertical = -.1f;
                 return true;
             }
             return false;
@@ -108,11 +112,13 @@
         /// </summary>
         public bool VerticalCancel()
         {
-            if (Vertical != 0)
-            {
-                Vertical = 0;
-                return true;
-            }
+            vertBegin = false;
+            //if (Vertical != 0)
+            //{
+                
+            //    //Vertical = 0;
+            //    return true;
+            //}
             return false;
         }
         /// <summary>
@@ -150,6 +156,40 @@
                 return true;
             }
             return false;
+        }
+
+
+        public void Update()
+        {
+            if (Vertical > 0)
+            {
+                if (vertBegin && Vertical < 1f)
+                {
+                    Vertical += 0.05f;
+                    if (Vertical > 1f) Vertical = 1f;
+                }
+                else
+                {
+                    Vertical -= 0.05f;
+                    if (Vertical < 0) Vertical = 0;
+                }
+            }
+            else if (Vertical < 0)
+            {
+                if (vertBegin && Vertical > -1f)
+                {
+                    Vertical -= 0.05f;
+                    if (Vertical < -1f) Vertical = -1f;
+                }
+                else
+                {
+                    Vertical += 0.05f;
+                    if (Vertical > 0) Vertical = 0;
+                }
+            }
+
+
+
         }
     }
 }
