@@ -2,7 +2,6 @@
 using MvkClient.Setitings;
 using MvkServer.Network;
 using MvkServer.Network.Packets;
-using MvkServer.World.Chunk;
 using System.Threading.Tasks;
 
 namespace MvkClient.Network
@@ -33,6 +32,8 @@ namespace MvkClient.Network
                     switch (id)
                     {
                         case 0x12: Packet12((PacketS12Success)packet); break;
+                        case 0x14: Packet14((PacketS14TimeUpdate)packet); break;
+                        case 0x20: Packet20((PacketB20Player)packet); break;
                         case 0x21: Packet21((PacketS21ChunckData)packet); break;
                         case 0xFF:
                             PacketTFFTest p1 = (PacketTFFTest)packet;
@@ -68,14 +69,27 @@ namespace MvkClient.Network
             ClientMain.TrancivePacket(new PacketC13ClientSetting(Setting.OverviewChunk));
 
             ClientMain.World.Player.SetUUID(Setting.Nickname, packet.GetUuid());
-            ClientMain.World.Player.SetMove(packet.Pos, packet.Yaw, packet.Pitch);
-            ClientMain.World.Player.SetMovePerv(packet.Pos);
-            ClientMain.World.Player.SetLast(packet.Pos);
+            ClientMain.World.Player.SetPosBegin(packet.Pos, packet.Yaw, packet.Pitch);
 
-            // Отправляем пакет местоположения игрока, для загрузки клиентских чанков
-            ClientMain.TrancivePacket(new PacketC20Player(ClientMain.World.Player.Position));
+            ClientMain.GameModeBegin();
+        }
+        /// <summary>
+        /// Пакет синхронизации времени с сервером
+        /// </summary>
+        protected void Packet14(PacketS14TimeUpdate packet)
+        {
+            ClientMain.SetTickCounter(packet.GetTime());
+        }
 
-            ClientMain.GameModeBegin(packet.Timer);
+        /// <summary>
+        /// Пакет положения игрока
+        /// </summary>
+        protected void Packet20(PacketB20Player packet)
+        {
+            if (!packet.GetRotating())
+            {
+                ClientMain.World.Player.SetPositionServer(packet.GetPos());
+            }
         }
 
         protected void Packet21(PacketS21ChunckData packet)

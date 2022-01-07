@@ -8,7 +8,6 @@ namespace MvkServer.Network.Packets
         public vec3 Pos;
         public float Yaw;
         public float Pitch;
-        public uint Timer;
 
         public PacketS12Success(string uuid)
         {
@@ -16,7 +15,6 @@ namespace MvkServer.Network.Packets
             Pos = new vec3(0f, 64f, 0f);
             Yaw = 0;
             Pitch = 0;
-            Timer = 0;
         }
 
         /// <summary>
@@ -30,7 +28,6 @@ namespace MvkServer.Network.Packets
             Pos = new vec3(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat());
             Yaw = stream.ReadFloat();
             Pitch = stream.ReadFloat();
-            Timer = stream.ReadUInt();
         }
 
         public void WritePacket(StreamBase stream)
@@ -41,7 +38,6 @@ namespace MvkServer.Network.Packets
             stream.WriteFloat(Pos.z);
             stream.WriteFloat(Yaw);
             stream.WriteFloat(Pitch);
-            stream.WriteUInt(Timer);
         }
     }
 }

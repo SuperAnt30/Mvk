@@ -22,5 +22,15 @@
         //public const bool IS_DRAW_DEBUG_CHUNK = true;
         public const bool IS_DRAW_DEBUG_CHUNK = false;
 
+        /// <summary>
+        /// Cколько пакетов чанков передавать по сети за один ТПС
+        /// </summary>
+        public const int COUNT_PACKET_CHUNK_TPS = 12;
+
+        /// <summary>
+        /// Cколько чанков рендерим в один кадр
+        /// </summary>
+        public const int COUNT_RENDER_CHUNK_FRAME = 10;
+
     }
 }

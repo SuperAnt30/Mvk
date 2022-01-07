@@ -49,6 +49,18 @@ namespace MvkServer.Management
             => World.ServerMain.ResponsePacket(entityPlayer.SocketClient, packet);
 
         /// <summary>
+        /// Отправить пакеты всех игрокам
+        /// </summary>
+        public void ResponsePacketAll(IPacket packet)
+        {
+            Hashtable ht = players.Clone() as Hashtable;
+            foreach (EntityPlayerServer player in ht.Values)
+            {
+                ResponsePacket(player, packet);
+            }
+        }
+
+        /// <summary>
         /// Добавить игрока
         /// </summary>
         protected bool PlayerAdd(EntityPlayerServer entityPlayer)
@@ -57,9 +69,9 @@ namespace MvkServer.Management
             {
                 // TODO::Тут проверяем место положение персонажа, и заносим при запуске
                 Random random = new Random();
-                entityPlayer.SetPosition(new vec3(random.Next(-16, 16), 40, random.Next(-16, 16)));
-                entityPlayer.SetChunkPosManaged(entityPlayer.ChunkPos);
                 entityPlayer.SetRotation(-0.9f, -.8f);
+                entityPlayer.SetPosition(new vec3(random.Next(-16, 16) + 80, 40, random.Next(-16, 16)));
+                entityPlayer.SetChunkPosManaged(entityPlayer.ChunkPos);
                 AddMountedMovingPlayer(entityPlayer);
                 players.Add(entityPlayer.UUID, entityPlayer);
                 FilterChunkLoadQueue(entityPlayer);
@@ -194,10 +206,10 @@ namespace MvkServer.Management
             {
                 Pos = player.Position,
                 Yaw = player.RotationYaw,
-                Pitch = player.RotationPitch,
-                Timer = World.ServerMain.TickCounter
+                Pitch = player.RotationPitch
             };
             ResponsePacket(player, packet);
+            ResponsePacket(player, new PacketS14TimeUpdate(World.ServerMain.TickCounter));
         }
 
         /// <summary>
@@ -307,7 +319,11 @@ namespace MvkServer.Management
                                 if (ccp.RemovePlayer(entityPlayer))
                                 {
                                     // отправить игроку что чанк удалить
-                                    World.ServerMain.ResponsePacket(entityPlayer.SocketClient, new PacketS21ChunckData(ccp.Position));
+                                    vec2i posch = new vec2i(ccp.Position);
+                                    //System.Threading.Tasks.Task.Factory.StartNew(() =>
+                                    {
+                                        World.ServerMain.ResponsePacket(entityPlayer.SocketClient, new PacketS21ChunckData(posch));
+                                    }//);
                                 }
                             }
                         }
@@ -330,9 +346,10 @@ namespace MvkServer.Management
 
             if (entityPlayer.DistSqrt != null)
             {
+                vec2i chunkPosManaged = entityPlayer.ChunkPosManaged;
                 for (int d = 0; d < entityPlayer.DistSqrt.Length; d++)
                 {
-                    vec2i pos = entityPlayer.DistSqrt[d] + entityPlayer.ChunkPosManaged;
+                    vec2i pos = entityPlayer.DistSqrt[d] + chunkPosManaged;
                     World.ChunkPrServ.DroppedChunks.Remove(pos);
                     if (map.ContainsKey(pos))
                     {
@@ -400,10 +417,7 @@ namespace MvkServer.Management
                 try
                 {
                     // Проверяем смещение чанка на выбранный параметр, если есть начинаем обработку
-                    if (player.CheckPosManaged(2))
-                    {
-                        World.Players.UpdateMountedMovingPlayer(player);
-                    }
+                    World.Players.UpdateMountedMovingPlayer(player);
                     player.Update();
                 }
                 catch

@@ -94,7 +94,7 @@ namespace MvkClient.Gui
         {
             if (screen != null) screen.Delete();
             ClientMain.SetWishFps(20);
-            if (ClientMain.World != null) ClientMain.World.KeyLife.CancelAll();
+            if (ClientMain.World != null) ClientMain.World.Player.Mov.AllEnd();
             screen = screenNew;
             screen.Finished += MenuScreen_Finished;
             screen.Initialize();
@@ -125,8 +125,6 @@ namespace MvkClient.Gui
             screen.Delete();
             screen = null;
             OnChanged();
-            // Задать фпс
-            ClientMain.SetWishFps(CheckFpsVsync());
         }
 
         /// <summary>
@@ -169,8 +167,6 @@ namespace MvkClient.Gui
         /// </summary>
         public void LoadingMainEnd() => Exchange(new ScreenMainMenu(ClientMain));
         
-        
-
         #endregion
 
         private void MenuScreen_Finished(object sender, ScreenEventArgs e)
@@ -192,13 +188,6 @@ namespace MvkClient.Gui
                 case EnumScreenKey.InGameMenu: InGameMenu(); break;
             }
         }
-
-        /// <summary>
-        /// Проверка FPS VSYNC
-        /// </summary>
-        protected int CheckFpsVsync() => Setting.Fps > 60 
-            ? (GLWindow.gl.GetString(OpenGL.GL_EXTENSIONS).IndexOf("WGL_EXT_swap_control") != -1 ? 60 : Setting.Fps) 
-            : Setting.Fps;
 
         #region Event
 

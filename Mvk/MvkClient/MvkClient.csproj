@@ -58,7 +58,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Actions\KeyboardLife.cs" />
+    <Compile Include="Actions\Keyboard.cs" />
     <Compile Include="Actions\MouseButton.cs" />
     <Compile Include="Audio\Al.cs" />
     <Compile Include="Audio\Alc.cs" />
@@ -116,7 +116,9 @@
     <Compile Include="Util\BufferedImage.cs" />
     <Compile Include="Util\CounterTick.cs" />
     <Compile Include="Gui\ScreenEvent.cs" />
+    <Compile Include="Util\CursorExtensions.cs" />
     <Compile Include="Util\Frustum.cs" />
+    <Compile Include="Util\InterpolationTime.cs" />
     <Compile Include="Util\ObjectKeyEvent.cs" />
     <Compile Include="Util\Ticker.cs" />
     <Compile Include="World\ChunkProviderClient.cs" />

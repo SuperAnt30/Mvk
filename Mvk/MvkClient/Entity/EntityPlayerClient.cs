@@ -7,6 +7,7 @@ using MvkServer.Glm;
 using MvkServer.Network.Packets;
 using MvkServer.Util;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace MvkClient.Entity
 {
@@ -27,6 +28,10 @@ namespace MvkClient.Entity
         /// массив матрицы расположения камеры в пространстве
         /// </summary>
         public float[] LookAt { get; protected set; }
+        /// <summary>
+        /// Принудительно обработать FrustumCulling
+        /// </summary>
+        public bool IsFrustumCulling { get; protected set; } = false;
 
         public vec3 Front { get; protected set; }
         public vec3 Up { get; protected set; }
@@ -43,31 +48,42 @@ namespace MvkClient.Entity
         protected float Width => (float)GLWindow.WindowWidth;
         protected float Height => (float)GLWindow.WindowHeight;
 
-        public EntityPlayerClient(WorldClient world) => World = world;
+        /// <summary>
+        /// Объект времени c последнего тпс
+        /// </summary>
+        protected InterpolationTime interpolation = new InterpolationTime();
+
+        public EntityPlayerClient(WorldClient world)
+        {
+            World = world;
+            interpolation.Start();
+        }
 
         /// <summary>
-        /// Задать перемещение игрока
+        /// Задать начальное положение игрока
         /// </summary>
         /// <param name="pos"></param>
         /// <param name="yaw"></param>
         /// <param name="pitch"></param>
-        public void SetMove(vec3 pos, float yaw, float pitch)
+        public void SetPosBegin(vec3 pos, float yaw, float pitch)
         {
             SetPosition(pos);
-            SetRotation(yaw, pitch);
-            //UpLookAt();
+            RotationYawLast = yaw;
+            RotationPitchLast = pitch;
+            PositionLast = pos;
+            SetMoveDraw(pos);
+            RotationEquals();
+            IsFrustumCulling = true;
         }
+
         /// <summary>
-        /// Задать перемещение игрока
+        /// Задать позицию для прорисовки на экране и обновить матрицу UpLookAt
         /// </summary>
-        /// <param name="pos"></param>
-        public void SetMove(vec3 pos) => SetMove(pos, RotationYaw, RotationPitch);
-        public void SetMovePerv(vec3 pos)
+        public void SetMoveDraw(vec3 pos)
         {
-            PervPosition = pos;
+            PositionDraw = pos;
             UpLookAt();
         }
-        public void SetLast(vec3 pos) => LastTickPosition = pos;
         /// <summary>
         /// Обновить матрицу камеры
         /// </summary>
@@ -79,10 +95,9 @@ namespace MvkClient.Entity
             Front = new vec3(rotation * new vec4(0, 0, -1, 1));
             Right = new vec3(rotation * new vec4(1, 0, 0, 1));
             Up = new vec3(rotation * new vec4(0, 1, 0, 1));
-            LookAt = glm.lookAt(PervPosition, PervPosition + Front, Up).to_array();
-            
-            // TODO::InitFrustumCulling возможно надо как-то поставить затычку, чтоб был интервал, не чаще 15 мс между
-            InitFrustumCulling();
+            LookAt = glm.lookAt(PositionDraw, PositionDraw + Front, Up).to_array();
+
+            // InitFrustumCulling перенесён в WorldRenderer.Draw перед прориовкой
         }
         /// <summary>
         /// Задать угол обзора
@@ -105,19 +120,41 @@ namespace MvkClient.Entity
             float speedMouse = 1.5f;
 
             if (deltaX == 0 && deltaY == 0) return;
-            float pitch = RotationPitch - deltaY / Height * speedMouse;
-            float yaw = RotationYaw - deltaX / Width * speedMouse;
+            float pitch = RotationPitchLast - deltaY / Height * speedMouse;
+            float yaw = RotationYawLast - deltaX / Width * speedMouse;
 
             if (pitch < -glm.radians(89.0f)) pitch = -glm.radians(89.0f);
             if (pitch > glm.radians(89.0f)) pitch = glm.radians(89.0f);
             if (yaw > glm.pi) yaw -= glm.pi360;
             if (yaw < -glm.pi) yaw += glm.pi360;
 
-            SetRotation(yaw, pitch);
-            UpLookAt();
+            RotationYawLast = yaw;
+            RotationPitchLast = pitch;
         }
 
-        protected void InitFrustumCulling()
+        /// <summary>
+        /// Проверка изменения вращения
+        /// </summary>
+        /// <returns>True - разные значения, надо InitFrustumCulling</returns>
+        public bool RotationEquals()
+        {
+            if (RotationPitchLast != RotationPitch || RotationYawLast != RotationYaw)
+            {
+                RotationYaw = RotationYawLast;
+                RotationPitch = RotationPitchLast;
+                UpLookAt();
+                float yaw = RotationYaw;
+                float pitch = RotationPitch;
+                Task.Factory.StartNew(() =>
+                {
+                    World.ClientMain.TrancivePacket(new PacketB20Player(yaw, pitch));
+                });
+                return true;
+            }
+            return false;
+        }
+
+        public void InitFrustumCulling()
         {
             if (LookAt == null || Projection == null) return;
 
@@ -126,12 +163,13 @@ namespace MvkClient.Entity
 
             int countAll = 0;
             int countFC = 0;
+            vec2i chunkPos = new vec2i(ChunkPos);
             List<ChunkRender> listC = new List<ChunkRender>();
-            
+
             for (int i = 0; i < DistSqrt.Length; i++)
             {
-                int xc = DistSqrt[i].x + ChunkPos.x;
-                int zc = DistSqrt[i].y + ChunkPos.y;
+                int xc = DistSqrt[i].x + chunkPos.x;
+                int zc = DistSqrt[i].y + chunkPos.y;
                 int xb = xc << 4;
                 int zb = zc << 4;
 
@@ -143,24 +181,34 @@ namespace MvkClient.Entity
                 countAll++;
             }
             ChunkFC = listC.ToArray();
+            IsFrustumCulling = false;
         }
 
-
         /// <summary>
-        /// Вызывается для обновления позиции / логики объекта
+        /// Отправить пакет действия клавиш управления
         /// </summary>
-        public override void Update()
+        public void KeyActionTrancivePacket(EnumKeyAction keyAction)
         {
-            base.Update();
-
-            if (!Motion.Equals(new vec3(0)))
+            if (keyAction != EnumKeyAction.None)
             {
-                vec3 pos = Position + Motion;
-                //World.Player.PervPosition.SetMove(pos)
-                World.Player.SetMove(pos);
-                World.ClientMain.TrancivePacket(new PacketC20Player(pos));
+                World.ClientMain.TrancivePacket(new PacketC22Input(keyAction));
             }
         }
 
+        /// <summary>
+        /// Получить коэффициент времени от прошлого пакета перемещения сервера в диапазоне 0 .. 1
+        /// где 0 это финиш, 1 начало
+        /// </summary>
+        public float TimeIndex() => interpolation.TimeIndex();
+
+        /// <summary>
+        /// Задать позицию от сервера
+        /// </summary>
+        public void SetPositionServer(vec3 pos)
+        {
+            interpolation.Restart();
+            PositionLast = Position;
+            SetPosition(pos);
+        }
     }
 }

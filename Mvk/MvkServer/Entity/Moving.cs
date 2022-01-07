@@ -1,195 +1,174 @@
-﻿namespace MvkServer.Entity
+﻿using MvkServer.Util;
+
+namespace MvkServer.Entity
 {
+    /// <summary>
+    /// Объект отвечающий за направление передвежения сущности, с плавным стартом и финишом
+    /// </summary>
     public class Moving
     {
         /// <summary>
-        /// Перемещение лево право
+        /// Перемещение вперёд
         /// </summary>
-        public float Horizontal { get; protected set; } = 0;
+        public Smooth Forward { get; protected set; }
         /// <summary>
-        /// Перемещение вперёд назад
+        /// Перемещение назад
         /// </summary>
-        public float Vertical { get; protected set; } = 0;
-        protected bool vertBegin = true;
+        public Smooth Back { get; protected set; }
         /// <summary>
-        /// Перемещение вверх или вниз, прыжок или присел
+        /// Перемещение вправо
         /// </summary>
-        public float Height { get; protected set; } = 0;
+        public Smooth Right { get; protected set; }
+        /// <summary>
+        /// Перемещение влево
+        /// </summary>
+        public Smooth Left { get; protected set; }
+        /// <summary>
+        /// Перемещение вверх
+        /// </summary>
+        public Smooth Up { get; protected set; }
+        /// <summary>
+        /// Перемещение вниз
+        /// </summary>
+        public Smooth Down { get; protected set; }
         /// <summary>
         /// Ускорение, только в одну сторону 
         /// </summary>
-        public float Sprinting { get; protected set; } = 0;
+        public Smooth Sprinting { get; protected set; }
+
+        public Moving()
+        {
+            Forward = new Smooth(0.2f);
+            Back = new Smooth(0.2f);
+            Right = new Smooth(0.2f);
+            Left = new Smooth(0.2f);
+            Up = new Smooth(0.2f);
+            Down = new Smooth(0.2f);
+            Sprinting = new Smooth(0.1f);
+        }
+
+
+        public float Vertical() => Forward.Value - Back.Value;
+
+        public float Horizontal() => Right.Value - Left.Value;
+
+        public float Height() => Up.Value - Down.Value;
+
+        /// <summary>
+        /// Нажата клавиша
+        /// </summary>
+        public void Key(EnumKeyAction key)
+        {
+            switch (key)
+            {
+                case EnumKeyAction.ForwardDown: Forward.Begin(); break;
+                case EnumKeyAction.BackDown: Back.Begin(); break;
+                case EnumKeyAction.RightDown: Right.Begin(); break;
+                case EnumKeyAction.LeftDown: Left.Begin(); break;
+                case EnumKeyAction.UpDown: Up.Begin(); break;
+                case EnumKeyAction.DownDown: Down.Begin(); break;
+                case EnumKeyAction.SprintingDown: Sprinting.Begin(); break;
+                case EnumKeyAction.ForwardUp: Forward.End(); break;
+                case EnumKeyAction.BackUp: Back.End(); break;
+                case EnumKeyAction.RightUp: Right.End(); break;
+                case EnumKeyAction.LeftUp: Left.End(); break;
+                case EnumKeyAction.UpUp: Up.End(); break;
+                case EnumKeyAction.DownUp: Down.End(); break;
+                case EnumKeyAction.SprintingUp: Sprinting.End(); break;
+            }
+        }
+
+        /*
+        #region Begin
 
         /// <summary>
         /// Вперёд
         /// </summary>
-        public bool Forward()
-        {
-            vertBegin = true;
-            if (Vertical <= 0)
-            {
-                
-                Vertical = .1f;
-                return true;
-            }
-            return false;
-        }
+        public void ForwardBegin() => Forward.Begin();
         /// <summary>
         /// Назад
         /// </summary>
-        public bool Back()
-        {
-            vertBegin = true;
-            if (Vertical >= 0)
-            {
-                Vertical = -.1f;
-                return true;
-            }
-            return false;
-        }
+        public void BackBegin() => Back.Begin();
         /// <summary>
         /// Право
         /// </summary>
-        public bool Right()
-        {
-            if (Horizontal != 1f)
-            {
-                Horizontal = 1f;
-                return true;
-            }
-            return false;
-        }
+        public void RightBegin() => Right.Begin();
         /// <summary>
         /// Лево
         /// </summary>
-        public bool Left()
-        {
-            if (Horizontal != -1f)
-            {
-                Horizontal = -1f;
-                return true;
-            }
-            return false;
-        }
+        public void LeftBegin() => Left.Begin();
         /// <summary>
         /// Вверх
         /// </summary>
-        public bool Up()
-        {
-            if (Height != 1f)
-            {
-                Height = 1f;
-                return true;
-            }
-            return false;
-        }
+        public void UpBegin() => Up.Begin();
         /// <summary>
         /// Вниз
         /// </summary>
-        public bool Down()
-        {
-            if (Height != -1f)
-            {
-                Height = -1f;
-                return true;
-            }
-            return false;
-        }
+        public void DownBegin() => Down.Begin();
         /// <summary>
         /// Начать ускорение
         /// </summary>
-        public bool SprintingBegin()
-        {
-            if (Sprinting != 1f)
-            {
-                Sprinting = 1f;
-                return true;
-            }
-            return false;
-        }
-        /// <summary>
-        /// Вперёд и Назад отменено
-        /// </summary>
-        public bool VerticalCancel()
-        {
-            vertBegin = false;
-            //if (Vertical != 0)
-            //{
-                
-            //    //Vertical = 0;
-            //    return true;
-            //}
-            return false;
-        }
-        /// <summary>
-        /// Лево и право отменено
-        /// </summary>
-        public bool HorizontalCancel()
-        {
-            if (Horizontal != 0)
-            {
-                Horizontal = 0;
-                return true;
-            }
-            return false;
-        }
-        /// <summary>
-        /// Вверх и Вниз отменено
-        /// </summary>
-        public bool HeightCancel()
-        {
-            if (Height != 0)
-            {
-                Height = 0;
-                return true;
-            }
-            return false;
-        }
-        /// <summary>
-        /// Отменить ускорение
-        /// </summary>
-        public bool SprintingCancel()
-        {
-            if (Sprinting != 0)
-            {
-                Sprinting = 0;
-                return true;
-            }
-            return false;
-        }
+        public void SprintingBegin() => Sprinting.Begin();
 
+        #endregion
+
+        #region End
+
+        /// <summary>
+        /// Вперёд
+        /// </summary>
+        public void ForwardEnd() => Forward.End();
+        /// <summary>
+        /// Назад
+        /// </summary>
+        public void BackEnd() => Back.End();
+        /// <summary>
+        /// Право
+        /// </summary>
+        public void RightEnd() => Right.End();
+        /// <summary>
+        /// Лево
+        /// </summary>
+        public void LeftEnd() => Left.End();
+        /// <summary>
+        /// Вверх
+        /// </summary>
+        public void UpEnd() => Up.End();
+        /// <summary>
+        /// Вниз
+        /// </summary>
+        public void DownEnd() => Down.End();
+        /// <summary>
+        /// Начать ускорение
+        /// </summary>
+        public void SprintingEnd() => Sprinting.End();
+
+        #endregion
+        */
+
+        /// <summary>
+        /// Принудительно отключить нажатия перемещения
+        /// </summary>
+        public void AllEnd()
+        {
+            Forward.End();
+            Back.End();
+            Right.End();
+            Left.End();
+            Up.End();
+            Down.End();
+            Sprinting.End();
+        }
 
         public void Update()
         {
-            if (Vertical > 0)
-            {
-                if (vertBegin && Vertical < 1f)
-                {
-                    Vertical += 0.05f;
-                    if (Vertical > 1f) Vertical = 1f;
-                }
-                else
-                {
-                    Vertical -= 0.05f;
-                    if (Vertical < 0) Vertical = 0;
-                }
-            }
-            else if (Vertical < 0)
-            {
-                if (vertBegin && Vertical > -1f)
-                {
-                    Vertical -= 0.05f;
-                    if (Vertical < -1f) Vertical = -1f;
-                }
-                else
-                {
-                    Vertical += 0.05f;
-                    if (Vertical > 0) Vertical = 0;
-                }
-            }
-
-
-
+            Forward.Update();
+            Back.Update();
+            Right.Update();
+            Left.Update();
+            Up.Update();
+            Down.Update();
+            Sprinting.Update();
         }
     }
 }

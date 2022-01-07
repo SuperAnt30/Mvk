@@ -4,6 +4,7 @@ using MvkClient.Audio;
 using MvkClient.Gui;
 using MvkClient.Network;
 using MvkClient.Renderer;
+using MvkClient.Setitings;
 using MvkClient.Util;
 using MvkClient.World;
 using MvkServer;
@@ -18,6 +19,10 @@ namespace MvkClient
 {
     public class Client
     {
+        /// <summary>
+        /// Объект лога
+        /// </summary>
+        public Logger Log { get; protected set; }
         /// <summary>
         /// Клиентский объект мира
         /// </summary>
@@ -63,6 +68,10 @@ namespace MvkClient
         /// Объект времени с момента запуска проекта
         /// </summary>
         private static Stopwatch stopwatch = new Stopwatch();
+        /// <summary>
+        /// Атрибут запуска управления мыши
+        /// </summary>
+        protected bool firstMouse;
 
         #region EventsWindow
 
@@ -72,6 +81,8 @@ namespace MvkClient
         /// </summary>
         public void Initialize()
         {
+            //Log = new Logger("client");
+            
             Sample.Initialize();
             glm.Initialized();
             MvkStatic.Initialized();
@@ -114,6 +125,7 @@ namespace MvkClient
         public bool WindowClosing()
         {
             isClosing = true;
+            //Log.Close();
             if (locServer.IsStartWorld)
             {
                 ExitingWorld("");
@@ -132,7 +144,11 @@ namespace MvkClient
         /// </summary>
         public void WindowDeactivate()
         {
-
+            // Если режим активного управления, запускаем меню игры
+            if (IsGamePlayAction())
+            {
+                Screen.InGameMenu();
+            }
         }
 
         /// <summary>
@@ -140,7 +156,7 @@ namespace MvkClient
         /// </summary>
         public void WindowGLEnter()
         {
-
+            
         }
 
         /// <summary>
@@ -190,16 +206,9 @@ namespace MvkClient
                 }
                 else
                 {
-                    switch(key)
-                    {
-                        case 65: World.KeyLife.Left(); break;
-                        case 68: World.KeyLife.Right(); break;
-                        case 87: World.KeyLife.Forward(); break;
-                        case 83: World.KeyLife.Back(); break;
-                        case 32: World.KeyLife.Up(); break;
-                        case 16: World.KeyLife.Down(); break;
-                        case 17: World.KeyLife.Sprinting(); break;
-                    }
+                    // TODO::KeyAction
+                    World.Player.KeyActionTrancivePacket(Keyboard.KeyActionToDown(key));
+                    //World.Player.Mov.Key(Keyboard.KeyActionToDown(key));
                 }
             }
         }
@@ -217,10 +226,12 @@ namespace MvkClient
         /// <param name="key">индекс клавиши</param>
         public void KeyUp(int key)
         {
-            if (key == 65 || key == 68) World.KeyLife.CancelHorizontal();
-            else if (key == 87 || key == 83) World.KeyLife.CancelVertical();
-            else if (key == 32 || key == 16) World.KeyLife.CancelUpDown();
-            else if (key == 17) World.KeyLife.CancelSprinting();
+            if (World != null)
+            {
+                // TODO::KeyAction
+                World.Player.KeyActionTrancivePacket(Keyboard.KeyActionToUp(key));
+                //World.Player.Mov.Key(Keyboard.KeyActionToUp(key));
+            }
         }
 
         /// <summary>
@@ -251,6 +262,12 @@ namespace MvkClient
         {
             if (IsGamePlayAction())
             {
+                if (firstMouse)
+                {
+                    firstMouse = false;
+                    deltaX = 0;
+                    deltaY = 0;
+                }
                 World.Player.MouseMove(deltaX, deltaY);
                 return true;
             }
@@ -300,6 +317,7 @@ namespace MvkClient
                     break;
                 case ObjectKey.Error: Screen.ScreenError(e.Tag.ToString()); break;// Ошибка
                 case ObjectKey.RenderDebug: Debug.RenderDebug(); break;
+                case ObjectKey.GameBegin: CursorShow(false); break;
             }
         }
 
@@ -367,14 +385,17 @@ namespace MvkClient
         /// <summary>
         /// Убрать Gui, переход в режим игры при старте
         /// </summary>
-        public void GameModeBegin(uint timer)
+        public void GameModeBegin()
         {
-            TickCounter = timer;
-            Screen.GameMode();
             tickerTps.Start();
+            Screen.GameMode();
+            OnThreadSend(new ObjectKeyEventArgs(ObjectKey.GameBegin));
         }
 
-        
+        /// <summary>
+        /// Задать время с сервера
+        /// </summary>
+        public void SetTickCounter(uint time) => TickCounter = time;
 
         /// <summary>
         /// Отправить пакет на сервер
@@ -408,11 +429,6 @@ namespace MvkClient
         protected void StringDebugTps() => Debug.strClient = (!IsGamePlay || World == null) ? "" : World.ToStringDebug();
 
         /// <summary>
-        /// Изменить таймер
-        /// </summary>
-        //public void SetTickCounter(uint timer) => TickCounter = timer;
-
-        /// <summary>
         /// Такт каждого ФПС
         /// </summary>
         private void TickerFps_Tick(object sender, EventArgs e)
@@ -432,6 +448,7 @@ namespace MvkClient
         {
             if (!isGamePaused)
             {
+                //Log.Log(TickCounter.ToString());
                 TickCounter++;
 
                 World.Tick();
@@ -465,6 +482,28 @@ namespace MvkClient
             // определить паузу
             isGamePaused = IsGamePlay && Screen.IsScreenPause() && !locServer.IsOpenNet();
             locServer.SetGamePauseSingle(isGamePaused);
+
+            if (IsGamePlay && Screen.IsEmptyScreen())
+            {
+                SetWishFps(Setting.Fps);
+                // Центрирование мыши
+                firstMouse = true;
+                CursorShow(false);
+            } else
+            {
+                CursorShow(true);
+            }
+        }
+
+        /// <summary>
+        /// Включить или выключить курсор
+        /// </summary>
+        protected void CursorShow(bool bShow)
+        {
+            if ((!bShow && CursorExtensions.IsVisible()) || (bShow && !CursorExtensions.IsVisible()))
+            {
+                CursorExtensions.Show(bShow);
+            }
         }
 
         /// <summary>

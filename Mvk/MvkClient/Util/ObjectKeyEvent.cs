@@ -48,6 +48,10 @@
         /// <summary>
         /// Рендер отладки
         /// </summary>
-        RenderDebug
+        RenderDebug,
+        /// <summary>
+        /// Начало игры
+        /// </summary>
+        GameBegin
     }
 }

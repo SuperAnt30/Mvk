@@ -66,21 +66,21 @@ namespace MvkServer.Entity
         #region PervLast
 
         /// <summary>
-        /// Прошлое 
+        /// Позиция которая сейчас на экране 
         /// </summary>
-        public vec3 PervPosition { get; protected set; }
-        ///// <summary>
-        ///// Поворот вокруг своей оси
-        ///// </summary>
-        //public float PervRotationYaw { get; protected set; }
-        ///// <summary>
-        ///// Поворот вверх вниз
-        ///// </summary>
-        //public float PervRotationPitch { get; protected set; }
+        public vec3 PositionDraw { get; protected set; }
+        /// <summary>
+        /// Последнее значение поворота вокруг своей оси
+        /// </summary>
+        public float RotationYawLast { get; protected set; }
+        /// <summary>
+        /// Последнее значение поворота вверх вниз
+        /// </summary>
+        public float RotationPitchLast { get; protected set; }
         /// <summary>
         /// Координата объекта на предыдущем тике, используемая для расчета позиции во время процедур рендеринга
         /// </summary>
-        public vec3 LastTickPosition { get; protected set; }
+        public vec3 PositionLast { get; protected set; }
 
         #endregion
 
@@ -126,7 +126,9 @@ namespace MvkServer.Entity
         /// </summary>
         public virtual void Update()
         {
-            LastTickPosition = Position;
+            PositionLast = Position;
+            RotationYawLast = RotationYaw;
+            RotationPitchLast = RotationPitch;
         }
     }
 }

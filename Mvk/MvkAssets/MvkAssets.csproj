@@ -64,6 +64,7 @@
     <Compile Include="AssetsLanguage.cs" />
     <Compile Include="FontSize.cs" />
     <Compile Include="Language.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ResourceLanguage.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -93,9 +94,7 @@
   <ItemGroup>
     <None Include="Resources\MobChickenPlop.ogg" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Properties\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="Resources\Widgets.png" />
   </ItemGroup>

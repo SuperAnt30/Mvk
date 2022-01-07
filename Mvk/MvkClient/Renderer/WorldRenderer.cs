@@ -2,6 +2,7 @@
 using MvkClient.Renderer.Chunk;
 using MvkClient.Renderer.Shaders;
 using MvkClient.World;
+using MvkServer;
 using MvkServer.Glm;
 using SharpGL;
 using System.Threading.Tasks;
@@ -24,18 +25,36 @@ namespace MvkClient.Renderer
         }
 
         /// <summary>
+        /// Плавное перемещение камиры игрока
+        /// </summary>
+        protected void PlayerMove()
+        {
+            bool isFrustumCulling = false;
+            // Перерасчёт расположение игрока если было смещение, согласно индексу времени
+            if (!World.Player.Position.Equals(World.Player.PositionLast))
+            {
+                // идёт плавное перемещение
+                float index = World.Player.TimeIndex();
+                vec3 vp = (World.Player.Position - World.Player.PositionLast) * index;
+                World.Player.SetMoveDraw(World.Player.Position + vp);
+                isFrustumCulling = true;
+            }
+
+            // Если имеется вражение камеры или было перемещение, то запускаем расчёт FrustumCulling
+            if (World.Player.RotationEquals() || isFrustumCulling || World.Player.IsFrustumCulling)
+            {
+                World.Player.InitFrustumCulling();
+            }
+        }
+
+        /// <summary>
         /// Прорисовка мира
         /// </summary>
         public void Draw()
         {
-            // Перерасчёт расположение игрока если было смещение, согласно индексу времени
-            if (!World.Player.Position.Equals(World.Player.LastTickPosition))
-            {
-                // идёт плавное перемещение
-                float index = World.TimeIndex();
-                vec3 vp = (World.Player.Position - World.Player.LastTickPosition) * index;
-                World.Player.SetMovePerv(World.Player.Position + vp);
-            }
+            long time = Client.Time();
+
+            PlayerMove();
 
             //GLWindow.gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_LINE);
             //GLWindow.gl.Disable(OpenGL.GL_CULL_FACE);
@@ -53,27 +72,22 @@ namespace MvkClient.Renderer
 
             RemoteMeshChunks();
 
-            long time = Client.Time();
-            ChunkRender[] listFC = World.Player.ChunkFC;
-            int countRender = 10;
-            for (int i = 0; i < listFC.Length;  i++)
+            int countRender = MvkGlobal.COUNT_RENDER_CHUNK_FRAME;
+            bool fastTime = Client.Time() - time <= MvkGlobal.COUNT_RENDER_CHUNK_FRAME;
+
+            for (int i = 0; i < World.Player.ChunkFC.Length; i++)
             {
-                bool fast = Client.Time() - time <= 10 || countRender == 10;
-                ChunkRender chunk = listFC[i];
+                bool fast = fastTime || countRender == MvkGlobal.COUNT_RENDER_CHUNK_FRAME;
+                ChunkRender chunk = World.Player.ChunkFC[i];
                 if (chunk.IsModifiedToRender && fast && countRender > 0)
                 {
                     // в отдельном потоке рендер
-                    vec2i pos = new vec2i(listFC[i].Position);
-                    countRender--;
-                    Task.Factory.StartNew(() =>
+                    vec2i pos = new vec2i(World.Player.ChunkFC[i].Position);
+                    if (World.IsChunksSquareLoaded(pos))
                     {
-                        if (World.IsChunksSquareLoaded(pos))
-                        {
-                            //Debug.DInt++;
-                            chunk.Render();
-                            //Debug.CountPoligon += chunk.CountPoligon;
-                        }
-                    });
+                        countRender--;
+                        Task.Factory.StartNew(chunk.Render);
+                    }
                 }
                 else
                 {

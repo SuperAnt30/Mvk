@@ -40,7 +40,10 @@
     <Compile Include="Entity\Moving.cs" />
     <Compile Include="Entity\MovingDirection.cs" />
     <Compile Include="MvkGlobal.cs" />
+    <Compile Include="Network\Packets\PacketC22Input.cs" />
+    <Compile Include="Network\Packets\PacketS14TimeUpdate.cs" />
     <Compile Include="Util\ArrayDistance.cs" />
+    <Compile Include="Util\EnumKeyAction.cs" />
     <Compile Include="Util\MvkStatic.cs" />
     <Compile Include="Util\BlockPos.cs" />
     <Compile Include="Util\EnumFacing.cs" />
@@ -61,6 +64,7 @@
     <Compile Include="Util\DebugChunk.cs" />
     <Compile Include="Util\ObjectEvent.cs" />
     <Compile Include="Util\Pole.cs" />
+    <Compile Include="Util\Smooth.cs" />
     <Compile Include="World\Block\BlockBase.cs" />
     <Compile Include="World\Block\Blocks.cs" />
     <Compile Include="World\Block\Box.cs" />
@@ -75,7 +79,7 @@
     <Compile Include="Network\IPacket.cs" />
     <Compile Include="Network\ITransfer.cs" />
     <Compile Include="Network\Packets\PacketC11LoginStart.cs" />
-    <Compile Include="Network\Packets\PacketC20Player.cs" />
+    <Compile Include="Network\Packets\PacketB20Player.cs" />
     <Compile Include="Network\Packets\PacketS10Connection.cs" />
     <Compile Include="Network\Packets\PacketS12Success.cs" />
     <Compile Include="Network\Packets\PacketS21ChunckData.cs" />

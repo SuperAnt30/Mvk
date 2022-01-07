@@ -26,7 +26,8 @@ namespace MvkServer.Network
                 {
                     case 0x11: Packet11(socket, (PacketC11LoginStart)packet); break;
                     case 0x13: Packet13(socket, (PacketC13ClientSetting)packet); break;
-                    case 0x20: Packet20(socket, (PacketC20Player)packet); break;
+                    case 0x20: Packet20(socket, (PacketB20Player)packet); break;
+                    case 0x22: Packet22(socket, (PacketC22Input)packet); break;
                     case 0xFF:
                         ServerMain.ResponsePacket(socket, new PacketTFFTest("Получил тест: " + ((PacketTFFTest)packet).Name));
                         break;
@@ -53,13 +54,30 @@ namespace MvkServer.Network
         /// <summary>
         /// Пакет положения игрока
         /// </summary>
-        protected void Packet20(Socket socket, PacketC20Player packet)
+        protected void Packet20(Socket socket, PacketB20Player packet)
         {
             EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
             if (entityPlayer != null)
             {
-                vec2i ch = entityPlayer.ChunkPos;
-                entityPlayer.SetPosition(packet.GetPos());
+                if (packet.GetRotating())
+                {
+                    entityPlayer.SetRotation(packet.GetYaw(), packet.GetPitch());
+                } else 
+                {
+                    entityPlayer.SetPosition(packet.GetPos());
+                }
+            }
+        }
+
+        /// <summary>
+        /// Нажатие клавиш игрока
+        /// </summary>
+        protected void Packet22(Socket socket, PacketC22Input packet)
+        {
+            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
+            if (entityPlayer != null)
+            {
+                entityPlayer.Mov.Key(packet.GetKey());
             }
         }
     }

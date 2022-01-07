@@ -1,5 +1,4 @@
-﻿using MvkClient.Actions;
-using MvkClient.Entity;
+﻿using MvkClient.Entity;
 using MvkClient.Renderer;
 using MvkClient.Renderer.Chunk;
 using MvkClient.Setitings;
@@ -8,7 +7,6 @@ using MvkServer;
 using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World;
-using System.Diagnostics;
 
 namespace MvkClient.World
 {
@@ -33,15 +31,11 @@ namespace MvkClient.World
         /// Мир для рендера и прорисовки
         /// </summary>
         public WorldRenderer WorldRender { get; protected set; }
-        /// <summary>
-        /// Объект управления клавиатурой
-        /// </summary>
-        public KeyboardLife KeyLife { get; protected set; }
 
         /// <summary>
         /// Объект времени c последнего тпс
         /// </summary>
-        protected Stopwatch stopwatchTps = new Stopwatch();
+        protected InterpolationTime interpolation = new InterpolationTime();
         /// <summary>
         /// фиксатор чистки мира
         /// </summary>
@@ -53,9 +47,8 @@ namespace MvkClient.World
         {
             ChunkPr = new ChunkProviderClient(this);
             ClientMain = client;
-            stopwatchTps.Start();
+            interpolation.Start();
             WorldRender = new WorldRenderer(this);
-            KeyLife = new KeyboardLife(this);
             Player = new EntityPlayerClient(this);
             Player.SetOverviewChunk(Setting.OverviewChunk, 0);
         }
@@ -65,17 +58,16 @@ namespace MvkClient.World
         /// </summary>
         public override void Tick()
         {
-            base.Tick();
-            stopwatchTps.Restart();
+            interpolation.Restart();
             uint time = ClientMain.TickCounter;
+
+            base.Tick();
 
             if (time - previousTotalWorldTime > MvkGlobal.CHUNK_CLEANING_TIME)
             {
                 previousTotalWorldTime = time;
                 ChunkPrClient.FixOverviewChunk(Player);
             }
-
-            Player.Update();
         }
 
         /// <summary>
@@ -104,13 +96,7 @@ namespace MvkClient.World
         /// Получить коэффициент времени от прошлого TPS клиента в диапазоне 0 .. 1
         /// где 0 это финиш, 1 начало
         /// </summary>
-        public float TimeIndex()
-        {
-            float f = stopwatchTps.ElapsedTicks / (float)MvkStatic.TimerFrequencyTps;
-            if (f > 1f) return 1f;
-            if (f < 0) return 0;
-            return f;
-        }
+        public float TimeIndex() => interpolation.TimeIndex();
 
         /// <summary>
         /// Строка для дебага

@@ -81,7 +81,7 @@ namespace MvkServer
         /// <returns>вёрнуть цифру тактов загрузки</returns>
         public void Initialize(int slot)
         {
-            Log = new Logger();
+            Log = new Logger("");
             Log.Log("server.runing slot={0}", slot);
             World = new WorldServer(this);
             packets = new ProcessServerPackets(this);
@@ -315,6 +315,8 @@ namespace MvkServer
             {
                 UpCountClients();
 
+                World.Players.ResponsePacketAll(new PacketS14TimeUpdate(TickCounter));
+                
                 //this.serverConfigManager.sendPacketToAllPlayersInDimension(new S03PacketTimeUpdate(
                 //var4.getTotalWorldTime(), 
                 //var4.getWorldTime(), 

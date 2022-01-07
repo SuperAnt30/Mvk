@@ -15,7 +15,7 @@ namespace MvkServer.Util
         protected string log;
         protected string path = "Logs" + Path.DirectorySeparatorChar;
 
-        public Logger()
+        public Logger(string prefixFileName)
         {
             stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -25,7 +25,7 @@ namespace MvkServer.Util
             CheckPath(path);
             while (true)
             {
-                fileName = string.Format("{0}-{1}.txt", sd, i);
+                fileName = string.Format("{2}{0}-{1}.txt", sd, i, prefixFileName);
                 if (!File.Exists(path + fileName)) break;
                 i++;
             }
@@ -39,7 +39,7 @@ namespace MvkServer.Util
                 Save(log);
                 log = "";
                 // Таймер, чтоб чаще раз 5 секунд не записывать
-                time = stopwatch.ElapsedMilliseconds + 5000;
+                time = stopwatch.ElapsedMilliseconds + 10000;
             }
         }
 

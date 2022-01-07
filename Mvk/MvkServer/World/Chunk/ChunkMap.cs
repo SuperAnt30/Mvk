@@ -27,20 +27,20 @@ namespace MvkServer.World.Chunk
             //    map[chunk.Position] = chunk;
             //}
             Hashtable mapThreadSafe = Hashtable.Synchronized(map);
-            //if (mapThreadSafe.ContainsKey(chunk.Position))
-            //{
-            //    mapThreadSafe[chunk.Position] = chunk;
-            //}
-            //else
+            if (mapThreadSafe.ContainsKey(chunk.Position))
             {
-                try
+                mapThreadSafe[chunk.Position] = chunk;
+            }
+            else
+            {
+                //try
                 {
                     mapThreadSafe.Add(chunk.Position, chunk);
                 }
-                catch
-                {
-                    mapThreadSafe[chunk.Position] = chunk;
-                }
+                //catch
+                //{
+                //    mapThreadSafe[chunk.Position] = chunk;
+                //}
             }
         }
 
