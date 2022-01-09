@@ -19,7 +19,7 @@ namespace MvkServer.Management
         /// <summary>
         /// Для фильтрации чанков игрока
         /// </summary>
-        private readonly int[][] xzDirectionsConst = { new int[] { 1, 0 }, new int[] { 0, 1 }, new int[] { -1, 0 }, new int[] { 0, -1 } };
+        //private readonly int[][] xzDirectionsConst = { new int[] { 1, 0 }, new int[] { 0, 1 }, new int[] { -1, 0 }, new int[] { 0, -1 } };
         /// <summary>
         /// Массив игроков
         /// </summary>

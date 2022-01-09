@@ -1,4 +1,5 @@
-﻿using MvkServer.Management;
+﻿using MvkServer.Entity.Player;
+using MvkServer.Management;
 using MvkServer.World.Chunk;
 
 namespace MvkServer.World
@@ -21,7 +22,7 @@ namespace MvkServer.World
         /// </summary>
         public ChunkProviderServer ChunkPrServ => ChunkPr as ChunkProviderServer;
 
-        public WorldServer(Server server)
+        public WorldServer(Server server) : base()
         {
             ServerMain = server;
             ChunkPr = new ChunkProviderServer(this);
@@ -43,7 +44,16 @@ namespace MvkServer.World
         /// </summary>
         public override string ToStringDebug()
         {
-            return string.Format("Ch {0}-{2} Pl {1}", ChunkPr.Count, Players.PlayerCount, Players.chunkCoordPlayers.Count);
+            try
+            {
+                EntityPlayerServer playerServer = Players.GetEntityPlayerMain();
+                return string.Format("Ch {0}-{2} Pl {1}\r\n{3}",
+                    ChunkPr.Count, Players.PlayerCount, Players.chunkCoordPlayers.Count, playerServer != null ? playerServer.ToString() : "");
+            }
+            catch
+            {
+                return "error";
+            }
         }
     }
 }

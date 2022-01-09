@@ -5,6 +5,7 @@ using MvkClient.World;
 using MvkServer;
 using MvkServer.Glm;
 using SharpGL;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace MvkClient.Renderer
@@ -25,36 +26,18 @@ namespace MvkClient.Renderer
         }
 
         /// <summary>
-        /// Плавное перемещение камиры игрока
-        /// </summary>
-        protected void PlayerMove()
-        {
-            bool isFrustumCulling = false;
-            // Перерасчёт расположение игрока если было смещение, согласно индексу времени
-            if (!World.Player.Position.Equals(World.Player.PositionLast))
-            {
-                // идёт плавное перемещение
-                float index = World.Player.TimeIndex();
-                vec3 vp = (World.Player.Position - World.Player.PositionLast) * index;
-                World.Player.SetMoveDraw(World.Player.Position + vp);
-                isFrustumCulling = true;
-            }
-
-            // Если имеется вражение камеры или было перемещение, то запускаем расчёт FrustumCulling
-            if (World.Player.RotationEquals() || isFrustumCulling || World.Player.IsFrustumCulling)
-            {
-                World.Player.InitFrustumCulling();
-            }
-        }
-
-        /// <summary>
         /// Прорисовка мира
         /// </summary>
         public void Draw()
         {
             long time = Client.Time();
+            if (World.Player.Projection == null) World.Player.UpProjection();
+            if (World.Player.LookAt == null) World.Player.UpLookAt();
 
-            PlayerMove();
+            World.Player.UpdateFrame();
+
+            RenderHitBox();
+            DrawLine();
 
             //GLWindow.gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_LINE);
             //GLWindow.gl.Disable(OpenGL.GL_CULL_FACE);
@@ -62,8 +45,6 @@ namespace MvkClient.Renderer
             ShaderVoxel shader = GLWindow.Shaders.ShVoxel;
             shader.Bind(GLWindow.gl);
             //shader.SetUniformMatrix4(GLWindow.gl, "projview", glm.ortho(0, GLWindow.WindowWidth, GLWindow.WindowHeight, 0).to_array());
-            if (World.Player.Projection == null) World.Player.UpProjection();
-            if (World.Player.LookAt == null) World.Player.UpLookAt();
             shader.SetUniformMatrix4(GLWindow.gl, "projection", World.Player.Projection);
             shader.SetUniformMatrix4(GLWindow.gl, "lookat", World.Player.LookAt);
 
@@ -97,8 +78,49 @@ namespace MvkClient.Renderer
 
             shader.Unbind(GLWindow.gl);
 
+            
+
             //GLWindow.gl.Enable(OpenGL.GL_CULL_FACE);
             //GLWindow.gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_FILL);
+        }
+
+
+        private LineMesh hitboxPlayer = new LineMesh();
+
+        private void RenderHitBox()
+        {
+            vec3 pos = World.Player.PositionDraw;
+            float w = World.Player.HitboxDraw.GetWidth(); // .6
+            float w2 = w * 2f;
+            float h = World.Player.HitboxDraw.GetHeight(); // 3.6
+            float e = World.Player.HitboxDraw.GetEyes(); // 3.25
+            float y = pos.y + h / 2f;
+            List<float> buffer = new List<float>();
+            buffer.AddRange(hitboxPlayer.Box(pos.x, y, pos.z, w2, h, w2, 0, 1, 1, 1));
+            y = pos.y + e;
+            vec4 col = new vec4(1, .5f, 1, 1);
+            buffer.AddRange(hitboxPlayer.Line(pos.x - w, y, pos.z + w, pos.x + w, y, pos.z + w, col));
+            buffer.AddRange(hitboxPlayer.Line(pos.x - w, y, pos.z - w, pos.x + w, y, pos.z - w, col));
+            buffer.AddRange(hitboxPlayer.Line(pos.x + w, y, pos.z - w, pos.x + w, y, pos.z + w, col));
+            buffer.AddRange(hitboxPlayer.Line(pos.x - w, y, pos.z - w, pos.x - w, y, pos.z + w, col));
+
+            hitboxPlayer.BindBuffer(buffer);
+        }
+
+        /// <summary>
+        /// Прорисовка линий 3д
+        /// </summary>
+        protected void DrawLine()
+        {
+            ShaderLine shader = GLWindow.Shaders.ShLine;
+            shader.Bind(GLWindow.gl);
+            shader.SetUniformMatrix4(GLWindow.gl, "projection", World.Player.Projection);
+            shader.SetUniformMatrix4(GLWindow.gl, "lookat", World.Player.LookAt);
+
+            hitboxPlayer.DrawLine();
+            //WorldLineM.Draw();
+
+            shader.Unbind(GLWindow.gl);
         }
 
         /// <summary>

@@ -86,7 +86,12 @@ namespace MvkClient.Network
         /// </summary>
         protected void Packet20(PacketB20Player packet)
         {
-            if (!packet.GetRotating())
+            byte type = packet.Type();
+            if (type == 2)
+            {
+                ClientMain.World.Player.SetHeightEyesServer(packet.GetHeight(), packet.GetEyes());
+            }
+            if (type == 0 || type == 2)
             {
                 ClientMain.World.Player.SetPositionServer(packet.GetPos());
             }

@@ -1,5 +1,6 @@
 ﻿using MvkServer.Glm;
 using MvkServer.Util;
+using MvkServer.World;
 
 namespace MvkServer.Entity
 {
@@ -8,7 +9,10 @@ namespace MvkServer.Entity
     /// </summary>
     public class EntityBase
     {
-        
+        /// <summary>
+        /// Объект мира
+        /// </summary>
+        public WorldBase World { get; protected set; }
         /// <summary>
         /// В каком чанке находится
         /// </summary>
@@ -53,7 +57,7 @@ namespace MvkServer.Entity
         /// <summary>
         /// На земле
         /// </summary>
-        public bool OnGround { get; protected set; } = false;
+        public bool OnGround { get; protected set; } = true;
         /// <summary>
         /// Бежим
         /// </summary>
@@ -62,13 +66,13 @@ namespace MvkServer.Entity
         /// Прыгаем
         /// </summary>
         public bool IsJumping { get; protected set; } = false;
+        /// <summary>
+        /// Летает ли сущность
+        /// </summary>
+        public bool IsFlying { get; protected set; } = false;
 
         #region PervLast
 
-        /// <summary>
-        /// Позиция которая сейчас на экране 
-        /// </summary>
-        public vec3 PositionDraw { get; protected set; }
         /// <summary>
         /// Последнее значение поворота вокруг своей оси
         /// </summary>
@@ -83,6 +87,11 @@ namespace MvkServer.Entity
         public vec3 PositionLast { get; protected set; }
 
         #endregion
+
+        /// <summary>
+        /// Результат сидеть
+        /// </summary>
+        protected EnumSneaking sneaking = EnumSneaking.DonSit;
 
         /// <summary>
         /// Задать вращение
@@ -120,6 +129,20 @@ namespace MvkServer.Entity
         /// </summary>
         public bool CheckPosManaged(int bias)
             => Mth.Abs(ChunkPos.x - ChunkPosManaged.x) >= bias || Mth.Abs(ChunkPos.y - ChunkPosManaged.y) >= bias;
+
+        ///// <summary>
+        ///// Присел ли
+        ///// </summary>
+        //public bool IsSneaking() => sneaking != EnumSneaking.DonSit;
+        ///// <summary>
+        ///// Встаём ли
+        ///// </summary>
+        //public bool IsSneakingNearly() => sneaking == EnumSneaking.GetUp;
+
+        /// <summary>
+        /// Заменить хзитбокс
+        /// </summary>
+        protected void SetHeightEyes(float height, float eyes) => Hitbox = Hitbox.SetHeightEyes(height, eyes);
 
         /// <summary>
         /// Вызывается для обновления позиции / логики объекта

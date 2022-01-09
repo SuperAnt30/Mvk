@@ -3,7 +3,7 @@
     /// <summary>
     /// Объект сетки чанка
     /// </summary>
-    public class ChunkMesh : RenderMesh
+    public class ChunkMesh : MeshBuffer
     {
         /// <summary>
         /// Буфер точки, точка xyz, текстура точки uv, цвет точки rgba

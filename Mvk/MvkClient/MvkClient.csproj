@@ -104,9 +104,11 @@
     <Compile Include="Renderer\GLTest.cs" />
     <Compile Include="Renderer\GLWindow.cs" />
     <Compile Include="Gui\ScreenBeginLoading.cs" />
+    <Compile Include="Renderer\LineMesh.cs" />
     <Compile Include="Renderer\Mesh.cs" />
-    <Compile Include="Renderer\RenderMesh.cs" />
+    <Compile Include="Renderer\MeshBuffer.cs" />
     <Compile Include="Renderer\Shaders\ShaderItems.cs" />
+    <Compile Include="Renderer\Shaders\ShaderLine.cs" />
     <Compile Include="Renderer\Shaders\ShaderVE.cs" />
     <Compile Include="Renderer\Shaders\ShaderVoxel.cs" />
     <Compile Include="Renderer\TextureMap.cs" />

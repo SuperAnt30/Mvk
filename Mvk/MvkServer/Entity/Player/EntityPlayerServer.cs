@@ -1,6 +1,7 @@
 ﻿using MvkServer.Glm;
 using MvkServer.Network.Packets;
 using MvkServer.Util;
+using MvkServer.World;
 using MvkServer.World.Chunk;
 using System;
 using System.Net.Sockets;
@@ -31,8 +32,9 @@ namespace MvkServer.Entity.Player
         // должен быть список чанков которые может видеть игрок
         // должен быть список чанков которые надо догрузить игроку
 
-        public EntityPlayerServer(Server server, Socket socket, string name)
+        public EntityPlayerServer(Server server, Socket socket, string name, WorldBase world) : base()
         {
+            World = world; 
             ServerMain = server;
             SocketClient = socket;
             Name = name;
@@ -52,16 +54,25 @@ namespace MvkServer.Entity.Player
         /// <summary>
         /// Вызывается для обновления позиции / логики объекта
         /// </summary>
-        public override void Update() // Пока не знаю где вызывать EntityPlayerMP.onUpdate()
+        public override void Update()
         {
             base.Update();
             try
             {
-                if (!Motion.Equals(new vec3(0)))
+                if (isMotion)
                 {
+                    isMotion = false;
                     vec3 pos = Position + Motion;
                     SetPosition(pos);
-                    ServerMain.ResponsePacket(SocketClient, new PacketB20Player(pos));
+                    if (isMotionHitbox)
+                    {
+                        isMotionHitbox = false;
+                        ServerMain.ResponsePacket(SocketClient, new PacketB20Player().Position(pos, Hitbox.GetHeight(), Hitbox.GetEyes()));
+                    }
+                    else
+                    {
+                        ServerMain.ResponsePacket(SocketClient, new PacketB20Player().Position(pos));
+                    }
                 }
 
                 int i = 0;

@@ -6,7 +6,7 @@ namespace MvkServer.Entity.Player
     /// <summary>
     /// Сущность игрока
     /// </summary>
-    public class EntityPlayer : EntityLiving
+    public abstract class EntityPlayer : EntityLiving
     {
         /// <summary>
         /// Уникальный id
@@ -24,6 +24,11 @@ namespace MvkServer.Entity.Player
         /// Массив по длинам используя квадратный корень для всей видимости
         /// </summary>
         public vec2i[] DistSqrt { get; protected set; }
+
+        protected EntityPlayer()
+        {
+            Hitbox = new HitBox(0.6f, 3.6f, 3.4f);
+        }
 
         /// <summary>
         /// Задать id и имя игрока

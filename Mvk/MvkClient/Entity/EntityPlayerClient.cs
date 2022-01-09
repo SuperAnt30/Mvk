@@ -2,6 +2,7 @@
 using MvkClient.Renderer.Chunk;
 using MvkClient.Util;
 using MvkClient.World;
+using MvkServer.Entity;
 using MvkServer.Entity.Player;
 using MvkServer.Glm;
 using MvkServer.Network.Packets;
@@ -19,7 +20,7 @@ namespace MvkClient.Entity
         /// <summary>
         /// Клиентский объект мира
         /// </summary>
-        public WorldClient World { get; protected set; }
+        public WorldClient ClientWorld { get; protected set; }
         /// <summary>
         /// массив матрицы перспективу камеры 3D
         /// </summary>
@@ -32,6 +33,14 @@ namespace MvkClient.Entity
         /// Принудительно обработать FrustumCulling
         /// </summary>
         public bool IsFrustumCulling { get; protected set; } = false;
+        /// <summary>
+        /// Позиция которая сейчас на экране 
+        /// </summary>
+        public vec3 PositionDraw { get; protected set; }
+        /// <summary>
+        /// Хитбок сущьности для прорисовки
+        /// </summary>
+        public HitBox HitboxDraw { get; protected set; }
 
         public vec3 Front { get; protected set; }
         public vec3 Up { get; protected set; }
@@ -52,10 +61,26 @@ namespace MvkClient.Entity
         /// Объект времени c последнего тпс
         /// </summary>
         protected InterpolationTime interpolation = new InterpolationTime();
+        /// <summary>
+        /// Хитбок сущьности анимации, что надо сделать
+        /// </summary>
+        protected HitBox hitboxLast;
+        /// <summary>
+        /// Хитбок сущьности анимации, конечное значение
+        /// </summary>
+        protected HitBox hitboxEnd;
 
-        public EntityPlayerClient(WorldClient world)
+        /// <summary>
+        /// Количество кадров для плавной анимации
+        /// </summary>
+        protected int hitboxFrame = 0;
+
+        public EntityPlayerClient(WorldClient world) : base()
         {
+            ClientWorld = world;
             World = world;
+            hitboxLast = Hitbox;
+            HitboxDraw = Hitbox;
             interpolation.Start();
         }
 
@@ -71,7 +96,8 @@ namespace MvkClient.Entity
             RotationYawLast = yaw;
             RotationPitchLast = pitch;
             PositionLast = pos;
-            SetMoveDraw(pos);
+            PositionDraw = pos;
+            //SetMoveDraw(pos);
             RotationEquals();
             IsFrustumCulling = true;
         }
@@ -79,11 +105,11 @@ namespace MvkClient.Entity
         /// <summary>
         /// Задать позицию для прорисовки на экране и обновить матрицу UpLookAt
         /// </summary>
-        public void SetMoveDraw(vec3 pos)
-        {
-            PositionDraw = pos;
-            UpLookAt();
-        }
+        //public void SetMoveDraw(vec3 pos)
+        //{
+        //    PositionDraw = pos;
+        //    UpLookAt();
+        //}
         /// <summary>
         /// Обновить матрицу камеры
         /// </summary>
@@ -95,7 +121,9 @@ namespace MvkClient.Entity
             Front = new vec3(rotation * new vec4(0, 0, -1, 1));
             Right = new vec3(rotation * new vec4(1, 0, 0, 1));
             Up = new vec3(rotation * new vec4(0, 1, 0, 1));
-            LookAt = glm.lookAt(PositionDraw, PositionDraw + Front, Up).to_array();
+            vec3 pos = new vec3(PositionDraw);
+            pos.y += HitboxDraw.GetEyes();
+            LookAt = glm.lookAt(pos, pos + Front, Up).to_array();
 
             // InitFrustumCulling перенесён в WorldRenderer.Draw перед прориовкой
         }
@@ -142,12 +170,11 @@ namespace MvkClient.Entity
             {
                 RotationYaw = RotationYawLast;
                 RotationPitch = RotationPitchLast;
-                UpLookAt();
                 float yaw = RotationYaw;
                 float pitch = RotationPitch;
                 Task.Factory.StartNew(() =>
                 {
-                    World.ClientMain.TrancivePacket(new PacketB20Player(yaw, pitch));
+                    ClientWorld.ClientMain.TrancivePacket(new PacketB20Player().YawPitch(yaw, pitch));
                 });
                 return true;
             }
@@ -176,7 +203,7 @@ namespace MvkClient.Entity
                 if (frustum.IsBoxInFrustum(xb, 0, zb, xb + 15, 255, zb + 15))
                 {
                     countFC++;
-                    listC.Add(World.ChunkPrClient.GetChunkRender(new vec2i(xc, zc), true));
+                    listC.Add(ClientWorld.ChunkPrClient.GetChunkRender(new vec2i(xc, zc), true));
                 }
                 countAll++;
             }
@@ -191,7 +218,7 @@ namespace MvkClient.Entity
         {
             if (keyAction != EnumKeyAction.None)
             {
-                World.ClientMain.TrancivePacket(new PacketC22Input(keyAction));
+                ClientWorld.ClientMain.TrancivePacket(new PacketC22Input(keyAction));
             }
         }
 
@@ -209,6 +236,92 @@ namespace MvkClient.Entity
             interpolation.Restart();
             PositionLast = Position;
             SetPosition(pos);
+        }
+
+        /// <summary>
+        /// Задать положение хитбокса с сервера с анимацией
+        /// </summary>
+        public void SetHeightEyesServer(float height, float eyes)
+        {
+            hitboxEnd = new HitBox(0, height, eyes);
+            // Сколько тактов TPS надо для плавного изменения глаз (сели встали)
+            hitboxFrame = 2;
+        }
+
+
+        /// <summary>
+        /// Обновление в кадре
+        /// </summary>
+        public void UpdateFrame()
+        {
+            // время от TPS клиента
+            float indexW = ClientWorld.TimeIndex();
+            // время от TPS пакетов сервера
+            float indexS = TimeIndex();
+            bool isUpLookAt = false;
+            bool isFrustumCulling = false;
+
+            // Проверка изменения хитбокса
+            if (!Hitbox.Equals(hitboxLast))
+            {
+                HitboxDraw = new HitBox(hitboxLast.GetWidth() + (Hitbox.GetWidth() - hitboxLast.GetWidth()) * indexW,
+                    hitboxLast.GetHeight() + (Hitbox.GetHeight() - hitboxLast.GetHeight()) * indexW,
+                    hitboxLast.GetEyes() + (Hitbox.GetEyes() - hitboxLast.GetEyes()) * indexW);
+                isUpLookAt = true;
+            }
+            else if (!HitboxDraw.Equals(Hitbox))
+            {
+                HitboxDraw = Hitbox;
+                isUpLookAt = true;
+            }
+            
+            // Перерасчёт расположение игрока если было смещение, согласно индексу времени
+            if (!Position.Equals(PositionLast))
+            {
+                vec3 vp = (Position - PositionLast) * indexS;
+                PositionDraw = PositionLast + vp;
+                isFrustumCulling = true;
+                isUpLookAt = true;
+            }
+            else if (!PositionDraw.Equals(Position))
+            {
+                PositionDraw = Position;
+                isUpLookAt = true;
+            }
+            
+            bool re = RotationEquals();
+
+            if (isUpLookAt || re) UpLookAt();
+
+            // Если имеется вражение камеры или было перемещение, то запускаем расчёт FrustumCulling
+            if (re || isFrustumCulling || IsFrustumCulling) InitFrustumCulling();
+        }
+
+        /// <summary>
+        /// Вызывается для обновления позиции / логики объекта
+        /// </summary>
+        public override void Update()
+        {
+            // Обновление хитбокса если надо
+            if (hitboxFrame >= 0)
+            {
+                hitboxLast = Hitbox;
+                if (hitboxFrame != 0)
+                {
+                    float h = Hitbox.GetHeight() - hitboxEnd.GetHeight();
+                    float e = Hitbox.GetEyes() - hitboxEnd.GetEyes();
+                    h /= hitboxFrame;
+                    e /= hitboxFrame;
+                    SetHeightEyes(Hitbox.GetHeight() - h, Hitbox.GetEyes() - e);
+                }
+                hitboxFrame--;
+            }
+        }
+
+        public override string ToString()
+        {
+            return string.Format("posDraw: {0}\r\nLast: {1} {2} {3}", 
+                PositionDraw, PositionLast, IsSprinting ? "[Sp]" : "", HitboxDraw);
         }
     }
 }

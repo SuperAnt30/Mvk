@@ -35,7 +35,9 @@
   <ItemGroup>
     <Compile Include="Entity\EntityBase.cs" />
     <Compile Include="Entity\EntityLiving.cs" />
+    <Compile Include="Entity\EnumSneaking.cs" />
     <Compile Include="Entity\HitBox.cs" />
+    <Compile Include="Entity\HitBoxSizeUD.cs" />
     <Compile Include="Entity\Interpolis.cs" />
     <Compile Include="Entity\Moving.cs" />
     <Compile Include="Entity\MovingDirection.cs" />
@@ -112,6 +114,8 @@
     <Compile Include="World\Chunk\ChunkProviderServer.cs" />
     <Compile Include="World\Chunk\ChunkProvider.cs" />
     <Compile Include="World\Chunk\ChunkStorage.cs" />
+    <Compile Include="World\CollisionBase.cs" />
+    <Compile Include="World\EnumCollisionBody.cs" />
     <Compile Include="World\WorldBase.cs" />
     <Compile Include="World\WorldServer.cs" />
   </ItemGroup>

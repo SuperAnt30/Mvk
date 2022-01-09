@@ -43,7 +43,7 @@ namespace MvkClient.World
 
        
 
-        public WorldClient(Client client)
+        public WorldClient(Client client) : base()
         {
             ChunkPr = new ChunkProviderClient(this);
             ClientMain = client;
@@ -62,6 +62,7 @@ namespace MvkClient.World
             uint time = ClientMain.TickCounter;
 
             base.Tick();
+            Player.Update();
 
             if (time - previousTotalWorldTime > MvkGlobal.CHUNK_CLEANING_TIME)
             {
@@ -103,7 +104,9 @@ namespace MvkClient.World
         /// </summary>
         public override string ToStringDebug()
         {
-            return string.Format("t {2} Ch {0} ChDel {3}\r\nXYZ {1}", ChunkPr.Count, Player.Position, ClientMain.TickCounter / 20, ChunkPrClient.RemoteMeshChunks.Count);
+            return string.Format("t {2} Ch {0} ChDel {3}\r\nXYZ {1}\r\n{4}", 
+                ChunkPr.Count, Player.Position, ClientMain.TickCounter / 20, 
+                ChunkPrClient.RemoteMeshChunks.Count, Player.ToString());
         }
     }
 }

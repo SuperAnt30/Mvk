@@ -7,7 +7,7 @@ namespace MvkClient.Renderer
     /// <summary>
     /// Объект создания сетки буфера, прорисовки и удаления
     /// </summary>
-    public abstract class RenderMesh : IDisposable
+    public abstract class MeshBuffer : IDisposable
     {
         protected Mesh mesh;
         /// <summary>

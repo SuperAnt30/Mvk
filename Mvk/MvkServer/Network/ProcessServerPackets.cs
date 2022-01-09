@@ -40,7 +40,7 @@ namespace MvkServer.Network
         /// </summary>
         protected void Packet11(Socket socket, PacketC11LoginStart packet)
         {
-            ServerMain.World.Players.LoginStart(new EntityPlayerServer(ServerMain, socket, packet.GetName()));
+            ServerMain.World.Players.LoginStart(new EntityPlayerServer(ServerMain, socket, packet.GetName(), ServerMain.World));
         }
 
         /// <summary>
@@ -59,12 +59,10 @@ namespace MvkServer.Network
             EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
             if (entityPlayer != null)
             {
-                if (packet.GetRotating())
+                switch(packet.Type())
                 {
-                    entityPlayer.SetRotation(packet.GetYaw(), packet.GetPitch());
-                } else 
-                {
-                    entityPlayer.SetPosition(packet.GetPos());
+                    case 0: entityPlayer.SetPosition(packet.GetPos()); break;
+                    case 1: entityPlayer.SetRotation(packet.GetYaw(), packet.GetPitch()); break;
                 }
             }
         }

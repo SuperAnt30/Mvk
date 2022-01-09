@@ -77,11 +77,48 @@ namespace MvkServer.World.Chunk
                     }
                 }
             }
+            for (int i = 5; i <= 10; i++)
+            {
+                StorageArrays[1].SetEBlock(12, 7, i, EnumBlock.Air);
+                StorageArrays[1].SetEBlock(13, 7, i, EnumBlock.Air);
+                StorageArrays[1].SetEBlock(14, 7, i, EnumBlock.Air);
+                StorageArrays[1].SetEBlock(15, 7, i, EnumBlock.Air);
+            }
+            StorageArrays[1].SetEBlock(14, 7, 11, EnumBlock.Air);
+            StorageArrays[1].SetEBlock(15, 7, 11, EnumBlock.Air);
+            StorageArrays[1].SetEBlock(14, 7, 12, EnumBlock.Air);
+            StorageArrays[1].SetEBlock(15, 7, 12, EnumBlock.Air);
+
+            StorageArrays[1].SetEBlock(10, 8, 6, EnumBlock.Turf);
+            StorageArrays[1].SetEBlock(10, 8, 5, EnumBlock.Turf);
+            StorageArrays[1].SetEBlock(11, 8, 6, EnumBlock.Turf);
+            StorageArrays[1].SetEBlock(11, 8, 5, EnumBlock.Turf);
+
+            StorageArrays[1].SetEBlock(8, 8, 0, EnumBlock.Turf);
+            StorageArrays[1].SetEBlock(6, 8, 0, EnumBlock.Cobblestone);
+            StorageArrays[1].SetEBlock(5, 8, 0, EnumBlock.Cobblestone);
+            StorageArrays[1].SetEBlock(6, 9, 0, EnumBlock.Cobblestone);
+            StorageArrays[1].SetEBlock(5, 9, 0, EnumBlock.Cobblestone);
+
+            StorageArrays[1].SetEBlock(3, 8, 0, EnumBlock.Stone);
+            StorageArrays[1].SetEBlock(3, 9, 0, EnumBlock.Stone);
+            StorageArrays[1].SetEBlock(2, 8, 0, EnumBlock.Stone);
+            StorageArrays[1].SetEBlock(2, 9, 0, EnumBlock.Stone);
+            StorageArrays[1].SetEBlock(2, 10, 0, EnumBlock.Stone);
+            StorageArrays[1].SetEBlock(1, 8, 0, EnumBlock.Stone);
+            StorageArrays[1].SetEBlock(1, 9, 0, EnumBlock.Stone);
+            StorageArrays[1].SetEBlock(1, 10, 0, EnumBlock.Stone);
             StorageArrays[1].SetEBlock(0, 8, 0, EnumBlock.Stone);
             StorageArrays[1].SetEBlock(0, 9, 0, EnumBlock.Stone);
             StorageArrays[1].SetEBlock(0, 10, 0, EnumBlock.Cobblestone);
             StorageArrays[1].SetEBlock(0, 11, 0, EnumBlock.Dirt);
             StorageArrays[1].SetEBlock(0, 12, 0, EnumBlock.Turf);
+            StorageArrays[1].SetEBlock(0, 12, 14, EnumBlock.Turf);
+            StorageArrays[1].SetEBlock(0, 12, 15, EnumBlock.Turf);
+            StorageArrays[1].SetEBlock(1, 12, 14, EnumBlock.Turf);
+            StorageArrays[1].SetEBlock(1, 12, 15, EnumBlock.Turf);
+            StorageArrays[1].SetEBlock(0, 11, 1, EnumBlock.Dirt);
+            StorageArrays[1].SetEBlock(0, 11, 2, EnumBlock.Dirt);
             StorageArrays[1].SetEBlock(1, 7, 0, EnumBlock.Dirt);
 
             IsChunkLoaded = true;// LoadinData();

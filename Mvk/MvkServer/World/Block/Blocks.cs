@@ -1,4 +1,5 @@
-﻿using MvkServer.Util;
+﻿using MvkServer.Glm;
+using MvkServer.Util;
 using MvkServer.World.Block.Items;
 
 namespace MvkServer.World.Block
@@ -25,7 +26,11 @@ namespace MvkServer.World.Block
         public static BlockBase GetBlock(EnumBlock eBlock, BlockPos pos)
         {
             BlockBase block = ToBlock(eBlock);
-            if (block != null) block.SetPosition(pos);
+            if (block != null)
+            {
+                block.SetEnumBlock(eBlock);
+                block.SetPosition(pos);
+            }
             return block;
         }
 
@@ -33,5 +38,9 @@ namespace MvkServer.World.Block
         /// Получить блок воздуха
         /// </summary>
         public static BlockBase GetAir(BlockPos pos) => GetBlock(EnumBlock.Air, pos);
+        /// <summary>
+        /// Получить блок воздуха
+        /// </summary>
+        public static BlockBase GetAir(vec3i pos) => GetAir(new BlockPos(pos));
     }
 }
