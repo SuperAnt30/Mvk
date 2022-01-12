@@ -69,6 +69,7 @@ namespace MvkServer.World.Chunk
             {
                 int sy = y0 >> 4;
                 int y = y0 & 15;
+                if (y0 > 8 && y0 < 16) continue;
                 for (int x = 0; x < 16; x++)
                 {
                     for (int z = 0; z < 16; z++)
@@ -94,17 +95,19 @@ namespace MvkServer.World.Chunk
             StorageArrays[1].SetEBlock(11, 8, 6, EnumBlock.Turf);
             StorageArrays[1].SetEBlock(11, 8, 5, EnumBlock.Turf);
 
-            StorageArrays[1].SetEBlock(8, 8, 0, EnumBlock.Turf);
+            StorageArrays[1].SetEBlock(14, 8, 12, EnumBlock.Cobblestone);
+
+            //   StorageArrays[1].SetEBlock(8, 8, 0, EnumBlock.Turf);
             StorageArrays[1].SetEBlock(6, 8, 0, EnumBlock.Cobblestone);
-            StorageArrays[1].SetEBlock(5, 8, 0, EnumBlock.Cobblestone);
-            StorageArrays[1].SetEBlock(6, 9, 0, EnumBlock.Cobblestone);
+            StorageArrays[1].SetEBlock(5, 8, 0, EnumBlock.Stone);
+            //StorageArrays[1].SetEBlock(6, 9, 0, EnumBlock.Cobblestone);
             StorageArrays[1].SetEBlock(5, 9, 0, EnumBlock.Cobblestone);
 
             StorageArrays[1].SetEBlock(3, 8, 0, EnumBlock.Stone);
             StorageArrays[1].SetEBlock(3, 9, 0, EnumBlock.Stone);
             StorageArrays[1].SetEBlock(2, 8, 0, EnumBlock.Stone);
             StorageArrays[1].SetEBlock(2, 9, 0, EnumBlock.Stone);
-            StorageArrays[1].SetEBlock(2, 10, 0, EnumBlock.Stone);
+            StorageArrays[1].SetEBlock(2, 10, 0, EnumBlock.Cobblestone);
             StorageArrays[1].SetEBlock(1, 8, 0, EnumBlock.Stone);
             StorageArrays[1].SetEBlock(1, 9, 0, EnumBlock.Stone);
             StorageArrays[1].SetEBlock(1, 10, 0, EnumBlock.Stone);
@@ -117,6 +120,7 @@ namespace MvkServer.World.Chunk
             StorageArrays[1].SetEBlock(0, 12, 15, EnumBlock.Turf);
             StorageArrays[1].SetEBlock(1, 12, 14, EnumBlock.Turf);
             StorageArrays[1].SetEBlock(1, 12, 15, EnumBlock.Turf);
+            StorageArrays[1].SetEBlock(1, 8, 15, EnumBlock.Cobblestone);
             StorageArrays[1].SetEBlock(0, 11, 1, EnumBlock.Dirt);
             StorageArrays[1].SetEBlock(0, 11, 2, EnumBlock.Dirt);
             StorageArrays[1].SetEBlock(1, 7, 0, EnumBlock.Dirt);

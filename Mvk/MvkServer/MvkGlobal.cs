@@ -32,5 +32,12 @@
         /// </summary>
         public const int COUNT_RENDER_CHUNK_FRAME = 10;
 
+        /// <summary>
+        /// Авто прыжок, указывается высота, на сколько может запрыгнуть
+        /// 0 - нет прыжка совсем
+        /// </summary>
+        public const float AUTO_JUMP_STEP_HEIGHT = 1.0f;
+
+
     }
 }

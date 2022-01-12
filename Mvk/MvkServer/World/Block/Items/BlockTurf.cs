@@ -38,6 +38,7 @@ namespace MvkServer.World.Block.Items
             };
 
             IsGrass = true;
+            
         }
     }
 }

@@ -55,6 +55,10 @@
         /// Действие завершения
         /// </summary>
         public bool GetEnd() => end;
+        /// <summary>
+        /// Значение равно нулю
+        /// </summary>
+        public bool IsZero() => Value == 0;
 
         /// <summary>
         /// Запуск 

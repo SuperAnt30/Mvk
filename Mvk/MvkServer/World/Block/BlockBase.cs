@@ -1,4 +1,5 @@
-﻿using MvkServer.Util;
+﻿using MvkServer.Glm;
+using MvkServer.Util;
 
 namespace MvkServer.World.Block
 {
@@ -12,9 +13,9 @@ namespace MvkServer.World.Block
         /// </summary>
         public Box[] Boxes { get; protected set; } = new Box[] { new Box() };
         /// <summary>
-        /// Хит бокс блока
+        /// Вся ли прорисовка, аналог кактус, забор...
         /// </summary>
-        public Box HitBox { get; protected set; } = new Box();
+        public bool AllDrawing { get; protected set; } = false;
         /// <summary>
         /// Получить тип блока
         /// </summary>
@@ -36,6 +37,18 @@ namespace MvkServer.World.Block
         /// </summary>
         public bool IsCollision { get; protected set; } = true;
 
+        /// <summary>
+        /// Минимальные координаты ограничительной рамки
+        /// </summary>
+        protected vec3 min = new vec3(0f);
+        /// <summary>
+        /// Максимальные координаты ограничительной рамки
+        /// </summary>
+        protected vec3 max = new vec3(1f);
+        /// <summary>
+        /// Ограничительная рамка занимает весь блок, для оптимизации, без проверки AABB блока
+        /// </summary>
+        public bool IsBoundingBoxAll { get; protected set; } = true;
 
         /// <summary>
         /// Задать позицию блока
@@ -45,6 +58,23 @@ namespace MvkServer.World.Block
         /// Задать тип блока
         /// </summary>
         public void SetEnumBlock(EnumBlock enumBlock) => EBlock = enumBlock;
+
+        /// <summary>
+        /// Получить ограничительную рамку блока
+        /// </summary>
+        protected AxisAlignedBB GetBoundingBox() => new AxisAlignedBB(
+            new vec3(Position.X + min.x, Position.Y + min.y, Position.Z + min.z),
+            new vec3(Position.X + max.x, Position.Y + max.y, Position.Z + max.z));
+
+        /// <summary>
+        /// Передать список  ограничительных рамок блока
+        /// </summary>
+        public virtual AxisAlignedBB[] GetCollisionBoxesToList() => new AxisAlignedBB[] { GetBoundingBox() };
+
+        /// <summary>
+        /// Получить высоту блока
+        /// </summary>
+        public float GetHeight() => max.y;
 
         /// <summary>
         /// Строка

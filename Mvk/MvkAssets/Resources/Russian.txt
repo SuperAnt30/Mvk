@@ -13,14 +13,14 @@ gui.apply:Применить
 gui.cancel:Отмена
 gui.no:Нет
 gui.yes:Да
-gui.connect:Соединится
+gui.connect:Соединиться
 gui.world.empty:- Пусто -
 gui.world.delete:Вы действительно хотите удалить мир?
 gui.saving:Сохранение...
 gui.process:Процесс...
 gui.loading.world:Загрузка мира {0:0.0} %
 gui.ip:IP адрес
-gui.back.game:Вернутся в игру
+gui.back.game:Вернуться в игру
 gui.exit.world:Выход из мира
 gui.language:Язык
 gui.error:Ошибка

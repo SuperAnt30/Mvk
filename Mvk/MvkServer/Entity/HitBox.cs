@@ -1,4 +1,6 @@
-﻿namespace MvkServer.Entity
+﻿using MvkServer.Glm;
+
+namespace MvkServer.Entity
 {
     /// <summary>
     /// Хитбокс сущности
@@ -31,6 +33,10 @@
         /// Высота от глаз и выше
         /// </summary>
         public float GetUpEyes() => height - eyes;
+
+        public vec3 VecWidth() => new vec3(width, 0, width);
+        public vec3 VecAll() => new vec3(width, height, width);
+
 
         /// <summary>
         /// Заменить хзитбокс

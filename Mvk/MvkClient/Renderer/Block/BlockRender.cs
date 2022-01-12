@@ -86,7 +86,7 @@ namespace MvkClient.Renderer.Block
             EnumBlock enumBlock = GetEBlock(posChunk + EnumFacing.DirectionVec(side));
             //_br = BlockedLight(posChunk + EnumFacing.DirectionVec(side));
             //   if (Blk.AllDrawing || _br.IsDraw)
-            if (enumBlock == EnumBlock.Air)
+            if (enumBlock == EnumBlock.Air || Block.AllDrawing || enumBlock == EnumBlock.Cobblestone)
             {
                 cSide = side;
                 buffer.AddRange(RenderMeshFace());

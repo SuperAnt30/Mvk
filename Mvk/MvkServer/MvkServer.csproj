@@ -37,14 +37,12 @@
     <Compile Include="Entity\EntityLiving.cs" />
     <Compile Include="Entity\EnumSneaking.cs" />
     <Compile Include="Entity\HitBox.cs" />
-    <Compile Include="Entity\HitBoxSizeUD.cs" />
-    <Compile Include="Entity\Interpolis.cs" />
     <Compile Include="Entity\Moving.cs" />
-    <Compile Include="Entity\MovingDirection.cs" />
     <Compile Include="MvkGlobal.cs" />
     <Compile Include="Network\Packets\PacketC22Input.cs" />
     <Compile Include="Network\Packets\PacketS14TimeUpdate.cs" />
     <Compile Include="Util\ArrayDistance.cs" />
+    <Compile Include="Util\AxisAlignedBB.cs" />
     <Compile Include="Util\EnumKeyAction.cs" />
     <Compile Include="Util\MvkStatic.cs" />
     <Compile Include="Util\BlockPos.cs" />

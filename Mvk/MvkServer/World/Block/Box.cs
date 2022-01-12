@@ -31,7 +31,7 @@ namespace MvkServer.World.Block
         /// <summary>
         /// Хитбок занимает полностью блок
         /// </summary>
-        public bool IsHitBoxAll { get; protected set; } = true;
+       // public bool IsHitBoxAll { get; protected set; } = true;
         /// <summary>
         /// Стороны
         /// </summary>
@@ -56,7 +56,7 @@ namespace MvkServer.World.Block
             From = from;
             To = to;
             Size = To - From;
-            IsHitBoxAll = false;
+           // IsHitBoxAll = false;
         }
 
         public Box(int numberTexture) => Faces = new Face[] { new Face(Pole.All, numberTexture) };

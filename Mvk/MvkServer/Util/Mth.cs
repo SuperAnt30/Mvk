@@ -55,11 +55,19 @@ namespace MvkServer.Util
         /// Возращаем наибольшее
         /// </summary>
         public static int Max(int v1, int v2) => v1 > v2 ? v1 : v2;
+        /// <summary>
+        /// Возращаем наибольшее
+        /// </summary>
+        public static float Max(float v1, float v2) => v1 > v2 ? v1 : v2;
 
         /// <summary>
         /// Возращаем наименьшее
         /// </summary>
         public static int Min(int v1, int v2) => v1 > v2 ? v2 : v1;
+        /// <summary>
+        /// Возращаем наименьшее
+        /// </summary>
+        public static float Min(float v1, float v2) => v1 > v2 ? v2 : v1;
 
         /// <summary>
         /// Получить среднее значение массива лонгов

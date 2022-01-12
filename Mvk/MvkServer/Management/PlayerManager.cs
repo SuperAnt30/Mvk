@@ -70,7 +70,7 @@ namespace MvkServer.Management
                 // TODO::Тут проверяем место положение персонажа, и заносим при запуске
                 Random random = new Random();
                 entityPlayer.SetRotation(-0.9f, -.8f);
-                entityPlayer.SetPosition(new vec3(random.Next(-16, 16) + 80, 40, random.Next(-16, 16)));
+                entityPlayer.SetPosition(new vec3(random.Next(-16, 16) + 80, 30, random.Next(-16, 16)));
                 entityPlayer.SetChunkPosManaged(entityPlayer.ChunkPos);
                 AddMountedMovingPlayer(entityPlayer);
                 players.Add(entityPlayer.UUID, entityPlayer);

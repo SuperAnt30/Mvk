@@ -13,6 +13,8 @@
         /// <summary>
         /// Коллизия с низу, когда падали вниз, прекращаем падать
         /// </summary>
-        CollisionDown = 2
+        CollisionDown = 2,
+        CollisionX = 3,
+        CollisionZ = 4,
     }
 }

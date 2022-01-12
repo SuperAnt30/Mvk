@@ -46,9 +46,17 @@ namespace MvkClient.Entity
         public vec3 Up { get; protected set; }
         public vec3 Right { get; protected set; }
         /// <summary>
-        /// Угол обзора
+        /// Угол обзора для прорисовки
         /// </summary>
-        public float Fov { get; protected set; } = 1.221111f;
+        public float FovDraw { get; protected set; } = 1.221111f;
+        /// <summary>
+        /// Угол обзора тикущего хода
+        /// </summary>
+        protected float fovLast = 1.221111f;
+        /// <summary>
+        /// Угол обзора для след хода
+        /// </summary>
+        protected float fov = 1.221111f;
         /// <summary>
         /// Массив чанков которые попадают под FrustumCulling для рендера
         /// </summary>
@@ -82,6 +90,7 @@ namespace MvkClient.Entity
             hitboxLast = Hitbox;
             HitboxDraw = Hitbox;
             interpolation.Start();
+            
         }
 
         /// <summary>
@@ -116,7 +125,7 @@ namespace MvkClient.Entity
         public void UpLookAt()
         {
             mat4 rotation = new mat4(1.0f);
-            rotation = glm.rotate(rotation, RotationYaw, new vec3(0, 1, 0));
+            rotation = glm.rotate(rotation, -RotationYaw, new vec3(0, 1, 0));
             rotation = glm.rotate(rotation, RotationPitch, new vec3(1, 0, 0));
             Front = new vec3(rotation * new vec4(0, 0, -1, 1));
             Right = new vec3(rotation * new vec4(1, 0, 0, 1));
@@ -131,16 +140,16 @@ namespace MvkClient.Entity
         /// Задать угол обзора
         /// </summary>
         /// <param name="fov">угол обзора в радианах</param>
-        public void SetFov(float fov)
+        protected void SetFov(float fov)
         {
-            Fov = fov;
+            FovDraw = fov;
             UpProjection();
         }
         /// <summary>
         /// Обновить перспективу камеры
         /// </summary>
         public void UpProjection() 
-            => Projection = glm.perspective(Fov, Width / Height, 0.001f, OverviewChunk * 22.624f * 2f).to_array();
+            => Projection = glm.perspective(FovDraw, Width / Height, 0.001f, OverviewChunk * 22.624f * 2f).to_array();
 
         public void MouseMove(float deltaX, float deltaY)
         {
@@ -149,7 +158,7 @@ namespace MvkClient.Entity
 
             if (deltaX == 0 && deltaY == 0) return;
             float pitch = RotationPitchLast - deltaY / Height * speedMouse;
-            float yaw = RotationYawLast - deltaX / Width * speedMouse;
+            float yaw = RotationYawLast + deltaX / Width * speedMouse;
 
             if (pitch < -glm.radians(89.0f)) pitch = -glm.radians(89.0f);
             if (pitch > glm.radians(89.0f)) pitch = glm.radians(89.0f);
@@ -219,6 +228,8 @@ namespace MvkClient.Entity
             if (keyAction != EnumKeyAction.None)
             {
                 ClientWorld.ClientMain.TrancivePacket(new PacketC22Input(keyAction));
+                if (keyAction == EnumKeyAction.SprintingDown) Mov.Sprinting.Begin();
+                else if(keyAction == EnumKeyAction.SprintingUp) Mov.Sprinting.End();
             }
         }
 
@@ -261,6 +272,12 @@ namespace MvkClient.Entity
             bool isUpLookAt = false;
             bool isFrustumCulling = false;
 
+            // Меняем угол обзора (как правило при изменении скорости)
+            if (fov != fovLast)
+            {
+                SetFov(fovLast + ((fov - fovLast) * indexW));
+            }
+
             // Проверка изменения хитбокса
             if (!Hitbox.Equals(hitboxLast))
             {
@@ -302,6 +319,13 @@ namespace MvkClient.Entity
         /// </summary>
         public override void Update()
         {
+            Mov.Sprinting.Update();
+
+            fovLast = fov;
+            // 1.22 = ~70 градусов
+            fov = 1.22f + Mov.Sprinting.Value * 0.17f; 
+
+
             // Обновление хитбокса если надо
             if (hitboxFrame >= 0)
             {
@@ -312,7 +336,7 @@ namespace MvkClient.Entity
                     float e = Hitbox.GetEyes() - hitboxEnd.GetEyes();
                     h /= hitboxFrame;
                     e /= hitboxFrame;
-                    SetHeightEyes(Hitbox.GetHeight() - h, Hitbox.GetEyes() - e);
+                    SetSize(Hitbox.GetHeight() - h, Hitbox.GetEyes() - e);
                 }
                 hitboxFrame--;
             }
@@ -321,7 +345,7 @@ namespace MvkClient.Entity
         public override string ToString()
         {
             return string.Format("posDraw: {0}\r\nLast: {1} {2} {3}", 
-                PositionDraw, PositionLast, IsSprinting ? "[Sp]" : "", HitboxDraw);
+                PositionDraw, PositionLast, IsSprinting ? "[Sp]" : "", FovDraw);
         }
     }
 }

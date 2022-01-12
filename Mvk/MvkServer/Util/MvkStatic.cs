@@ -27,7 +27,7 @@ namespace MvkServer.Util
         };
 
         /// <summary>
-        /// Параметр [0]=0 .. [16]=0.0625f
+        /// Параметр [0]=0 .. [16]=0.015625f
         /// </summary>
         public static float[] Uv { get; protected set; } = new float[17];
         /// <summary>
@@ -51,7 +51,7 @@ namespace MvkServer.Util
         {
             for (int i = 0; i <= 16; i++)
             {
-                Uv[i] = (float)i * 0.00390625f;
+                Uv[i] = (float)i * 0.0009765625f;
                 Xy[i] = (float)i * 0.0625f;
             }
             TimerFrequency = Stopwatch.Frequency / 1000;

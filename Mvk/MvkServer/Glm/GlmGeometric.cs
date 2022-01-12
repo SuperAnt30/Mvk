@@ -30,6 +30,35 @@ namespace MvkServer.Glm
             return (tmp.x + tmp.y) + (tmp.z + tmp.w);
         }
 
+        /// <summary>
+        /// Получить растояние между двумя точками
+        /// </summary>
+        public static float distance(vec3 v1, vec3 v2)
+        {
+            float var2 = v1.x - v2.x;
+            float var4 = v1.y - v2.y;
+            float var6 = v1.z - v2.z;
+            return Mth.Sqrt(var2 * var2 + var4 * var4 + var6 * var6);
+        }
+
+        /// <summary>
+        /// Получить растояние вектора
+        /// </summary>
+        public static float distance(vec3 v1)
+        {
+            return Mth.Sqrt(v1.x * v1.x + v1.y * v1.y + v1.z * v1.z);
+        }
+
+        /// <summary>
+        /// Получить растояние между двумя точками
+        /// </summary>
+        public static float distance(vec2 v1, vec2 v2)
+        {
+            float var2 = v1.x - v2.x;
+            float var4 = v1.y - v2.y;
+            return Mth.Sqrt(var2 * var2 + var4 * var4);
+        }
+
         public static vec2 normalize(vec2 v)
         {
             float sqr = v.x * v.x + v.y * v.y;

@@ -47,11 +47,17 @@ namespace MvkServer.Entity
             Sprinting = new Smooth(0.2f);
         }
 
-
-        public float Vertical() => Forward.Value - Back.Value;
-
-        public float Horizontal() => Right.Value - Left.Value;
-
+        /// <summary>
+        /// Вперёд и назад
+        /// </summary>
+        public float ForwardAndBack() => Back.Value - Forward.Value;
+        /// <summary>
+        /// Шаг в сторону
+        /// </summary>
+        public float Strafe() => Right.Value - Left.Value;
+        /// <summary>
+        /// Высота вертикального смещения
+        /// </summary>
         public float Height() => Up.Value - Down.Value;
 
         /// <summary>
