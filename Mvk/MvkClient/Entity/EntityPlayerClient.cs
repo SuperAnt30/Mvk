@@ -34,63 +34,34 @@ namespace MvkClient.Entity
         /// </summary>
         public bool IsFrustumCulling { get; protected set; } = false;
         /// <summary>
+        /// Плавное перемещение угла обзора
+        /// </summary>
+        public SmoothFrame Fov { get; protected set; }
+        /// <summary>
+        /// Плавное перемещение глаз, сел/встал
+        /// </summary>
+        public SmoothFrame Eye { get; protected set; }
+        /// <summary>
         /// Позиция которая сейчас на экране 
         /// </summary>
-        public vec3 PositionDraw { get; protected set; }
-        /// <summary>
-        /// Хитбок сущьности для прорисовки
-        /// </summary>
-        public HitBox HitboxDraw { get; protected set; }
-
-        public vec3 Front { get; protected set; }
-        public vec3 Up { get; protected set; }
-        public vec3 Right { get; protected set; }
-        /// <summary>
-        /// Угол обзора для прорисовки
-        /// </summary>
-        public float FovDraw { get; protected set; } = 1.221111f;
-        /// <summary>
-        /// Угол обзора тикущего хода
-        /// </summary>
-        protected float fovLast = 1.221111f;
-        /// <summary>
-        /// Угол обзора для след хода
-        /// </summary>
-        protected float fov = 1.221111f;
+        public vec3 PositionFrame { get; protected set; }
         /// <summary>
         /// Массив чанков которые попадают под FrustumCulling для рендера
         /// </summary>
         public ChunkRender[] ChunkFC { get; protected set; } = new ChunkRender[0];
 
-        protected float Width => (float)GLWindow.WindowWidth;
-        protected float Height => (float)GLWindow.WindowHeight;
-
         /// <summary>
         /// Объект времени c последнего тпс
         /// </summary>
         protected InterpolationTime interpolation = new InterpolationTime();
-        /// <summary>
-        /// Хитбок сущьности анимации, что надо сделать
-        /// </summary>
-        protected HitBox hitboxLast;
-        /// <summary>
-        /// Хитбок сущьности анимации, конечное значение
-        /// </summary>
-        protected HitBox hitboxEnd;
-
-        /// <summary>
-        /// Количество кадров для плавной анимации
-        /// </summary>
-        protected int hitboxFrame = 0;
 
         public EntityPlayerClient(WorldClient world) : base()
         {
             ClientWorld = world;
             World = world;
-            hitboxLast = Hitbox;
-            HitboxDraw = Hitbox;
+            Fov = new SmoothFrame(1.22f);
+            Eye = new SmoothFrame(GetEyeHeight());
             interpolation.Start();
-            
         }
 
         /// <summary>
@@ -104,21 +75,11 @@ namespace MvkClient.Entity
             SetPosition(pos);
             RotationYawLast = yaw;
             RotationPitchLast = pitch;
-            PositionLast = pos;
-            PositionDraw = pos;
-            //SetMoveDraw(pos);
+            PositionFrame = PositionPrev = pos;
             RotationEquals();
             IsFrustumCulling = true;
         }
 
-        /// <summary>
-        /// Задать позицию для прорисовки на экране и обновить матрицу UpLookAt
-        /// </summary>
-        //public void SetMoveDraw(vec3 pos)
-        //{
-        //    PositionDraw = pos;
-        //    UpLookAt();
-        //}
         /// <summary>
         /// Обновить матрицу камеры
         /// </summary>
@@ -127,29 +88,19 @@ namespace MvkClient.Entity
             mat4 rotation = new mat4(1.0f);
             rotation = glm.rotate(rotation, -RotationYaw, new vec3(0, 1, 0));
             rotation = glm.rotate(rotation, RotationPitch, new vec3(1, 0, 0));
-            Front = new vec3(rotation * new vec4(0, 0, -1, 1));
-            Right = new vec3(rotation * new vec4(1, 0, 0, 1));
-            Up = new vec3(rotation * new vec4(0, 1, 0, 1));
-            vec3 pos = new vec3(PositionDraw);
-            pos.y += HitboxDraw.GetEyes();
-            LookAt = glm.lookAt(pos, pos + Front, Up).to_array();
-
-            // InitFrustumCulling перенесён в WorldRenderer.Draw перед прориовкой
+            vec3 front = new vec3(rotation * new vec4(0, 0, -1, 1));
+            //vec3 right = new vec3(rotation * new vec4(1, 0, 0, 1));
+            vec3 up = new vec3(rotation * new vec4(0, 1, 0, 1));
+            vec3 pos = new vec3(PositionFrame);
+            pos.y += Eye.ValueFrame;
+            LookAt = glm.lookAt(pos, pos + front, up).to_array();
         }
-        /// <summary>
-        /// Задать угол обзора
-        /// </summary>
-        /// <param name="fov">угол обзора в радианах</param>
-        protected void SetFov(float fov)
-        {
-            FovDraw = fov;
-            UpProjection();
-        }
+        
         /// <summary>
         /// Обновить перспективу камеры
         /// </summary>
         public void UpProjection() 
-            => Projection = glm.perspective(FovDraw, Width / Height, 0.001f, OverviewChunk * 22.624f * 2f).to_array();
+            => Projection = glm.perspective(Fov.ValueFrame, (float)GLWindow.WindowWidth / (float)GLWindow.WindowHeight, 0.001f, OverviewChunk * 22.624f * 2f).to_array();
 
         public void MouseMove(float deltaX, float deltaY)
         {
@@ -157,8 +108,8 @@ namespace MvkClient.Entity
             float speedMouse = 1.5f;
 
             if (deltaX == 0 && deltaY == 0) return;
-            float pitch = RotationPitchLast - deltaY / Height * speedMouse;
-            float yaw = RotationYawLast + deltaX / Width * speedMouse;
+            float pitch = RotationPitchLast - deltaY / (float)GLWindow.WindowHeight * speedMouse;
+            float yaw = RotationYawLast + deltaX / (float)GLWindow.WindowWidth * speedMouse;
 
             if (pitch < -glm.radians(89.0f)) pitch = -glm.radians(89.0f);
             if (pitch > glm.radians(89.0f)) pitch = glm.radians(89.0f);
@@ -190,6 +141,25 @@ namespace MvkClient.Entity
             return false;
         }
 
+        /// <summary>
+        /// Перерасчёт графического расположение игрока если было смещение, согласно индексу времени
+        /// </summary>
+        public bool UpdatePositionFrame(float index)
+        {
+            if (!Position.Equals(PositionPrev))
+            {
+                vec3 vp = (Position - PositionPrev) * index;
+                PositionFrame = PositionPrev + vp;
+                return true;
+            }
+            if (!PositionFrame.Equals(Position))
+            {
+                PositionFrame = Position;
+                return true;
+            }
+            return false;
+        }
+
         public void InitFrustumCulling()
         {
             if (LookAt == null || Projection == null) return;
@@ -199,7 +169,7 @@ namespace MvkClient.Entity
 
             int countAll = 0;
             int countFC = 0;
-            vec2i chunkPos = new vec2i(ChunkPos);
+            vec2i chunkPos = GetChunkPos();
             List<ChunkRender> listC = new List<ChunkRender>();
 
             for (int i = 0; i < DistSqrt.Length; i++)
@@ -227,9 +197,10 @@ namespace MvkClient.Entity
         {
             if (keyAction != EnumKeyAction.None)
             {
-                ClientWorld.ClientMain.TrancivePacket(new PacketC22Input(keyAction));
-                if (keyAction == EnumKeyAction.SprintingDown) Mov.Sprinting.Begin();
-                else if(keyAction == EnumKeyAction.SprintingUp) Mov.Sprinting.End();
+                Mov.Key(keyAction);
+                //ClientWorld.ClientMain.TrancivePacket(new PacketC22Input(keyAction));
+                //if (keyAction == EnumKeyAction.SprintingDown) Mov.Sprinting.Begin();
+                //else if(keyAction == EnumKeyAction.SprintingUp) Mov.Sprinting.End();
             }
         }
 
@@ -242,23 +213,17 @@ namespace MvkClient.Entity
         /// <summary>
         /// Задать позицию от сервера
         /// </summary>
-        public void SetPositionServer(vec3 pos)
+        public void SetPositionServer(vec3 pos, bool sneaking)
         {
             interpolation.Restart();
-            PositionLast = Position;
+            if (IsSneaking != sneaking)
+            {
+                IsSneaking = sneaking;
+                if (IsSneaking) Sitting(); else Standing();
+            }
+            PositionPrev = Position;
             SetPosition(pos);
         }
-
-        /// <summary>
-        /// Задать положение хитбокса с сервера с анимацией
-        /// </summary>
-        public void SetHeightEyesServer(float height, float eyes)
-        {
-            hitboxEnd = new HitBox(0, height, eyes);
-            // Сколько тактов TPS надо для плавного изменения глаз (сели встали)
-            hitboxFrame = 2;
-        }
-
 
         /// <summary>
         /// Обновление в кадре
@@ -268,41 +233,19 @@ namespace MvkClient.Entity
             // время от TPS клиента
             float indexW = ClientWorld.TimeIndex();
             // время от TPS пакетов сервера
-            float indexS = TimeIndex();
+            //float indexS = TimeIndex();
             bool isUpLookAt = false;
             bool isFrustumCulling = false;
 
             // Меняем угол обзора (как правило при изменении скорости)
-            if (fov != fovLast)
-            {
-                SetFov(fovLast + ((fov - fovLast) * indexW));
-            }
+            if (Fov.UpdateFrame(indexW)) UpProjection();
+            // Меняем положения глаз
+            if (Eye.UpdateFrame(indexW)) isUpLookAt = true;
 
-            // Проверка изменения хитбокса
-            if (!Hitbox.Equals(hitboxLast))
-            {
-                HitboxDraw = new HitBox(hitboxLast.GetWidth() + (Hitbox.GetWidth() - hitboxLast.GetWidth()) * indexW,
-                    hitboxLast.GetHeight() + (Hitbox.GetHeight() - hitboxLast.GetHeight()) * indexW,
-                    hitboxLast.GetEyes() + (Hitbox.GetEyes() - hitboxLast.GetEyes()) * indexW);
-                isUpLookAt = true;
-            }
-            else if (!HitboxDraw.Equals(Hitbox))
-            {
-                HitboxDraw = Hitbox;
-                isUpLookAt = true;
-            }
-            
             // Перерасчёт расположение игрока если было смещение, согласно индексу времени
-            if (!Position.Equals(PositionLast))
+            if (UpdatePositionFrame(indexW))
             {
-                vec3 vp = (Position - PositionLast) * indexS;
-                PositionDraw = PositionLast + vp;
                 isFrustumCulling = true;
-                isUpLookAt = true;
-            }
-            else if (!PositionDraw.Equals(Position))
-            {
-                PositionDraw = Position;
                 isUpLookAt = true;
             }
             
@@ -319,33 +262,31 @@ namespace MvkClient.Entity
         /// </summary>
         public override void Update()
         {
-            Mov.Sprinting.Update();
-
-            fovLast = fov;
-            // 1.22 = ~70 градусов
-            fov = 1.22f + Mov.Sprinting.Value * 0.17f; 
-
-
-            // Обновление хитбокса если надо
-            if (hitboxFrame >= 0)
+            base.Update();
+            
+            if (isMotion)
             {
-                hitboxLast = Hitbox;
-                if (hitboxFrame != 0)
-                {
-                    float h = Hitbox.GetHeight() - hitboxEnd.GetHeight();
-                    float e = Hitbox.GetEyes() - hitboxEnd.GetEyes();
-                    h /= hitboxFrame;
-                    e /= hitboxFrame;
-                    SetSize(Hitbox.GetHeight() - h, Hitbox.GetEyes() - e);
-                }
-                hitboxFrame--;
+                isMotion = false;
+                vec3 pos = Position + Motion;
+                SetPosition(pos);
+                Eye.Set(GetEyeHeight(), 4);
+                Fov.Set(IsSprinting ? 1.22f : 1.43f, 4);
+
+                ClientWorld.ClientMain.TrancivePacket(new PacketB20Player().Position(Position, IsSneaking));
             }
+
+            Eye.Update();
+            Fov.Update();
         }
 
         public override string ToString()
         {
-            return string.Format("posDraw: {0}\r\nLast: {1} {2} {3}", 
-                PositionDraw, PositionLast, IsSprinting ? "[Sp]" : "", FovDraw);
+            return Name + "\r\n" + base.ToString()
+                + "\r\nposDraw:" + PositionFrame + "\r\nPitch: " + glm.degrees(RotationPitch);
+
+                ;
+            //return string.Format("{4}\r\nposDraw: {0}\r\nLast: {1} {2} {3}", 
+            //    PositionDraw, PositionLast, IsSprinting ? "[Sp]" : "", FovDraw, Name);
         }
     }
 }

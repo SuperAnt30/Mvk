@@ -1,4 +1,5 @@
-﻿using MvkClient.Renderer.Chunk;
+﻿using MvkClient.Entity;
+using MvkClient.Renderer.Chunk;
 using MvkClient.Setitings;
 using MvkServer.Network;
 using MvkServer.Network.Packets;
@@ -52,7 +53,7 @@ namespace MvkClient.Network
             if (packet.IsConnect())
             {
                 // connect
-                ClientMain.TrancivePacket(new PacketC11LoginStart(Setting.Nickname + (ClientMain.IsServerLocalRun() ? "" : "2")));
+                ClientMain.TrancivePacket(new PacketC11LoginStart(Setting.Nickname));// + (ClientMain.IsServerLocalRun() ? "" : "2")));
             }
             else
             {
@@ -81,6 +82,21 @@ namespace MvkClient.Network
             ClientMain.SetTickCounter(packet.GetTime());
         }
 
+        protected EntityPlayerClient GetEntity(string name)
+        {
+            EntityPlayerClient entity;
+            if (!ClientMain.World.Entities.ContainsKey(name))
+            {
+                entity = new EntityPlayerClient(ClientMain.World);
+                ClientMain.World.Entities.Add(name, entity);
+            }
+            else
+            {
+                entity = ClientMain.World.Entities[name] as EntityPlayerClient;
+            }
+            return entity;
+        }
+
         /// <summary>
         /// Пакет положения игрока
         /// </summary>
@@ -89,11 +105,37 @@ namespace MvkClient.Network
             byte type = packet.Type();
             if (type == 2)
             {
-                ClientMain.World.Player.SetHeightEyesServer(packet.GetHeight(), packet.GetEyes());
+                string name = packet.GetName();
+                if (name != "" && ClientMain.World.Player.Name != name)
+                {
+                    GetEntity(name).SetPositionServer(packet.GetPos(), packet.IsSneaking());
+                }
+                //  ClientMain.World.Player.SetHeightEyesServer(packet.GetHeight(), packet.GetWidth());
             }
-            if (type == 0 || type == 2)
+            if (type == 3)
             {
-                ClientMain.World.Player.SetPositionServer(packet.GetPos());
+                string name = packet.GetName();
+                if (name != "" && ClientMain.World.Player.Name != name)
+                {
+                    GetEntity(name).SetRotation(packet.GetYaw(), packet.GetPitch());
+                }
+                //string name = packet.GetName();
+                //if (ClientMain.World.Player.Name == name || name == "")
+                //{
+                //    ClientMain.World.Player.SetPositionServer(packet.GetPos());
+                //} else
+                //{
+                //    EntityPlayerClient entity;
+                //    if (!ClientMain.World.Entities.ContainsKey(name))
+                //    {
+                //        entity = new EntityPlayerClient(ClientMain.World);
+                //        ClientMain.World.Entities.Add(name, entity);
+                //    } else
+                //    {
+                //        entity = ClientMain.World.Entities[name] as EntityPlayerClient;
+                //    }
+                //    entity.SetPositionServer(packet.GetPos());
+                //}
             }
         }
 

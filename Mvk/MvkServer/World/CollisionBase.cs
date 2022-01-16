@@ -93,27 +93,5 @@ namespace MvkServer.World
             }
             return false;
         }
-
-        /// <summary>
-        /// Проверяем коллизию только нижнего ряда
-        /// </summary>
-        /// <param name="entity">Сущность проверки</param>
-        /// <param name="pos">позиция</param>
-        public bool IsCollisionDown(EntityBase entity, vec3 pos)
-        {
-            AxisAlignedBB aabb = entity.GetBoundingBox(pos);
-            vec3i min = aabb.MinInt();
-            vec3i max = aabb.MaxInt();
-            int y = min.y;
-
-            for (int x = min.x; x <= max.x; x++)
-            {
-                for (int z = min.z; z <= max.z; z++)
-                {
-                    if (BlockCollision(new vec3i(x, y, z), aabb)) return true;
-                }
-            }
-            return false;
-        }
     }
 }

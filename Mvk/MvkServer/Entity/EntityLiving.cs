@@ -10,48 +10,30 @@ namespace MvkServer.Entity
     public abstract class EntityLiving : EntityBase
     {
         /// <summary>
-        /// Размер
-        /// </summary>
-        //public HitBoxSize Size { get; protected set; } = new HitBoxSize();
-        /// <summary>
-        /// Режим перемещения
-        /// </summary>
-       // public VEMoving Mode { get; protected set; } = VEMoving.Survival;
-        /// <summary>
-        /// Объект скоростей
-        /// </summary>
-       // protected EntitySpeed speed = new EntitySpeed();
-        /// <summary>
         /// Ключевой объект перемещения движения
         /// </summary>
         public Moving Mov { get; protected set; } = new Moving();
-
         /// <summary>
         /// Любое изменение в движении
         /// </summary>
         protected bool isMotion = true;
         /// <summary>
-        /// Было ли изменение в хитбоксе
-        /// </summary>
-        protected bool isMotionHitbox = false;
-        /// <summary>
         /// Количество тактов для запрета повторного прыжка
         /// </summary>
         protected int jumpTicks = 0;
-        
-        private string strHVJ = "";
         /// <summary>
         /// Дистанция падения
         /// </summary>
         private float fallDistance = 0;
         /// <summary>
-        /// Дистанция прыжка вверх
+        /// Результат падения, отладка!!!
         /// </summary>
-        private float jumpDistance = 0;
+        private float fallDistanceResult = 0;
+        /// <summary>
+        /// Отладка!!!
+        /// </summary>
+        private string strHVJ = "";
 
-        private vec3 motion;
-
-        
         /// <summary>
         /// Вызывается для обновления позиции / логики объекта
         /// </summary>
@@ -66,15 +48,19 @@ namespace MvkServer.Entity
             float height = IsFlying ? Mov.Height() : Mov.Up.Value > 0 ? 1f : 0;
 
             // Sprinting
-            IsSprinting = Mov.Sprinting.Value > 0;
+            bool isSprinting = Mov.Sprinting.Value > 0 && !Mov.Forward.IsZero();
+            if (IsSprinting != isSprinting)
+            {
+                IsSprinting = isSprinting;
+                isMotion = true;
+            }
 
             // Обновить положение сидя
             if (!IsFlying && OnGround && Mov.Down.GetBegin() && !IsSneaking)
             {
                 // Только в выживании можно сесть
                 IsSneaking = true;
-                SetSize(2.7f, 2.5f);
-                isMotionHitbox = true;
+                Sitting();
                 isMotion = true;
             }
 
@@ -88,16 +74,16 @@ namespace MvkServer.Entity
             if ((Mov.Down.GetEnd() || Mov.Down.IsZero()) && IsSneaking)
             {
                 // Проверка коллизии вверхней части при положении стоя
-                SetSize(3.6f, 3.4f);
+                Standing();
+                // TODO:: хочется как-то ловить колизию положение встать в MoveCheckCollision
                 if (NoClip || !World.Collision.IsCollisionBody(this, new vec3(Position + Motion)))
                 {
                     IsSneaking = false;
-                    isMotionHitbox = true;
                     isMotion = true;
                 }
                 else
                 {
-                    SetSize(2.7f, 2.5f);
+                    Sitting();
                 }
             }
 
@@ -113,18 +99,20 @@ namespace MvkServer.Entity
         /// </summary>
         protected vec3 MoveWithHeading(float strafe, float forward, float height)
         {
+            // Определение скорости направлений
             if (IsFlying)
             {
                 strafe *= .43f;
                 forward *= 1.1f;
                 height *= .75f;
+
             } else
             {
                 strafe *= .43f;
                 forward *= .43f;
             }
 
-            // == Определение скорости
+            // Ускорение или крастись
             if (IsSprinting && forward < 0 && !IsSneaking)
             {
                 // Бег 
@@ -134,11 +122,6 @@ namespace MvkServer.Entity
                 } else
                 {
                     forward *= 1.0f + 0.3f * Mov.Sprinting.Value;
-                    if (IsJumping)
-                    {
-                        // Если прыжок с бегом, то скорость увеличивается на 20%
-                        forward *= 1.2f;
-                    }
                 }
             }
             else if (!IsFlying && (forward != 0 || strafe != 0) && IsSneaking)
@@ -149,47 +132,46 @@ namespace MvkServer.Entity
             }
 
             strHVJ = string.Format("strafe:{0:0.00} forward:{1:0.00} height:{2:0.00}", strafe, forward, height);
-            motion = MotionAngle(strafe, forward, height);
 
-            motion.x *= .98f;
-            motion.z *= .98f;
+            // Конвертация из направлений в xyz
+            vec3 motion = MotionAngle(strafe, forward);//, height);
 
-            // Проверка начала прыжка
-            if (!IsFlying)
+            // Определение прыжка и высотного Y значения
+            if (IsFlying)
             {
-                if (!IsJumping && OnGround && motion.y > 0)
-                {
-                    // Прыжок
-                    if (jumpTicks == 0)
-                    {
-                        IsJumping = true;
-                        OnGround = false;
-                        motion.y = 0.84f;
-                        jumpDistance = motion.y;
-                        jumpTicks = 10;
-                    }
-                    else
-                    {
-                        // отмена прыжка
-                        motion.y = 0;
-                    }
-                }
+                motion.y = height;
+                IsJumping = false;
+            }
+            else
+            {
+                IsJumping = height == 1f;
+                if (OnGround) motion.y = -0.2f;
+                else motion.y = Motion.y - .16f;
+            }
 
-                // Расчёт падения
-                if (jumpTicks < 10 && !OnGround)
+            // Если мелось убираем
+            if (Mth.Abs(motion.x) < 0.005f) motion.x = 0;
+            if (Mth.Abs(motion.y) < 0.005f) motion.y = 0;
+            if (Mth.Abs(motion.z) < 0.005f) motion.z = 0;
+
+            // Мягкость
+            motion.x *= .5f;
+            motion.y *= .98f;
+            motion.z *= .5f;
+
+            // Прыжок, только выживание
+            if (IsJumping)
+            {
+                // для воды свои правила, плыть вверх
+                //...
+                // Для прыжка надо стоять на земле, и что счётик прыжка был = 0
+                if (OnGround && jumpTicks == 0)
                 {
-                    // Падаем
-                    float fall = motion.y;
-                    motion.y -= .16f; // .08
-                    motion.y *= .98f;
-                    if (motion.y > 0)
-                    {
-                        jumpDistance += motion.y;
-                    }
-                    else if (fall >= 0 && motion.y < 0)
-                    {
-                        fallDistance = 0;
-                    }
+                    vec3 motionJump = Jump();
+                    motion.x += motionJump.x;
+                    motion.y = motionJump.y;
+                    motion.z += motionJump.z;
+                    jumpTicks = 10;
                 }
             }
 
@@ -197,21 +179,34 @@ namespace MvkServer.Entity
         }
 
         /// <summary>
+        /// Значения для првжка
+        /// </summary>
+        protected vec3 Jump()
+        {
+            // Стартовое значение прыжка, чтоб на 6 так допрыгнут наивысшую точку в 2,5 блока
+            vec3 motion = new vec3(0, .84f, 0);
+            if (IsSprinting)
+            {
+                // Если прыжок с бегом, то скорость увеличивается на 20%
+                motion.x += glm.sin(RotationYaw) * 0.2f;
+                motion.z -= glm.cos(RotationYaw) * 0.2f;
+            }
+            return motion;
+        }
+
+        /// <summary>
         /// Определение вращения
         /// </summary>
-        protected vec3 MotionAngle(float strafe, float forward, float height)
+        protected vec3 MotionAngle(float strafe, float forward)
         {
-            motion = new vec3(0)
-            {
-                y = IsFlying ? height : (OnGround && height > 0 ? height : Motion.y)
-            };
+            vec3 motion = Motion;
 
             if (strafe != 0 || forward != 0)
             {
                 float ysin = glm.sin(RotationYaw);
                 float ycos = glm.cos(RotationYaw);
-                motion.x = ycos * strafe - ysin * forward;
-                motion.z = ycos * forward + ysin * strafe;
+                motion.x += ycos * strafe - ysin * forward;
+                motion.z += ycos * forward + ysin * strafe;
             }
             return motion;
         }
@@ -228,35 +223,58 @@ namespace MvkServer.Entity
                 return;
             }
 
-            // Проверка на начало падения
-            bool isCheckFall = true;
+            // Расширение из-за огруглении float
+            AxisAlignedBB boundingBox = BoundingBox.Expand(new vec3(0.00001f, 0, 0.00001f));
 
-            AxisAlignedBB aabbEntity = BoundingBox.Clone();
-            List<AxisAlignedBB> aabbs = World.Collision.GetCollidingBoundingBoxes(BoundingBox.AddCoord(motion));
+            AxisAlignedBB aabbEntity = boundingBox.Clone();
+            List<AxisAlignedBB> aabbs;
 
-            float x = motion.x;
-            float y = motion.y;
-            float z = motion.z;
+            float x0 = motion.x;
+            float y0 = motion.y;
+            float z0 = motion.z;
+
+            float x = x0;
+            float y = y0;
+            float z = z0;
+
+            // Защита от падения с края блока если сидишь
+            // TODO:: проверку добавть только для Игроков, не падать с края!!!
+            if (OnGround && IsSneaking)
+            {
+                // Шаг проверки смещения
+                float step = 0.05f;
+                for (; x != 0f && World.Collision.GetCollidingBoundingBoxes(boundingBox.Offset(new vec3(x, -1, 0))).Count == 0; x0 = x)
+                {
+                    if (x < step && x >= -step) x = 0f;
+                    else if (x > 0f) x -= step;
+                    else x += step;
+                }
+                for (; z != 0f && World.Collision.GetCollidingBoundingBoxes(boundingBox.Offset(new vec3(0, -1, z))).Count == 0; z0 = z)
+                {
+                    if (z < step && z >= -step) z = 0f;
+                    else if (z > 0f) z -= step;
+                    else z += step;
+                }
+                for (; x != 0f && z0 != 0f && World.Collision.GetCollidingBoundingBoxes(boundingBox.Offset(new vec3(x0, -1, z0))).Count == 0; z0 = z)
+                {
+                    if (x < step && x >= -step) x = 0f;
+                    else if (x > 0f) x -= step;
+                    else x += step;
+                    x0 = x;
+                    if (z < step && z >= -step) z = 0f;
+                    else if (z > 0f) z -= step;
+                    else z += step;
+                }
+            }
+
+            aabbs = World.Collision.GetCollidingBoundingBoxes(boundingBox.AddCoord(new vec3(x, y, z)));
 
             // Находим смещение по Y
-            foreach(AxisAlignedBB axis in aabbs) y = axis.CalculateYOffset(aabbEntity, y);
+            foreach (AxisAlignedBB axis in aabbs) y = axis.CalculateYOffset(aabbEntity, y);
             aabbEntity = aabbEntity.Offset(new vec3(0, y, 0));
-
-            // счётчик дистанции падения
-            if (y < 0) fallDistance -= y;
 
             // Не прыгаем (момент взлёта)
             bool isNotJump = OnGround || motion.y != y && motion.y < 0f;
-
-            if (!OnGround && motion.y < y)
-            {
-                // Окончание падения
-                OnGround = true;
-                isMotion = true;
-                IsJumping = false;
-                // Если закончили падать, нет смысла проверять начало падения
-                isCheckFall = false;
-            }
 
             // Находим смещение по X
             foreach (AxisAlignedBB axis in aabbs) x = axis.CalculateXOffset(aabbEntity, x);
@@ -267,17 +285,15 @@ namespace MvkServer.Entity
             aabbEntity = aabbEntity.Offset(new vec3(0, 0, z));
 
             // Запуск проверки авто прыжка
-            if (MvkGlobal.AUTO_JUMP_STEP_HEIGHT > 0f && isCheckFall && isNotJump && (motion.x != x || motion.z != z))
+            if (StepHeight > 0f && isNotJump && (x0 != x || z0 != z))
             {
-                // Какую высоту можно прыгать
-                float stepHeight = MvkGlobal.AUTO_JUMP_STEP_HEIGHT;
                 // Кэш для откада, если авто прыжок не допустим
                 vec3 monCache = new vec3(x, y, z);
 
-                y = stepHeight;
-                aabbs = World.Collision.GetCollidingBoundingBoxes(BoundingBox.AddCoord(new vec3(motion.x, y, motion.z)));
-                AxisAlignedBB aabbEntity2 = BoundingBox.Clone();
-                AxisAlignedBB aabb = aabbEntity2.AddCoord(new vec3(motion.x, 0, motion.z));
+                y = StepHeight;
+                aabbs = World.Collision.GetCollidingBoundingBoxes(boundingBox.AddCoord(new vec3(x0, y, z0)));
+                AxisAlignedBB aabbEntity2 = boundingBox.Clone();
+                AxisAlignedBB aabb = aabbEntity2.AddCoord(new vec3(x0, 0, z0));
 
                 // Находим смещение по Y
                 float y2 = y;
@@ -285,16 +301,16 @@ namespace MvkServer.Entity
                 aabbEntity2 = aabbEntity2.Offset(new vec3(0, y2, 0));
 
                 // Находим смещение по X
-                float x2 = motion.x;
+                float x2 = x0;
                 foreach (AxisAlignedBB axis in aabbs) x2 = axis.CalculateXOffset(aabbEntity2, x2);
                 aabbEntity2 = aabbEntity2.Offset(new vec3(x2, 0, 0));
 
                 // Находим смещение по Z
-                float z2 = motion.z;
+                float z2 = z0;
                 foreach (AxisAlignedBB axis in aabbs) z2 = axis.CalculateZOffset(aabbEntity2, z2);
                 aabbEntity2 = aabbEntity2.Offset(new vec3(0, 0, z2));
 
-                AxisAlignedBB aabbEntity3 = BoundingBox.Clone();
+                AxisAlignedBB aabbEntity3 = boundingBox.Clone();
 
                 // Находим смещение по Y
                 float y3 = y;
@@ -302,12 +318,12 @@ namespace MvkServer.Entity
                 aabbEntity3 = aabbEntity3.Offset(new vec3(0, y3, 0));
 
                 // Находим смещение по X
-                float x3 = motion.x;
+                float x3 = x0;
                 foreach (AxisAlignedBB axis in aabbs) x3 = axis.CalculateXOffset(aabbEntity3, x3);
                 aabbEntity3 = aabbEntity3.Offset(new vec3(x3, 0, 0));
 
                 // Находим смещение по Z
-                float z3 = motion.z;
+                float z3 = z0;
                 foreach (AxisAlignedBB axis in aabbs) z3 = axis.CalculateZOffset(aabbEntity3, z3);
                 aabbEntity3 = aabbEntity3.Offset(new vec3(0, 0, z3));
 
@@ -322,7 +338,7 @@ namespace MvkServer.Entity
                     z = z3;
                     aabbEntity = aabbEntity3;
                 }
-                y = -stepHeight;
+                y = -StepHeight;
 
                 // Находим итоговое смещение по Y
                 foreach (AxisAlignedBB axis in aabbs) y = axis.CalculateYOffset(aabbEntity, y);
@@ -337,29 +353,28 @@ namespace MvkServer.Entity
                 else
                 {
                     // Авто прыжок
-                    SetPosition(new vec3(Position.x, Position.y + stepHeight + y, Position.z));
-                    // убираем, так как в следующем такте остаётся в Motion.y значение, и срабатывает падение
-                    y = 0;
-                    isMotion = true;
-                    // Если авто прыжок, нет смысла проверять падение
-                    isCheckFall = false;
-                }
-            }
-            
-            // Этап проверки начала падения
-            if (isCheckFall && OnGround)
-            {
-                // Глубина где проверяем падение и фиксируем начало падения
-                float fall = .02f;
-                if (!World.Collision.IsCollisionDown(this, new vec3(Position + new vec3(x, y - fall, z))))
-                {
-                    // Если стоим на земле но под нагами нет блоков, начинаем падать
-                    OnGround = false;
-                    y = -fall;
-                    fallDistance = fall;
+                    y += StepHeight;
                 }
             }
 
+            IsCollidedHorizontally = x0 != x || z0 != z;
+            IsCollidedVertically = y0 != y;
+            OnGround = IsCollidedVertically && y0 < 0.0f;
+            IsCollided = IsCollidedHorizontally || IsCollidedVertically;
+
+            // Определение дистанции падения, и фиксаия падения
+            if (y < 0f) fallDistance -= y;
+            if (OnGround)
+            {
+                if (fallDistance > 0f)
+                {
+                    // Упал
+                    fallDistanceResult = fallDistance;
+                    fallDistance = 0f;
+                }
+            }
+
+            // Обновить значения перемещения для следующего такта
             Motion = new vec3(x, y, z);
         }
 
@@ -373,7 +388,7 @@ namespace MvkServer.Entity
             return string.Format("{0}\r\n{1}{2}{5}{7} jm:{6:0.00} boom:{8:0.00} {3} \r\nPos Serv:{4}",
                 strHVJ, OnGround ? "__" : "",
                 IsSprinting ? "[Sp]" : "",
-                Motion, Position, IsJumping ? "[J]" : "", jumpDistance, IsSneaking ? "[Sn]" : ""
+                Motion, Position, IsJumping ? "[J]" : "", fallDistanceResult, IsSneaking ? "[Sn]" : ""
                 , fallDistance);
         }
     }

@@ -14,26 +14,6 @@ namespace MvkServer.Entity
         /// </summary>
         public WorldBase World { get; protected set; }
         /// <summary>
-        /// В каком чанке находится
-        /// </summary>
-        public vec2i ChunkPos { get; protected set; } = new vec2i();
-        /// <summary>
-        /// Позиция псевдо чанка
-        /// </summary>
-        public int ChunkY { get; protected set; }
-        /// <summary>
-        /// В каком блоке находится
-        /// </summary>
-        public vec3i BlockPos { get; protected set; } = new vec3i();
-        /// <summary>
-        /// На каком стоим блоке
-        /// </summary>
-        public vec3i BlockPosDown { get; protected set; } = new vec3i();
-        /// <summary>
-        /// В каком чанке было обработка чанков
-        /// </summary>
-        public vec2i ChunkPosManaged { get; protected set; } = new vec2i();
-        /// <summary>
         /// Позиция объекта
         /// </summary>
         public vec3 Position { get; private set; }
@@ -45,11 +25,6 @@ namespace MvkServer.Entity
         /// Поворот вверх вниз
         /// </summary>
         public float RotationPitch { get; protected set; }
-        /// <summary>
-        /// Хитбок сущьности
-        /// </summary>
-        public HitBox Hitbox { get; protected set; }
-
         /// <summary>
         /// Перемещение объекта
         /// </summary>
@@ -82,6 +57,31 @@ namespace MvkServer.Entity
         /// Ограничивающая рамка
         /// </summary>
         public AxisAlignedBB BoundingBox { get; protected set; }
+        /// <summary>
+        /// Пол ширина сущности
+        /// </summary>
+        public float Width { get; protected set; }
+        /// <summary>
+        /// Высота сущности
+        /// </summary>
+        public float Height { get; protected set; }
+        /// <summary>
+        /// Как высоко эта сущность может подняться при столкновении с блоком, чтобы попытаться преодолеть его
+        /// </summary>
+        public float StepHeight { get; protected set; }
+
+        /// <summary>
+        /// Истинно, если после перемещения этот объект столкнулся с чем-то по оси X или Z. 
+        /// </summary>
+        public bool IsCollidedHorizontally { get; protected set; } = false;
+        /// <summary>
+        /// Истинно, если после перемещения этот объект столкнулся с чем-то по оси Y 
+        /// </summary>
+        public bool IsCollidedVertically { get; protected set; } = false;
+        /// <summary>
+        /// Истинно, если после перемещения эта сущность столкнулась с чем-то либо вертикально, либо горизонтально 
+        /// </summary>
+        public bool IsCollided { get; protected set; } = false;
 
         #region PervLast
 
@@ -96,9 +96,38 @@ namespace MvkServer.Entity
         /// <summary>
         /// Координата объекта на предыдущем тике, используемая для расчета позиции во время процедур рендеринга
         /// </summary>
-        public vec3 PositionLast { get; protected set; }
+        public vec3 PositionPrev { get; protected set; }
 
         #endregion
+
+        // TODO:: Enity.getLook // Enity.func_174806_f // Enity.func_174824_e // Enity.func_174822_a
+
+        #region Get Methods
+
+        /// <summary>
+        /// В каком блоке находится
+        /// </summary>
+        public vec3i GetBlockPos() => new vec3i(Position);
+        /// <summary>
+        /// В каком чанке находится
+        /// </summary>
+        public vec2i GetChunkPos() => new vec2i(Mth.Floor(Position.x) >> 4, Mth.Floor(Position.z) >> 4);
+        /// <summary>
+        /// Позиция псевдо чанка
+        /// </summary>
+        public int GetChunkY() => Mth.Floor(Position.y) >> 4;
+        /// <summary>
+        /// Получить ограничительную рамку на выбранной позиции
+        /// </summary>
+        public AxisAlignedBB GetBoundingBox(vec3 pos) => new AxisAlignedBB(pos - new vec3(Width, 0, Width), pos + new vec3(Width, Height, Width));
+        /// <summary>
+        /// Высота глаз
+        /// </summary>
+        public float GetEyeHeight() => Height * 0.85f;
+
+        #endregion
+
+        #region Set Methods
 
         /// <summary>
         /// Задать вращение
@@ -117,10 +146,6 @@ namespace MvkServer.Entity
             if (!Position.Equals(pos))
             {
                 Position = pos;
-                BlockPos = new vec3i(Position);
-                BlockPosDown = new vec3i(new vec3(pos.x, pos.y - 1, pos.z));
-                ChunkPos = new vec2i((BlockPos.x) >> 4, (BlockPos.z) >> 4);
-                ChunkY = (BlockPos.y) >> 4;
                 UpBoundingBox();
                 return true;
             }
@@ -128,24 +153,26 @@ namespace MvkServer.Entity
         }
 
         /// <summary>
-        /// Задать чанк обработки
-        /// </summary>
-        public void SetChunkPosManaged(vec2i pos) => ChunkPosManaged = pos;
-
-        /// <summary>
-        /// Проверка смещения чанка на выбранное положение
-        /// </summary>
-        public bool CheckPosManaged(int bias)
-            => Mth.Abs(ChunkPos.x - ChunkPosManaged.x) >= bias || Mth.Abs(ChunkPos.y - ChunkPosManaged.y) >= bias;
-
-        /// <summary>
         /// Заменить размер хитбокс сущности
         /// </summary>
-        protected void SetSize(float height, float eyes)
+        protected void SetSize(float width, float height)
         {
-            Hitbox = Hitbox.SetHeightEyes(height, eyes);
+            Height = height;
+            Width = width;
             UpBoundingBox();
         }
+
+        /// <summary>
+        /// Положение стоя
+        /// </summary>
+        protected virtual void Standing() => SetSize(.6f, 3.6f);
+
+        /// <summary>
+        /// Положение сидя
+        /// </summary>
+        protected virtual void Sitting() => SetSize(.6f, 2.6f);
+
+        #endregion
 
         /// <summary>
         /// Обновить ограничительную рамку
@@ -153,16 +180,11 @@ namespace MvkServer.Entity
         protected void UpBoundingBox() => BoundingBox = GetBoundingBox(Position);
 
         /// <summary>
-        /// Получить ограничительную рамку на выбранной позиции
-        /// </summary>
-        public AxisAlignedBB GetBoundingBox(vec3 pos) => new AxisAlignedBB(pos - Hitbox.VecWidth(), pos + Hitbox.VecAll());
-
-        /// <summary>
         /// Вызывается для обновления позиции / логики объекта
         /// </summary>
         public virtual void Update()
         {
-            PositionLast = Position;
+            PositionPrev = Position;
             RotationYawLast = RotationYaw;
             RotationPitchLast = RotationPitch;
         }

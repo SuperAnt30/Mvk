@@ -65,6 +65,7 @@
     <Compile Include="Util\ObjectEvent.cs" />
     <Compile Include="Util\Pole.cs" />
     <Compile Include="Util\Smooth.cs" />
+    <Compile Include="Util\SmoothFrame.cs" />
     <Compile Include="World\Block\BlockBase.cs" />
     <Compile Include="World\Block\Blocks.cs" />
     <Compile Include="World\Block\Box.cs" />

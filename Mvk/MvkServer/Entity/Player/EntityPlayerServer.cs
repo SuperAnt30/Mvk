@@ -56,24 +56,25 @@ namespace MvkServer.Entity.Player
         /// </summary>
         public override void Update()
         {
-            base.Update();
+            //base.Update();
             try
             {
-                if (isMotion)
-                {
-                    isMotion = false;
-                    vec3 pos = Position + Motion;
-                    SetPosition(pos);
-                    if (isMotionHitbox)
-                    {
-                        isMotionHitbox = false;
-                        ServerMain.ResponsePacket(SocketClient, new PacketB20Player().Position(pos, Hitbox.GetHeight(), Hitbox.GetEyes()));
-                    }
-                    else
-                    {
-                        ServerMain.ResponsePacket(SocketClient, new PacketB20Player().Position(pos));
-                    }
-                }
+                //if (isMotion)
+                //{
+                //    isMotion = false;
+                //    vec3 pos = Position + Motion;
+                //    SetPosition(pos);
+                //    if (isMotionHitbox)
+                //    {
+                //        isMotionHitbox = false;
+                //        ServerMain.ResponsePacket(SocketClient, new PacketB20Player().Position(pos, Height, Width, ""));
+                //    }
+                //    else
+                //    {
+                //        ServerMain.World.Players.ResponsePacketAll(new PacketB20Player().Position(pos, Name));
+                //        //ServerMain.ResponsePacket(SocketClient, new PacketB20Player().Position(pos, ""));
+                //    }
+                //}
 
                 int i = 0;
                 while (LoadedChunks.Count > 0 && i < MvkGlobal.COUNT_PACKET_CHUNK_TPS)

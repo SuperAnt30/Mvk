@@ -84,8 +84,9 @@ namespace MvkClient.World
         {
             // дополнительно к обзору для кэша из-за клона обработки, разных потоков
             int additional = 6;
-            vec2i min = entity.ChunkPos - (entity.OverviewChunk + additional);
-            vec2i max = entity.ChunkPos + (entity.OverviewChunk + additional);
+            vec2i chunkCoor = entity.GetChunkPos();
+            vec2i min = chunkCoor - (entity.OverviewChunk + additional);
+            vec2i max = chunkCoor + (entity.OverviewChunk + additional);
 
             Hashtable ht = chunkMapping.CloneMap();
             foreach (ChunkRender chunk in ht.Values)

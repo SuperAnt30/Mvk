@@ -24,10 +24,16 @@ namespace MvkServer.Entity.Player
         /// Массив по длинам используя квадратный корень для всей видимости
         /// </summary>
         public vec2i[] DistSqrt { get; protected set; }
+        /// <summary>
+        /// В каком чанке было обработка чанков
+        /// </summary>
+        public vec2i ChunkPosManaged { get; protected set; } = new vec2i();
+
 
         protected EntityPlayer()
         {
-            Hitbox = new HitBox(0.6f, 3.6f, 3.4f);
+            Standing();
+            StepHeight = 1.2f;
         }
 
         /// <summary>
@@ -47,5 +53,20 @@ namespace MvkServer.Entity.Player
             OverviewChunk = overviewChunk;
             DistSqrt = MvkStatic.GetSqrt(overviewChunk + plusDistSqrt);
         }
+
+        /// <summary>
+        /// Задать чанк обработки
+        /// </summary>
+        public void SetChunkPosManaged(vec2i pos) => ChunkPosManaged = pos;
+
+        /// <summary>
+        /// Проверка смещения чанка на выбранное положение
+        /// </summary>
+        public bool CheckPosManaged(int bias)
+        {
+            vec2i chunk = GetChunkPos();
+            return Mth.Abs(chunk.x - ChunkPosManaged.x) >= bias || Mth.Abs(chunk.y - ChunkPosManaged.y) >= bias;
+        }
+            
     }
 }

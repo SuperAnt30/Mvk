@@ -1,8 +1,10 @@
 ﻿using MvkAssets;
+using MvkClient.Entity;
 using MvkClient.Renderer.Chunk;
 using MvkClient.Renderer.Shaders;
 using MvkClient.World;
 using MvkServer;
+using MvkServer.Entity;
 using MvkServer.Glm;
 using SharpGL;
 using System.Collections.Generic;
@@ -34,9 +36,15 @@ namespace MvkClient.Renderer
             if (World.Player.Projection == null) World.Player.UpProjection();
             if (World.Player.LookAt == null) World.Player.UpLookAt();
 
+            // время от TPS клиента
+            float indexW = World.TimeIndex();
+            foreach (EntityPlayerClient entity in World.Entities.Values)
+            {
+                entity.UpdatePositionFrame(entity.TimeIndex());
+            }
             World.Player.UpdateFrame();
 
-            RenderHitBox();
+            RenderHitBoxEntitis();
             DrawLine();
 
             //GLWindow.gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_LINE);
@@ -87,13 +95,25 @@ namespace MvkClient.Renderer
 
         private LineMesh hitboxPlayer = new LineMesh();
 
-        private void RenderHitBox()
+
+        private void RenderHitBoxEntitis()
         {
-            vec3 pos = World.Player.PositionDraw;
-            float w = World.Player.HitboxDraw.GetWidth(); // .6
+            List<float> buffer = new List<float>();
+            buffer.AddRange(RenderHitBox(World.Player));
+            foreach(EntityPlayerClient entity in World.Entities.Values)
+            {
+                if (entity.Name != World.Player.Name) buffer.AddRange(RenderHitBox(entity));
+            }
+            hitboxPlayer.BindBuffer(buffer);
+        }
+
+        private List<float> RenderHitBox(EntityPlayerClient entity)
+        {
+            vec3 pos = entity.PositionFrame;
+            float w = entity.Width; // .6
             float w2 = w * 2f;
-            float h = World.Player.HitboxDraw.GetHeight(); // 3.6
-            float e = World.Player.HitboxDraw.GetEyes(); // 3.25
+            float h = entity.Height; // 3.6
+            float e = entity.GetEyeHeight(); 
             float y = pos.y + h / 2f;
             List<float> buffer = new List<float>();
             buffer.AddRange(hitboxPlayer.Box(pos.x, y, pos.z, w2, h, w2, 0, 1, 1, 1));
@@ -103,8 +123,18 @@ namespace MvkClient.Renderer
             buffer.AddRange(hitboxPlayer.Line(pos.x - w, y, pos.z - w, pos.x + w, y, pos.z - w, col));
             buffer.AddRange(hitboxPlayer.Line(pos.x + w, y, pos.z - w, pos.x + w, y, pos.z + w, col));
             buffer.AddRange(hitboxPlayer.Line(pos.x - w, y, pos.z - w, pos.x - w, y, pos.z + w, col));
+            
+            float ycos = glm.cos(entity.RotationPitch);
+            vec3 ray = new vec3(
+                glm.sin(entity.RotationYaw) * ycos,
+                glm.sin(entity.RotationPitch),
+                -glm.cos(entity.RotationYaw) * ycos
+                ).normalize() * 2f;
 
-            hitboxPlayer.BindBuffer(buffer);
+            buffer.AddRange(hitboxPlayer.Line(pos.x, y, pos.z, pos.x + ray.x, y + ray.y, pos.z + ray.z, col));
+
+            return buffer;
+            //hitboxPlayer.BindBuffer(buffer);
         }
 
         /// <summary>

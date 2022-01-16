@@ -71,7 +71,7 @@ namespace MvkServer.Management
                 Random random = new Random();
                 entityPlayer.SetRotation(-0.9f, -.8f);
                 entityPlayer.SetPosition(new vec3(random.Next(-16, 16) + 80, 30, random.Next(-16, 16)));
-                entityPlayer.SetChunkPosManaged(entityPlayer.ChunkPos);
+                entityPlayer.SetChunkPosManaged(entityPlayer.GetChunkPos());
                 AddMountedMovingPlayer(entityPlayer);
                 players.Add(entityPlayer.UUID, entityPlayer);
                 FilterChunkLoadQueue(entityPlayer);
@@ -295,8 +295,9 @@ namespace MvkServer.Management
             if (entityPlayer.CheckPosManaged(2))
             {
                 int radius = entityPlayer.OverviewChunk + 1;
-                int chx = entityPlayer.ChunkPos.x;
-                int chz = entityPlayer.ChunkPos.y;
+                vec2i chunkCoor = entityPlayer.GetChunkPos(); 
+                int chx = chunkCoor.x;
+                int chz = chunkCoor.y;
                 int chmx = entityPlayer.ChunkPosManaged.x;
                 int chmz = entityPlayer.ChunkPosManaged.y;
                 int dx = chx - chmx;

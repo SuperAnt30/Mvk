@@ -1,6 +1,7 @@
 ﻿using MvkServer.Glm;
 using MvkServer.World.Block;
 using MvkServer.World.Chunk;
+using System.Collections;
 
 namespace MvkServer.World
 {
@@ -20,7 +21,7 @@ namespace MvkServer.World
         /// <summary>
         /// Список сущностей
         /// </summary>
-        //public Hashtable Entities { get; protected set; }
+        public Hashtable Entities { get; protected set; } = new Hashtable();
 
 
         protected WorldBase() => Collision = new CollisionBase(this);

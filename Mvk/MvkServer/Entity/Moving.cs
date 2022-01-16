@@ -38,13 +38,13 @@ namespace MvkServer.Entity
 
         public Moving()
         {
-            Forward = new Smooth(0.1f, .2f);
-            Back = new Smooth(0.1f, .2f);
-            Right = new Smooth(0.1f, .2f);
-            Left = new Smooth(0.1f, .2f);
-            Up = new Smooth(.5f);
-            Down = new Smooth(0.2f);
-            Sprinting = new Smooth(0.2f);
+            Forward = new Smooth(1f, 1f);
+            Back = new Smooth(1f, 1f);
+            Right = new Smooth(1f, 1f);
+            Left = new Smooth(1f, 1f);
+            Up = new Smooth(1f);
+            Down = new Smooth(1f);
+            Sprinting = new Smooth(1f);
         }
 
         /// <summary>

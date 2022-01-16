@@ -259,7 +259,7 @@ namespace MvkServer
             ServerRunning = true;
 
             EntityPlayerServer entityPlayer = World.Players.GetEntityPlayerMain();
-            vec2i pos = entityPlayer != null ? entityPlayer.ChunkPos : new vec2i(0, 0);
+            vec2i pos = entityPlayer != null ? entityPlayer.GetChunkPos() : new vec2i(0, 0);
 
             int radius = MvkGlobal.OVERVIEW_CHUNK_START;
             OnLoadStepCount((radius + radius + 1) * (radius + radius + 1));

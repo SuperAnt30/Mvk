@@ -72,6 +72,10 @@ namespace MvkClient
         /// Атрибут запуска управления мыши
         /// </summary>
         protected bool firstMouse;
+        /// <summary>
+        /// Режим 3д управление мышки
+        /// </summary>
+        protected bool isMouseGamePlay = true;
 
         #region EventsWindow
 
@@ -144,11 +148,11 @@ namespace MvkClient
         /// </summary>
         public void WindowDeactivate()
         {
-            // Если режим активного управления, запускаем меню игры
-            if (IsGamePlayAction())
-            {
-                Screen.InGameMenu();
-            }
+            // Если режим активного управления
+            // Выходим из режима управления 3д
+            MouseGamePlay(false);
+            // запускаем меню игры
+            // Screen.InGameMenu();
         }
 
         /// <summary>
@@ -204,12 +208,30 @@ namespace MvkClient
                 {
                     Screen.InGameMenu();
                 }
+                else if (key == 9) // Tab
+                {
+                    MouseGamePlay(!isMouseGamePlay);
+                }
                 else
                 {
                     // TODO::KeyAction
                     World.Player.KeyActionTrancivePacket(Keyboard.KeyActionToDown(key));
                     //World.Player.Mov.Key(Keyboard.KeyActionToDown(key));
                 }
+            }
+        }
+
+        /// <summary>
+        /// Активация или деактивация управление мыши от одного лица в 3д
+        /// </summary>
+        /// <param name="action">true - активация</param>
+        public void MouseGamePlay(bool action)
+        {
+            if (IsGamePlayAction() && isMouseGamePlay != action)
+            {
+                isMouseGamePlay = action;
+                if (isMouseGamePlay) firstMouse = true;
+                CursorShow(!action);
             }
         }
         /// <summary>
@@ -239,6 +261,9 @@ namespace MvkClient
         /// </summary>
         public void MouseDown(MouseButton button, int x, int y)
         {
+            // Если надо, то включаем режим управления 3д
+            MouseGamePlay(true);
+            // Действия клика мышки передаём в GUI скрина
             Screen.MouseDown(button, x, y);
         }
 
@@ -260,7 +285,7 @@ namespace MvkClient
         /// <returns>true - сбросить на центр</returns>
         public bool MouseMove(int x, int y, int deltaX, int deltaY)
         {
-            if (IsGamePlayAction())
+            if (IsGamePlayAction() && isMouseGamePlay)
             {
                 if (firstMouse)
                 {
@@ -452,6 +477,7 @@ namespace MvkClient
                 TickCounter++;
 
                 World.Tick();
+                World.Player.Update();
 
                 if (TickCounter % 4 == 0)
                 {
