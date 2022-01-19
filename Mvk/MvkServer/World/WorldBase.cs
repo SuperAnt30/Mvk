@@ -18,10 +18,7 @@ namespace MvkServer.World
         /// Объект проверки коллизии
         /// </summary>
         public CollisionBase Collision { get; protected set; }
-        /// <summary>
-        /// Список сущностей
-        /// </summary>
-        public Hashtable Entities { get; protected set; } = new Hashtable();
+        
 
 
         protected WorldBase() => Collision = new CollisionBase(this);

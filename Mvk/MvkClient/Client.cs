@@ -212,11 +212,17 @@ namespace MvkClient
                 {
                     MouseGamePlay(!isMouseGamePlay);
                 }
+                else if (key == 116) // F5
+                {
+                    World.Player.ModeFly();
+                }
+                else if (key == 117) // F6
+                {
+                    World.Player.ModeSurvival();
+                }
                 else
                 {
-                    // TODO::KeyAction
                     World.Player.KeyActionTrancivePacket(Keyboard.KeyActionToDown(key));
-                    //World.Player.Mov.Key(Keyboard.KeyActionToDown(key));
                 }
             }
         }
@@ -231,6 +237,7 @@ namespace MvkClient
             {
                 isMouseGamePlay = action;
                 if (isMouseGamePlay) firstMouse = true;
+                else World.Player.Mov.AllEnd();
                 CursorShow(!action);
             }
         }
@@ -250,9 +257,7 @@ namespace MvkClient
         {
             if (World != null)
             {
-                // TODO::KeyAction
                 World.Player.KeyActionTrancivePacket(Keyboard.KeyActionToUp(key));
-                //World.Player.Mov.Key(Keyboard.KeyActionToUp(key));
             }
         }
 

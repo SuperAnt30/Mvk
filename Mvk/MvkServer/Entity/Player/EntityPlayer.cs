@@ -13,6 +13,10 @@ namespace MvkServer.Entity.Player
         /// </summary>
         public string UUID { get; protected set; }
         /// <summary>
+        /// Порядковый номер игрока на сервере, с момента запуска сервера
+        /// </summary>
+        public ushort Id { get; protected set; }
+        /// <summary>
         /// Имя
         /// </summary>
         public string Name { get; protected set; }
@@ -33,16 +37,8 @@ namespace MvkServer.Entity.Player
         protected EntityPlayer()
         {
             Standing();
+            SpeedSurvival();
             StepHeight = 1.2f;
-        }
-
-        /// <summary>
-        /// Задать id и имя игрока
-        /// </summary>
-        public void SetUUID(string name, string uuid)
-        {
-            Name = name;
-            UUID = uuid;
         }
 
         /// <summary>

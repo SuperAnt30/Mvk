@@ -63,5 +63,18 @@ namespace MvkServer.Glm
             return c == 0 ? float.PositiveInfinity : sin(angle) / c;
             //return (float)Math.Tan(angle);
         }
+
+        public static float atan2(float y, float x) => (float)Math.Atan2(y, x);
+
+        /// <summary>
+        /// Перевести угол в радианах в -180 .. 180
+        /// </summary>
+        public static float wrapAngleToPi(float angle)
+        {
+            angle %= pi360;
+            if (angle >= pi) angle -= pi360;
+            if (angle < -pi) angle += pi360;
+            return angle;
+        }
     }
 }

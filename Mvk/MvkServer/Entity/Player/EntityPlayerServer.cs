@@ -42,6 +42,11 @@ namespace MvkServer.Entity.Player
         }
 
         /// <summary>
+        /// Задать порядковый номер на сервере
+        /// </summary>
+        public void SetId(ushort id) => Id = id;
+
+        /// <summary>
         /// Получить хэш по строке
         /// </summary>
         protected string GetHash(string input)

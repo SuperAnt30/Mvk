@@ -32,6 +32,10 @@ namespace MvkServer.Management
         /// Чанки игроков
         /// </summary>
         public Hashtable chunkCoordPlayers = new Hashtable();
+        /// <summary>
+        /// Последний порядковый номер игрока с момента запуска
+        /// </summary>
+        protected ushort lastPlayerId = 0;
 
         /// <summary>
         /// фиксатор чистки мира
@@ -67,8 +71,10 @@ namespace MvkServer.Management
         {
             if (!players.ContainsKey(entityPlayer.UUID))
             {
+                lastPlayerId++;
                 // TODO::Тут проверяем место положение персонажа, и заносим при запуске
                 Random random = new Random();
+                entityPlayer.SetId(lastPlayerId);
                 entityPlayer.SetRotation(-0.9f, -.8f);
                 entityPlayer.SetPosition(new vec3(random.Next(-16, 16) + 80, 30, random.Next(-16, 16)));
                 entityPlayer.SetChunkPosManaged(entityPlayer.GetChunkPos());
@@ -106,6 +112,7 @@ namespace MvkServer.Management
                 World.ServerMain.Log.Log("server.player.entry.repeat {0} [{1}]", entityPlayer.Name, entityPlayer.UUID);
                 RemoveMountedMovingPlayer(entityPlayer);
                 players.Remove(entityPlayer.UUID);
+                ResponsePacketAll(new PacketS15Disconnect(entityPlayer.Id));
             }
         }
 
@@ -180,7 +187,7 @@ namespace MvkServer.Management
                 else
                 {
                     // Сетевой игрок подключён, сразу отправляем пакет PacketS12Success
-                    GameBegin(entityPlayer);
+                    ResponsePacketS12Success(entityPlayer);
                 }
             } else
             {
@@ -197,29 +204,23 @@ namespace MvkServer.Management
         public void LoginStart()
         {
             EntityPlayerServer player = GetEntityPlayerMain();
-            if (player != null) GameBegin(player);
-        }
-
-        protected void ResponsePacketS12Success(EntityPlayerServer player)
-        {
-            PacketS12Success packet = new PacketS12Success(player.UUID)
-            {
-                Pos = player.Position,
-                Yaw = player.RotationYaw,
-                Pitch = player.RotationPitch
-            };
-            ResponsePacket(player, packet);
-            ResponsePacket(player, new PacketS14TimeUpdate(World.ServerMain.TickCounter));
+            if (player != null) ResponsePacketS12Success(player);
         }
 
         /// <summary>
         /// Начало игры, прошли проверку на игрока, теперь в игре
         /// </summary>
-        protected void GameBegin(EntityPlayerServer player)
+        protected void ResponsePacketS12Success(EntityPlayerServer player)
         {
-            // отправить игроку его местоположение и время сервера
-            ResponsePacketS12Success(player);
+            ResponsePacketAll(new PacketS12Success(player));
+            ResponsePacket(player, new PacketS14TimeUpdate(World.ServerMain.TickCounter));
             
+            // Так же отправляем всех игроков новому игроку
+            Hashtable ht = players.Clone() as Hashtable;
+            foreach (EntityPlayerServer player2 in ht.Values)
+            {
+                if (player.UUID != player2.UUID) ResponsePacket(player, new PacketS12Success(player2));
+            }
         }
 
         /// <summary>

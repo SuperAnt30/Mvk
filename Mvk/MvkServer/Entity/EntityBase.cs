@@ -48,7 +48,7 @@ namespace MvkServer.Entity
         /// <summary>
         /// Летает ли сущность
         /// </summary>
-        public bool IsFlying { get; protected set; } = false;
+        public bool IsFlying { get; private set; } = false;
         /// <summary>
         /// Будет ли эта сущность проходить сквозь блоки
         /// </summary>
@@ -69,6 +69,10 @@ namespace MvkServer.Entity
         /// Как высоко эта сущность может подняться при столкновении с блоком, чтобы попытаться преодолеть его
         /// </summary>
         public float StepHeight { get; protected set; }
+        /// <summary>
+        /// Объект скорости сущности
+        /// </summary>
+        public EntitySpeed Speed { get; protected set; }
 
         /// <summary>
         /// Истинно, если после перемещения этот объект столкнулся с чем-то по оси X или Z. 
@@ -97,10 +101,16 @@ namespace MvkServer.Entity
         /// Координата объекта на предыдущем тике, используемая для расчета позиции во время процедур рендеринга
         /// </summary>
         public vec3 PositionPrev { get; protected set; }
+        /// <summary>
+        /// Значение на предыдущем тике поворота вокруг своей оси
+        /// </summary>
+        public float RotationYawPrev { get; protected set; }
+        /// <summary>
+        /// Значение на предыдущем тике поворота вверх вниз
+        /// </summary>
+        public float RotationPitchPrev { get; protected set; }
 
         #endregion
-
-        // TODO:: Enity.getLook // Enity.func_174806_f // Enity.func_174824_e // Enity.func_174822_a
 
         #region Get Methods
 
@@ -124,6 +134,10 @@ namespace MvkServer.Entity
         /// Высота глаз
         /// </summary>
         public float GetEyeHeight() => Height * 0.85f;
+        /// <summary>
+        /// Высота глаз для кадра
+        /// </summary>
+        public virtual float GetEyeHeightFrame() => GetEyeHeight();
 
         #endregion
 
@@ -136,6 +150,7 @@ namespace MvkServer.Entity
         {
             RotationYaw = yaw;
             RotationPitch = pitch;
+            CheckRotation();
         }
 
         /// <summary>
@@ -162,6 +177,54 @@ namespace MvkServer.Entity
             UpBoundingBox();
         }
 
+        #endregion
+
+        /// <summary>
+        /// Проверить градусы
+        /// </summary>
+        protected virtual void CheckRotation()
+        {
+            while (RotationYaw - RotationYawPrev < -glm.pi) RotationYawPrev -= glm.pi360;
+            while (RotationYaw - RotationYawPrev >= glm.pi) RotationYawPrev += glm.pi360;
+            while (RotationPitch - RotationPitchPrev < -glm.pi) RotationPitchPrev -= glm.pi360;
+            while (RotationPitch - RotationPitchPrev >= glm.pi) RotationPitchPrev += glm.pi360;
+        }
+
+        /// <summary>
+        /// Активация режима полёта
+        /// </summary>
+        public void ModeFly()
+        {
+            if (!IsFlying)
+            {
+                IsFlying = true;
+                Standing();
+                SpeedFly();
+            }
+        }
+
+        /// <summary>
+        /// Активация режима выживания
+        /// </summary>
+        public void ModeSurvival()
+        {
+            if (IsFlying)
+            {
+                IsFlying = false;
+                SpeedSurvival();
+            }
+        }
+
+        /// <summary>
+        /// Скорость для режима полёта
+        /// </summary>
+        protected virtual void SpeedFly() => Speed = new EntitySpeed(1.1f, .43f, .75f, 2.0f);
+
+        /// <summary>
+        /// Скорость для режима выживания
+        /// </summary>
+        protected virtual void SpeedSurvival() => Speed = new EntitySpeed(.43f);
+
         /// <summary>
         /// Положение стоя
         /// </summary>
@@ -172,12 +235,71 @@ namespace MvkServer.Entity
         /// </summary>
         protected virtual void Sitting() => SetSize(.6f, 2.6f);
 
-        #endregion
-
         /// <summary>
         /// Обновить ограничительную рамку
         /// </summary>
         protected void UpBoundingBox() => BoundingBox = GetBoundingBox(Position);
+
+        /// <summary>
+        /// Получить вектор направления камеры
+        /// </summary>
+        /// <param name="timeIndex">Коэфициент между тактами</param>
+        public virtual vec3 GetLookFrame(float timeIndex) => GetLookBodyFrame(timeIndex);
+
+        /// <summary>
+        /// Получить вектор направления камеры тела
+        /// </summary>
+        /// <param name="timeIndex">Коэфициент между тактами</param>
+        public vec3 GetLookBodyFrame(float timeIndex) => GetLookFrame(RotationYaw, RotationYawPrev, timeIndex);
+
+        
+
+        protected vec3 GetLookFrame(float yaw, float yawPrev, float timeIndex)
+        {
+            float yawR, pitch;
+            if (timeIndex == 1.0f || (yawPrev == yaw && RotationPitchPrev == RotationPitch))
+            {
+                yawR = yaw;
+                pitch = RotationPitch;
+            }
+            else
+            {
+                yawR = yawPrev + (yaw - yawPrev) * timeIndex;
+                pitch = RotationPitchPrev + (RotationPitch - RotationPitchPrev) * timeIndex;
+            }
+            return GetRay(yawR, pitch);
+        }
+
+        /// <summary>
+        /// Получить вектор направления по поворотам
+        /// </summary>
+        protected vec3 GetRay(float yaw, float pitch)
+        {
+            float pitchxz = glm.cos(pitch);
+            return new vec3(glm.sin(yaw) * pitchxz, glm.sin(pitch), -glm.cos(yaw) * pitchxz);
+        }
+
+        /// <summary>
+        /// Получить позицию сущности для кадра
+        /// </summary>
+        /// <param name="timeIndex">коэфициент между тактами</param>
+        public vec3 GetPositionFrame(float timeIndex)
+        {
+            if (timeIndex == 1.0f || Position.Equals(PositionPrev)) 
+            {
+                return Position;
+            }
+            else
+            {
+                return PositionPrev + (Position - PositionPrev) * timeIndex;
+            }
+        }
+
+        /// <summary>
+        /// Получить позицию глаз сущности для кадра
+        /// </summary>
+        /// <param name="timeIndex">коэфициент между тактами</param>
+        public vec3 GetPositionEyeFrame(float timeIndex) => GetPositionFrame(timeIndex) + new vec3(0, GetEyeHeightFrame(), 0);
 
         /// <summary>
         /// Вызывается для обновления позиции / логики объекта
@@ -185,8 +307,8 @@ namespace MvkServer.Entity
         public virtual void Update()
         {
             PositionPrev = Position;
-            RotationYawLast = RotationYaw;
-            RotationPitchLast = RotationPitch;
+            RotationYawPrev = RotationYaw;
+            RotationPitchPrev = RotationPitch;
         }
     }
 }

@@ -38,8 +38,10 @@
     <Compile Include="Entity\EnumSneaking.cs" />
     <Compile Include="Entity\HitBox.cs" />
     <Compile Include="Entity\Moving.cs" />
+    <Compile Include="Entity\EntitySpeed.cs" />
     <Compile Include="MvkGlobal.cs" />
     <Compile Include="Network\Packets\PacketC22Input.cs" />
+    <Compile Include="Network\Packets\PacketS15Disconnect.cs" />
     <Compile Include="Network\Packets\PacketS14TimeUpdate.cs" />
     <Compile Include="Util\ArrayDistance.cs" />
     <Compile Include="Util\AxisAlignedBB.cs" />

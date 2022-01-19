@@ -14,13 +14,34 @@ namespace MvkServer.Entity
         /// </summary>
         public Moving Mov { get; protected set; } = new Moving();
         /// <summary>
+        /// Счётчик движения. Влияет на то, где в данный момент находятся ноги и руки при качании. 
+        /// </summary>
+        public float LimbSwing { get; protected set; } = 0;
+        /// <summary>
+        /// Вращение головы
+        /// </summary>
+        public float RotationYawHead { get; protected set; }
+        /// <summary>
+        /// Вращение головы на предыдущем тике
+        /// </summary>
+        public float RotationYawHeadPrev { get; protected set; }
+
+        /// <summary>
+        /// Скорость движения. Влияет на то, где в данный момент находятся ноги и руки при качании. 
+        /// </summary>
+        private float limbSwingAmount = 0;
+        /// <summary>
+        /// Скорость движения на предыдущем тике. Влияет на то, где в данный момент находятся ноги и руки при качании. 
+        /// </summary>
+        private float limbSwingAmountPrev = 0;
+        /// <summary>
         /// Любое изменение в движении
         /// </summary>
         protected bool isMotion = true;
         /// <summary>
         /// Количество тактов для запрета повторного прыжка
         /// </summary>
-        protected int jumpTicks = 0;
+        private int jumpTicks = 0;
         /// <summary>
         /// Дистанция падения
         /// </summary>
@@ -40,23 +61,13 @@ namespace MvkServer.Entity
         public override void Update()
         {
             base.Update();
-            Mov.Update();
+            RotationYawHeadPrev = RotationYawHead;
+
+            // счётчик прыжка
             if (jumpTicks > 0) jumpTicks--;
 
-            float strafe = Mov.Strafe();
-            float forward = Mov.ForwardAndBack();
-            float height = IsFlying ? Mov.Height() : Mov.Up.Value > 0 ? 1f : 0;
-
-            // Sprinting
-            bool isSprinting = Mov.Sprinting.Value > 0 && !Mov.Forward.IsZero();
-            if (IsSprinting != isSprinting)
-            {
-                IsSprinting = isSprinting;
-                isMotion = true;
-            }
-
             // Обновить положение сидя
-            if (!IsFlying && OnGround && Mov.Down.GetBegin() && !IsSneaking)
+            if (!IsFlying && OnGround && Mov.Down && !IsSneaking)
             {
                 // Только в выживании можно сесть
                 IsSneaking = true;
@@ -64,14 +75,26 @@ namespace MvkServer.Entity
                 isMotion = true;
             }
 
+            // Sprinting
+            bool isSprinting = Mov.Sprinting && Mov.Forward && !IsSneaking;
+            if (IsSprinting != isSprinting)
+            {
+                IsSprinting = isSprinting;
+                isMotion = true;
+            }
+
             // Перемещение, определяем скорости
-            vec3 motion = MoveWithHeading(strafe, forward, height);
+            vec3 motion = MoveWithHeading(
+                Mov.Strafe() * Speed.Strafe,
+                Mov.ForwardAndBack() * Speed.Forward,
+                IsFlying ? Mov.Height() * Speed.Vertical : Mov.Up ? 1f : 0
+            );
 
             // Коллизия перемещения
             MoveCheckCollision(motion);
 
             // Если хотим встать
-            if ((Mov.Down.GetEnd() || Mov.Down.IsZero()) && IsSneaking)
+            if (!Mov.Down && IsSneaking)
             {
                 // Проверка коллизии вверхней части при положении стоя
                 Standing();
@@ -91,60 +114,50 @@ namespace MvkServer.Entity
             if (!isMotion && (Motion.x != 0 || Motion.y != 0 || Motion.z != 0))
             {
                 isMotion = true;
+                vec3 pos = Position + Motion;
+                SetPosition(pos);
             }
+
+            // Расчёт амплитуды конечностей, при движении
+            UpLimbSwing();
+            // Для вращении головы
+            HeadTurn(motion);
         }
 
+        
+
         /// <summary>
-        /// Перемещение, определяем скорости
+        /// Конвертация от направления движения в XYZ координаты с кооректировками скоростей
         /// </summary>
-        protected vec3 MoveWithHeading(float strafe, float forward, float height)
+        protected vec3 MoveWithHeading(float strafe, float forward, float vertical)
         {
-            // Определение скорости направлений
-            if (IsFlying)
-            {
-                strafe *= .43f;
-                forward *= 1.1f;
-                height *= .75f;
-
-            } else
-            {
-                strafe *= .43f;
-                forward *= .43f;
-            }
-
             // Ускорение или крастись
             if (IsSprinting && forward < 0 && !IsSneaking)
             {
                 // Бег 
-                if (IsFlying)
-                {
-                    forward *= 1.0f + Mov.Sprinting.Value;
-                } else
-                {
-                    forward *= 1.0f + 0.3f * Mov.Sprinting.Value;
-                }
+                forward *= Speed.Sprinting;
             }
             else if (!IsFlying && (forward != 0 || strafe != 0) && IsSneaking)
             {
-                // Скорость если крадёмся
+                // Крадёмся
                 forward *= .3f;
                 strafe *= .3f;
             }
 
-            strHVJ = string.Format("strafe:{0:0.00} forward:{1:0.00} height:{2:0.00}", strafe, forward, height);
+            strHVJ = string.Format("strafe:{0:0.00} forward:{1:0.00} height:{2:0.00}", strafe, forward, vertical);
 
             // Конвертация из направлений в xyz
-            vec3 motion = MotionAngle(strafe, forward);//, height);
+            vec3 motion = MotionAngle(strafe, forward);
 
             // Определение прыжка и высотного Y значения
             if (IsFlying)
             {
-                motion.y = height;
+                motion.y = vertical;
                 IsJumping = false;
             }
             else
             {
-                IsJumping = height == 1f;
+                IsJumping = vertical == 1f;
                 if (OnGround) motion.y = -0.2f;
                 else motion.y = Motion.y - .16f;
             }
@@ -203,8 +216,10 @@ namespace MvkServer.Entity
 
             if (strafe != 0 || forward != 0)
             {
-                float ysin = glm.sin(RotationYaw);
-                float ycos = glm.cos(RotationYaw);
+                //float ysin = glm.sin(RotationYaw);
+                //float ycos = glm.cos(RotationYaw);
+                float ysin = glm.sin(RotationYawHead);
+                float ycos = glm.cos(RotationYawHead);
                 motion.x += ycos * strafe - ysin * forward;
                 motion.z += ycos * forward + ysin * strafe;
             }
@@ -224,7 +239,8 @@ namespace MvkServer.Entity
             }
 
             // Расширение из-за огруглении float
-            AxisAlignedBB boundingBox = BoundingBox.Expand(new vec3(0.00001f, 0, 0.00001f));
+            // TODO:: иногда на отрицательных проходит стенку колизия!!! 
+            AxisAlignedBB boundingBox = BoundingBox.Expand(new vec3(0.001f, 0, 0.001f));
 
             AxisAlignedBB aabbEntity = boundingBox.Clone();
             List<AxisAlignedBB> aabbs;
@@ -378,18 +394,136 @@ namespace MvkServer.Entity
             Motion = new vec3(x, y, z);
         }
 
+        /// <summary>
+        /// Скорость движения для кадра
+        /// </summary>
+        /// <param name="timeIndex">коэфициент между тактами</param>
+        public float GetLimbSwingAmountFrame(float timeIndex)
+        {
+            if (timeIndex == 1.0f || limbSwingAmount.Equals(limbSwingAmountPrev))
+            {
+                return limbSwingAmount;
+            }
+            else
+            {
+                return limbSwingAmountPrev + (limbSwingAmount - limbSwingAmountPrev) * timeIndex;
+            }
+        }
+
+        /// <summary>
+        /// Задать вращение
+        /// </summary>
+        public void SetRotationHead(float yawHead, float yawBody, float pitch)
+        {
+            //SetRotation(yaw, pitch);
+            RotationYawHead = yawHead;
+            RotationYaw = yawBody;
+            RotationPitch = pitch;
+            CheckRotation();
+        }
+
+        /// <summary>
+        /// Проверить градусы
+        /// </summary>
+        protected override void CheckRotation()
+        {
+            base.CheckRotation();
+            while (RotationYawHead - RotationYawHeadPrev < -glm.pi) RotationYawHeadPrev -= glm.pi360;
+            while (RotationYawHead - RotationYawHeadPrev >= glm.pi) RotationYawHeadPrev += glm.pi360;
+        }
+
+        /// <summary>
+        /// Получить вектор направления камеры от головы
+        /// </summary>
+        /// <param name="timeIndex">Коэфициент между тактами</param>
+        public override vec3 GetLookFrame(float timeIndex) => GetLookFrame(RotationYawHead, RotationYawHeadPrev, timeIndex);
+
+        /// <summary>
+        /// Поворот тела от движения и поворота головы 
+        /// </summary>
+        protected void HeadTurn(vec3 motion)
+        {
+            float yawOffset;
+            // Определяем двигается ли сущность
+            bool movingForward = Mov.Forward || Mov.Back || Mov.Left || Mov.Right;
+            if (movingForward)
+            {
+                // Определяем угол направления в зависимости куда движемся
+                yawOffset = glm.atan2(motion.z, motion.x);
+                if (Mov.Forward) yawOffset += glm.pi90;
+                else if (Mov.Back) yawOffset -= glm.pi90;
+                else if (Mov.Left) yawOffset += glm.pi135;
+                else if (Mov.Right) yawOffset += glm.pi45;
+
+                // Плавность поворота тела когда перемещаемся, до 15 градусов за такт
+                RotationYaw = UpdateRotation(RotationYaw, yawOffset, .26f) % glm.pi360;
+            }
+            else
+            {
+                // Если не движется берём угол головы
+                yawOffset = RotationYawHead;
+            
+                // Если не перемещаемся находим дельту поворота между телом и головой
+                float delta = RotationYawHead - RotationYaw;
+                while (delta < -glm.pi) delta += glm.pi360;
+                while (delta >= glm.pi) delta -= glm.pi360;
+
+                // Смещаем тело если дельта выше 60 градусов
+                float angleR = 1.05f; // 60гр
+                if (delta > angleR) RotationYaw = (RotationYaw + delta - angleR) % glm.pi360;
+                else if (delta < -angleR) RotationYaw = (RotationYaw + delta + angleR) % glm.pi360;
+            }
+        }
+
+        /// <summary>
+        /// Расчёт амплитуды конечностей, при движении
+        /// </summary>
+        protected void UpLimbSwing()
+        {
+            limbSwingAmountPrev = limbSwingAmount;
+            float xx = Position.x - PositionPrev.x;
+            float zz = Position.z - PositionPrev.z;
+            float xxzz = xx * xx + zz * zz;
+            float xz = Mth.Sqrt(xxzz) * 2.0f;
+            if (xz > 1.0f) xz = 1.0f;
+            limbSwingAmount += (xz - limbSwingAmount) * 0.4f;
+            LimbSwing += limbSwingAmount;
+        }
+
+        /// <summary>
+        /// Обновить поворот с ограниченым смещением
+        /// </summary>
+        /// <param name="angle">Входящий угол в радианах</param>
+        /// <param name="angleOffset">Смещение угла в радианах</param>
+        /// <param name="increment">Увеличение в радианах</param>
+        /// <returns>Новое значение</returns>
+        private float UpdateRotation(float angle, float angleOffset, float increment)
+        {
+            float offset = glm.wrapAngleToPi(angleOffset - angle);
+
+            if (offset > increment) offset = increment;
+            if (offset < -increment) offset = -increment;
+
+            return angle + offset;
+        }
+
+
         public override string ToString()
         {
-            //string.Format("j: {0:0.0}{8}{9} v: {1:0.0} h: {2:0.0} {3}{5}{4}{6}{7}",
-            //    j, v, h, OnGround ? "__" : "",
-            //    HitBox.IsEyesWater ? "[E]" : "", HitBox.IsDownWater ? "[D]" : "", HitBox.IsLegsWater ? "[L]" : "", HitBox.Flow != Pole.Down ? HitBox.Flow.ToString() : "",
-            //    IsSprinting ? "[Sp]" : "", IsSneaking ? "[Sn]" : "");
-
-            return string.Format("{0}\r\n{1}{2}{5}{7} jm:{6:0.00} boom:{8:0.00} {3} \r\nPos Serv:{4}",
-                strHVJ, OnGround ? "__" : "",
-                IsSprinting ? "[Sp]" : "",
-                Motion, Position, IsJumping ? "[J]" : "", fallDistanceResult, IsSneaking ? "[Sn]" : ""
-                , fallDistance);
+            return string.Format("XYZ {7}\r\nyaw:{8:0.00} H:{9:0.00} pitch:{10:0.00} \r\n{1}{2}{6}{4} boom:{5:0.00}\r\nMotion:{3}\r\nL:{11:0.000}",
+                strHVJ, // 0
+                OnGround ? "__" : "", // 1
+                IsSprinting ? "[Sp]" : "", // 2
+                Motion, // 3
+                IsJumping ? "[J]" : "", // 4
+                fallDistanceResult, // 5
+                IsSneaking ? "[Sn]" : "", // 6
+                Position, // 7
+                glm.degrees(RotationYaw), // 8
+                glm.degrees(RotationYawHead), // 9
+                glm.degrees(RotationPitch), // 10
+                limbSwingAmount // 11
+                );
         }
     }
 }

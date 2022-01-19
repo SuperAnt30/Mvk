@@ -34,6 +34,7 @@ namespace MvkClient.Network
                     {
                         case 0x12: Packet12((PacketS12Success)packet); break;
                         case 0x14: Packet14((PacketS14TimeUpdate)packet); break;
+                        case 0x15: Packet15((PacketS15Disconnect)packet); break;
                         case 0x20: Packet20((PacketB20Player)packet); break;
                         case 0x21: Packet21((PacketS21ChunckData)packet); break;
                         case 0xFF:
@@ -66,13 +67,22 @@ namespace MvkClient.Network
         /// </summary>
         protected void Packet12(PacketS12Success packet)
         {
-            // отправляем настройки
-            ClientMain.TrancivePacket(new PacketC13ClientSetting(Setting.OverviewChunk));
-
-            ClientMain.World.Player.SetUUID(Setting.Nickname, packet.GetUuid());
-            ClientMain.World.Player.SetPosBegin(packet.Pos, packet.Yaw, packet.Pitch);
-
-            ClientMain.GameModeBegin();
+            if (Setting.Nickname == packet.Name)
+            {
+                // Основной игрок этого клиента
+                ClientMain.World.Player.OnPacketS12Success(packet);
+                ClientMain.World.Player.FrustumCulling();
+                ClientMain.GameModeBegin();
+                // отправляем настройки
+                ClientMain.TrancivePacket(new PacketC13ClientSetting(Setting.OverviewChunk));
+            }
+            else
+            {
+                // Удачный вход сетевого игрока, типа приветствие
+                EntityPlayerMP entity = new EntityPlayerMP(ClientMain.World);
+                entity.OnPacketS12Success(packet);
+                ClientMain.World.SetPlayerMP(entity);
+            }
         }
         /// <summary>
         /// Пакет синхронизации времени с сервером
@@ -82,20 +92,14 @@ namespace MvkClient.Network
             ClientMain.SetTickCounter(packet.GetTime());
         }
 
-        protected EntityPlayerClient GetEntity(string name)
+        /// <summary>
+        /// Дисконект игрока
+        /// </summary>
+        protected void Packet15(PacketS15Disconnect packet)
         {
-            EntityPlayerClient entity;
-            if (!ClientMain.World.Entities.ContainsKey(name))
-            {
-                entity = new EntityPlayerClient(ClientMain.World);
-                ClientMain.World.Entities.Add(name, entity);
-            }
-            else
-            {
-                entity = ClientMain.World.Entities[name] as EntityPlayerClient;
-            }
-            return entity;
+            ClientMain.World.RemovePlayerMP(packet.GetId());
         }
+             
 
         /// <summary>
         /// Пакет положения игрока
@@ -103,39 +107,18 @@ namespace MvkClient.Network
         protected void Packet20(PacketB20Player packet)
         {
             byte type = packet.Type();
-            if (type == 2)
+            if (type == 2 || type == 3)
             {
-                string name = packet.GetName();
-                if (name != "" && ClientMain.World.Player.Name != name)
+                ushort id = packet.GetId();
+                if (id != 0 && ClientMain.World.Player.Id != id)
                 {
-                    GetEntity(name).SetPositionServer(packet.GetPos(), packet.IsSneaking());
+                    EntityPlayerMP entity = ClientMain.World.GetPlayerMP(id);
+                    if (entity != null)
+                    {
+                        if (type == 2) entity.SetPositionServer(packet.GetPos(), packet.IsSneaking());
+                        else entity.SetRotationServer(packet.GetYawHead(), packet.GetYawBody(), packet.GetPitch());
+                    }
                 }
-                //  ClientMain.World.Player.SetHeightEyesServer(packet.GetHeight(), packet.GetWidth());
-            }
-            if (type == 3)
-            {
-                string name = packet.GetName();
-                if (name != "" && ClientMain.World.Player.Name != name)
-                {
-                    GetEntity(name).SetRotation(packet.GetYaw(), packet.GetPitch());
-                }
-                //string name = packet.GetName();
-                //if (ClientMain.World.Player.Name == name || name == "")
-                //{
-                //    ClientMain.World.Player.SetPositionServer(packet.GetPos());
-                //} else
-                //{
-                //    EntityPlayerClient entity;
-                //    if (!ClientMain.World.Entities.ContainsKey(name))
-                //    {
-                //        entity = new EntityPlayerClient(ClientMain.World);
-                //        ClientMain.World.Entities.Add(name, entity);
-                //    } else
-                //    {
-                //        entity = ClientMain.World.Entities[name] as EntityPlayerClient;
-                //    }
-                //    entity.SetPositionServer(packet.GetPos());
-                //}
             }
         }
 

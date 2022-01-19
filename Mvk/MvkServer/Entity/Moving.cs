@@ -3,62 +3,51 @@
 namespace MvkServer.Entity
 {
     /// <summary>
-    /// Объект отвечающий за направление передвежения сущности, с плавным стартом и финишом
+    /// Объект отвечающий за направление передвежения сущности
     /// </summary>
     public class Moving
     {
         /// <summary>
         /// Перемещение вперёд
         /// </summary>
-        public Smooth Forward { get; protected set; }
+        public bool Forward { get; protected set; }
         /// <summary>
         /// Перемещение назад
         /// </summary>
-        public Smooth Back { get; protected set; }
+        public bool Back { get; protected set; }
         /// <summary>
         /// Перемещение вправо
         /// </summary>
-        public Smooth Right { get; protected set; }
+        public bool Right { get; protected set; }
         /// <summary>
         /// Перемещение влево
         /// </summary>
-        public Smooth Left { get; protected set; }
+        public bool Left { get; protected set; }
         /// <summary>
         /// Перемещение вверх
         /// </summary>
-        public Smooth Up { get; protected set; }
+        public bool Up { get; protected set; }
         /// <summary>
         /// Перемещение вниз
         /// </summary>
-        public Smooth Down { get; protected set; }
+        public bool Down { get; protected set; }
         /// <summary>
         /// Ускорение, только в одну сторону 
         /// </summary>
-        public Smooth Sprinting { get; protected set; }
-
-        public Moving()
-        {
-            Forward = new Smooth(1f, 1f);
-            Back = new Smooth(1f, 1f);
-            Right = new Smooth(1f, 1f);
-            Left = new Smooth(1f, 1f);
-            Up = new Smooth(1f);
-            Down = new Smooth(1f);
-            Sprinting = new Smooth(1f);
-        }
+        public bool Sprinting { get; protected set; }
 
         /// <summary>
         /// Вперёд и назад
         /// </summary>
-        public float ForwardAndBack() => Back.Value - Forward.Value;
+        public float ForwardAndBack() => (Back ? 1f : 0f) - (Forward ? 1f : 0f);
         /// <summary>
         /// Шаг в сторону
         /// </summary>
-        public float Strafe() => Right.Value - Left.Value;
+        public float Strafe() => (Right ? 1f : 0f) - (Left ? 1f : 0f);
         /// <summary>
         /// Высота вертикального смещения
         /// </summary>
-        public float Height() => Up.Value - Down.Value;
+        public float Height() => (Up ? 1f : 0f) - (Down ? 1f : 0f);
 
         /// <summary>
         /// Нажата клавиша
@@ -67,114 +56,35 @@ namespace MvkServer.Entity
         {
             switch (key)
             {
-                case EnumKeyAction.ForwardDown: Forward.Begin(); break;
-                case EnumKeyAction.BackDown: Back.Begin(); break;
-                case EnumKeyAction.RightDown: Right.Begin(); break;
-                case EnumKeyAction.LeftDown: Left.Begin(); break;
-                case EnumKeyAction.UpDown: Up.Begin(); break;
-                case EnumKeyAction.DownDown: Down.Begin(); break;
-                case EnumKeyAction.SprintingDown: Sprinting.Begin(); break;
-                case EnumKeyAction.ForwardUp: Forward.End(); break;
-                case EnumKeyAction.BackUp: Back.End(); break;
-                case EnumKeyAction.RightUp: Right.End(); break;
-                case EnumKeyAction.LeftUp: Left.End(); break;
-                case EnumKeyAction.UpUp: Up.End(); break;
-                case EnumKeyAction.DownUp: Down.End(); break;
-                case EnumKeyAction.SprintingUp: Sprinting.End(); break;
+                case EnumKeyAction.ForwardDown: Forward = true; break;
+                case EnumKeyAction.BackDown: Back = true; break;
+                case EnumKeyAction.RightDown: Right = true; break;
+                case EnumKeyAction.LeftDown: Left = true; break;
+                case EnumKeyAction.UpDown: Up = true; break;
+                case EnumKeyAction.DownDown: Down = true; break;
+                case EnumKeyAction.SprintingDown: Sprinting = true; break;
+                case EnumKeyAction.ForwardUp: Forward = false; break;
+                case EnumKeyAction.BackUp: Back = false; break;
+                case EnumKeyAction.RightUp: Right = false; break;
+                case EnumKeyAction.LeftUp: Left = false; break;
+                case EnumKeyAction.UpUp: Up = false; break;
+                case EnumKeyAction.DownUp: Down = false; break;
+                case EnumKeyAction.SprintingUp: Sprinting = false; break;
             }
         }
-
-        /*
-        #region Begin
-
-        /// <summary>
-        /// Вперёд
-        /// </summary>
-        public void ForwardBegin() => Forward.Begin();
-        /// <summary>
-        /// Назад
-        /// </summary>
-        public void BackBegin() => Back.Begin();
-        /// <summary>
-        /// Право
-        /// </summary>
-        public void RightBegin() => Right.Begin();
-        /// <summary>
-        /// Лево
-        /// </summary>
-        public void LeftBegin() => Left.Begin();
-        /// <summary>
-        /// Вверх
-        /// </summary>
-        public void UpBegin() => Up.Begin();
-        /// <summary>
-        /// Вниз
-        /// </summary>
-        public void DownBegin() => Down.Begin();
-        /// <summary>
-        /// Начать ускорение
-        /// </summary>
-        public void SprintingBegin() => Sprinting.Begin();
-
-        #endregion
-
-        #region End
-
-        /// <summary>
-        /// Вперёд
-        /// </summary>
-        public void ForwardEnd() => Forward.End();
-        /// <summary>
-        /// Назад
-        /// </summary>
-        public void BackEnd() => Back.End();
-        /// <summary>
-        /// Право
-        /// </summary>
-        public void RightEnd() => Right.End();
-        /// <summary>
-        /// Лево
-        /// </summary>
-        public void LeftEnd() => Left.End();
-        /// <summary>
-        /// Вверх
-        /// </summary>
-        public void UpEnd() => Up.End();
-        /// <summary>
-        /// Вниз
-        /// </summary>
-        public void DownEnd() => Down.End();
-        /// <summary>
-        /// Начать ускорение
-        /// </summary>
-        public void SprintingEnd() => Sprinting.End();
-
-        #endregion
-        */
 
         /// <summary>
         /// Принудительно отключить нажатия перемещения
         /// </summary>
         public void AllEnd()
         {
-            Forward.End();
-            Back.End();
-            Right.End();
-            Left.End();
-            Up.End();
-            Down.End();
-            Sprinting.End();
-        }
-
-        public void Update()
-        {
-            Forward.Update();
-            Back.Update();
-            Right.Update();
-            Left.Update();
-            Up.Update();
-            Down.Update();
-            Sprinting.Update();
+            Forward = false;
+            Back = false;
+            Right = false;
+            Left = false;
+            Up = false;
+            Down = false;
+            Sprinting = false;
         }
     }
 }

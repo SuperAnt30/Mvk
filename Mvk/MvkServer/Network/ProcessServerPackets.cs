@@ -63,11 +63,12 @@ namespace MvkServer.Network
                 {
                     case 0:
                         entityPlayer.SetPosition(packet.GetPos());
-                        ServerMain.World.Players.ResponsePacketAll(new PacketB20Player().Position(packet.GetPos(), packet.IsSneaking(), entityPlayer.Name));
+                        ServerMain.World.Players.ResponsePacketAll(new PacketB20Player().Position(packet.GetPos(), packet.IsSneaking(), entityPlayer.Id));
                         break;
                     case 1:
-                        entityPlayer.SetRotation(packet.GetYaw(), packet.GetPitch());
-                        ServerMain.World.Players.ResponsePacketAll(new PacketB20Player().YawPitch(packet.GetYaw(), packet.GetPitch(), entityPlayer.Name));
+                        entityPlayer.SetRotationHead(packet.GetYawHead(), packet.GetYawBody(), packet.GetPitch());
+                        //entityPlayer.SetRotation(packet.GetYaw(), packet.GetPitch());
+                        ServerMain.World.Players.ResponsePacketAll(new PacketB20Player().YawPitch(packet.GetYawHead(), packet.GetYawBody(), packet.GetPitch(), entityPlayer.Id));
                         break;
                 }
             }

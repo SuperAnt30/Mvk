@@ -32,6 +32,11 @@
         /// </summary>
         public const int COUNT_RENDER_CHUNK_FRAME = 10;
 
+        /// <summary>
+        /// Эффект покачивания при движении
+        /// </summary>
+        public const bool WIGGLE_EFFECT = false;
+
 
     }
 }

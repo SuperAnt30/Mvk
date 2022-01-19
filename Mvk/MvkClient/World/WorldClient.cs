@@ -7,6 +7,7 @@ using MvkServer;
 using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World;
+using System.Collections;
 
 namespace MvkClient.World
 {
@@ -22,7 +23,7 @@ namespace MvkClient.World
         /// <summary>
         /// Объект клиента
         /// </summary>
-        public EntityPlayerClient Player { get; protected set; }
+        public EntityPlayerSP Player { get; protected set; }
         /// <summary>
         /// Посредник клиентоского чанка
         /// </summary>
@@ -31,6 +32,10 @@ namespace MvkClient.World
         /// Мир для рендера и прорисовки
         /// </summary>
         public WorldRenderer WorldRender { get; protected set; }
+        /// <summary>
+        /// Список сущностей игроков
+        /// </summary>
+        public Hashtable PlayerEntities { get; protected set; } = new Hashtable();
 
         /// <summary>
         /// Объект времени c последнего тпс
@@ -40,8 +45,10 @@ namespace MvkClient.World
         /// фиксатор чистки мира
         /// </summary>
         protected uint previousTotalWorldTime;
-
-       
+        /// <summary>
+        /// Перечень игроков, отладка
+        /// </summary>
+        protected string strPlayers = "";
 
         public WorldClient(Client client) : base()
         {
@@ -49,8 +56,9 @@ namespace MvkClient.World
             ClientMain = client;
             interpolation.Start();
             WorldRender = new WorldRenderer(this);
-            Player = new EntityPlayerClient(this);
+            Player = new EntityPlayerSP(this);
             Player.SetOverviewChunk(Setting.OverviewChunk, 0);
+            UpStrPlayers();
         }
 
         /// <summary>
@@ -95,18 +103,70 @@ namespace MvkClient.World
 
         /// <summary>
         /// Получить коэффициент времени от прошлого TPS клиента в диапазоне 0 .. 1
-        /// где 0 это финиш, 1 начало
+        /// где 0 это начало, 1 финиш
         /// </summary>
         public float TimeIndex() => interpolation.TimeIndex();
+
+        /// <summary>
+        /// Получить объект игрока по сети, по имени
+        /// </summary>
+        public EntityPlayerMP GetPlayerMP(ushort id)
+        {
+            if (PlayerEntities.ContainsKey(id))
+            {
+                return PlayerEntities[id] as EntityPlayerMP;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Заменить объект игрока по сети
+        /// </summary>
+        public void SetPlayerMP(EntityPlayerMP entity)
+        {
+            if (!PlayerEntities.ContainsKey(entity.Id))
+            {
+                PlayerEntities.Add(entity.Id, entity);
+            }
+            else
+            {
+                PlayerEntities[entity.Id] = entity;
+            }
+            UpStrPlayers();
+        }
+
+        /// <summary>
+        /// Удалить игрока с базы
+        /// </summary>
+        public void RemovePlayerMP(ushort id)
+        {
+            PlayerEntities.Remove(id);
+            UpStrPlayers();
+        }
+
+        /// <summary>
+        /// Обновить перечень игроков, отладка
+        /// </summary>
+        protected void UpStrPlayers()
+        {
+            strPlayers = "[" + PlayerEntities.Count + "] ";
+            if (PlayerEntities.Count > 0)
+            {
+                foreach (EntityPlayerMP entity in PlayerEntities.Values)
+                {
+                    strPlayers += entity.Name + " ";
+                }
+            }
+        }
 
         /// <summary>
         /// Строка для дебага
         /// </summary>
         public override string ToStringDebug()
         {
-            return string.Format("t {2} Ch {0} ChDel {3}\r\nXYZ {1}\r\n!!!{4}", 
-                ChunkPr.Count, Player.Position, ClientMain.TickCounter / 20, 
-                ChunkPrClient.RemoteMeshChunks.Count, Player.ToString());
+            return string.Format("t {2} Ch {0} ChDel {3}\r\n{4} {1}", 
+                ChunkPr.Count, Player, ClientMain.TickCounter / 20, 
+                ChunkPrClient.RemoteMeshChunks.Count, strPlayers);
         }
     }
 }

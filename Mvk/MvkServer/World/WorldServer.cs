@@ -46,9 +46,8 @@ namespace MvkServer.World
         {
             try
             {
-                EntityPlayerServer playerServer = Players.GetEntityPlayerMain();
-                return string.Format("Ch {0}-{2} Pl {1}\r\n{3}",
-                    ChunkPr.Count, Players.PlayerCount, Players.chunkCoordPlayers.Count, playerServer != null ? playerServer.ToString() : "");
+                return string.Format("Ch {0}-{2} Pl {1}",
+                    ChunkPr.Count, Players.PlayerCount, Players.chunkCoordPlayers.Count);
             }
             catch
             {

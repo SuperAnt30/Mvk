@@ -70,6 +70,7 @@ namespace MvkClient.World
                     chunk.ChunkUnload();
                     // заносим в массив чистки чанков по сетки для основного потока
                     RemoteMeshChunks.Add(chunk);
+                    // TODO::System.IndexOutOfRangeException: "Индекс находился вне границ массива."
                 }
                 // TODO:: Из-за этого тормозит у меня дома!!! Комп разгрузил и вроде лучше
                 chunkMapping.Remove(chunk.Position);
