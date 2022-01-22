@@ -33,9 +33,9 @@ namespace MvkServer.World.Block
         /// </summary>
         public bool IsGrass { get; protected set; } = false;
         /// <summary>
-        /// Есть ли столкновение
+        /// Может ли блок сталкиваться
         /// </summary>
-        public bool IsCollision { get; protected set; } = true;
+        public bool IsCollidable { get; protected set; } = true;
 
         /// <summary>
         /// Минимальные координаты ограничительной рамки
@@ -62,7 +62,7 @@ namespace MvkServer.World.Block
         /// <summary>
         /// Получить ограничительную рамку блока
         /// </summary>
-        protected AxisAlignedBB GetBoundingBox() => new AxisAlignedBB(
+        public AxisAlignedBB GetBoundingBox() => new AxisAlignedBB(
             new vec3(Position.X + min.x, Position.Y + min.y, Position.Z + min.z),
             new vec3(Position.X + max.x, Position.Y + max.y, Position.Z + max.z));
 
@@ -75,6 +75,26 @@ namespace MvkServer.World.Block
         /// Получить высоту блока
         /// </summary>
         public float GetHeight() => max.y;
+
+
+        /// <summary>
+        /// Проверить колизию блока на пересечение луча
+        /// </summary>
+        /// <param name="pos">точка от куда идёт лучь</param>
+        /// <param name="dir">вектор луча</param>
+        /// <param name="maxDist">максимальная дистания</param>
+        public bool CollisionRayTrace(vec3 pos, vec3 dir, float maxDist)
+        {
+            if (IsCollidable)
+            {
+                if (IsBoundingBoxAll) return true;
+
+                // Если блок не полный, обрабатываем хитбокс блока
+                RayCross ray = new RayCross(pos, dir, maxDist);
+                return ray.CrossLineToRectangle(GetBoundingBox());
+            }
+            return false;
+        }
 
         /// <summary>
         /// Строка

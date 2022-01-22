@@ -315,7 +315,7 @@ namespace MvkServer
             {
                 UpCountClients();
 
-                World.Players.ResponsePacketAll(new PacketS14TimeUpdate(TickCounter));
+                World.Players.ResponsePacketAll(new PacketS14TimeUpdate(TickCounter), -1);
                 
                 //this.serverConfigManager.sendPacketToAllPlayersInDimension(new S03PacketTimeUpdate(
                 //var4.getTotalWorldTime(), 

@@ -38,7 +38,7 @@ namespace MvkServer.World
                     for (int z = min.z; z <= max.z; z++)
                     {
                         BlockBase block = World.GetBlock(new vec3i(x, y, z));
-                        if (block.IsCollision)
+                        if (block.IsCollidable)
                         {
                             list.AddRange(block.GetCollisionBoxesToList());
                         }
@@ -57,7 +57,7 @@ namespace MvkServer.World
         protected bool BlockCollision(vec3i blockPos, AxisAlignedBB aabb)
         {
             BlockBase block = World.GetBlock(blockPos);
-            if (block.IsCollision)
+            if (block.IsCollidable)
             {
                 // Цельный блок на коллизию
                 if (block.IsBoundingBoxAll) return true;

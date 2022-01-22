@@ -26,7 +26,7 @@ namespace MvkServer.Network
                 case 0x15: return new PacketS15Disconnect();
                 case 0x20: return new PacketB20Player();
                 case 0x21: return new PacketS21ChunckData();
-                case 0x22: return new PacketC22Input();
+               // case 0x22: return new PacketC22Input();
                 case 0xFF: return new PacketTFFTest();
             }
             return null;

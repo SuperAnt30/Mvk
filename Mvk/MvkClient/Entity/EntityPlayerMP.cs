@@ -15,7 +15,11 @@ namespace MvkClient.Entity
         /// <summary>
         /// Вызывается для обновления позиции / логики объекта
         /// </summary>
-        public override void Update() { }
+        public override void Update()
+        {
+            // Расчёт амплитуды конечностей, при движении
+            UpLimbSwing();
+        }
 
     }
 }

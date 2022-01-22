@@ -47,6 +47,15 @@ namespace MvkServer.Entity.Player
         public void SetId(ushort id) => Id = id;
 
         /// <summary>
+        /// Задать положение сидя
+        /// </summary>
+        public void SetIsSneaking(bool sneaking)
+        {
+            IsSneaking = sneaking;
+            isMotionServer = true;
+        }
+
+        /// <summary>
         /// Получить хэш по строке
         /// </summary>
         protected string GetHash(string input)
@@ -64,6 +73,13 @@ namespace MvkServer.Entity.Player
             //base.Update();
             try
             {
+                if (isMotionServer)
+                {
+                    // было изменение, надо отправить данные на сервер
+                    ServerMain.World.Players.ResponsePacketAll(new PacketB20Player().Position(Position, IsSneaking, Id), Id);
+                    ServerMain.World.Players.ResponsePacketAll(new PacketB20Player().YawPitch(RotationYawHead, RotationYaw, RotationPitch, Id), Id);
+                    isMotionServer = false;
+                }
                 //if (isMotion)
                 //{
                 //    isMotion = false;

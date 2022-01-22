@@ -79,5 +79,21 @@ namespace MvkServer.Util
             return (float)count / (float)items.Length;
         }
 
+        /// <summary>
+        /// Одинаковые ли массивы с погрешностью
+        /// </summary>
+        public static bool EqualsArrayFloat(float[] ar1, float[] ar2, float fault)
+        {
+            if (ar1 != null && ar2 != null && ar1.Length == ar2.Length)
+            {
+                for (int i = 0; i < ar1.Length; i++)
+                {
+                    if (Abs(ar1[i] - ar2[i]) > fault) return false;
+                }
+                return true;
+            }
+            return false;
+        }
+
     }
 }

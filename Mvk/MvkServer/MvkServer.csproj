@@ -35,9 +35,10 @@
   <ItemGroup>
     <Compile Include="Entity\EntityBase.cs" />
     <Compile Include="Entity\EntityLiving.cs" />
+    <Compile Include="Entity\EntityLivingHead.cs" />
     <Compile Include="Entity\EnumSneaking.cs" />
     <Compile Include="Entity\HitBox.cs" />
-    <Compile Include="Entity\Moving.cs" />
+    <Compile Include="Util\EnumInput.cs" />
     <Compile Include="Entity\EntitySpeed.cs" />
     <Compile Include="MvkGlobal.cs" />
     <Compile Include="Network\Packets\PacketC22Input.cs" />
@@ -45,7 +46,7 @@
     <Compile Include="Network\Packets\PacketS14TimeUpdate.cs" />
     <Compile Include="Util\ArrayDistance.cs" />
     <Compile Include="Util\AxisAlignedBB.cs" />
-    <Compile Include="Util\EnumKeyAction.cs" />
+    <Compile Include="Util\MovingObjectPosition.cs" />
     <Compile Include="Util\MvkStatic.cs" />
     <Compile Include="Util\BlockPos.cs" />
     <Compile Include="Util\EnumFacing.cs" />
@@ -66,6 +67,7 @@
     <Compile Include="Util\DebugChunk.cs" />
     <Compile Include="Util\ObjectEvent.cs" />
     <Compile Include="Util\Pole.cs" />
+    <Compile Include="Util\RayCross.cs" />
     <Compile Include="Util\Smooth.cs" />
     <Compile Include="Util\SmoothFrame.cs" />
     <Compile Include="World\Block\BlockBase.cs" />

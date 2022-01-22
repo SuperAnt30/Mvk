@@ -71,6 +71,7 @@
     <Compile Include="Entity\EntityPlayerClient.cs" />
     <Compile Include="Entity\EntityPlayerMP.cs" />
     <Compile Include="Entity\EntityPlayerSP.cs" />
+    <Compile Include="Entity\EnumViewCamera.cs" />
     <Compile Include="Gui\EnumAlight.cs" />
     <Compile Include="Gui\Label.cs" />
     <Compile Include="Gui\Control.cs" />
@@ -141,6 +142,8 @@
       <Name>MvkServer</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Renderer\Entity\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

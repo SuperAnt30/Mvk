@@ -48,6 +48,8 @@ namespace MvkClient.Renderer
             //GLWindow.gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_LINE);
             //GLWindow.gl.Disable(OpenGL.GL_CULL_FACE);
 
+            // ВОКСЕЛИ!!!
+
             ShaderVoxel shader = GLWindow.Shaders.ShVoxel;
             shader.Bind(GLWindow.gl);
             //shader.SetUniformMatrix4(GLWindow.gl, "projview", glm.ortho(0, GLWindow.WindowWidth, GLWindow.WindowHeight, 0).to_array());
@@ -97,7 +99,7 @@ namespace MvkClient.Renderer
         private void RenderHitBoxEntitis(float timeIndex)
         {
             List<float> buffer = new List<float>();
-            if (!MvkGlobal.WIGGLE_EFFECT) buffer.AddRange(RenderHitBox(World.Player, timeIndex));
+            if (World.Player.ViewCamera != EnumViewCamera.Eye) buffer.AddRange(RenderHitBox(World.Player, timeIndex));
             foreach(EntityPlayerClient entity in World.PlayerEntities.Values)
             {
                 if (entity.Name != World.Player.Name) buffer.AddRange(RenderHitBox(entity, entity.TimeIndex()));
@@ -136,8 +138,8 @@ namespace MvkClient.Renderer
             vec3 rayHead2 = new vec3(rayHead.x, 0, rayHead.z);
             rayHead2 = rayHead2.normalize();
             buffer.AddRange(hitboxPlayer.Line(
-                pos.x + rayHead2.x, pos.y + .07f, pos.z + rayHead2.z, 
-                pos.x + rayHead2.x * 2f, pos.y + .07f, pos.z + rayHead2.z * 2f, col));
+                pos.x + rayHead2.x, pos.y + .01f, pos.z + rayHead2.z, 
+                pos.x + rayHead2.x * 2f, pos.y + .01f, pos.z + rayHead2.z * 2f, col));
 
             pos += new vec3(rayHead.x, 0, rayHead.z) * 2f;
             float xz = glm.cos(entity.LimbSwing * 0.6662f) * 1.4f * entity.GetLimbSwingAmountFrame(timeIndex);

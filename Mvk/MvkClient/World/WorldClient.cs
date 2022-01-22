@@ -1,4 +1,5 @@
-﻿using MvkClient.Entity;
+﻿using MvkClient.Actions;
+using MvkClient.Entity;
 using MvkClient.Renderer;
 using MvkClient.Renderer.Chunk;
 using MvkClient.Setitings;
@@ -36,6 +37,10 @@ namespace MvkClient.World
         /// Список сущностей игроков
         /// </summary>
         public Hashtable PlayerEntities { get; protected set; } = new Hashtable();
+        /// <summary>
+        /// Объект нажатия клавиатуры
+        /// </summary>
+        public Keyboard Key { get; protected set; }
 
         /// <summary>
         /// Объект времени c последнего тпс
@@ -50,6 +55,7 @@ namespace MvkClient.World
         /// </summary>
         protected string strPlayers = "";
 
+
         public WorldClient(Client client) : base()
         {
             ChunkPr = new ChunkProviderClient(this);
@@ -58,6 +64,7 @@ namespace MvkClient.World
             WorldRender = new WorldRenderer(this);
             Player = new EntityPlayerSP(this);
             Player.SetOverviewChunk(Setting.OverviewChunk, 0);
+            Key = new Keyboard(this);
             UpStrPlayers();
         }
 
@@ -70,7 +77,16 @@ namespace MvkClient.World
             uint time = ClientMain.TickCounter;
 
             base.Tick();
-            
+
+            // Обновить игрока
+            Player.Update();
+            // Обновить остальных сущностей
+            Hashtable pe = PlayerEntities.Clone() as Hashtable;
+            foreach (EntityPlayerMP entity in pe.Values)
+            {
+                entity.Update();
+            }
+
 
             if (time - previousTotalWorldTime > MvkGlobal.CHUNK_CLEANING_TIME)
             {

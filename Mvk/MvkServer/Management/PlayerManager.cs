@@ -55,12 +55,12 @@ namespace MvkServer.Management
         /// <summary>
         /// Отправить пакеты всех игрокам
         /// </summary>
-        public void ResponsePacketAll(IPacket packet)
+        public void ResponsePacketAll(IPacket packet, int id)
         {
             Hashtable ht = players.Clone() as Hashtable;
             foreach (EntityPlayerServer player in ht.Values)
             {
-                ResponsePacket(player, packet);
+                if (id <= 0 || player.Id != id) ResponsePacket(player, packet);
             }
         }
 
@@ -112,7 +112,7 @@ namespace MvkServer.Management
                 World.ServerMain.Log.Log("server.player.entry.repeat {0} [{1}]", entityPlayer.Name, entityPlayer.UUID);
                 RemoveMountedMovingPlayer(entityPlayer);
                 players.Remove(entityPlayer.UUID);
-                ResponsePacketAll(new PacketS15Disconnect(entityPlayer.Id));
+                ResponsePacketAll(new PacketS15Disconnect(entityPlayer.Id), entityPlayer.Id);
             }
         }
 
@@ -212,7 +212,7 @@ namespace MvkServer.Management
         /// </summary>
         protected void ResponsePacketS12Success(EntityPlayerServer player)
         {
-            ResponsePacketAll(new PacketS12Success(player));
+            ResponsePacketAll(new PacketS12Success(player), -1);
             ResponsePacket(player, new PacketS14TimeUpdate(World.ServerMain.TickCounter));
             
             // Так же отправляем всех игроков новому игроку

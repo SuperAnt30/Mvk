@@ -6,7 +6,7 @@ namespace MvkServer.Entity.Player
     /// <summary>
     /// Сущность игрока
     /// </summary>
-    public abstract class EntityPlayer : EntityLiving
+    public abstract class EntityPlayer : EntityLivingHead
     {
         /// <summary>
         /// Уникальный id

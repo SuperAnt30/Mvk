@@ -1,4 +1,5 @@
-﻿using MvkServer.Glm;
+﻿using MvkServer.Entity.Player;
+using MvkServer.Glm;
 using MvkServer.Util;
 using System.Collections.Generic;
 
@@ -10,22 +11,18 @@ namespace MvkServer.Entity
     public abstract class EntityLiving : EntityBase
     {
         /// <summary>
-        /// Ключевой объект перемещения движения
+        /// Объект ввода кликов клавиатуры
         /// </summary>
-        public Moving Mov { get; protected set; } = new Moving();
+        public EnumInput Input { get; protected set; } = EnumInput.None;
         /// <summary>
         /// Счётчик движения. Влияет на то, где в данный момент находятся ноги и руки при качании. 
         /// </summary>
         public float LimbSwing { get; protected set; } = 0;
-        /// <summary>
-        /// Вращение головы
-        /// </summary>
-        public float RotationYawHead { get; protected set; }
-        /// <summary>
-        /// Вращение головы на предыдущем тике
-        /// </summary>
-        public float RotationYawHeadPrev { get; protected set; }
 
+        /// <summary>
+        /// Нужна ли амплитуда конечностей
+        /// </summary>
+        protected bool isLimbSwing = true;
         /// <summary>
         /// Скорость движения. Влияет на то, где в данный момент находятся ноги и руки при качании. 
         /// </summary>
@@ -34,10 +31,6 @@ namespace MvkServer.Entity
         /// Скорость движения на предыдущем тике. Влияет на то, где в данный момент находятся ноги и руки при качании. 
         /// </summary>
         private float limbSwingAmountPrev = 0;
-        /// <summary>
-        /// Любое изменение в движении
-        /// </summary>
-        protected bool isMotion = true;
         /// <summary>
         /// Количество тактов для запрета повторного прыжка
         /// </summary>
@@ -55,19 +48,36 @@ namespace MvkServer.Entity
         /// </summary>
         private string strHVJ = "";
 
+        #region Input
+
+        /// <summary>
+        /// Нет нажатий
+        /// </summary>
+        public void InputNone() => Input = EnumInput.None;
+        /// <summary>
+        /// Добавить нажатие
+        /// </summary>
+        public void InputAdd(EnumInput input) => Input |= input;
+        /// <summary>
+        /// Убрать нажатие
+        /// </summary>
+        public void InputRemove(EnumInput input) => Input ^= input;
+        
+        #endregion
+
         /// <summary>
         /// Вызывается для обновления позиции / логики объекта
         /// </summary>
         public override void Update()
         {
             base.Update();
-            RotationYawHeadPrev = RotationYawHead;
 
+            bool isMotion = false;
             // счётчик прыжка
             if (jumpTicks > 0) jumpTicks--;
 
             // Обновить положение сидя
-            if (!IsFlying && OnGround && Mov.Down && !IsSneaking)
+            if (!IsFlying && OnGround && Input.HasFlag(EnumInput.Down) && !IsSneaking)
             {
                 // Только в выживании можно сесть
                 IsSneaking = true;
@@ -76,7 +86,7 @@ namespace MvkServer.Entity
             }
 
             // Sprinting
-            bool isSprinting = Mov.Sprinting && Mov.Forward && !IsSneaking;
+            bool isSprinting = Input.HasFlag(EnumInput.Sprinting | EnumInput.Forward) && !IsSneaking;
             if (IsSprinting != isSprinting)
             {
                 IsSprinting = isSprinting;
@@ -84,17 +94,24 @@ namespace MvkServer.Entity
             }
 
             // Перемещение, определяем скорости
-            vec3 motion = MoveWithHeading(
-                Mov.Strafe() * Speed.Strafe,
-                Mov.ForwardAndBack() * Speed.Forward,
-                IsFlying ? Mov.Height() * Speed.Vertical : Mov.Up ? 1f : 0
-            );
+            float strafe = (Input.HasFlag(EnumInput.Right) ? 1f : 0) - (Input.HasFlag(EnumInput.Left) ? 1f : 0);
+            float forward = (Input.HasFlag(EnumInput.Back) ? 1f : 0f) - (Input.HasFlag(EnumInput.Forward) ? 1f : 0f);
+
+            float height = 0;
+            if (IsFlying)
+            {
+                height = (Input.HasFlag(EnumInput.Up) ? 1f : 0f) - (Input.HasFlag(EnumInput.Down) ? 1f : 0f);
+                height *= Speed.Vertical;
+            }
+            else if (Input.HasFlag(EnumInput.Up)) height = 1f;
+
+            vec3 motion = MoveWithHeading(strafe * Speed.Strafe, forward * Speed.Forward, height);
 
             // Коллизия перемещения
             MoveCheckCollision(motion);
 
             // Если хотим встать
-            if (!Mov.Down && IsSneaking)
+            if (!Input.HasFlag(EnumInput.Down) && IsSneaking)
             {
                 // Проверка коллизии вверхней части при положении стоя
                 Standing();
@@ -110,21 +127,35 @@ namespace MvkServer.Entity
                 }
             }
 
-            // Пометка что было какое-то движение
-            if (!isMotion && (Motion.x != 0 || Motion.y != 0 || Motion.z != 0))
+            // Пометка что было какое-то движение, вращения, бег, сидеть и тп.
+            if (isMotion || Motion.x != 0 || Motion.y != 0 || Motion.z != 0)
             {
-                isMotion = true;
-                vec3 pos = Position + Motion;
-                SetPosition(pos);
+                UpdateLiving();
             }
 
-            // Расчёт амплитуды конечностей, при движении
-            UpLimbSwing();
             // Для вращении головы
             HeadTurn(motion);
         }
 
-        
+        /// <summary>
+        /// Проверка колизии по вектору движения
+        /// </summary>
+        /// <param name="motion">вектор движения</param>
+        public void UpMoveCheckCollision(vec3 motion)
+        {
+            MoveCheckCollision(motion);
+            SetPosition(Position + Motion);
+        }
+
+        /// <summary>
+        /// Обновление в каждом тике, если были требования по изминению позицыи, вращения, бег, сидеть и тп.
+        /// </summary>
+        protected virtual void UpdateLiving() => SetPosition(Position + Motion);
+
+        /// <summary>
+        /// Поворот тела от движения и поворота головы 
+        /// </summary>
+        protected virtual void HeadTurn(vec3 motion) { }
 
         /// <summary>
         /// Конвертация от направления движения в XYZ координаты с кооректировками скоростей
@@ -162,11 +193,6 @@ namespace MvkServer.Entity
                 else motion.y = Motion.y - .16f;
             }
 
-            // Если мелось убираем
-            if (Mth.Abs(motion.x) < 0.005f) motion.x = 0;
-            if (Mth.Abs(motion.y) < 0.005f) motion.y = 0;
-            if (Mth.Abs(motion.z) < 0.005f) motion.z = 0;
-
             // Мягкость
             motion.x *= .5f;
             motion.y *= .98f;
@@ -177,7 +203,7 @@ namespace MvkServer.Entity
             {
                 // для воды свои правила, плыть вверх
                 //...
-                // Для прыжка надо стоять на земле, и что счётик прыжка был = 0
+                // Для прыжка надо стоять на земле, и чтоб счётик прыжка был = 0
                 if (OnGround && jumpTicks == 0)
                 {
                     vec3 motionJump = Jump();
@@ -189,6 +215,18 @@ namespace MvkServer.Entity
             }
 
             return motion;
+        }
+
+        /// <summary>
+        /// Задать смещение, с обрезкой малых чисел
+        /// </summary>
+        protected void SetMotion(vec3 motion)
+        {
+            // Если мелочь убираем
+            if (Mth.Abs(motion.x) < 0.005f) motion.x = 0;
+            if (Mth.Abs(motion.y) < 0.005f) motion.y = 0;
+            if (Mth.Abs(motion.z) < 0.005f) motion.z = 0;
+            Motion = motion;
         }
 
         /// <summary>
@@ -210,16 +248,14 @@ namespace MvkServer.Entity
         /// <summary>
         /// Определение вращения
         /// </summary>
-        protected vec3 MotionAngle(float strafe, float forward)
+        protected virtual vec3 MotionAngle(float strafe, float forward)
         {
             vec3 motion = Motion;
 
             if (strafe != 0 || forward != 0)
             {
-                //float ysin = glm.sin(RotationYaw);
-                //float ycos = glm.cos(RotationYaw);
-                float ysin = glm.sin(RotationYawHead);
-                float ycos = glm.cos(RotationYawHead);
+                float ysin = glm.sin(RotationYaw);
+                float ycos = glm.cos(RotationYaw);
                 motion.x += ycos * strafe - ysin * forward;
                 motion.z += ycos * forward + ysin * strafe;
             }
@@ -234,15 +270,12 @@ namespace MvkServer.Entity
             // Без проверки столкновения
             if (NoClip)
             {
-                Motion = motion;
+                SetMotion(motion);
                 return;
             }
 
-            // Расширение из-за огруглении float
-            // TODO:: иногда на отрицательных проходит стенку колизия!!! 
-            AxisAlignedBB boundingBox = BoundingBox.Expand(new vec3(0.001f, 0, 0.001f));
-
-            AxisAlignedBB aabbEntity = boundingBox.Clone();
+            AxisAlignedBB boundingBox = BoundingBox.Clone();
+            AxisAlignedBB aabbEntity = BoundingBox.Clone();
             List<AxisAlignedBB> aabbs;
 
             float x0 = motion.x;
@@ -253,9 +286,8 @@ namespace MvkServer.Entity
             float y = y0;
             float z = z0;
 
-            // Защита от падения с края блока если сидишь
-            // TODO:: проверку добавть только для Игроков, не падать с края!!!
-            if (OnGround && IsSneaking)
+            // Защита от падения с края блока если сидишь и являешься игроком
+            if (OnGround && IsSneaking && this is EntityPlayer)
             {
                 // Шаг проверки смещения
                 float step = 0.05f;
@@ -300,13 +332,18 @@ namespace MvkServer.Entity
             foreach (AxisAlignedBB axis in aabbs) z = axis.CalculateZOffset(aabbEntity, z);
             aabbEntity = aabbEntity.Offset(new vec3(0, 0, z));
 
+            
             // Запуск проверки авто прыжка
             if (StepHeight > 0f && isNotJump && (x0 != x || z0 != z))
             {
                 // Кэш для откада, если авто прыжок не допустим
                 vec3 monCache = new vec3(x, y, z);
 
-                y = StepHeight;
+                float stepHeight = StepHeight;
+                // Если сидим авто прыжок в двое ниже
+                if (IsSneaking) stepHeight *= 0.5f;
+
+                y = stepHeight;
                 aabbs = World.Collision.GetCollidingBoundingBoxes(boundingBox.AddCoord(new vec3(x0, y, z0)));
                 AxisAlignedBB aabbEntity2 = boundingBox.Clone();
                 AxisAlignedBB aabb = aabbEntity2.AddCoord(new vec3(x0, 0, z0));
@@ -354,7 +391,7 @@ namespace MvkServer.Entity
                     z = z3;
                     aabbEntity = aabbEntity3;
                 }
-                y = -StepHeight;
+                y = -stepHeight;
 
                 // Находим итоговое смещение по Y
                 foreach (AxisAlignedBB axis in aabbs) y = axis.CalculateYOffset(aabbEntity, y);
@@ -369,7 +406,7 @@ namespace MvkServer.Entity
                 else
                 {
                     // Авто прыжок
-                    y += StepHeight;
+                    y += stepHeight;
                 }
             }
 
@@ -391,7 +428,7 @@ namespace MvkServer.Entity
             }
 
             // Обновить значения перемещения для следующего такта
-            Motion = new vec3(x, y, z);
+            SetMotion(new vec3(x, y, z));
         }
 
         /// <summary>
@@ -400,79 +437,9 @@ namespace MvkServer.Entity
         /// <param name="timeIndex">коэфициент между тактами</param>
         public float GetLimbSwingAmountFrame(float timeIndex)
         {
-            if (timeIndex == 1.0f || limbSwingAmount.Equals(limbSwingAmountPrev))
-            {
-                return limbSwingAmount;
-            }
-            else
-            {
-                return limbSwingAmountPrev + (limbSwingAmount - limbSwingAmountPrev) * timeIndex;
-            }
-        }
-
-        /// <summary>
-        /// Задать вращение
-        /// </summary>
-        public void SetRotationHead(float yawHead, float yawBody, float pitch)
-        {
-            //SetRotation(yaw, pitch);
-            RotationYawHead = yawHead;
-            RotationYaw = yawBody;
-            RotationPitch = pitch;
-            CheckRotation();
-        }
-
-        /// <summary>
-        /// Проверить градусы
-        /// </summary>
-        protected override void CheckRotation()
-        {
-            base.CheckRotation();
-            while (RotationYawHead - RotationYawHeadPrev < -glm.pi) RotationYawHeadPrev -= glm.pi360;
-            while (RotationYawHead - RotationYawHeadPrev >= glm.pi) RotationYawHeadPrev += glm.pi360;
-        }
-
-        /// <summary>
-        /// Получить вектор направления камеры от головы
-        /// </summary>
-        /// <param name="timeIndex">Коэфициент между тактами</param>
-        public override vec3 GetLookFrame(float timeIndex) => GetLookFrame(RotationYawHead, RotationYawHeadPrev, timeIndex);
-
-        /// <summary>
-        /// Поворот тела от движения и поворота головы 
-        /// </summary>
-        protected void HeadTurn(vec3 motion)
-        {
-            float yawOffset;
-            // Определяем двигается ли сущность
-            bool movingForward = Mov.Forward || Mov.Back || Mov.Left || Mov.Right;
-            if (movingForward)
-            {
-                // Определяем угол направления в зависимости куда движемся
-                yawOffset = glm.atan2(motion.z, motion.x);
-                if (Mov.Forward) yawOffset += glm.pi90;
-                else if (Mov.Back) yawOffset -= glm.pi90;
-                else if (Mov.Left) yawOffset += glm.pi135;
-                else if (Mov.Right) yawOffset += glm.pi45;
-
-                // Плавность поворота тела когда перемещаемся, до 15 градусов за такт
-                RotationYaw = UpdateRotation(RotationYaw, yawOffset, .26f) % glm.pi360;
-            }
-            else
-            {
-                // Если не движется берём угол головы
-                yawOffset = RotationYawHead;
-            
-                // Если не перемещаемся находим дельту поворота между телом и головой
-                float delta = RotationYawHead - RotationYaw;
-                while (delta < -glm.pi) delta += glm.pi360;
-                while (delta >= glm.pi) delta -= glm.pi360;
-
-                // Смещаем тело если дельта выше 60 градусов
-                float angleR = 1.05f; // 60гр
-                if (delta > angleR) RotationYaw = (RotationYaw + delta - angleR) % glm.pi360;
-                else if (delta < -angleR) RotationYaw = (RotationYaw + delta + angleR) % glm.pi360;
-            }
+            if (timeIndex == 1.0f) limbSwingAmountPrev = limbSwingAmount;
+            if (limbSwingAmount.Equals(limbSwingAmountPrev)) return limbSwingAmount;
+            return limbSwingAmountPrev + (limbSwingAmount - limbSwingAmountPrev) * timeIndex;
         }
 
         /// <summary>
@@ -480,37 +447,22 @@ namespace MvkServer.Entity
         /// </summary>
         protected void UpLimbSwing()
         {
-            limbSwingAmountPrev = limbSwingAmount;
-            float xx = Position.x - PositionPrev.x;
-            float zz = Position.z - PositionPrev.z;
-            float xxzz = xx * xx + zz * zz;
-            float xz = Mth.Sqrt(xxzz) * 2.0f;
-            if (xz > 1.0f) xz = 1.0f;
-            limbSwingAmount += (xz - limbSwingAmount) * 0.4f;
-            LimbSwing += limbSwingAmount;
+            if (isLimbSwing)
+            {
+                limbSwingAmountPrev = limbSwingAmount;
+                float xx = Position.x - PositionPrev.x;
+                float zz = Position.z - PositionPrev.z;
+                float xxzz = xx * xx + zz * zz;
+                float xz = Mth.Sqrt(xxzz) * 2.0f;
+                if (xz > 1.0f) xz = 1.0f;
+                limbSwingAmount += (xz - limbSwingAmount) * 0.4f;
+                LimbSwing += limbSwingAmount;
+            }
         }
-
-        /// <summary>
-        /// Обновить поворот с ограниченым смещением
-        /// </summary>
-        /// <param name="angle">Входящий угол в радианах</param>
-        /// <param name="angleOffset">Смещение угла в радианах</param>
-        /// <param name="increment">Увеличение в радианах</param>
-        /// <returns>Новое значение</returns>
-        private float UpdateRotation(float angle, float angleOffset, float increment)
-        {
-            float offset = glm.wrapAngleToPi(angleOffset - angle);
-
-            if (offset > increment) offset = increment;
-            if (offset < -increment) offset = -increment;
-
-            return angle + offset;
-        }
-
 
         public override string ToString()
         {
-            return string.Format("XYZ {7}\r\nyaw:{8:0.00} H:{9:0.00} pitch:{10:0.00} \r\n{1}{2}{6}{4} boom:{5:0.00}\r\nMotion:{3}\r\nL:{11:0.000}",
+            return string.Format("XYZ {7}\r\nyaw:{8:0.00} H:{9:0.00} pitch:{10:0.00} \r\n{1}{2}{6}{4} boom:{5:0.00}\r\nMotion:{3}\r\n{11}",
                 strHVJ, // 0
                 OnGround ? "__" : "", // 1
                 IsSprinting ? "[Sp]" : "", // 2
@@ -520,9 +472,9 @@ namespace MvkServer.Entity
                 IsSneaking ? "[Sn]" : "", // 6
                 Position, // 7
                 glm.degrees(RotationYaw), // 8
-                glm.degrees(RotationYawHead), // 9
+                0,//glm.degrees(RotationYawHead), // 9
                 glm.degrees(RotationPitch), // 10
-                limbSwingAmount // 11
+                IsCollidedHorizontally // 11
                 );
         }
     }

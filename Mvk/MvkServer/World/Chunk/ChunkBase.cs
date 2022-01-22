@@ -125,6 +125,14 @@ namespace MvkServer.World.Chunk
             StorageArrays[1].SetEBlock(0, 11, 2, EnumBlock.Dirt);
             StorageArrays[1].SetEBlock(1, 7, 0, EnumBlock.Dirt);
 
+            int xv = 8;
+            int zv = 1;
+
+            StorageArrays[1].SetEBlock(xv, 8, zv, EnumBlock.Stone);
+            StorageArrays[1].SetEBlock(xv, 9, zv, EnumBlock.Stone);
+            StorageArrays[1].SetEBlock(xv, 10, zv, EnumBlock.Stone);
+            StorageArrays[1].SetEBlock(xv, 11, zv, EnumBlock.Stone);
+
             IsChunkLoaded = true;// LoadinData();
             // Продумать, для клиента запрос для сервера данных чанка, 
             // для сервера чанк пытается загрузиться, если он не создан то создаём

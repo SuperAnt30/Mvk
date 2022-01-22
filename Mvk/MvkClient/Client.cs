@@ -40,6 +40,8 @@ namespace MvkClient
         /// </summary>
         public GuiScreen Screen { get; private set; }
 
+        
+
         /// <summary>
         /// Тикер Fps
         /// </summary>
@@ -202,45 +204,9 @@ namespace MvkClient
                 Debug.IsDraw = !Debug.IsDraw;
             }
             
-            if (IsGamePlayAction())
-            {
-                if (key == 27) // Esc
-                {
-                    Screen.InGameMenu();
-                }
-                else if (key == 9) // Tab
-                {
-                    MouseGamePlay(!isMouseGamePlay);
-                }
-                else if (key == 116) // F5
-                {
-                    World.Player.ModeFly();
-                }
-                else if (key == 117) // F6
-                {
-                    World.Player.ModeSurvival();
-                }
-                else
-                {
-                    World.Player.KeyActionTrancivePacket(Keyboard.KeyActionToDown(key));
-                }
-            }
+            if (World != null && IsGamePlayAction()) World.Key.Down(key);
         }
-
-        /// <summary>
-        /// Активация или деактивация управление мыши от одного лица в 3д
-        /// </summary>
-        /// <param name="action">true - активация</param>
-        public void MouseGamePlay(bool action)
-        {
-            if (IsGamePlayAction() && isMouseGamePlay != action)
-            {
-                isMouseGamePlay = action;
-                if (isMouseGamePlay) firstMouse = true;
-                else World.Player.Mov.AllEnd();
-                CursorShow(!action);
-            }
-        }
+        
         /// <summary>
         /// Нажата клавиша в char формате
         /// </summary>
@@ -255,11 +221,25 @@ namespace MvkClient
         /// <param name="key">индекс клавиши</param>
         public void KeyUp(int key)
         {
-            if (World != null)
+            if (World != null) World.Key.Up(key);
+        }
+
+        /// <summary>
+        /// Активация или деактивация управление мыши от одного лица в 3д
+        /// </summary>
+        /// <param name="action">true - активация</param>
+        public void MouseGamePlay(bool action)
+        {
+            if (IsGamePlayAction() && isMouseGamePlay != action)
             {
-                World.Player.KeyActionTrancivePacket(Keyboard.KeyActionToUp(key));
+                isMouseGamePlay = action;
+                if (isMouseGamePlay) firstMouse = true;
+                else World.Player.InputNone();
+                CursorShow(!action);
             }
         }
+
+        public void MouseGamePlay() => MouseGamePlay(!isMouseGamePlay);
 
         /// <summary>
         /// Нажатие клавиши мышки
@@ -482,7 +462,6 @@ namespace MvkClient
                 TickCounter++;
 
                 World.Tick();
-                World.Player.Update();
 
                 if (TickCounter % 4 == 0)
                 {
@@ -511,7 +490,7 @@ namespace MvkClient
         private void Screen_Changed(object sender, EventArgs e)
         {
             // определить паузу
-            isGamePaused = IsGamePlay && Screen.IsScreenPause() && !locServer.IsOpenNet();
+            isGamePaused = IsGamePlay && Screen.IsScreenPause() && !locServer.IsOpenNet() && locServer.IsLoacl;
             locServer.SetGamePauseSingle(isGamePaused);
 
             if (IsGamePlay && Screen.IsEmptyScreen())

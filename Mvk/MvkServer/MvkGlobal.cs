@@ -35,8 +35,11 @@
         /// <summary>
         /// Эффект покачивания при движении
         /// </summary>
-        public const bool WIGGLE_EFFECT = false;
+        public const bool WIGGLE_EFFECT = true;
 
-
+        /// <summary>
+        /// На каком растоянии от глаз, камера при виде сзади или спереди
+        /// </summary>
+        public const float CAMERA_DIST = 8f;
     }
 }

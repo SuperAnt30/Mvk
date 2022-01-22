@@ -8,6 +8,11 @@ namespace MvkServer.Util
     /// </summary>
     public class AxisAlignedBB
     {
+        /// <summary>
+        /// Погрешность
+        /// </summary>
+        private const float FAULT = 0.001f;
+
         public vec3 Min { get; protected set; }
         public vec3 Max { get; protected set; }
 
@@ -67,12 +72,12 @@ namespace MvkServer.Util
                 if (offset > 0f && other.Max.x <= Min.x)
                 {
                     float bias = Min.x - other.Max.x;
-                    if (bias < offset) offset = bias;
+                    if (bias < offset) offset = bias - FAULT;
                 }
                 else if (offset < 0f && other.Min.x >= Max.x)
                 {
                     float bias = Max.x - other.Min.x;
-                    if (bias > offset) offset = bias;
+                    if (bias > offset) offset = bias + FAULT;
                 }
             }
             return offset;
@@ -94,12 +99,12 @@ namespace MvkServer.Util
                 if (offset > 0f && other.Max.y <= Min.y)
                 {
                     float bias = Min.y - other.Max.y;
-                    if (bias < offset) offset = bias;
+                    if (bias < offset) offset = bias - FAULT;
                 }
                 else if (offset < 0f && other.Min.y >= Max.y)
                 {
                     float bias = Max.y - other.Min.y;
-                    if (bias > offset) offset = bias;
+                    if (bias > offset) offset = bias + FAULT;
                 }
             }
             return offset;
@@ -121,12 +126,12 @@ namespace MvkServer.Util
                 if (offset > 0f && other.Max.z <= Min.z)
                 {
                     float bias = Min.z - other.Max.z;
-                    if (bias < offset) offset = bias;
+                    if (bias < offset) offset = bias - FAULT;
                 }
                 else if (offset < 0f && other.Min.z >= Max.z)
                 {
                     float bias = Max.z - other.Min.z;
-                    if (bias > offset) offset = bias;
+                    if (bias > offset) offset = bias + FAULT;
                 }
             }
             return offset;

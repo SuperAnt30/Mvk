@@ -99,7 +99,6 @@ namespace MvkServer.World.Block.Items
             //min = new vec3(0);
             //max = new vec3(1, MvkStatic.Xy[8], 1);
             //aabbs[0] = GetBoundingBox();
-            //return aabbs;
 
             AxisAlignedBB[] aabbs = new AxisAlignedBB[2];
             min = new vec3(MvkStatic.Xy[1], 0, MvkStatic.Xy[1]);
@@ -108,6 +107,14 @@ namespace MvkServer.World.Block.Items
             min = new vec3(MvkStatic.Xy[1], MvkStatic.Xy[9], MvkStatic.Xy[1]);
             max = new vec3(MvkStatic.Xy[8], MvkStatic.Xy[16], MvkStatic.Xy[15]);
             aabbs[1] = GetBoundingBox();
+
+            //AxisAlignedBB[] aabbs = new AxisAlignedBB[2];
+            //min = new vec3(0);
+            //max = new vec3(MvkStatic.Xy[16], MvkStatic.Xy[8], MvkStatic.Xy[16]);
+            //aabbs[0] = GetBoundingBox();
+            //min = new vec3(0, MvkStatic.Xy[9], 0);
+            //max = new vec3(MvkStatic.Xy[8], MvkStatic.Xy[16], MvkStatic.Xy[16]);
+            //aabbs[1] = GetBoundingBox();
             return aabbs;
         }
     }

@@ -36,9 +36,9 @@ namespace MvkClient.Entity
             UUID = packet.GetUuid();
             Id = packet.GetId();
             SetPosition(packet.Pos);
-            RotationYawLast = RotationYawPrev = packet.Yaw;
-            RotationPitchLast = RotationPitchPrev = packet.Pitch;
-            SetRotation(packet.Yaw, packet.Pitch);
+            RotationYawLast = RotationYawPrev = RotationYaw = RotationYawHead = RotationYawHeadPrev = packet.Yaw;
+            RotationPitchLast = RotationPitchPrev = RotationPitch = packet.Pitch;
+            //SetRotation(packet.Yaw, packet.Pitch);
             PositionPrev = Position;
         }
 
@@ -53,7 +53,7 @@ namespace MvkClient.Entity
         /// </summary>
         public void SetPositionServer(vec3 pos, bool sneaking)
         {
-            interpolation.Restart();
+           // interpolation.Restart();
             if (IsSneaking != sneaking)
             {
                 IsSneaking = sneaking;
@@ -73,7 +73,7 @@ namespace MvkClient.Entity
             RotationYawPrev = RotationYaw;
             RotationYawHeadPrev = RotationYawHead;
             SetRotationHead(yawHead, yawBody, pitch);
-            //SetRotation(yaw, pitch);
+            //SetRotation(yawHead, pitch);
             //RotationYaw = yaw;
             //RotationPitch = pitch;
         }

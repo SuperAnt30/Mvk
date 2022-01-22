@@ -1,43 +1,82 @@
-﻿using MvkServer.Util;
+﻿using MvkClient.World;
+using MvkServer.Entity;
+using MvkServer.Util;
+using System.Diagnostics;
 
 namespace MvkClient.Actions
 {
     public class Keyboard
     {
-        /// <summary>
-        /// Получить ключь действие клавиши по индексу нажатой клавиши
+        // <summary>
+        /// Клиентский объект мира
         /// </summary>
-        public static EnumKeyAction KeyActionToDown(int key)
+        public WorldClient World { get; protected set; }
+
+        /// <summary>
+        /// Объект времени с момента запуска проекта
+        /// </summary>
+        private static Stopwatch stopwatch = new Stopwatch();
+        /// <summary>
+        /// Какая клавиша была нажата ранее
+        /// </summary>
+        private int keyPrev;
+
+        public Keyboard(WorldClient world)
         {
-            switch (key)
-            {
-                case 65: return EnumKeyAction.LeftDown;
-                case 68: return EnumKeyAction.RightDown;
-                case 87: return EnumKeyAction.ForwardDown;
-                case 83: return EnumKeyAction.BackDown;
-                case 32: return EnumKeyAction.UpDown;
-                case 16: return EnumKeyAction.DownDown;
-                case 17: return EnumKeyAction.SprintingDown;
-            }
-            return EnumKeyAction.None;
+            World = world;
+            stopwatch.Start();
         }
 
         /// <summary>
-        /// Получить ключь действие клавиши по индексу отпущенной клавиши
+        /// Нажата клавиша
         /// </summary>
-        public static EnumKeyAction KeyActionToUp(int key)
+        /// <param name="key">индекс клавиши</param>
+        public void Down(int key)
+        {
+            if (key == 32)
+            {
+                long ms = stopwatch.ElapsedMilliseconds;
+                stopwatch.Restart();
+                if (ms < 300 && key == keyPrev && !World.Player.Input.HasFlag(EnumInput.Up))
+                {
+                    // дабл клик пробела
+                    if (World.Player.IsFlying) World.Player.ModeSurvival();
+                    else if (!World.Player.IsSneaking) World.Player.ModeFly();
+                }
+            }
+            keyPrev = key;
+
+            // одно нажатие
+            if (key == 9) World.ClientMain.MouseGamePlay(); // Tab
+            else if (key == 18) World.Player.InputNone(); // Alt
+            else if (key == 27) World.ClientMain.Screen.InGameMenu(); // Esc
+            else if (key == 116) World.Player.ViewCameraNext(); // F5
+            //else if (key == 117) ; // F6
+            else World.Player.InputAdd(KeyActionToInput(key));
+        }
+
+        /// <summary>
+        /// Отпущена клавиша
+        /// </summary>
+        /// <param name="key">индекс клавиши</param>
+        public void Up(int key) => World.Player.InputRemove(KeyActionToInput(key));
+
+        /// <summary>
+        /// Получить ключ действие клавиши по индексу нажатой клавиши
+        /// </summary>
+        private EnumInput KeyActionToInput(int key)
         {
             switch (key)
             {
-                case 65: return EnumKeyAction.LeftUp;
-                case 68: return EnumKeyAction.RightUp;
-                case 87: return EnumKeyAction.ForwardUp;
-                case 83: return EnumKeyAction.BackUp;
-                case 32: return EnumKeyAction.UpUp;
-                case 16: return EnumKeyAction.DownUp;
-                case 17: return EnumKeyAction.SprintingUp;
+                case 65: return EnumInput.Left;
+                case 68: return EnumInput.Right;
+                case 87: return EnumInput.Forward;
+                case 83: return EnumInput.Back;
+                case 32: return EnumInput.Up;
+                case 16: return EnumInput.Down;
+                case 17: return EnumInput.Sprinting;
             }
-            return EnumKeyAction.None;
+            return EnumInput.None;
         }
     }
 }

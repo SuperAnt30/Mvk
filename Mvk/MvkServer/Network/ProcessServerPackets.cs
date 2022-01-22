@@ -27,7 +27,7 @@ namespace MvkServer.Network
                     case 0x11: Packet11(socket, (PacketC11LoginStart)packet); break;
                     case 0x13: Packet13(socket, (PacketC13ClientSetting)packet); break;
                     case 0x20: Packet20(socket, (PacketB20Player)packet); break;
-                    case 0x22: Packet22(socket, (PacketC22Input)packet); break;
+                   // case 0x22: Packet22(socket, (PacketC22Input)packet); break;
                     case 0xFF:
                         ServerMain.ResponsePacket(socket, new PacketTFFTest("Получил тест: " + ((PacketTFFTest)packet).Name));
                         break;
@@ -63,12 +63,13 @@ namespace MvkServer.Network
                 {
                     case 0:
                         entityPlayer.SetPosition(packet.GetPos());
-                        ServerMain.World.Players.ResponsePacketAll(new PacketB20Player().Position(packet.GetPos(), packet.IsSneaking(), entityPlayer.Id));
+                        entityPlayer.SetIsSneaking(packet.IsSneaking());
+                        //ServerMain.World.Players.ResponsePacketAll(new PacketB20Player().Position(packet.GetPos(), packet.IsSneaking(), entityPlayer.Id));
                         break;
                     case 1:
                         entityPlayer.SetRotationHead(packet.GetYawHead(), packet.GetYawBody(), packet.GetPitch());
-                        //entityPlayer.SetRotation(packet.GetYaw(), packet.GetPitch());
-                        ServerMain.World.Players.ResponsePacketAll(new PacketB20Player().YawPitch(packet.GetYawHead(), packet.GetYawBody(), packet.GetPitch(), entityPlayer.Id));
+                        //entityPlayer.SetRotation(packet.GetYawHead(), packet.GetPitch());
+                        //ServerMain.World.Players.ResponsePacketAll(new PacketB20Player().YawPitch(packet.GetYawHead(), packet.GetYawBody(), packet.GetPitch(), entityPlayer.Id));
                         break;
                 }
             }
@@ -77,13 +78,13 @@ namespace MvkServer.Network
         /// <summary>
         /// Нажатие клавиш игрока
         /// </summary>
-        protected void Packet22(Socket socket, PacketC22Input packet)
-        {
-            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
-            if (entityPlayer != null)
-            {
-                entityPlayer.Mov.Key(packet.GetKey());
-            }
-        }
+        //protected void Packet22(Socket socket, PacketC22Input packet)
+        //{
+        //    //EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
+        //    //if (entityPlayer != null)
+        //    //{
+        //    //    entityPlayer.Mov.Key(packet.GetKey());
+        //    //}
+        //}
     }
 }
