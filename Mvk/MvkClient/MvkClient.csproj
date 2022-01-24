@@ -100,6 +100,14 @@
     <Compile Include="Renderer\Chunk\ChunkBuffer.cs" />
     <Compile Include="Renderer\Chunk\ChunkMesh.cs" />
     <Compile Include="Renderer\Chunk\ChunkRender.cs" />
+    <Compile Include="Renderer\Model\ModelBase.cs" />
+    <Compile Include="Renderer\Model\ModelBox.cs" />
+    <Compile Include="Renderer\Model\ModelChicken.cs" />
+    <Compile Include="Renderer\Model\ModelPlayer.cs" />
+    <Compile Include="Renderer\Model\ModelRender.cs" />
+    <Compile Include="Renderer\Model\TexturedQuad.cs" />
+    <Compile Include="Renderer\Model\TextureVertex.cs" />
+    <Compile Include="Renderer\Render.cs" />
     <Compile Include="Renderer\Font\FontAdvance.cs" />
     <Compile Include="Renderer\Font\FontRenderer.cs" />
     <Compile Include="Renderer\Font\Symbol.cs" />
@@ -115,6 +123,7 @@
     <Compile Include="Renderer\Shaders\ShaderVE.cs" />
     <Compile Include="Renderer\Shaders\ShaderVoxel.cs" />
     <Compile Include="Renderer\TextureMap.cs" />
+    <Compile Include="Renderer\TextureStruct.cs" />
     <Compile Include="Renderer\WorldRenderer.cs" />
     <Compile Include="Setitings\Setting.cs" />
     <Compile Include="LocalServer.cs" />

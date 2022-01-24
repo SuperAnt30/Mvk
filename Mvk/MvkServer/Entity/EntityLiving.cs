@@ -18,7 +18,7 @@ namespace MvkServer.Entity
         /// Счётчик движения. Влияет на то, где в данный момент находятся ноги и руки при качании. 
         /// </summary>
         public float LimbSwing { get; protected set; } = 0;
-
+        
         /// <summary>
         /// Нужна ли амплитуда конечностей
         /// </summary>
@@ -105,7 +105,8 @@ namespace MvkServer.Entity
             }
             else if (Input.HasFlag(EnumInput.Up)) height = 1f;
 
-            vec3 motion = MoveWithHeading(strafe * Speed.Strafe, forward * Speed.Forward, height);
+            //vec3 motion = MoveWithHeading(strafe * Speed.Strafe, forward * Speed.Forward, height);
+            vec3 motion = MoveWithHeading(strafe, forward, height);
 
             // Коллизия перемещения
             MoveCheckCollision(motion);
@@ -162,23 +163,26 @@ namespace MvkServer.Entity
         /// </summary>
         protected vec3 MoveWithHeading(float strafe, float forward, float vertical)
         {
+            float friction = Mth.Max(Speed.Strafe, Speed.Forward);
             // Ускорение или крастись
             if (IsSprinting && forward < 0 && !IsSneaking)
             {
                 // Бег 
-                forward *= Speed.Sprinting;
+                //forward *= Speed.Sprinting;
+                friction *= Speed.Sprinting;
             }
             else if (!IsFlying && (forward != 0 || strafe != 0) && IsSneaking)
             {
                 // Крадёмся
-                forward *= .3f;
-                strafe *= .3f;
+                friction *= .3f;
+                //forward *= .3f;
+                //strafe *= .3f;
             }
 
-            strHVJ = string.Format("strafe:{0:0.00} forward:{1:0.00} height:{2:0.00}", strafe, forward, vertical);
+            strHVJ = string.Format("strafe:{0:0.00} forward:{1:0.00} height:{2:0.00} --- {3}", strafe, forward, vertical, friction);
 
             // Конвертация из направлений в xyz
-            vec3 motion = MotionAngle(strafe, forward);
+            vec3 motion = MotionAngle(strafe, forward, friction);
 
             // Определение прыжка и высотного Y значения
             if (IsFlying)
@@ -248,19 +252,31 @@ namespace MvkServer.Entity
         /// <summary>
         /// Определение вращения
         /// </summary>
-        protected virtual vec3 MotionAngle(float strafe, float forward)
+        protected vec3 MotionAngle(float strafe, float forward, float friction)
         {
             vec3 motion = Motion;
 
-            if (strafe != 0 || forward != 0)
+            float sf = strafe * strafe + forward * forward;
+            if (sf >= 0.0001f)
             {
-                float ysin = glm.sin(RotationYaw);
-                float ycos = glm.cos(RotationYaw);
+                sf = Mth.Sqrt(sf);
+                if (sf < 1f) sf = 1f;
+                sf = friction / sf;
+                strafe *= sf;
+                forward *= sf;
+                float yaw = GetRotationYaw();
+                float ysin = glm.sin(yaw);
+                float ycos = glm.cos(yaw);
                 motion.x += ycos * strafe - ysin * forward;
                 motion.z += ycos * forward + ysin * strafe;
             }
             return motion;
         }
+
+        /// <summary>
+        /// Получить градус поворота по Yaw
+        /// </summary>
+        protected virtual float GetRotationYaw() => RotationYaw;
 
         /// <summary>
         /// Проверка перемещения со столкновением
@@ -419,7 +435,12 @@ namespace MvkServer.Entity
             if (y < 0f) fallDistance -= y;
             if (OnGround)
             {
-                if (fallDistance > 0f)
+                if (IsFlying)
+                {
+                    ModeSurvival();
+                    fallDistance = 0f;
+                }
+                else if (fallDistance > 0f)
                 {
                     // Упал
                     fallDistanceResult = fallDistance;
@@ -462,7 +483,7 @@ namespace MvkServer.Entity
 
         public override string ToString()
         {
-            return string.Format("XYZ {7}\r\nyaw:{8:0.00} H:{9:0.00} pitch:{10:0.00} \r\n{1}{2}{6}{4} boom:{5:0.00}\r\nMotion:{3}\r\n{11}",
+            return string.Format("XYZ {7}\r\n{0}\r\nyaw:{8:0.00} H:{9:0.00} pitch:{10:0.00} \r\n{1}{2}{6}{4} boom:{5:0.00}\r\nMotion:{3}\r\n{11}",
                 strHVJ, // 0
                 OnGround ? "__" : "", // 1
                 IsSprinting ? "[Sp]" : "", // 2

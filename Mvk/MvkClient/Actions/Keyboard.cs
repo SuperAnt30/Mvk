@@ -33,11 +33,11 @@ namespace MvkClient.Actions
         /// <param name="key">индекс клавиши</param>
         public void Down(int key)
         {
-            if (key == 32)
+            if (key == 32 && !World.Player.Input.HasFlag(EnumInput.Up))
             {
                 long ms = stopwatch.ElapsedMilliseconds;
                 stopwatch.Restart();
-                if (ms < 300 && key == keyPrev && !World.Player.Input.HasFlag(EnumInput.Up))
+                if (ms < 300 && key == keyPrev)
                 {
                     // дабл клик пробела
                     if (World.Player.IsFlying) World.Player.ModeSurvival();
@@ -48,8 +48,8 @@ namespace MvkClient.Actions
 
             // одно нажатие
             if (key == 9) World.ClientMain.MouseGamePlay(); // Tab
-            else if (key == 18) World.Player.InputNone(); // Alt
-            else if (key == 27) World.ClientMain.Screen.InGameMenu(); // Esc
+            //else if (key == 18) World.Player.InputNone(); // Alt
+            else if (key == 27 || key == 18) World.ClientMain.Screen.InGameMenu(); // Esc
             else if (key == 116) World.Player.ViewCameraNext(); // F5
             //else if (key == 117) ; // F6
             else World.Player.InputAdd(KeyActionToInput(key));
@@ -59,7 +59,11 @@ namespace MvkClient.Actions
         /// Отпущена клавиша
         /// </summary>
         /// <param name="key">индекс клавиши</param>
-        public void Up(int key) => World.Player.InputRemove(KeyActionToInput(key));
+        public void Up(int key)
+        {
+            if (key == 18) World.Player.InputNone(); // Alt
+            else World.Player.InputRemove(KeyActionToInput(key));
+        }
 
         /// <summary>
         /// Получить ключ действие клавиши по индексу нажатой клавиши

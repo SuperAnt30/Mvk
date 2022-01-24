@@ -45,7 +45,7 @@ namespace MvkClient.Renderer
         /// Получить индекс текстуры по ключу
         /// </summary>
         /// <param name="key">ключ текстуры</param>
-        protected uint GetData(AssetsTexture key) => items.ContainsKey(key) ? (uint)items[key] : 0;
+        public TextureStruct GetData(AssetsTexture key) => items.ContainsKey(key) ? (TextureStruct)items[key] : new TextureStruct();
 
         /// <summary>
         /// Запустить текстуру
@@ -59,11 +59,23 @@ namespace MvkClient.Renderer
         /// <param name="texture">OpenGL.GL_TEXTURE0 + texture</param>
         public void BindTexture(AssetsTexture key, uint texture)
         {
-            if (items.ContainsKey(key))
-            {
-                GLWindow.gl.ActiveTexture(OpenGL.GL_TEXTURE0 + texture);
-                GLWindow.gl.BindTexture(OpenGL.GL_TEXTURE_2D, GetData(key));
-            }
+            TextureStruct ts = GetData(key);
+            if (!ts.IsEmpty()) BindTexture(ts.GetKey(), texture);
+        }
+        /// <summary>
+        /// Запустить текстуру
+        /// </summary>
+        /// <param name="key">ключ текстуры</param>
+        public void BindTexture(uint key) => BindTexture(key, 0);
+        /// <summary>
+        /// Запустить текстуру
+        /// </summary>
+        /// <param name="key">ключ текстуры</param>
+        /// <param name="texture">OpenGL.GL_TEXTURE0 + texture</param>
+        public void BindTexture(uint key, uint texture)
+        {
+            GLWindow.gl.ActiveTexture(OpenGL.GL_TEXTURE0 + texture);
+            GLWindow.gl.BindTexture(OpenGL.GL_TEXTURE_2D, key);
         }
 
         /// <summary>
@@ -77,15 +89,25 @@ namespace MvkClient.Renderer
 
             uint[] texture = new uint[1];
 
-            if (items.ContainsKey(image.Key))
-            {
-                texture[0] = (uint)items[image.Key];
-            }
-            else
+            TextureStruct ts = GetData(image.Key);
+            if (ts.IsEmpty())
             {
                 gl.GenTextures(1, texture);
-                items.Add(image.Key, texture[0]);
+                ts = new TextureStruct(texture[0], image.Width, image.Height, image.Key);
+                items.Add(image.Key, ts);
+            } else
+            {
+                texture[0] = ts.GetKey();
             }
+            //if (items.ContainsKey(image.Key))
+            //{
+            //    texture[0] = (uint)items[image.Key];
+            //}
+            //else
+            //{
+            //    gl.GenTextures(1, texture);
+            //    items.Add(image.Key, texture[0]);
+            //}
 
             gl.BindTexture(OpenGL.GL_TEXTURE_2D, texture[0]);
             gl.PixelStore(OpenGL.GL_UNPACK_ALIGNMENT, 1);

@@ -94,7 +94,6 @@
   <ItemGroup>
     <None Include="Resources\MobChickenPlop.ogg" />
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
     <None Include="Resources\Widgets.png" />
   </ItemGroup>
@@ -118,6 +117,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\Atlas.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Steve.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Chicken.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

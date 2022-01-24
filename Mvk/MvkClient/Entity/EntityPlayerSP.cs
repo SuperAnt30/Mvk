@@ -7,6 +7,7 @@ using MvkServer.Entity;
 using MvkServer.Glm;
 using MvkServer.Network.Packets;
 using MvkServer.Util;
+using SharpGL;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -34,6 +35,7 @@ namespace MvkClient.Entity
         /// массив матрицы расположения камеры в пространстве
         /// </summary>
         public float[] LookAt { get; protected set; }
+        
         /// <summary>
         /// Принудительно обработать FrustumCulling
         /// </summary>
@@ -53,12 +55,54 @@ namespace MvkClient.Entity
         protected float yawBodyFrame;
         protected float eyeFrame;
 
+        protected uint dListLookAt;
+        /// <summary>
+        /// массив векторов расположения камеры в пространстве для DisplayList
+        /// </summary>
+        protected vec3[] lookAtDL;
+
         public EntityPlayerSP(WorldClient world) : base(world)
         {
             Fov = new SmoothFrame(1.22f);
             Eye = new SmoothFrame(GetEyeHeight());
             interpolation.Start();
         }
+
+        #region DisplayList
+
+        /// <summary>
+        /// Обновить матрицу
+        /// </summary>
+        protected void UpMatrixProjection()
+        {
+            if (lookAtDL != null && lookAtDL.Length == 3)
+            {
+                GLRender.ListDelete(dListLookAt);
+                dListLookAt = GLRender.ListBegin();
+                GLWindow.gl.MatrixMode(OpenGL.GL_PROJECTION);
+                GLWindow.gl.LoadIdentity();
+                GLWindow.gl.Perspective(glm.degrees(Fov.ValueFrame), (float)GLWindow.WindowWidth / (float)GLWindow.WindowHeight, 0.001f, OverviewChunk * 22.624f * 2f);
+                GLWindow.gl.LookAt(lookAtDL[0].x, lookAtDL[0].y, lookAtDL[0].z,
+                    lookAtDL[1].x, lookAtDL[1].y, lookAtDL[1].z,
+                    lookAtDL[2].x, lookAtDL[2].y, lookAtDL[2].z);
+                GLWindow.gl.MatrixMode(OpenGL.GL_MODELVIEW);
+                GLWindow.gl.LoadIdentity();
+                GLWindow.gl.Disable(OpenGL.GL_CULL_FACE);
+                // Код с фиксированной функцией может использовать альфа-тестирование
+                // Чтоб корректно прорисовывался кактус
+                GLWindow.gl.AlphaFunc(OpenGL.GL_GREATER, 0.1f);
+                GLWindow.gl.Enable(OpenGL.GL_ALPHA_TEST);
+                //GLWindow.gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_FILL);
+                GLRender.ListEnd();
+            }
+        }
+
+        /// <summary>
+        /// Прорисовать матрицу для DisplayList
+        /// </summary>
+        public void DrawMatrixProjection() => GLRender.ListCall(dListLookAt);
+
+        #endregion
 
         /// <summary>
         /// Вызывается для обновления позиции / логики объекта
@@ -139,8 +183,6 @@ namespace MvkClient.Entity
             RotationPitchLast = pitch;
         }
 
-        
-
         /// <summary>
         /// Обновить матрицу камеры
         /// </summary>
@@ -165,17 +207,21 @@ namespace MvkClient.Entity
             {
                 // Эффект болтания когда игрок движется 
                 vec3 right = glm.cross(up, front).normalize();
+                float limbS = GetLimbSwingAmountFrame(timeIndex) * .12f;
                 // эффект лево-право
-                float limb = glm.cos(LimbSwing * 0.3331f) * GetLimbSwingAmountFrame(timeIndex);
-                pos += right * limb * .12f;
+                float limb = glm.cos(LimbSwing * 0.3331f) * limbS;
+                pos += right * limb;
                 up = glm.cross(front, right);
                 // эффект вверх-вниз
-                pos += up * Mth.Abs(limb * .2f);
+                limb = glm.cos(LimbSwing * 0.6662f) * limbS;
+                pos += up * limb;
             }
-            float[] lookAt = glm.lookAt(pos, front, up).to_array();
+            float[] lookAt = glm.lookAt(pos, pos + front, up).to_array();
             if (!Mth.EqualsArrayFloat(lookAt, LookAt, 0.00001f))
             {
                 LookAt = lookAt;
+                lookAtDL = new vec3[] { pos, pos + front, up };
+                UpMatrixProjection();
                 return true;
             }
             return false;
@@ -185,8 +231,10 @@ namespace MvkClient.Entity
         /// Обновить перспективу камеры
         /// </summary>
         public void UpProjection()
-            => Projection = glm.perspective(Fov.ValueFrame, (float)GLWindow.WindowWidth / (float)GLWindow.WindowHeight, 0.001f, OverviewChunk * 22.624f * 2f).to_array();
-
+        {
+            Projection = glm.perspective(Fov.ValueFrame, (float)GLWindow.WindowWidth / (float)GLWindow.WindowHeight, 0.001f, OverviewChunk * 22.624f * 2f).to_array();
+            UpMatrixProjection();
+        }
 
         /// <summary>
         /// Обновление в кадре

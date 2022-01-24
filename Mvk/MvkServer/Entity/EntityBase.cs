@@ -235,7 +235,7 @@ namespace MvkServer.Entity
         /// <summary>
         /// Положение сидя
         /// </summary>
-        protected virtual void Sitting() => SetSize(.6f, 2.6f);
+        protected virtual void Sitting() => SetSize(.6f, 2.99f);
 
         /// <summary>
         /// Обновить ограничительную рамку
@@ -270,13 +270,13 @@ namespace MvkServer.Entity
         /// Получить угол Yaw для кадра
         /// </summary>
         /// <param name="timeIndex">Коэфициент между тактами</param>
-        protected virtual float GetRotationYawFrame(float timeIndex) => GetRotationYawBodyFrame(timeIndex);
+        public virtual float GetRotationYawFrame(float timeIndex) => GetRotationYawBodyFrame(timeIndex);
 
         /// <summary>
         /// Получить угол YawBody для кадра
         /// </summary>
         /// <param name="timeIndex">Коэфициент между тактами</param>
-        protected float GetRotationYawBodyFrame(float timeIndex)
+        public float GetRotationYawBodyFrame(float timeIndex)
         {
             if (timeIndex == 1.0f) RotationYawPrev = RotationYaw;
             if (RotationYawPrev == RotationYaw) return RotationYaw;
@@ -287,7 +287,7 @@ namespace MvkServer.Entity
         /// Получить угол Pitch для кадра
         /// </summary>
         /// <param name="timeIndex">Коэфициент между тактами</param>
-        protected float GetRotationPitchFrame(float timeIndex)
+        public float GetRotationPitchFrame(float timeIndex)
         {
             if (timeIndex == 1.0f) RotationPitchPrev = RotationPitch;
             if (RotationPitchPrev == RotationPitch) return RotationPitch;

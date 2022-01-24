@@ -45,7 +45,7 @@ namespace MvkServer.Entity
         /// Получить угол Yaw для кадра
         /// </summary>
         /// <param name="timeIndex">Коэфициент между тактами</param>
-        protected override float GetRotationYawFrame(float timeIndex)
+        public override float GetRotationYawFrame(float timeIndex)
         {
             if (timeIndex == 1.0f) RotationYawHeadPrev = RotationYawHead;
             if (RotationYawHeadPrev == RotationYawHead) return RotationYawHead;
@@ -72,21 +72,9 @@ namespace MvkServer.Entity
         }
 
         /// <summary>
-        /// Определение вращения
+        /// Получить градус поворота по Yaw
         /// </summary>
-        protected override vec3 MotionAngle(float strafe, float forward)
-        {
-            vec3 motion = Motion;
-
-            if (strafe != 0 || forward != 0)
-            {
-                float ysin = glm.sin(RotationYawHead);
-                float ycos = glm.cos(RotationYawHead);
-                motion.x += ycos * strafe - ysin * forward;
-                motion.z += ycos * forward + ysin * strafe;
-            }
-            return motion;
-        }
+        protected override float GetRotationYaw() => RotationYawHead;
 
         /// <summary>
         /// Поворот тела от движения и поворота головы 

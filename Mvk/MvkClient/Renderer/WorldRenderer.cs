@@ -42,8 +42,9 @@ namespace MvkClient.Renderer
             // Обновить кадр основного игрока, камера и прочее
             World.Player.UpdateFrame(timeIndex);
 
-            RenderHitBoxEntitis(timeIndex);
-            DrawLine();
+            //RenderHitBoxEntitis(timeIndex);
+            
+            //DrawLine();
 
             //GLWindow.gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_LINE);
             //GLWindow.gl.Disable(OpenGL.GL_CULL_FACE);
@@ -86,7 +87,10 @@ namespace MvkClient.Renderer
 
             shader.Unbind(GLWindow.gl);
 
-            
+
+            //GLRender.Rectangle(0, 0, FontAdvance.HoriAdvance[Size], FontAdvance.VertAdvance[Size], u1, v1, u2, v2);
+            Render render = new Render();
+            render.DrawEntities(World, timeIndex, World.ClientMain.TickCounter + timeIndex);
 
             //GLWindow.gl.Enable(OpenGL.GL_CULL_FACE);
             //GLWindow.gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_FILL);

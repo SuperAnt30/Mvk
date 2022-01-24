@@ -73,6 +73,15 @@ namespace MvkClient.Renderer
         }
 
         /// <summary>
+        /// Добавить вершину с текстурой 3D
+        /// </summary>
+        public static void VertexWithUV(float x, float y, float z, float u, float v)
+        {
+            gl.TexCoord(u, v);
+            gl.Vertex(x, y, z);
+        }
+
+        /// <summary>
         /// Запуск листа
         /// </summary>
         public static uint ListBegin()

@@ -76,7 +76,7 @@ namespace MvkServer.Management
                 Random random = new Random();
                 entityPlayer.SetId(lastPlayerId);
                 entityPlayer.SetRotation(-0.9f, -.8f);
-                entityPlayer.SetPosition(new vec3(random.Next(-16, 16) + 80, 30, random.Next(-16, 16)));
+                entityPlayer.SetPosition(new vec3(random.Next(-16, 16) + 0, 30, random.Next(-16, 16)));
                 entityPlayer.SetChunkPosManaged(entityPlayer.GetChunkPos());
                 AddMountedMovingPlayer(entityPlayer);
                 players.Add(entityPlayer.UUID, entityPlayer);

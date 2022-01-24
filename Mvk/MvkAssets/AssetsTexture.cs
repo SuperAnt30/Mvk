@@ -34,7 +34,16 @@
         /// <summary>
         /// Атлас блоков
         /// </summary>
-        Atlas
+        Atlas,
+        /// <summary>
+        /// Текстура игрока стива, для теста
+        /// </summary>
+        Steve,
+        /// <summary>
+        /// Текстура курицы
+        /// </summary>
+        Chicken
+
 
     }
 }

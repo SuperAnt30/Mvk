@@ -57,12 +57,12 @@ namespace MvkServer.Glm
         /// Build a look at view matrix.
         /// </summary>
         /// <param name="eye">The eye.</param>
-        /// <param name="f">The vec front.</param>
+        /// <param name="center">The center.</param>
         /// <param name="up">Up.</param>
         /// <returns></returns>
-        public static mat4 lookAt(vec3 eye, vec3 f, vec3 up)
+        public static mat4 lookAt(vec3 eye, vec3 center, vec3 up)
         {
-            //vec3 f = new vec3(normalize(center - eye));
+            vec3 f = new vec3(normalize(center - eye));
             vec3 s = new vec3(normalize(cross(f, up)));
             vec3 u = new vec3(cross(s, f));
 
