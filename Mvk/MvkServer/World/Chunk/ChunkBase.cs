@@ -146,10 +146,11 @@ namespace MvkServer.World.Chunk
             IsChunkLoaded = false;
             // Продумать, для клиента просто удалить, для сервера записать и удалить
             //Save();
-            for (int y = 0; y < StorageArrays.Length; y++)
-            {
-                StorageArrays[y].Delete();
-            }
+            //StorageArraysClear();
+            //for (int y = 0; y < StorageArrays.Length; y++)
+            //{
+            //    StorageArrays[y].Delete();
+            //}
         }
         /// <summary>
         /// Очистить данные чанков

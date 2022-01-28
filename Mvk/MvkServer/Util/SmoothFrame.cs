@@ -56,13 +56,11 @@
                 {
                     valueLast = (valueEnd - Value) / Count + Value;
                     Count--;
-                }
-                else
-                {
-                    valueLast = valueEnd;
-                    Count = 0;
+                    return;
                 }
             }
+            valueLast = valueEnd;
+            Count = 0;
         }
 
         /// <summary>

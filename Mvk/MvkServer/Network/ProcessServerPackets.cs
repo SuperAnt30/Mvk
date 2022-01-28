@@ -63,7 +63,7 @@ namespace MvkServer.Network
                 {
                     case 0:
                         entityPlayer.SetPosition(packet.GetPos());
-                        entityPlayer.SetIsSneaking(packet.IsSneaking());
+                        entityPlayer.SetSneakOnGround(packet.IsSneaking(), packet.OnGround());
                         //ServerMain.World.Players.ResponsePacketAll(new PacketB20Player().Position(packet.GetPos(), packet.IsSneaking(), entityPlayer.Id));
                         break;
                     case 1:

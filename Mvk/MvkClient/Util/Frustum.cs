@@ -89,5 +89,11 @@ namespace MvkClient.Util
 
             return true;
         }
+        /// <summary>
+        /// Возвращает true, если прямоугольник находится внутри всех 6 плоскостей отсечения,
+        /// в противном случае возвращает false.
+        /// </summary>
+        public bool IsBoxInFrustum(AxisAlignedBB aabb) 
+            => IsBoxInFrustum(aabb.Min.x, aabb.Min.y, aabb.Min.z, aabb.Max.x, aabb.Max.y, aabb.Max.z);
     }
 }

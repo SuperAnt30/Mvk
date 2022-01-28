@@ -1,8 +1,10 @@
 ﻿using MvkClient.Entity;
 using MvkClient.Renderer.Chunk;
 using MvkClient.Setitings;
+using MvkServer.Glm;
 using MvkServer.Network;
 using MvkServer.Network.Packets;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace MvkClient.Network
@@ -71,7 +73,7 @@ namespace MvkClient.Network
             {
                 // Основной игрок этого клиента
                 ClientMain.World.Player.OnPacketS12Success(packet);
-                ClientMain.World.Player.FrustumCulling();
+                ClientMain.World.Player.UpFrustumCulling();
                 ClientMain.GameModeBegin();
                 // отправляем настройки
                 ClientMain.TrancivePacket(new PacketC13ClientSetting(Setting.OverviewChunk));
@@ -115,24 +117,30 @@ namespace MvkClient.Network
                     EntityPlayerMP entity = ClientMain.World.GetPlayerMP(id);
                     if (entity != null)
                     {
-                        if (type == 2) entity.SetPositionServer(packet.GetPos(), packet.IsSneaking());
+                        if (type == 2) entity.SetPositionServer(packet.GetPos(), packet.IsSneaking(), packet.OnGround());
                         else entity.SetRotationServer(packet.GetYawHead(), packet.GetYawBody(), packet.GetPitch());
                     }
                 }
             }
         }
 
+        //List<vec2i> cha = new List<vec2i>();
+        //List<vec2i> chr = new List<vec2i>();
+
         protected void Packet21(PacketS21ChunckData packet)
         {
             if (packet.IsRemoved())
             {
+               // chr.Add(packet.GetPos());
                 ClientMain.World.ChunkPrClient.UnloadChunk(packet.GetPos());
             }
             else
             {
-                ChunkRender chunk = ClientMain.World.ChunkPrClient.GetChunkRender(packet.GetPos(), true);
-                chunk.SetBinary(packet.GetBuffer(), packet.GetHeight());
-                chunk.ModifiedToRender();
+                //  cha.Add(packet.GetPos());
+                ClientMain.World.ChunkPrClient.AddChunck(packet);
+                //  ChunkRender chunk = ClientMain.World.ChunkPrClient.GetChunkRender(packet.GetPos(), true);
+                //chunk.SetBinary(packet.GetBuffer(), packet.GetHeight());
+                //chunk.ModifiedToRender();
             }
         }
     }

@@ -8,6 +8,7 @@ namespace MvkServer.Network.Packets
 
         private vec3 pos;
         private bool sneaking;
+        private bool onGround;
 
         private float yawBody;
         private float yawHead;
@@ -26,10 +27,11 @@ namespace MvkServer.Network.Packets
         /// <summary>
         /// Отправляем координату позиции с сервера клиенту
         /// </summary>
-        public PacketB20Player Position(vec3 pos, bool sneaking)
+        public PacketB20Player Position(vec3 pos, bool sneaking, bool onGround)
         {
             this.pos = pos;
             this.sneaking = sneaking;
+            this.onGround = onGround;
             type = 0;
             return this;
         }
@@ -47,10 +49,11 @@ namespace MvkServer.Network.Packets
         /// <summary>
         /// Отправляем координату позиции с сервера клиенту
         /// </summary>
-        public PacketB20Player Position(vec3 pos, bool sneaking, ushort id)
+        public PacketB20Player Position(vec3 pos, bool sneaking, bool onGround, ushort id)
         {
             this.pos = pos;
             this.sneaking = sneaking;
+            this.onGround = onGround;
             this.id = id;
             type = 2;
             return this;
@@ -73,6 +76,7 @@ namespace MvkServer.Network.Packets
         public ushort GetId() => id;
         public vec3 GetPos() => pos;
         public bool IsSneaking() => sneaking;
+        public bool OnGround() => onGround;
         public float GetYawHead() => yawHead;
         public float GetYawBody() => yawBody;
         public float GetPitch() => pitch;
@@ -85,6 +89,7 @@ namespace MvkServer.Network.Packets
             {
                 pos = new vec3(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat());
                 sneaking = stream.ReadBool();
+                onGround = stream.ReadBool();
             } else
             {
                 yawHead = stream.ReadFloat();
@@ -103,6 +108,7 @@ namespace MvkServer.Network.Packets
                 stream.WriteFloat(pos.y);
                 stream.WriteFloat(pos.z);
                 stream.WriteBool(sneaking);
+                stream.WriteBool(onGround);
             }
             else
             {

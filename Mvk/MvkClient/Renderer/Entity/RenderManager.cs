@@ -1,0 +1,107 @@
+﻿using MvkClient.Entity;
+using MvkClient.Renderer.Model;
+using MvkClient.World;
+using MvkServer.Entity;
+using MvkServer.Glm;
+using MvkServer.Util;
+using SharpGL;
+using System.Collections;
+
+namespace MvkClient.Renderer.Entity
+{
+    public class RenderManager
+    {
+        /// <summary>
+        /// Клиентский объект мира
+        /// </summary>
+        public WorldClient World { get; protected set; }
+
+        /// <summary>
+        /// Скрыть ли хитбокс сущности
+        /// </summary>
+        public bool IsHiddenHitbox { get; set; } = true;
+
+        /// <summary>
+        /// Перечень рендер объектов сущьностей
+        /// </summary>
+        private Hashtable entities = new Hashtable();
+
+        public RenderManager(WorldClient world)
+        {
+            World = world;
+            entities.Add(EnumEntities.Player, new RenderPlayer(this, new ModelPlayer()));
+            entities.Add(EnumEntities.Chicken, new RenderChicken(this, new ModelChicken()));
+        }
+
+        protected RendererLivingEntity GetEntityRenderObject(EntityPlayerClient entity)
+        {
+            if (entities.ContainsKey(entity.Type))
+            {
+                return entities[entity.Type] as RendererLivingEntity;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Сгенерировать сущность на экране
+        /// </summary>
+        public void RenderEntity(EntityPlayerClient entity, float timeIndex)
+        {
+            if (!entity.IsHidden)
+            {
+                World.CountEntitiesShowAdd();
+                RendererLivingEntity render = GetEntityRenderObject(entity);
+                 
+                if (render != null)
+                {
+                    render.DoRender(entity, new vec3(0), timeIndex);
+                    if (!IsHiddenHitbox)
+                    {
+                        RenderEntityBoundingBox(entity, new vec3(0), timeIndex);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Отрисовать рамку хитбокса сущности, для отладки
+        /// </summary>
+        protected void RenderEntityBoundingBox(EntityPlayerClient entity, vec3 offset, float timeIndex)
+        {
+            vec3 look = entity.GetLookFrame(timeIndex);
+            AxisAlignedBB aabb = entity.GetBoundingBox(entity.GetPositionFrame(timeIndex)).Offset(offset);
+            float eye = entity.GetEyeHeight() + aabb.Min.y;
+            float width = entity.Width;
+
+            GLRender.PushMatrix();
+            GLRender.Texture2DDisable();
+            GLRender.CullDisable();
+            GLRender.LineWidth(2f);
+
+            // Рамка хитбокса
+            GLRender.Color(new vec4(1));
+            GLRender.DrawOutlinedBoundingBox(aabb);
+
+            // Уровень глаз
+            GLRender.Color(new vec4(1, .3f, .9f, 1));
+            GLRender.Begin(OpenGL.GL_LINE_STRIP);
+            GLRender.Vertex(aabb.Min.x, eye, aabb.Min.z);
+            GLRender.Vertex(aabb.Max.x, eye, aabb.Min.z);
+            GLRender.Vertex(aabb.Max.x, eye, aabb.Max.z);
+            GLRender.Vertex(aabb.Min.x, eye, aabb.Max.z);
+            GLRender.Vertex(aabb.Min.x, eye, aabb.Min.z);
+            GLRender.End();
+
+            // Луч глаз куда смотрит
+            GLRender.Color(new vec4(1));
+            GLRender.Begin(OpenGL.GL_LINES);
+            vec3 pos = new vec3(aabb.Min.x + width, eye, aabb.Min.z + width);
+            GLRender.Vertex(pos);
+            GLRender.Vertex(pos + look * 2f);
+            GLRender.End();
+
+            GLRender.CullEnable();
+            GLRender.PopMatrix();
+        }
+    }
+}

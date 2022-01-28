@@ -51,7 +51,7 @@ namespace MvkClient.Actions
             //else if (key == 18) World.Player.InputNone(); // Alt
             else if (key == 27 || key == 18) World.ClientMain.Screen.InGameMenu(); // Esc
             else if (key == 116) World.Player.ViewCameraNext(); // F5
-            //else if (key == 117) ; // F6
+            else if (key == 117) World.RenderEntityManager.IsHiddenHitbox = !World.RenderEntityManager.IsHiddenHitbox; // F6
             else World.Player.InputAdd(KeyActionToInput(key));
         }
 

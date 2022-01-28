@@ -1,4 +1,5 @@
-﻿using MvkServer.Glm;
+﻿using MvkServer.Entity;
+using MvkServer.Glm;
 
 namespace MvkClient.Renderer.Model
 {
@@ -11,37 +12,39 @@ namespace MvkClient.Renderer.Model
         protected ModelRender boxLegRight;
         protected ModelRender boxLegLeft;
 
-        public ModelPlayer(bool sneak, bool onGround) : base(sneak, onGround)
+        public ModelPlayer()
         {
             float y = 0;
             boxHead = new ModelRender(this, 0, 0) { RotationPointY = y };
-            boxHead.SetBox(-4, -8, -4, 8, 8, 8);
+            boxHead.SetBox(-4, -8, -4, 8, 8, 8, 0);
 
             boxBody = new ModelRender(this, 16, 16) { RotationPointY = y };
-            boxBody.SetBox(-4, 0, -2, 8, 12, 4);
+            boxBody.SetBox(-4, 0, -2, 8, 12, 4, 0);
             boxArmRight = new ModelRender(this, 40, 16);
-            boxArmRight.SetBox(-3, -2, -2, 4, 12, 4);
+            boxArmRight.SetBox(-3, -2, -2, 4, 12, 4, 0);
             boxArmRight.SetRotationPoint(-5, 2 + y, 0);
             boxArmLeft = new ModelRender(this, 40, 16);
-            boxArmLeft.SetBox(-1, -2, -2, 4, 12, 4);
+            boxArmLeft.Mirror();
+            boxArmLeft.SetBox(-1, -2, -2, 4, 12, 4, 0);
             boxArmLeft.SetRotationPoint(5, 2 + y, 0);
             boxLegRight = new ModelRender(this, 0, 16);
-            boxLegRight.SetBox(-2, 0, -2, 4, 12, 4);
+            boxLegRight.SetBox(-2, 0, -2, 4, 12, 4, 0);
             boxLegRight.SetRotationPoint(-1.9f, 12 + y, 0);
             boxLegLeft = new ModelRender(this, 0, 16);
-            boxLegLeft.SetBox(-2, 0, -2, 4, 12, 4);
+            boxLegLeft.Mirror();
+            boxLegLeft.SetBox(-2, 0, -2, 4, 12, 4, 0);
             boxLegLeft.SetRotationPoint(1.9f, 12 + y, 0);
 
-            boxArmLeft.Mirror();
-            boxLegLeft.Mirror();
+            
+            
         }
 
-        public override void Render(float limbSwing, float limbSwingAmount, float ageInTicks, float headYaw, float headPitch, float scale)
+        public override void Render(EntityLiving entity, float limbSwing, float limbSwingAmount, float ageInTicks, float headYaw, float headPitch, float scale)
         {
-            SetRotationAngles(limbSwing, limbSwingAmount, ageInTicks, headYaw, headPitch, scale);
+            SetRotationAngles(entity, limbSwing, limbSwingAmount, ageInTicks, headYaw, headPitch, scale);
             GLWindow.gl.PushMatrix();
 
-            if (isSneak)
+            if (entity.IsSneaking)
             {
                 GLWindow.gl.Translate(0, .3f, 0);
             }
@@ -56,7 +59,7 @@ namespace MvkClient.Renderer.Model
             GLWindow.gl.PopMatrix();
         }
 
-        protected override void SetRotationAngles(float limbSwing,
+        protected override void SetRotationAngles(EntityLiving entity, float limbSwing,
             float limbSwingAmount, float ageInTicks, float headYaw, float headPitch, float scale)
         {
             boxHead.RotateAngleY = headYaw;
@@ -66,7 +69,7 @@ namespace MvkClient.Renderer.Model
             boxArmRight.RotateAngleX = boxLegLeft.RotateAngleX * 0.5f;
             boxArmLeft.RotateAngleX = boxLegRight.RotateAngleX * 0.5f;
 
-            if (isSneak)
+            if (entity.IsSneaking)
             {
                 boxBody.RotateAngleX = 0.5f;
                 boxArmRight.RotateAngleX += 0.4f;

@@ -1,5 +1,6 @@
 ﻿using MvkClient.Renderer.Font;
 using MvkServer.Glm;
+using MvkServer.Util;
 using SharpGL;
 
 namespace MvkClient.Renderer
@@ -46,7 +47,7 @@ namespace MvkClient.Renderer
         /// </summary>
         public static void Rectangle(float x1, float y1, float x2, float y2, vec4 color)
         {
-            gl.Color(color.x, color.y, color.z, color.w);
+            Color(color);
             gl.Begin(OpenGL.GL_TRIANGLE_STRIP);
             gl.Vertex(x1, y2);
             gl.Vertex(x2, y2);
@@ -82,13 +83,19 @@ namespace MvkClient.Renderer
         }
 
         /// <summary>
+        /// Добавить вершину
+        /// </summary>
+        public static void Vertex(float x, float y, float z) => gl.Vertex(x, y, z);
+        public static void Vertex(vec3 pos) => gl.Vertex(pos.x, pos.y, pos.z);
+
+        /// <summary>
         /// Запуск листа
         /// </summary>
         public static uint ListBegin()
         {
             uint list = gl.GenLists(1);
             gl.NewList(list, OpenGL.GL_COMPILE);
-            //Debug.DInt = (int)list;
+            Debug.DInt = (int)list;
             return list;
         }
         /// <summary>
@@ -103,16 +110,71 @@ namespace MvkClient.Renderer
         /// Удалить лист
         /// </summary>
         public static void ListDelete(uint list) => gl.DeleteLists(list, 1);
+        /// <summary>
+        /// Видим обратную сторону полигона
+        /// </summary>
+        public static void CullDisable() => gl.Disable(OpenGL.GL_CULL_FACE);
+        /// <summary>
+        /// Видим только лицевую сторону полигона
+        /// </summary>
+        public static void CullEnable() => gl.Enable(OpenGL.GL_CULL_FACE);
 
-        //gl.Begin(OpenGL.GL_TRIANGLES);
-        //gl.TexCoord(x0, y0); gl.Vertex(0, 0, 0);
-        //gl.TexCoord(x1, y1); gl.Vertex(s, s, 0);
-        //gl.TexCoord(x0, y1); gl.Vertex(0, s, 0);
+        public static void PushMatrix() => gl.PushMatrix();
+        public static void PopMatrix() => gl.PopMatrix();
 
-        //gl.TexCoord(x0, y0); gl.Vertex(0, 0, 0);
-        //gl.TexCoord(x1, y0); gl.Vertex(s, 0, 0);
-        //gl.TexCoord(x1, y1); gl.Vertex(s, s, 0);
-        //gl.End();
-        //gl.PopMatrix();
+
+        public static void Color(float r, float g, float b, float a) => gl.Color(r, g, b, a);
+        public static void Color(vec4 color) => gl.Color(color.x, color.y, color.z, color.w);
+        public static void Color(float r, float g, float b) => gl.Color(r, g, b);
+        public static void Color(float rgb) => gl.Color(rgb, rgb, rgb);
+
+        public static void Scale(float x, float y, float z) => gl.Scale(x, y, z);
+        public static void Translate(float x, float y, float z) => gl.Translate(x, y, z);
+        public static void Translate(vec3 pos) => gl.Translate(pos.x, pos.y, pos.z);
+        public static void Rotate(float angle, float x, float y, float z) => gl.Rotate(angle, x, y, z);
+
+        public static void Texture2DEnable() => gl.Enable(OpenGL.GL_TEXTURE_2D);
+        public static void Texture2DDisable() => gl.Disable(OpenGL.GL_TEXTURE_2D);
+        public static void LineWidth(float width) => gl.LineWidth(width);
+
+        public static void Begin(uint mode) => gl.Begin(mode);
+        public static void End() => gl.End();
+
+
+        /// <summary>
+        /// Нарисовать рамку, с заданным цветом и выбранной толщиной линии
+        /// </summary>
+        /// <param name="aabb">Объект рамки</param>
+        /// <param name="color">цвет</param>
+        /// <param name="depth">толщина линии</param>
+        public static void DrawOutlinedBoundingBox(AxisAlignedBB aabb)
+        {
+            Begin(OpenGL.GL_LINE_STRIP);
+            Vertex(aabb.Min.x, aabb.Min.y, aabb.Min.z);
+            Vertex(aabb.Max.x, aabb.Min.y, aabb.Min.z);
+            Vertex(aabb.Max.x, aabb.Min.y, aabb.Max.z);
+            Vertex(aabb.Min.x, aabb.Min.y, aabb.Max.z);
+            Vertex(aabb.Min.x, aabb.Min.y, aabb.Min.z);
+            End();
+
+            gl.Begin(OpenGL.GL_LINE_STRIP);
+            Vertex(aabb.Min.x, aabb.Max.y, aabb.Min.z);
+            Vertex(aabb.Max.x, aabb.Max.y, aabb.Min.z);
+            Vertex(aabb.Max.x, aabb.Max.y, aabb.Max.z);
+            Vertex(aabb.Min.x, aabb.Max.y, aabb.Max.z);
+            Vertex(aabb.Min.x, aabb.Max.y, aabb.Min.z);
+            End();
+
+            Begin(OpenGL.GL_LINES);
+            Vertex(aabb.Min.x, aabb.Min.y, aabb.Min.z);
+            Vertex(aabb.Min.x, aabb.Max.y, aabb.Min.z);
+            Vertex(aabb.Max.x, aabb.Min.y, aabb.Min.z);
+            Vertex(aabb.Max.x, aabb.Max.y, aabb.Min.z);
+            Vertex(aabb.Max.x, aabb.Min.y, aabb.Max.z);
+            Vertex(aabb.Max.x, aabb.Max.y, aabb.Max.z);
+            Vertex(aabb.Min.x, aabb.Min.y, aabb.Max.z);
+            Vertex(aabb.Min.x, aabb.Max.y, aabb.Max.z);
+            End();
+        }
     }
 }

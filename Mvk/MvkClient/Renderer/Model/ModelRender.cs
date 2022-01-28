@@ -44,9 +44,9 @@ namespace MvkClient.Renderer.Model
             textureOffsetY = v;
         }
 
-        public ModelRender SetBox(float x, float y, float z, int w, int h, int d)
+        public ModelRender SetBox(float x, float y, float z, int w, int h, int d, float scaleFactor)
         {
-            box = new ModelBox(model.TextureSize, textureOffsetX, textureOffsetY, x, y, z, w, h, d);
+            box = new ModelBox(model.TextureSize, textureOffsetX, textureOffsetY, x, y, z, w, h, d, scaleFactor, IsMirror);
             return this;
         }
 
@@ -77,10 +77,7 @@ namespace MvkClient.Renderer.Model
                     if (RotateAngleX != 0f) GLWindow.gl.Rotate(glm.degrees(RotateAngleX), 1, 0, 0);
                     GLRender.ListCall(dList);
                     GLWindow.gl.PopMatrix();
-                    //GLRender.ListCall(dList);
                 }
-                GLRender.ListDelete(dList);
-                compiled = false;
             }
         }
 

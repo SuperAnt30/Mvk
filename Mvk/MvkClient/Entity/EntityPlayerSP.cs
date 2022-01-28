@@ -41,6 +41,10 @@ namespace MvkClient.Entity
         /// </summary>
         public bool IsFrustumCulling { get; protected set; } = false;
         /// <summary>
+        /// Объект расчёта FrustumCulling
+        /// </summary>
+        public Frustum FrustumCulling { get; protected set; } = new Frustum();
+        /// <summary>
         /// Массив чанков которые попадают под FrustumCulling для рендера
         /// </summary>
         public ChunkRender[] ChunkFC { get; protected set; } = new ChunkRender[0];
@@ -48,6 +52,8 @@ namespace MvkClient.Entity
         /// Вид камеры
         /// </summary>
         public EnumViewCamera ViewCamera { get; protected set; } = EnumViewCamera.Eye;
+
+        
 
         protected vec3 positionFrame;
         protected float pitchFrame;
@@ -87,11 +93,11 @@ namespace MvkClient.Entity
                     lookAtDL[2].x, lookAtDL[2].y, lookAtDL[2].z);
                 GLWindow.gl.MatrixMode(OpenGL.GL_MODELVIEW);
                 GLWindow.gl.LoadIdentity();
-                GLWindow.gl.Disable(OpenGL.GL_CULL_FACE);
                 // Код с фиксированной функцией может использовать альфа-тестирование
                 // Чтоб корректно прорисовывался кактус
                 GLWindow.gl.AlphaFunc(OpenGL.GL_GREATER, 0.1f);
                 GLWindow.gl.Enable(OpenGL.GL_ALPHA_TEST);
+                //GLWindow.gl.Enable(OpenGL.GL_TEXTURE_2D);
                 //GLWindow.gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_FILL);
                 GLRender.ListEnd();
             }
@@ -100,7 +106,7 @@ namespace MvkClient.Entity
         /// <summary>
         /// Прорисовать матрицу для DisplayList
         /// </summary>
-        public void DrawMatrixProjection() => GLRender.ListCall(dListLookAt);
+        public void CameraMatrixProjection() => GLRender.ListCall(dListLookAt);
 
         #endregion
 
@@ -121,12 +127,8 @@ namespace MvkClient.Entity
             // Расчёт амплитуды конечностей, при движении
             UpLimbSwing();
 
-            // Если имеется вращение камеры или было перемещение, то запускаем расчёт FrustumCulling
-            //if (RotationEquals() || isMotionServer)
-            //{
-            //    isMotionServer = false;
-            //    InitFrustumCulling();
-            //}
+            // Скрыть прорисовку себя если вид с глаз
+            IsHidden = ViewCamera == EnumViewCamera.Eye;
         }
 
         /// <summary>
@@ -137,7 +139,7 @@ namespace MvkClient.Entity
             base.UpdateLiving();
             Eye.Set(GetEyeHeight(), 4);
             Fov.Set(IsSprinting ? 1.22f : 1.43f, 4);
-            ClientWorld.ClientMain.TrancivePacket(new PacketB20Player().Position(Position, IsSneaking));
+            ClientWorld.ClientMain.TrancivePacket(new PacketB20Player().Position(Position, IsSneaking, OnGround));
         }
 
         /// <summary>
@@ -265,8 +267,9 @@ namespace MvkClient.Entity
         /// <summary>
         /// Требуется перерасчёт FrustumCulling
         /// </summary>
-        public void FrustumCulling() => IsFrustumCulling = true;
+        public void UpFrustumCulling() => IsFrustumCulling = true;
 
+        //public void ClearFrustumCulling() => ChunkFC = new ChunkRender[0];
         /// <summary>
         /// Перерасчёт FrustumCulling
         /// </summary>
@@ -274,8 +277,7 @@ namespace MvkClient.Entity
         {
             if (LookAt == null || Projection == null) return;
 
-            Frustum frustum = new Frustum();
-            frustum.Init(LookAt, Projection);
+            FrustumCulling.Init(LookAt, Projection);
 
             int countAll = 0;
             int countFC = 0;
@@ -289,10 +291,10 @@ namespace MvkClient.Entity
                 int xb = xc << 4;
                 int zb = zc << 4;
 
-                if (frustum.IsBoxInFrustum(xb, 0, zb, xb + 15, 255, zb + 15))
+                if (FrustumCulling.IsBoxInFrustum(xb, 0, zb, xb + 15, 255, zb + 15))
                 {
                     countFC++;
-                    listC.Add(ClientWorld.ChunkPrClient.GetChunkRender(new vec2i(xc, zc), true));
+                    listC.Add(ClientWorld.ChunkPrClient.GetChunkRender(new vec2i(xc, zc), false));
                 }
                 countAll++;
             }

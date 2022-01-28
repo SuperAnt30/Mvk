@@ -40,6 +40,6 @@
         /// <summary>
         /// На каком растоянии от глаз, камера при виде сзади или спереди
         /// </summary>
-        public const float CAMERA_DIST = 10f;
+        public const float CAMERA_DIST = 6f;
     }
 }

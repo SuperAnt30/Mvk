@@ -1,6 +1,7 @@
 ﻿using MvkClient.Renderer.Chunk;
 using MvkServer.Entity.Player;
 using MvkServer.Glm;
+using MvkServer.Network.Packets;
 using MvkServer.World.Chunk;
 using System.Collections;
 using System.Collections.Generic;
@@ -13,17 +14,40 @@ namespace MvkClient.World
     public class ChunkProviderClient : ChunkProvider
     {
         /// <summary>
+        /// Клиентский объект мира
+        /// </summary>
+        public WorldClient ClientWorld { get; protected set; }
+
+        /// <summary>
         /// Список чанков Для удаления сетки основного потока
         /// </summary>
-        public List<ChunkRender> RemoteMeshChunks { get; protected set; } = new List<ChunkRender>();
+        private List<ChunkRender> remoteMeshChunks = new List<ChunkRender>();
+        /// <summary>
+        /// Список чанков на удаление
+        /// </summary>
+        private List<ChunkRender> remoteChunks = new List<ChunkRender>();
+        /// <summary>
+        /// Список чанков на дабавление
+        /// </summary>
+        private List<ChunkRender> addChunks = new List<ChunkRender>();
+        /// <summary>
+        /// Перезапуск чанки по итоку удаления (смена обзора к примеру)
+        /// </summary>
+        private bool isResetLoadingChunk = false;
 
-        public ChunkProviderClient(WorldClient worldIn) => world = worldIn;
+        public ChunkProviderClient(WorldClient worldIn)
+        {
+            ClientWorld = worldIn;
+            world = worldIn;
+        }
 
         /// <summary>
         /// Очистить все чанки, ТОЛЬКО для клиента
         /// </summary>
-        public void ClearAllChunks()
+        /// <param name="reset">надо ли перезапустить чанки по итоку удаления (смена обзора к примеру)</param>
+        public void ClearAllChunks(bool reset)
         {
+            isResetLoadingChunk = reset;
             Hashtable ht = chunkMapping.CloneMap();
             foreach (ChunkRender chunk in ht.Values)
             {
@@ -43,15 +67,30 @@ namespace MvkClient.World
         {
             if (!(chunkMapping.Get(pos) is ChunkRender chunk))
             {
-                if (isCreate)
-                {
-                    chunk = new ChunkRender((WorldClient)world, pos);
-                    chunkMapping.Set(chunk);
-                    return chunk;
-                }
+                //if (isCreate)
+                //{
+                //    chunk = new ChunkRender((WorldClient)world, pos);
+                //    addChunks.Add(chunk);
+                //    //chunkMapping.Set(chunk);
+                //    return chunk;
+                //}
                 return null;
             }
             return chunk;
+        }
+
+        public void AddChunck(PacketS21ChunckData packet)
+        {
+            ChunkRender chunk = new ChunkRender(ClientWorld, packet.GetPos());
+
+            if (packet.GetBuffer().Length == 0 || packet.GetHeight() == 0)
+            {
+                return;
+            }
+            //ClientMain.World.ChunkPrClient.GetChunkRender(packet.GetPos(), true);
+            chunk.SetBinary(packet.GetBuffer(), packet.GetHeight());
+            chunk.ModifiedToRender();
+            addChunks.Add(chunk);
         }
 
         /// <summary>
@@ -69,17 +108,68 @@ namespace MvkClient.World
                 {
                     chunk.ChunkUnload();
                     // заносим в массив чистки чанков по сетки для основного потока
-                    RemoteMeshChunks.Add(chunk);
-                    // TODO::System.IndexOutOfRangeException: "Индекс находился вне границ массива."
+                    remoteMeshChunks.Add(chunk);
                 }
-                // TODO:: Из-за этого тормозит у меня дома!!! Комп разгрузил и вроде лучше
-                chunkMapping.Remove(chunk.Position);
+                else
+                {
+                    remoteChunks.Add(chunk);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Выгрузка загрузка чанков в тике
+        /// </summary>
+        public void ChunksTickUnloadLoad()
+        {
+            // Выгрузка чанков, не больше 100 шт за такт
+            int count = 100;
+            while (remoteChunks.Count > 0 && count > 0)
+            {
+                chunkMapping.Remove(remoteChunks[0].Position);
+                remoteChunks.RemoveAt(0);
+                count--;
+            }
+            if (isResetLoadingChunk && remoteChunks.Count == 0)
+            {
+                isResetLoadingChunk = false;
+                //ClientWorld.Player.UpFrustumCulling();
+                ClientWorld.ClientMain.TrancivePacket(new PacketC13ClientSetting(ClientWorld.Player.OverviewChunk));
+            }
+            // Загрузка
+            count = 50;
+            while (addChunks.Count > 0 && count > 0)
+            {
+                chunkMapping.Set(addChunks[0]);
+                addChunks.RemoveAt(0);
+                count--;
+            }
+        }
+
+        /// <summary>
+        /// Чистка сетки опенгл
+        /// </summary>
+        public void RemoteMeshChunks()
+        {
+            long time = Client.Time();
+            long timeNew = time;
+            // 4 мc на чистку чанков
+            while (remoteMeshChunks.Count > 0 && timeNew - time <= 4)
+            {
+                if (!remoteMeshChunks[0].IsChunkLoaded)
+                {
+                    remoteMeshChunks[0].MeshDelete();
+                }
+                remoteChunks.Add(remoteMeshChunks[0]);
+                remoteMeshChunks.RemoveAt(0);
+                timeNew = Client.Time();
             }
         }
 
         /// <summary>
         /// Перепроверить чанки игроков в попадание в обзоре, если нет, убрать
         /// для клиента
+        /// Tick
         /// </summary>
         public void FixOverviewChunk(EntityPlayer entity)
         {
@@ -97,6 +187,11 @@ namespace MvkClient.World
                     UnloadChunk(chunk);
                 }
             }
+        }
+
+        public override string ToString()
+        {
+            return "Ch:" + chunkMapping.Count + " RM:" + remoteMeshChunks.Count + " R:" + remoteChunks.Count + " A:" + addChunks.Count;
         }
     }
 }

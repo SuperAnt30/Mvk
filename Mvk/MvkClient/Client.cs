@@ -198,7 +198,7 @@ namespace MvkClient
         public void KeyDown(int key)
         {
             //locServer.TrancivePacket(new PacketTFFTest(key.ToString()));
-            Debug.DInt = key;
+            //Debug.DInt = key;
             if (key == 114) // F3
             {
                 Debug.IsDraw = !Debug.IsDraw;
@@ -443,12 +443,19 @@ namespace MvkClient
         /// </summary>
         private void TickerFps_Tick(object sender, EventArgs e)
         {
-            if (!Screen.IsEmptyScreen())
+            try
             {
-                // GUI что-то есть
-                OnThreadSend(new ObjectKeyEventArgs(ObjectKey.RenderDebug));
+                if (!Screen.IsEmptyScreen())
+                {
+                    // GUI что-то есть
+                    OnThreadSend(new ObjectKeyEventArgs(ObjectKey.RenderDebug));
+                }
+                OnDraw();
             }
-            OnDraw();
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
 
         /// <summary>
@@ -456,32 +463,40 @@ namespace MvkClient
         /// </summary>
         private void TickerTps_Tick(object sender, EventArgs e)
         {
-            if (!isGamePaused)
+            try
             {
-                //Log.Log(TickCounter.ToString());
-                TickCounter++;
-
-                World.Tick();
-
-                if (TickCounter % 4 == 0)
+                if (!isGamePaused)
                 {
-                    // лог статистика за это время
+                    //Log.Log(TickCounter.ToString());
+                    TickCounter++;
 
-                    if (MvkGlobal.IS_DRAW_DEBUG_CHUNK)
+                    World.Tick();
+
+                    if (TickCounter % 4 == 0)
                     {
-                        // отладка чанков
-                        Debug.ListChunks.listChunkPlayer = World.ChunkPr.GetListDebug();
-                        Debug.ListChunks.isRender = true;
+                        // лог статистика за это время
+
+                        if (MvkGlobal.IS_DRAW_DEBUG_CHUNK)
+                        {
+                            // отладка чанков
+                            Debug.ListChunks.listChunkPlayer = World.ChunkPr.GetListDebug();
+                            Debug.ListChunks.isRender = true;
+                        }
                     }
                 }
+
+                StringDebugTps();
+                if (Screen.IsEmptyScreen())
+                {
+                    // GUI нет
+                    OnThreadSend(new ObjectKeyEventArgs(ObjectKey.RenderDebug));
+                }
             }
-            
-            StringDebugTps();
-            if (Screen.IsEmptyScreen())
+            catch (Exception ex)
             {
-                // GUI нет
-                OnThreadSend(new ObjectKeyEventArgs(ObjectKey.RenderDebug));
+                throw;
             }
+
         }
 
         /// <summary>

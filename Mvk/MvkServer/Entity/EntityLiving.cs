@@ -108,8 +108,10 @@ namespace MvkServer.Entity
             //vec3 motion = MoveWithHeading(strafe * Speed.Strafe, forward * Speed.Forward, height);
             vec3 motion = MoveWithHeading(strafe, forward, height);
 
+            bool onGroundOld = OnGround;
             // Коллизия перемещения
             MoveCheckCollision(motion);
+            if (onGroundOld != OnGround) isMotion = true;
 
             // Если хотим встать
             if (!Input.HasFlag(EnumInput.Down) && IsSneaking)
@@ -483,7 +485,7 @@ namespace MvkServer.Entity
 
         public override string ToString()
         {
-            return string.Format("XYZ {7}\r\n{0}\r\nyaw:{8:0.00} H:{9:0.00} pitch:{10:0.00} \r\n{1}{2}{6}{4} boom:{5:0.00}\r\nMotion:{3}\r\n{11}",
+            return string.Format("XYZ {7} ch:{12}\r\n{0}\r\nyaw:{8:0.00} H:{9:0.00} pitch:{10:0.00} \r\n{1}{2}{6}{4} boom:{5:0.00}\r\nMotion:{3}\r\n{11}",
                 strHVJ, // 0
                 OnGround ? "__" : "", // 1
                 IsSprinting ? "[Sp]" : "", // 2
@@ -495,7 +497,8 @@ namespace MvkServer.Entity
                 glm.degrees(RotationYaw), // 8
                 0,//glm.degrees(RotationYawHead), // 9
                 glm.degrees(RotationPitch), // 10
-                IsCollidedHorizontally // 11
+                IsCollidedHorizontally, // 11
+                GetChunkPos()
                 );
         }
     }

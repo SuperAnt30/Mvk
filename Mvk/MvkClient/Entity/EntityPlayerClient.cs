@@ -16,6 +16,10 @@ namespace MvkClient.Entity
         /// </summary>
         public WorldClient ClientWorld { get; protected set; }
         /// <summary>
+        /// Скрыта ли сущность на экране
+        /// </summary>
+        public bool IsHidden { get; protected set; } = true;
+        /// <summary>
         /// Объект времени c последнего тпс
         /// </summary>
         protected InterpolationTime interpolation = new InterpolationTime();
@@ -51,7 +55,7 @@ namespace MvkClient.Entity
         /// <summary>
         /// Задать позицию от сервера
         /// </summary>
-        public void SetPositionServer(vec3 pos, bool sneaking)
+        public void SetPositionServer(vec3 pos, bool sneaking, bool onGround)
         {
            // interpolation.Restart();
             if (IsSneaking != sneaking)
@@ -59,6 +63,7 @@ namespace MvkClient.Entity
                 IsSneaking = sneaking;
                 if (IsSneaking) Sitting(); else Standing();
             }
+            OnGround = onGround;
             PositionPrev = Position;
             SetPosition(pos);
         }

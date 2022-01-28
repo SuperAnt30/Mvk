@@ -38,6 +38,7 @@ namespace MvkServer.Entity.Player
         {
             Standing();
             SpeedSurvival();
+            Type = EnumEntities.Player;
             StepHeight = 1.2f;
         }
 

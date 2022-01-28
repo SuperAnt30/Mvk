@@ -49,7 +49,6 @@ namespace MvkServer.Util
         /// <summary>
         /// Клон карты
         /// </summary>
-        /// <returns></returns>
         public Hashtable CloneMap() => map.Clone() as Hashtable;
 
         /// <summary>

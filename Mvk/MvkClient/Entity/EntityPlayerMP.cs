@@ -1,4 +1,5 @@
-﻿using MvkClient.World;
+﻿using MvkClient.Util;
+using MvkClient.World;
 
 namespace MvkClient.Entity
 {
@@ -19,6 +20,9 @@ namespace MvkClient.Entity
         {
             // Расчёт амплитуды конечностей, при движении
             UpLimbSwing();
+
+            // Видна ли сущность, прорисовывать ли её на экране
+            IsHidden = !ClientWorld.Player.FrustumCulling.IsBoxInFrustum(BoundingBox);
         }
 
     }

@@ -2,12 +2,14 @@
 using MvkClient.Entity;
 using MvkClient.Renderer;
 using MvkClient.Renderer.Chunk;
+using MvkClient.Renderer.Entity;
 using MvkClient.Setitings;
 using MvkClient.Util;
 using MvkServer;
 using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World;
+using System;
 using System.Collections;
 
 namespace MvkClient.World
@@ -34,6 +36,10 @@ namespace MvkClient.World
         /// </summary>
         public WorldRenderer WorldRender { get; protected set; }
         /// <summary>
+        /// Менеджер прорисовки сущностей
+        /// </summary>
+        public RenderManager RenderEntityManager { get; protected set; }
+        /// <summary>
         /// Список сущностей игроков
         /// </summary>
         public Hashtable PlayerEntities { get; protected set; } = new Hashtable();
@@ -54,6 +60,10 @@ namespace MvkClient.World
         /// Перечень игроков, отладка
         /// </summary>
         protected string strPlayers = "";
+        /// <summary>
+        /// Количество прорисованных сущностей, для отладки
+        /// </summary>
+        protected int entitiesCountShow = 0;
 
 
         public WorldClient(Client client) : base()
@@ -62,6 +72,7 @@ namespace MvkClient.World
             ClientMain = client;
             interpolation.Start();
             WorldRender = new WorldRenderer(this);
+            RenderEntityManager = new RenderManager(this);
             Player = new EntityPlayerSP(this);
             Player.SetOverviewChunk(Setting.OverviewChunk, 0);
             Key = new Keyboard(this);
@@ -73,25 +84,34 @@ namespace MvkClient.World
         /// </summary>
         public override void Tick()
         {
-            interpolation.Restart();
-            uint time = ClientMain.TickCounter;
-
-            base.Tick();
-
-            // Обновить игрока
-            Player.Update();
-            // Обновить остальных сущностей
-            Hashtable pe = PlayerEntities.Clone() as Hashtable;
-            foreach (EntityPlayerMP entity in pe.Values)
+            try
             {
-                entity.Update();
+                interpolation.Restart();
+                uint time = ClientMain.TickCounter;
+
+                base.Tick();
+
+                // Обновить игрока
+                Player.Update();
+                // Обновить остальных сущностей
+                Hashtable pe = PlayerEntities.Clone() as Hashtable;
+                foreach (EntityPlayerMP entity in pe.Values)
+                {
+                    entity.Update();
+                }
+
+                if (time - previousTotalWorldTime > MvkGlobal.CHUNK_CLEANING_TIME)
+                {
+                    previousTotalWorldTime = time;
+                    ChunkPrClient.FixOverviewChunk(Player);
+                }
+
+                // Выгрузка чанков в тике
+                ChunkPrClient.ChunksTickUnloadLoad();
             }
-
-
-            if (time - previousTotalWorldTime > MvkGlobal.CHUNK_CLEANING_TIME)
+            catch (Exception e)
             {
-                previousTotalWorldTime = time;
-                ChunkPrClient.FixOverviewChunk(Player);
+                throw;
             }
         }
 
@@ -114,7 +134,7 @@ namespace MvkClient.World
         /// </summary>
         public void StopWorldDelete()
         {
-            ChunkPrClient.ClearAllChunks();
+            ChunkPrClient.ClearAllChunks(false);
         }
 
         /// <summary>
@@ -175,14 +195,21 @@ namespace MvkClient.World
             }
         }
 
+        #region Debug
+
+        public void CountEntitiesShowBegin() => entitiesCountShow = 0;
+        public void CountEntitiesShowAdd() => entitiesCountShow++;
+
+        #endregion
+
         /// <summary>
         /// Строка для дебага
         /// </summary>
         public override string ToStringDebug()
         {
-            return string.Format("t {2} Ch {0} ChDel {3}\r\n{4} {1}", 
-                ChunkPr.Count, Player, ClientMain.TickCounter / 20, 
-                ChunkPrClient.RemoteMeshChunks.Count, strPlayers);
+            return string.Format("t {2} {0} E:{4}/{5}\r\n{3} {1}",
+                ChunkPrClient.ToString(), Player, ClientMain.TickCounter / 20, 
+                strPlayers, PlayerEntities.Count + 1, entitiesCountShow);
         }
     }
 }

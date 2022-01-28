@@ -54,20 +54,26 @@ namespace MvkServer.Network
         {
             IPacket packet = Init(buffer[0]);
             if (packet == null) return;
-            using (MemoryStream readStream = new MemoryStream(buffer, 1, buffer.Length - 1))
+            try
             {
-                using (StreamBase stream = new StreamBase(readStream))
+                using (MemoryStream readStream = new MemoryStream(buffer, 1, buffer.Length - 1))
                 {
-                    packet.ReadPacket(stream);
-                    if (isClient)
+                    using (StreamBase stream = new StreamBase(readStream))
                     {
-                        ReceivePacketClient(packet);
-                    }
-                    else
-                    {
-                        ReceivePacketServer(socket, packet);
+                        packet.ReadPacket(stream);
+                        if (isClient)
+                        {
+                            ReceivePacketClient(packet);
+                        }
+                        else
+                        {
+                            ReceivePacketServer(socket, packet);
+                        }
                     }
                 }
+            } catch (Exception e)
+            {
+                Console.WriteLine($"Generic Exception Handler: {e}");
             }
         }
 

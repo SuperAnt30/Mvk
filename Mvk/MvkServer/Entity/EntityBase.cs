@@ -73,6 +73,10 @@ namespace MvkServer.Entity
         /// Объект скорости сущности
         /// </summary>
         public EntitySpeed Speed { get; protected set; }
+        /// <summary>
+        /// Тип сущности
+        /// </summary>
+        public EnumEntities Type { get; protected set; } = EnumEntities.None;
 
         /// <summary>
         /// Истинно, если после перемещения этот объект столкнулся с чем-то по оси X или Z. 
@@ -220,7 +224,7 @@ namespace MvkServer.Entity
         /// <summary>
         /// Скорость для режима полёта
         /// </summary>
-        protected virtual void SpeedFly() => Speed = new EntitySpeed(1.1f, .43f, .75f, 2.0f);
+        protected virtual void SpeedFly() => Speed = new EntitySpeed(1.1f, .43f, .75f, 5.0f);
 
         /// <summary>
         /// Скорость для режима выживания

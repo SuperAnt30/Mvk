@@ -55,5 +55,18 @@ namespace MvkClient.Renderer.Model
             vec2 texture = vertex.GetTexture();
             GLRender.VertexWithUV(pos.x * scale, pos.y * scale, pos.z * scale, texture.x, texture.y);
         }
+
+        /// <summary>
+        /// Перевернуть лицо
+        /// </summary>
+        public void FlipFace()
+        {
+            TextureVertex[] vertices = new TextureVertex[4];
+            for (int i = 0; i < 4; i++)
+            {
+                vertices[i] = Vertices[3 - i];
+            }
+            Vertices = vertices;
+        }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using MvkServer.Entity.Player;
 using MvkServer.Glm;
 using MvkServer.Util;
+using System;
 using System.Collections;
 
 namespace MvkServer.World.Chunk
@@ -26,21 +27,37 @@ namespace MvkServer.World.Chunk
             //{
             //    map[chunk.Position] = chunk;
             //}
-            Hashtable mapThreadSafe = Hashtable.Synchronized(map);
-            if (mapThreadSafe.ContainsKey(chunk.Position))
+            //Hashtable mapThreadSafe = Hashtable.Synchronized(map);
+            //if (mapThreadSafe.ContainsKey(chunk.Position))
+            //{
+            //    mapThreadSafe[chunk.Position] = chunk;
+            //}
+            //else
+            //{
+            //    //try
+            //    {
+            //        mapThreadSafe.Add(chunk.Position, chunk);
+            //    }
+            //    //catch
+            //    //{
+            //    //    mapThreadSafe[chunk.Position] = chunk;
+            //    //}
+            //}
+
+            try
             {
-                mapThreadSafe[chunk.Position] = chunk;
-            }
-            else
-            {
-                //try
+                if (map.ContainsKey(chunk.Position))
                 {
-                    mapThreadSafe.Add(chunk.Position, chunk);
+                    map[chunk.Position] = chunk;
                 }
-                //catch
-                //{
-                //    mapThreadSafe[chunk.Position] = chunk;
-                //}
+                else
+                {
+                    map.Add(chunk.Position, chunk);
+                }
+            }
+            catch (Exception e)
+            {
+                throw;
             }
         }
 

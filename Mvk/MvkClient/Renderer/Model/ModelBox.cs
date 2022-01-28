@@ -23,7 +23,7 @@ namespace MvkClient.Renderer.Model
         /// <summary>
         /// Создать коробку
         /// </summary>
-        public ModelBox(vec2 textureSize, int u, int v, float x, float y, float z, int w, int h, int d)
+        public ModelBox(vec2 textureSize, int u, int v, float x, float y, float z, int w, int h, int d, float scaleFactor, bool mirror)
         {
             PosMin = new vec3(x, y, z);
             PosMax = PosMin + new vec3(w, h, d);
@@ -31,6 +31,20 @@ namespace MvkClient.Renderer.Model
             float xm = PosMax.x;
             float ym = PosMax.y;
             float zm = PosMax.z;
+
+            x -= scaleFactor;
+            y -= scaleFactor;
+            z -= scaleFactor;
+            xm += scaleFactor;
+            ym += scaleFactor;
+            zm += scaleFactor;
+
+            if (mirror)
+            {
+                float x0 = xm;
+                xm = x;
+                x = x0;
+            }
 
             vec3[] p = new vec3[8];
 
@@ -57,6 +71,14 @@ namespace MvkClient.Renderer.Model
             { p[1], p[0], p[3], p[2] }, u + d, v + d, u + d + w, v + d + h, textureSize);
             Quads[5] = new TexturedQuad(new vec3[]
             { p[4], p[5], p[6], p[7] }, u + d + w + d, v + d, u + d + w + d + w, v + d + h, textureSize);
+
+            if (mirror)
+            {
+                for (int i = 0; i < 6; i++)
+                {
+                    Quads[i].FlipFace();
+                }
+            }
         }
 
         public void Render(float scale)

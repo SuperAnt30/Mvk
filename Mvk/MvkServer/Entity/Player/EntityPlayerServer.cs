@@ -47,11 +47,12 @@ namespace MvkServer.Entity.Player
         public void SetId(ushort id) => Id = id;
 
         /// <summary>
-        /// Задать положение сидя
+        /// Задать положение сидя и на земле ли
         /// </summary>
-        public void SetIsSneaking(bool sneaking)
+        public void SetSneakOnGround(bool sneaking, bool onGround)
         {
             IsSneaking = sneaking;
+            OnGround = onGround;
             isMotionServer = true;
         }
 
@@ -76,7 +77,7 @@ namespace MvkServer.Entity.Player
                 if (isMotionServer)
                 {
                     // было изменение, надо отправить данные на сервер
-                    ServerMain.World.Players.ResponsePacketAll(new PacketB20Player().Position(Position, IsSneaking, Id), Id);
+                    ServerMain.World.Players.ResponsePacketAll(new PacketB20Player().Position(Position, IsSneaking, OnGround, Id), Id);
                     ServerMain.World.Players.ResponsePacketAll(new PacketB20Player().YawPitch(RotationYawHead, RotationYaw, RotationPitch, Id), Id);
                     isMotionServer = false;
                 }
