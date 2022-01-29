@@ -131,7 +131,7 @@ namespace MvkServer.World
                     //{
                     //    if (t < EntityDis.Distance)
                     //    {
-                            return new MovingObjectPosition(block, iend, iend + norm);
+                            return new MovingObjectPosition(block, iend, norm, end);
                     //    }
                     //    return new MovingObjectPosition(EntityDis.Entity);
                     //}

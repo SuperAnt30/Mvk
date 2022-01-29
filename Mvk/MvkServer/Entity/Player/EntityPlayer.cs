@@ -17,10 +17,6 @@ namespace MvkServer.Entity.Player
         /// </summary>
         public ushort Id { get; protected set; }
         /// <summary>
-        /// Имя
-        /// </summary>
-        public string Name { get; protected set; }
-        /// <summary>
         /// Обзор чанков
         /// </summary>
         public int OverviewChunk { get; protected set; } = MvkGlobal.OVERVIEW_CHUNK_START;
@@ -49,7 +45,13 @@ namespace MvkServer.Entity.Player
         {
             OverviewChunk = overviewChunk;
             DistSqrt = MvkStatic.GetSqrt(overviewChunk + plusDistSqrt);
+            UpProjection();
         }
+
+        /// <summary>
+        /// Обновить перспективу камеры
+        /// </summary>
+        public virtual void UpProjection() { }
 
         /// <summary>
         /// Задать чанк обработки

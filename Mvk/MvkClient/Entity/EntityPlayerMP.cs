@@ -1,5 +1,6 @@
 ﻿using MvkClient.Util;
 using MvkClient.World;
+using MvkServer.Glm;
 
 namespace MvkClient.Entity
 {
@@ -22,7 +23,8 @@ namespace MvkClient.Entity
             UpLimbSwing();
 
             // Видна ли сущность, прорисовывать ли её на экране
-            IsHidden = !ClientWorld.Player.FrustumCulling.IsBoxInFrustum(BoundingBox);
+            IsHidden = !ClientWorld.Player.FrustumCulling.IsBoxInFrustum(
+                BoundingBox.Offset(ClientWorld.RenderEntityManager.CameraOffset * -1f));
         }
 
     }

@@ -37,7 +37,6 @@
     <Compile Include="Entity\EntityLiving.cs" />
     <Compile Include="Entity\EntityLivingHead.cs" />
     <Compile Include="Entity\EnumEntities.cs" />
-    <Compile Include="Entity\HitBox.cs" />
     <Compile Include="Util\EnumInput.cs" />
     <Compile Include="Entity\EntitySpeed.cs" />
     <Compile Include="MvkGlobal.cs" />

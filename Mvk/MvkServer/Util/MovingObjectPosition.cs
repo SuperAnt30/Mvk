@@ -26,6 +26,14 @@ namespace MvkServer.Util
         /// </summary>
         public vec3i Put { get; protected set; }
         /// <summary>
+        /// Нормаль попадания
+        /// </summary>
+        public vec3i Norm { get; protected set; }
+        /// <summary>
+        /// Координата куда попал луч
+        /// </summary>
+        public vec3 RayHit { get; protected set; }
+        /// <summary>
         /// Сторона куда смотрит луч
         /// </summary>
         //public Pole Side { get; protected set; } = Pole.All;
@@ -42,12 +50,15 @@ namespace MvkServer.Util
         /// </summary>
         /// <param name="block">блок</param>
         /// <param name="hit">Координата по которому ударили</param>
-        /// <param name="put">Координата на какой надо ставить</param>
-        public MovingObjectPosition(BlockBase block, vec3i hit, vec3i put)
+        /// <param name="norm">Нормаль попадания</param>
+        /// <param name="rayHit">Координата куда попал луч</param>
+        public MovingObjectPosition(BlockBase block, vec3i hit, vec3i norm, vec3 rayHit)
         {
             Block = block;
+            RayHit = rayHit;
             Hit = hit;
-            Put = put;
+            Put = hit + norm;
+            Norm = norm;
             type = MovingObjectType.Block;
         }
 

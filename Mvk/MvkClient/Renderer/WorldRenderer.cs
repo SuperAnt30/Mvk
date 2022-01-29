@@ -2,6 +2,7 @@
 using MvkClient.Entity;
 using MvkClient.Renderer.Chunk;
 using MvkClient.Renderer.Shaders;
+using MvkClient.Util;
 using MvkClient.World;
 using MvkServer;
 using MvkServer.Glm;
@@ -18,6 +19,12 @@ namespace MvkClient.Renderer
         /// Клиентский объект мира
         /// </summary>
         public WorldClient World { get; protected set; }
+
+        /// <summary>
+        /// Дополнительный счётчик, для повторной проверки, если камера не двигается, а чанки догружаются
+        /// Возможноcть обрабатывать только структуру чанка чтоб догрузить в FC чанк
+        /// </summary>
+        private int addInitFrustumCulling = 0;
 
         public WorldRenderer(WorldClient world)
         {
@@ -48,19 +55,20 @@ namespace MvkClient.Renderer
             World.ChunkPrClient.RemoteMeshChunks();
         }
 
-        private int dddd = 0;
+        
         /// <summary>
         /// Прорисовка вокселей VBO
         /// </summary>
         private void DrawVoxel(float timeIndex)
         {
             long time = Client.Time();
+
+            GLWindow.Texture.BindTexture(AssetsTexture.Atlas);
             ShaderVoxel shader = GLWindow.Shaders.ShVoxel;
             shader.Bind(GLWindow.gl);
             shader.SetUniformMatrix4(GLWindow.gl, "projection", World.Player.Projection);
             shader.SetUniformMatrix4(GLWindow.gl, "lookat", World.Player.LookAt);
-
-            GLWindow.Texture.BindTexture(AssetsTexture.Atlas);
+            //shader.SetUniform3(GLWindow.gl, "pos", 0, -24, 0);
 
             int countRender = MvkGlobal.COUNT_RENDER_CHUNK_FRAME;
             bool fastTime = Client.Time() - time <= MvkGlobal.COUNT_RENDER_CHUNK_FRAME;
@@ -68,9 +76,10 @@ namespace MvkClient.Renderer
             for (int i = 0; i < World.Player.ChunkFC.Length; i++)
             {
                 bool fast = fastTime || countRender == MvkGlobal.COUNT_RENDER_CHUNK_FRAME;
-                ChunkRender chunk = World.Player.ChunkFC[i];
-                if (chunk != null)
+                FrustumStruct fs = World.Player.ChunkFC[i];
+                if (fs.IsChunk())
                 {
+                    ChunkRender chunk = fs.GetChunk();
                     if (chunk.IsModifiedToRender && fast && countRender > 0)
                     {
                         // в отдельном потоке рендер
@@ -83,21 +92,28 @@ namespace MvkClient.Renderer
                     }
                     else
                     {
+                        shader.SetUniform3(GLWindow.gl, "pos", 
+                            (chunk.Position.x << 4) - World.RenderEntityManager.CameraOffset.x, 
+                            -World.RenderEntityManager.CameraOffset.y,
+                            (chunk.Position.y << 4) - World.RenderEntityManager.CameraOffset.z);
                         chunk.Draw(fast);
                     }
                 }
                 else
                 {
-                    dddd++;
+                    addInitFrustumCulling++;
                 }
             }
 
             shader.Unbind(GLWindow.gl);
 
-            if (dddd > 100)
+            // Если хоть один чанк не догружен, то продолжаем счётчик
+            if (addInitFrustumCulling > 0) addInitFrustumCulling++;
+            // Или много не догруженных чанков, либо прошло время для повторной проверки
+            if (addInitFrustumCulling > 100)
             {
-                dddd = 0;
-                //World.Player.InitFrustumCulling();
+                addInitFrustumCulling = 0;
+                World.Player.CheckChunkFrustumCulling();
             }
         }
 

@@ -76,7 +76,7 @@ namespace MvkServer.Management
                 Random random = new Random();
                 entityPlayer.SetId(lastPlayerId);
                 entityPlayer.SetRotation(-0.9f, -.8f);
-                entityPlayer.SetPosition(new vec3(random.Next(-16, 16) + 0, 30, random.Next(-16, 16)));
+                entityPlayer.SetPosition(new vec3(random.Next(-16, 16) + 50000, 30, random.Next(-16, 16)));
                 entityPlayer.SetChunkPosManaged(entityPlayer.GetChunkPos());
                 AddMountedMovingPlayer(entityPlayer);
                 players.Add(entityPlayer.UUID, entityPlayer);
@@ -212,6 +212,7 @@ namespace MvkServer.Management
         /// </summary>
         protected void ResponsePacketS12Success(EntityPlayerServer player)
         {
+            // TODO:: надо отправлять игроку данные, после первой загрузки чанка, где он стоит. А то на чнёт проваливаться!!!
             ResponsePacketAll(new PacketS12Success(player), -1);
             ResponsePacket(player, new PacketS14TimeUpdate(World.ServerMain.TickCounter));
             

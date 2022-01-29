@@ -17,10 +17,12 @@ out vec2 a_texCoord;
 
 uniform mat4 projection;
 uniform mat4 lookat;
+uniform vec3 pos;
 
 void main()
 {
-    gl_Position = projection * lookat * vec4(v_position, 1.0);
+    vec3 pos2 = pos + v_position;
+    gl_Position = projection * lookat * vec4(pos2, 1.0);
 //    a_color = vec4(1.0, 1.0, 1.0, 1.0);
     a_color = vec4(v_color, 1.0);
 	a_texCoord = v_texCoord;

@@ -113,7 +113,9 @@ namespace MvkClient.Renderer.Block
             color.z -= l; if (color.z < 0) color.z = 0;
             vec3 col = new vec3(color.x, color.y, color.z);
             //col = new vec3(1f);
-            vec3 pos = Block.Position.ToVec3();
+            vec3i posi = Block.Position.Position;
+            vec3 pos = new vec3(posi.x & 15, posi.y, posi.z & 15);
+            //vec3 pos = Block.Position.ToVec3();
             BlockFaceUV blockUV = new BlockFaceUV(col, pos);
 
             blockUV.SetVecUV(

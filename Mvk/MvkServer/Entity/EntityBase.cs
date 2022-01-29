@@ -14,6 +14,10 @@ namespace MvkServer.Entity
         /// </summary>
         public WorldBase World { get; protected set; }
         /// <summary>
+        /// Имя
+        /// </summary>
+        public string Name { get; protected set; } = "";
+        /// <summary>
         /// Позиция объекта
         /// </summary>
         public vec3 Position { get; private set; }
@@ -313,7 +317,7 @@ namespace MvkServer.Entity
         /// Получить позицию глаз сущности для кадра
         /// </summary>
         /// <param name="timeIndex">коэфициент между тактами</param>
-        public vec3 GetPositionEyeFrame(float timeIndex) => GetPositionFrame(timeIndex) + new vec3(0, GetEyeHeightFrame(), 0);
+        //public vec3 GetPositionEyeFrame(float timeIndex) => GetPositionFrame(timeIndex) + new vec3(0, GetEyeHeightFrame(), 0);
 
         /// <summary>
         /// Высота глаз для кадра

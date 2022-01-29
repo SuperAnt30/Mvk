@@ -20,6 +20,13 @@ namespace MvkLauncher
             client.Draw += Client_Draw;
             client.Closeded += Client_Closeded;
             client.ThreadSend += Client_ThreadSend;
+            client.CursorClipBounds += Client_CursorClipBounds;
+        }
+
+        private void Client_CursorClipBounds(object sender, CursorEventArgs e)
+        {
+            if (InvokeRequired) Invoke(new CursorEventHandler(Client_CursorClipBounds), sender, e);
+            else Cursor.Clip = e.IsBounds ? Bounds : Rectangle.Empty;
         }
 
         private void Client_ThreadSend(object sender, ObjectKeyEventArgs e)
@@ -96,11 +103,11 @@ namespace MvkLauncher
         /// <summary>
         /// Отпущена клавиша
         /// </summary>
-        private void OpenGLControl1_KeyUp(object sender, KeyEventArgs e) => client.KeyUp(e.KeyValue);
+        private void OpenGLControl1_KeyUp(object sender, KeyEventArgs e) => client.KeyUp(e.Alt ? 18 : e.KeyValue);
         /// <summary>
         /// Нажата специальная клавиша
         /// </summary>
-        private void OpenGLControl1_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e) => client.KeyDown(e.KeyValue);
+        private void OpenGLControl1_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e) => client.KeyDown(e.Alt ? 18 : e.KeyValue);
         /// <summary>
         /// Нажата клавиша в char формате
         /// </summary>
@@ -152,7 +159,5 @@ namespace MvkLauncher
             }
             return MouseButton.None;
         }
-
-        
     }
 }

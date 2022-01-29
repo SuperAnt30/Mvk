@@ -35,7 +35,7 @@ namespace MvkClient.Entity
         /// массив матрицы расположения камеры в пространстве
         /// </summary>
         public float[] LookAt { get; protected set; }
-        
+
         /// <summary>
         /// Принудительно обработать FrustumCulling
         /// </summary>
@@ -47,7 +47,7 @@ namespace MvkClient.Entity
         /// <summary>
         /// Массив чанков которые попадают под FrustumCulling для рендера
         /// </summary>
-        public ChunkRender[] ChunkFC { get; protected set; } = new ChunkRender[0];
+        public FrustumStruct[] ChunkFC { get; protected set; } = new FrustumStruct[0];
         /// <summary>
         /// Вид камеры
         /// </summary>
@@ -116,6 +116,8 @@ namespace MvkClient.Entity
         public override void Update()
         {
             base.Update();
+
+
             if (RotationEquals()) IsFrustumCulling = true;
             if (isMotionServer)
             {
@@ -190,7 +192,7 @@ namespace MvkClient.Entity
         /// </summary>
         public bool UpLookAt(float timeIndex)
         {
-            vec3 pos = GetPositionEyeFrame(timeIndex);
+            vec3 pos = new vec3(0, GetEyeHeightFrame() + GetPositionFrame(timeIndex).y, 0);
             vec3 front = GetLookFrame(timeIndex).normalize();
 
             if (ViewCamera == EnumViewCamera.Back)
@@ -232,7 +234,7 @@ namespace MvkClient.Entity
         /// <summary>
         /// Обновить перспективу камеры
         /// </summary>
-        public void UpProjection()
+        public override void UpProjection()
         {
             Projection = glm.perspective(Fov.ValueFrame, (float)GLWindow.WindowWidth / (float)GLWindow.WindowHeight, 0.001f, OverviewChunk * 22.624f * 2f).to_array();
             UpMatrixProjection();
@@ -254,12 +256,12 @@ namespace MvkClient.Entity
             yawHeadFrame = GetRotationYawFrame(timeIndex);
             pitchFrame = GetRotationPitchFrame(timeIndex);
 
+            ClientWorld.RenderEntityManager.SetCamera(positionFrame, yawHeadFrame, pitchFrame);
 
             // Изменяем матрицу глаз игрока
-            if (UpLookAt(timeIndex))// || IsFrustumCulling)
+            if (UpLookAt(timeIndex) || IsFrustumCulling)
             {
                 // Если имеется вращение камеры или было перемещение, то запускаем расчёт FrustumCulling
-                //if (IsFrustumCulling)
                 InitFrustumCulling();
             }
         }
@@ -269,7 +271,6 @@ namespace MvkClient.Entity
         /// </summary>
         public void UpFrustumCulling() => IsFrustumCulling = true;
 
-        //public void ClearFrustumCulling() => ChunkFC = new ChunkRender[0];
         /// <summary>
         /// Перерасчёт FrustumCulling
         /// </summary>
@@ -281,25 +282,45 @@ namespace MvkClient.Entity
 
             int countAll = 0;
             int countFC = 0;
-            vec2i chunkPos = GetChunkPos();
-            List<ChunkRender> listC = new List<ChunkRender>();
+            vec2i chunkPos = new vec2i(Mth.Floor(positionFrame.x) >> 4, Mth.Floor(positionFrame.z) >> 4);
+            List<FrustumStruct> listC = new List<FrustumStruct>();
 
             for (int i = 0; i < DistSqrt.Length; i++)
             {
-                int xc = DistSqrt[i].x + chunkPos.x;
-                int zc = DistSqrt[i].y + chunkPos.y;
+                int xc = DistSqrt[i].x;
+                int zc = DistSqrt[i].y;
                 int xb = xc << 4;
                 int zb = zc << 4;
 
-                if (FrustumCulling.IsBoxInFrustum(xb, 0, zb, xb + 15, 255, zb + 15))
+                if (FrustumCulling.IsBoxInFrustum(xb - 15, 0, zb - 15, xb + 15 , 255, zb + 15))
                 {
                     countFC++;
-                    listC.Add(ClientWorld.ChunkPrClient.GetChunkRender(new vec2i(xc, zc), false));
+                    vec2i coord = new vec2i(xc + chunkPos.x, zc + chunkPos.y);
+                    ChunkRender chunk = ClientWorld.ChunkPrClient.GetChunkRender(coord);
+                    if (chunk == null) listC.Add(new FrustumStruct(coord));
+                    else listC.Add(new FrustumStruct(chunk));
+                    //listC.Add(ClientWorld.ChunkPrClient.GetChunkRender(new vec2i(xc + chunkPos.x, zc + chunkPos.y)));
                 }
                 countAll++;
             }
             ChunkFC = listC.ToArray();
             IsFrustumCulling = false;
+        }
+
+        /// <summary>
+        /// Проверить не догруженые чанки и догрузить если надо
+        /// </summary>
+        public void CheckChunkFrustumCulling()
+        {
+            for (int i = 0; i < ChunkFC.Length; i++)
+            {
+                FrustumStruct fs = ChunkFC[i];
+                if (!fs.IsChunk())
+                {
+                    ChunkRender chunk = ClientWorld.ChunkPrClient.GetChunkRender(fs.GetCoord());
+                    if (chunk != null) ChunkFC[i] = new FrustumStruct(chunk);
+                }
+            }
         }
 
         /// <summary>
@@ -321,8 +342,9 @@ namespace MvkClient.Entity
         /// <param name="vec">направляющий вектор к расположению камеры</param>
         protected vec3 GetPositionCamera(vec3 pos, vec3 vec)
         {
-            MovingObjectPosition moving = World.RayCast(pos, vec, MvkGlobal.CAMERA_DIST);
-            return pos + vec * (moving.IsBlock() ? glm.distance(pos, new vec3(moving.Put) + new vec3(.5f)) : MvkGlobal.CAMERA_DIST);
+            vec3 offset = ClientWorld.RenderEntityManager.CameraOffset;
+            MovingObjectPosition moving = World.RayCast(pos + offset, vec, MvkGlobal.CAMERA_DIST);
+            return pos + vec * (moving.IsBlock() ? glm.distance(pos, moving.RayHit + new vec3(moving.Norm) * .5f - offset) : MvkGlobal.CAMERA_DIST);
         }
 
         #region Frame

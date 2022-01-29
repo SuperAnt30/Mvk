@@ -95,7 +95,7 @@ namespace MvkClient.Renderer
         {
             uint list = gl.GenLists(1);
             gl.NewList(list, OpenGL.GL_COMPILE);
-            Debug.DInt = (int)list;
+            //Debug.DInt = (int)list;
             return list;
         }
         /// <summary>
@@ -140,6 +140,8 @@ namespace MvkClient.Renderer
         public static void Begin(uint mode) => gl.Begin(mode);
         public static void End() => gl.End();
 
+        public static void DepthEnable() => gl.Enable(OpenGL.GL_DEPTH_TEST);
+        public static void DepthDisable() => gl.Disable(OpenGL.GL_DEPTH_TEST);
 
         /// <summary>
         /// Нарисовать рамку, с заданным цветом и выбранной толщиной линии

@@ -101,7 +101,6 @@ namespace MvkClient.Network
         {
             ClientMain.World.RemovePlayerMP(packet.GetId());
         }
-             
 
         /// <summary>
         /// Пакет положения игрока
@@ -124,24 +123,7 @@ namespace MvkClient.Network
             }
         }
 
-        //List<vec2i> cha = new List<vec2i>();
-        //List<vec2i> chr = new List<vec2i>();
-
-        protected void Packet21(PacketS21ChunckData packet)
-        {
-            if (packet.IsRemoved())
-            {
-               // chr.Add(packet.GetPos());
-                ClientMain.World.ChunkPrClient.UnloadChunk(packet.GetPos());
-            }
-            else
-            {
-                //  cha.Add(packet.GetPos());
-                ClientMain.World.ChunkPrClient.AddChunck(packet);
-                //  ChunkRender chunk = ClientMain.World.ChunkPrClient.GetChunkRender(packet.GetPos(), true);
-                //chunk.SetBinary(packet.GetBuffer(), packet.GetHeight());
-                //chunk.ModifiedToRender();
-            }
-        }
+        protected void Packet21(PacketS21ChunckData packet) 
+            => ClientMain.World.ChunkPrClient.PacketChunckData(packet);
     }
 }

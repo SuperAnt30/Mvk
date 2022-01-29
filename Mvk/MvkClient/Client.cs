@@ -198,13 +198,10 @@ namespace MvkClient
         public void KeyDown(int key)
         {
             //locServer.TrancivePacket(new PacketTFFTest(key.ToString()));
-            //Debug.DInt = key;
-            if (key == 114) // F3
-            {
-                Debug.IsDraw = !Debug.IsDraw;
-            }
+            Debug.DInt = key;
             
             if (World != null && IsGamePlayAction()) World.Key.Down(key);
+            else if (key == 114) Debug.IsDraw = !Debug.IsDraw; // F3
         }
         
         /// <summary>
@@ -525,6 +522,7 @@ namespace MvkClient
         /// </summary>
         protected void CursorShow(bool bShow)
         {
+            OnCursorClipBounds(!bShow);
             if ((!bShow && CursorExtensions.IsVisible()) || (bShow && !CursorExtensions.IsVisible()))
             {
                 CursorExtensions.Show(bShow);
@@ -555,6 +553,12 @@ namespace MvkClient
         /// </summary>
         public event ObjectKeyEventHandler ThreadSend;
         protected virtual void OnThreadSend(ObjectKeyEventArgs e) => ThreadSend?.Invoke(this, e);
+
+        /// <summary>
+        /// Событие Курсор только в окне
+        /// </summary>
+        public event CursorEventHandler CursorClipBounds;
+        protected virtual void OnCursorClipBounds(bool isBounds) => CursorClipBounds?.Invoke(this, new CursorEventArgs(isBounds));
 
         #endregion
     }

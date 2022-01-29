@@ -64,7 +64,10 @@ namespace MvkClient.World
         /// Количество прорисованных сущностей, для отладки
         /// </summary>
         protected int entitiesCountShow = 0;
-
+        /// <summary>
+        /// Объект заглушка
+        /// </summary>
+        private object locker = new object();
 
         public WorldClient(Client client) : base()
         {
@@ -123,7 +126,7 @@ namespace MvkClient.World
         {
             for (int i = 0; i < MvkStatic.AreaOne8.Length; i++)
             {
-                ChunkRender chunk = ChunkPrClient.GetChunkRender(pos + MvkStatic.AreaOne8[i], false);
+                ChunkRender chunk = ChunkPrClient.GetChunkRender(pos + MvkStatic.AreaOne8[i]);
                 if (chunk == null || !chunk.IsChunkLoaded) return false;
             }
             return true; 
@@ -176,7 +179,7 @@ namespace MvkClient.World
         /// </summary>
         public void RemovePlayerMP(ushort id)
         {
-            PlayerEntities.Remove(id);
+            lock(locker) PlayerEntities.Remove(id);
             UpStrPlayers();
         }
 

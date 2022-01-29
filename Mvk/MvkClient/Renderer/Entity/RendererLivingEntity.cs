@@ -1,8 +1,9 @@
 ﻿using MvkAssets;
+using MvkClient.Entity;
+using MvkClient.Renderer.Font;
 using MvkClient.Renderer.Model;
 using MvkServer.Entity;
 using MvkServer.Glm;
-using MvkServer.Util;
 
 namespace MvkClient.Renderer.Entity
 {
@@ -50,6 +51,7 @@ namespace MvkClient.Renderer.Entity
                         -yaw, entity.GetRotationPitchFrame(timeIndex), .0625f);
                 }
                 GLRender.PopMatrix();
+                RenderLivingLabel(entity);
             }
             GLRender.PopMatrix();
         }
@@ -68,5 +70,44 @@ namespace MvkClient.Renderer.Entity
             TextureStruct ts = GLWindow.Texture.GetData(texture);
             GLWindow.Texture.BindTexture(ts.GetKey());
         }
+
+        /// <summary>
+        /// Название сущности над головой, если имеется
+        /// </summary>
+        protected void RenderLivingLabel(EntityLiving entity)
+        {
+            if (entity.Name == "" || entity == renderManager.World.Player) return;
+
+            string text = entity.Name;
+
+            EntityPlayerSP player = renderManager.World.Player;
+            float dis = glm.distance(renderManager.CameraPosition, entity.Position);
+
+            if (dis <= 64) // дистанция между сущностями
+            {
+                float size = 3.2f;
+                float scale = 0.0167f * size;
+                FontSize font = FontSize.Font8;
+                int ws = FontRenderer.WidthString(entity.Name, font) / 2;
+
+                GLRender.PushMatrix();
+                {
+                    GLRender.DepthDisable();
+                    GLRender.Translate(0, entity.Height + .5f, 0);
+                    GLRender.Rotate(glm.degrees(-renderManager.CameraRotationYaw), 0, 1, 0);
+                    GLRender.Rotate(glm.degrees(renderManager.CameraRotationPitch), 1, 0, 0);
+                    GLRender.Scale(scale, -scale, scale);
+                    GLRender.Texture2DDisable();
+                    GLRender.Rectangle(-ws - 1, -1, ws + 1, 8, new vec4(0, 0, 0, .25f));
+                    GLRender.Texture2DEnable();
+                    GLWindow.Texture.BindTexture(Assets.ConvertFontToTexture(font));
+                    FontRenderer.RenderString(-ws, 0, new vec4(1), entity.Name, font);
+
+                    GLRender.DepthEnable();
+                }
+                GLRender.PopMatrix();
+            }
+        }
+
     }
 }

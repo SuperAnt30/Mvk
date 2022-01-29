@@ -69,7 +69,6 @@
             this.Load += new System.EventHandler(this.FormLauncher_Load);
             ((System.ComponentModel.ISupportInitialize)(this.openGLControl1)).EndInit();
             this.ResumeLayout(false);
-
         }
 
         #endregion
