@@ -38,14 +38,6 @@ namespace MvkServer.World.Block
         public bool IsCollidable { get; protected set; } = true;
 
         /// <summary>
-        /// Минимальные координаты ограничительной рамки
-        /// </summary>
-        protected vec3 min = new vec3(0f);
-        /// <summary>
-        /// Максимальные координаты ограничительной рамки
-        /// </summary>
-        protected vec3 max = new vec3(1f);
-        /// <summary>
         /// Ограничительная рамка занимает весь блок, для оптимизации, без проверки AABB блока
         /// </summary>
         public bool IsBoundingBoxAll { get; protected set; } = true;
@@ -60,22 +52,13 @@ namespace MvkServer.World.Block
         public void SetEnumBlock(EnumBlock enumBlock) => EBlock = enumBlock;
 
         /// <summary>
-        /// Получить ограничительную рамку блока
-        /// </summary>
-        public AxisAlignedBB GetBoundingBox() => new AxisAlignedBB(
-            new vec3(Position.X + min.x, Position.Y + min.y, Position.Z + min.z),
-            new vec3(Position.X + max.x, Position.Y + max.y, Position.Z + max.z));
-
-        /// <summary>
         /// Передать список  ограничительных рамок блока
         /// </summary>
-        public virtual AxisAlignedBB[] GetCollisionBoxesToList() => new AxisAlignedBB[] { GetBoundingBox() };
-
-        /// <summary>
-        /// Получить высоту блока
-        /// </summary>
-        public float GetHeight() => max.y;
-
+        public virtual AxisAlignedBB[] GetCollisionBoxesToList()
+        {
+            vec3 min = Position.ToVec3();
+            return new AxisAlignedBB[] { new AxisAlignedBB(min, min + 1f) };
+        }
 
         /// <summary>
         /// Проверить колизию блока на пересечение луча
@@ -91,7 +74,7 @@ namespace MvkServer.World.Block
 
                 // Если блок не полный, обрабатываем хитбокс блока
                 RayCross ray = new RayCross(pos, dir, maxDist);
-                return ray.CrossLineToRectangle(GetBoundingBox());
+                return ray.IsCrossAABBs(GetCollisionBoxesToList());
             }
             return false;
         }

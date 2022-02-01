@@ -35,6 +35,10 @@ namespace MvkClient.Entity
         /// массив матрицы расположения камеры в пространстве
         /// </summary>
         public float[] LookAt { get; protected set; }
+        /// <summary>
+        /// Вектор луча
+        /// </summary>
+        public vec3 RayLook { get; protected set; }
 
         /// <summary>
         /// Принудительно обработать FrustumCulling
@@ -48,6 +52,10 @@ namespace MvkClient.Entity
         /// Массив чанков которые попадают под FrustumCulling для рендера
         /// </summary>
         public FrustumStruct[] ChunkFC { get; protected set; } = new FrustumStruct[0];
+        /// <summary>
+        /// Список сущностей которые попали в луч
+        /// </summary>
+        public EntityPlayerMP[] EntitiesLook { get; protected set; } = new EntityPlayerMP[0];
         /// <summary>
         /// Вид камеры
         /// </summary>
@@ -117,7 +125,6 @@ namespace MvkClient.Entity
         {
             base.Update();
 
-
             if (RotationEquals()) IsFrustumCulling = true;
             if (isMotionServer)
             {
@@ -128,6 +135,8 @@ namespace MvkClient.Entity
             Fov.Update();
             // Расчёт амплитуды конечностей, при движении
             UpLimbSwing();
+            // Тут временно, просчёт взмаха руки
+            UpdateArmSwingProgress();
 
             // Скрыть прорисовку себя если вид с глаз
             IsHidden = ViewCamera == EnumViewCamera.Eye;
@@ -194,10 +203,14 @@ namespace MvkClient.Entity
         {
             vec3 pos = new vec3(0, GetEyeHeightFrame() + GetPositionFrame(timeIndex).y, 0);
             vec3 front = GetLookFrame(timeIndex).normalize();
+            vec3 up = new vec3(0, 1, 0);
 
             if (ViewCamera == EnumViewCamera.Back)
             {
                 // вид сзади, но надо check на кализию камеры
+                //vec3 right = glm.cross(up, front).normalize();
+                //vec3 f2 = (front * -1f - right * .3f).normalize();
+                //pos = GetPositionCamera(pos, f2);
                 pos = GetPositionCamera(pos, front * -1f);
             } else if (ViewCamera == EnumViewCamera.Front)
             {
@@ -206,7 +219,6 @@ namespace MvkClient.Entity
                 front *= -1f;
             }
 
-            vec3 up = new vec3(0, 1, 0);
             if (!IsFlying && MvkGlobal.WIGGLE_EFFECT)
             {
                 // Эффект болтания когда игрок движется 
@@ -224,6 +236,7 @@ namespace MvkClient.Entity
             if (!Mth.EqualsArrayFloat(lookAt, LookAt, 0.00001f))
             {
                 LookAt = lookAt;
+                RayLook = front;
                 lookAtDL = new vec3[] { pos, pos + front, up };
                 UpMatrixProjection();
                 return true;
@@ -336,6 +349,11 @@ namespace MvkClient.Entity
         }
 
         /// <summary>
+        /// Занести массив сущностей попадающих в луч
+        /// </summary>
+        public void SetEntitiesLook(List<EntityPlayerMP> entities) => EntitiesLook = entities.ToArray();
+
+        /// <summary>
         /// Определить положение камеры, при виде сзади и спереди, проверка RayCast
         /// </summary>
         /// <param name="pos">позиция глаз</param>
@@ -345,6 +363,14 @@ namespace MvkClient.Entity
             vec3 offset = ClientWorld.RenderEntityManager.CameraOffset;
             MovingObjectPosition moving = World.RayCast(pos + offset, vec, MvkGlobal.CAMERA_DIST);
             return pos + vec * (moving.IsBlock() ? glm.distance(pos, moving.RayHit + new vec3(moving.Norm) * .5f - offset) : MvkGlobal.CAMERA_DIST);
+        }
+
+        /// <summary>
+        /// Действие рукой
+        /// </summary>
+        public void Action()
+        {
+            SwingItem();
         }
 
         #region Frame
@@ -359,15 +385,19 @@ namespace MvkClient.Entity
         /// </summary>
         /// <param name="timeIndex">коэфициент между тактами</param>
         public override vec3 GetPositionFrame(float timeIndex) => positionFrame;
+        /// <summary>
+        /// Получить позицию сущности для кадра
+        /// </summary>
+        public vec3 GetPositionFrame() => positionFrame;
 
         /// <summary>
-        /// Получить вектор направления камеры тела
+        /// Получить вектор направления камеры тела для кадра
         /// </summary>
         /// <param name="timeIndex">Коэфициент между тактами</param>
         public override vec3 GetLookBodyFrame(float timeIndex) => GetRay(yawBodyFrame, pitchFrame);
 
         /// <summary>
-        /// Получить вектор направления камеры от головы
+        /// Получить вектор направления камеры от головы для кадра
         /// </summary>
         /// <param name="timeIndex">Коэфициент между тактами</param>
         public override vec3 GetLookFrame(float timeIndex) => GetRay(yawHeadFrame, pitchFrame);

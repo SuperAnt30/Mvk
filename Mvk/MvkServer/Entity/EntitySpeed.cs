@@ -21,11 +21,16 @@
         /// Скорость ускорения бега
         /// </summary>
         public float Sprinting;
+        /// <summary>
+        /// Крадёмся
+        /// </summary>
+        public float Sneaking;
 
         public EntitySpeed(float forward)
         {
             Forward = Strafe = Vertical = forward;
             Sprinting = 1.3f;
+            Sneaking = 0.3f;
         }
         public EntitySpeed(float forward, float strafe, float vertical) : this(forward, strafe, vertical, 1.3f) { }
         
@@ -35,6 +40,7 @@
             Strafe = strafe;
             Vertical = vertical;
             Sprinting = sprinting;
+            Sneaking = 0.3f;
         }
 
         #region ToString support

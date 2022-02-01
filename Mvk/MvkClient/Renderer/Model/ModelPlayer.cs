@@ -91,32 +91,29 @@ namespace MvkClient.Renderer.Model
             boxArmLeft.RotateAngleX = boxArmLeft.RotateAngleX * .5f - glm.pi / 10f;
             // boxArmRight.RotateAngleY = -.524f;
 
-            swingProgress2 += 0.08f;
-            if (swingProgress2 > 1f) swingProgress2 = 0f;
             // Удар рукой
-            //  if (this.swingProgress > -9990.0F)
-            //{
-            //    float swingProgress = swingProgress2;
-            //    float var8 = swingProgress;
-            //    boxBody.RotateAngleY = glm.sin(Mth.Sqrt(var8) * glm.pi360) * .2f;
-            //    boxArmRight.RotationPointZ = glm.sin(boxBody.RotateAngleY) * 5f;
-            //    boxArmRight.RotationPointX = -glm.cos(boxBody.RotateAngleY) * 5f;
-            //    boxArmLeft.RotationPointZ = -glm.sin(boxBody.RotateAngleY) * 5f;
-            //    boxArmLeft.RotationPointX = glm.cos(boxBody.RotateAngleY) * 5f;
-            //    boxArmRight.RotateAngleY += boxBody.RotateAngleY;
-            //    boxArmLeft.RotateAngleY += boxBody.RotateAngleY;
-            //    boxArmLeft.RotateAngleX += boxBody.RotateAngleY;
-            //    var8 = 1f - swingProgress;
-            //    var8 *= var8;
-            //    var8 *= var8;
-            //    var8 = 1f - var8;
-            //    float var9 = glm.sin(var8 * glm.pi);
-            //    float var10 = glm.sin(swingProgress * glm.pi) * -(boxHead.RotateAngleX - .7f) * .75f;
-            //    boxArmRight.RotateAngleX = boxArmRight.RotateAngleX - (var9 * 1.2f + var10);
-            //    boxArmRight.RotateAngleY += boxBody.RotateAngleY * 2f;
-            //    boxArmRight.RotateAngleZ += glm.sin(swingProgress * glm.pi) * -.4f;
-            //}
-
+            if (SwingProgress > 0)
+            {
+                float swingProgress = SwingProgress;
+                float sp = swingProgress;
+                boxBody.RotateAngleY = glm.sin(Mth.Sqrt(sp) * glm.pi360) * .2f;
+                boxArmRight.RotationPointZ = glm.sin(boxBody.RotateAngleY) * 5f;
+                boxArmRight.RotationPointX = -glm.cos(boxBody.RotateAngleY) * 5f;
+                boxArmLeft.RotationPointZ = -glm.sin(boxBody.RotateAngleY) * 5f;
+                boxArmLeft.RotationPointX = glm.cos(boxBody.RotateAngleY) * 5f;
+                boxArmRight.RotateAngleY += boxBody.RotateAngleY;
+                boxArmLeft.RotateAngleY += boxBody.RotateAngleY;
+                boxArmLeft.RotateAngleX += boxBody.RotateAngleY;
+                sp = 1f - swingProgress;
+                sp *= sp;
+                sp *= sp;
+                sp = 1f - sp;
+                float s1 = glm.sin(sp * glm.pi);
+                float s2 = glm.sin(swingProgress * glm.pi) * -(boxHead.RotateAngleX - .7f) * .75f;
+                boxArmRight.RotateAngleX = boxArmRight.RotateAngleX - (s1 * 1.2f + s2);
+                boxArmRight.RotateAngleY += boxBody.RotateAngleY * 2f;
+                boxArmRight.RotateAngleZ += glm.sin(swingProgress * glm.pi) * -.4f;
+            }
 
             if (entity.IsSneaking)
             {

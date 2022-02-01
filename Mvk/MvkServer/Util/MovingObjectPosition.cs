@@ -86,5 +86,10 @@ namespace MvkServer.Util
             Block = 1,
             Entity = 2
         }
+
+        public override string ToString()
+        {
+            return string.Format("{0} {1} {2}", type, Hit, RayHit);
+        }
     }
 }

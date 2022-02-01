@@ -27,6 +27,7 @@ namespace MvkClient.Renderer.Entity
         public void DoRender(EntityLiving entity, vec3 offset, float timeIndex)
         {
             vec3 pos = entity.GetPositionFrame(timeIndex);
+            model.SetSwingProgress(entity.GetSwingProgressFrame(timeIndex));
 
             GLRender.PushMatrix();
             {

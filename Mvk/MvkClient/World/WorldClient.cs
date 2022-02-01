@@ -6,11 +6,14 @@ using MvkClient.Renderer.Entity;
 using MvkClient.Setitings;
 using MvkClient.Util;
 using MvkServer;
+using MvkServer.Entity;
 using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World;
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace MvkClient.World
 {
@@ -96,12 +99,16 @@ namespace MvkClient.World
 
                 // Обновить игрока
                 Player.Update();
+
                 // Обновить остальных сущностей
+                List<EntityPlayerMP> entitiesLook = new List<EntityPlayerMP>();
                 Hashtable pe = PlayerEntities.Clone() as Hashtable;
                 foreach (EntityPlayerMP entity in pe.Values)
                 {
                     entity.Update();
+                    if (entity.IsRayEye) entitiesLook.Add(entity);
                 }
+                Player.SetEntitiesLook(entitiesLook);
 
                 if (time - previousTotalWorldTime > MvkGlobal.CHUNK_CLEANING_TIME)
                 {
@@ -183,6 +190,56 @@ namespace MvkClient.World
             UpStrPlayers();
         }
 
+        public void MouseDown(MouseButton button)
+        {
+            if (button == MouseButton.Left)
+            {
+                vec3 pos = Player.GetPositionFrame();
+                pos.y += Player.GetEyeHeightFrame();
+                vec3 dir = Player.RayLook;//.GetLookFrame();
+               
+                MovingObjectPosition moving = RayCast(pos, dir, 10f);
+                MovingObjectPosition movingE = RayCastEntity();
+
+                Player.Action();
+                //Stopwatch stopwatch0 = new Stopwatch();
+                //stopwatch0.Start();
+
+                //int j = 0;
+                //float fj = 0f;
+                //for (int i = 0; i < 40000000; i++) fj = fj / 2.7f * i; //j++;
+
+                //float tf = (stopwatch0.ElapsedTicks / (float)Stopwatch.Frequency) * 1000f;
+                // луч
+                Debug.DStr = moving.ToString() + "\r\n" + movingE.ToString(); // + " --" + string.Format("{0:0.00}",tf);
+
+            }
+        }
+
+        /// <summary>
+        /// Получить попадает ли в луч сущность, выбрать самую близкую
+        /// </summary>
+        public MovingObjectPosition RayCastEntity()
+        {
+            MovingObjectPosition moving = new MovingObjectPosition();
+            if (Player.EntitiesLook.Length > 0)
+            {
+                EntityPlayerMP[] entities = Player.EntitiesLook.Clone() as EntityPlayerMP[];
+                vec3 pos = Player.GetPositionFrame();
+                float dis = 1000f;
+                foreach (EntityPlayerMP entity in entities)
+                {
+                    float disR = glm.distance(pos, entity.GetPositionFrame(entity.TimeIndex()));
+                    if (dis > disR)
+                    {
+                        dis = disR;
+                        moving = new MovingObjectPosition(entity);
+                    }
+                }
+            }
+            return moving;
+        }
+
         /// <summary>
         /// Обновить перечень игроков, отладка
         /// </summary>
@@ -197,6 +254,8 @@ namespace MvkClient.World
                 }
             }
         }
+
+        
 
         #region Debug
 

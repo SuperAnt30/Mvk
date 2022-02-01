@@ -59,6 +59,19 @@ namespace MvkServer.Util
         public bool CrossLineToRectangle(AxisAlignedBB aabb) => CrossLineToRectangle(aabb.Min, aabb.Max);
 
         /// <summary>
+        /// Пересекает ли луч хоть одину из рамок 
+        /// </summary>
+        /// <param name="aabbs">ограничительные рамки</param>
+        public bool IsCrossAABBs(AxisAlignedBB[] aabbs)
+        {
+            foreach (AxisAlignedBB aabb in aabbs)
+            {
+                if (CrossLineToRectangle(aabb)) return true;
+            }
+            return false;
+        }
+
+        /// <summary>
         /// Пересекает ли отрезок прямоугольник в плоскости
         /// </summary>
         /// <param name="from">меньшый угол прямоугольника</param>

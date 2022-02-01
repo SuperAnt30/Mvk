@@ -1,6 +1,7 @@
 ﻿using MvkClient.Util;
 using MvkClient.World;
 using MvkServer.Glm;
+using MvkServer.Util;
 
 namespace MvkClient.Entity
 {
@@ -25,6 +26,22 @@ namespace MvkClient.Entity
             // Видна ли сущность, прорисовывать ли её на экране
             IsHidden = !ClientWorld.Player.FrustumCulling.IsBoxInFrustum(
                 BoundingBox.Offset(ClientWorld.RenderEntityManager.CameraOffset * -1f));
+
+            // Проверка луча игрока к сущности
+            bool isRayEye = false;
+            // Максимальная дистанция луча
+            float maxDist = 32f;
+
+            vec3 pos = ClientWorld.Player.Position;
+
+            if (!IsHidden && glm.distance(Position, pos) < maxDist)
+            {
+                pos.y += ClientWorld.Player.GetEyeHeight();
+                vec3 dir = ClientWorld.Player.RayLook;
+                RayCross ray = new RayCross(pos, dir, maxDist);
+                isRayEye = ray.CrossLineToRectangle(BoundingBox.Clone());
+            }
+            IsRayEye = isRayEye;
         }
 
     }

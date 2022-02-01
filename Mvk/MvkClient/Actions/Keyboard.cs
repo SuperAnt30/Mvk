@@ -50,8 +50,7 @@ namespace MvkClient.Actions
             keyPrev = key;
 
             // одно нажатие
-            if (key == 9) World.ClientMain.MouseGamePlay(); // Tab
-            else if (key == 66 && keyF3) World.RenderEntityManager.IsHiddenHitbox = !World.RenderEntityManager.IsHiddenHitbox; // F3+B
+            if (key == 66 && keyF3) World.RenderEntityManager.IsHiddenHitbox = !World.RenderEntityManager.IsHiddenHitbox; // F3+B
             else if (key == 114) keyF3 = true; // F3
             else if (key == 27 || key == 18) World.ClientMain.Screen.InGameMenu(); // Esc или Alt
             else if (key == 116) World.Player.ViewCameraNext(); // F5
@@ -65,8 +64,7 @@ namespace MvkClient.Actions
         /// <param name="key">индекс клавиши</param>
         public void Up(int key)
         {
-            if (key == 18) World.Player.InputNone(); // Alt
-            else if (key == 114) // F3
+            if (key == 114) // F3
             {
                 keyF3 = false;
                 if (keyPrev == 114) Debug.IsDraw = !Debug.IsDraw; // Нажимали только F3

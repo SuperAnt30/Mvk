@@ -6,6 +6,7 @@ using MvkClient.Util;
 using MvkClient.World;
 using MvkServer;
 using MvkServer.Glm;
+using SharpGL;
 using System.Threading.Tasks;
 
 namespace MvkClient.Renderer
@@ -25,6 +26,11 @@ namespace MvkClient.Renderer
         /// Возможноcть обрабатывать только структуру чанка чтоб догрузить в FC чанк
         /// </summary>
         private int addInitFrustumCulling = 0;
+        /// <summary>
+        /// Курсор прицела
+        /// </summary>
+        private uint dListсPricel;
+        private bool compiledPricel = false;
 
         public WorldRenderer(WorldClient world)
         {
@@ -50,6 +56,8 @@ namespace MvkClient.Renderer
 
             // Сущности DisplayList
             DrawEntities(timeIndex);
+
+            
 
             // Чистка сетки чанков при необходимости
             World.ChunkPrClient.RemoteMeshChunks();
@@ -138,6 +146,46 @@ namespace MvkClient.Renderer
                 }
             }
         }
+
+        /// <summary>
+        /// Прорисовать курсор прицела
+        /// </summary>
+        public void DrawPricel()
+        {
+            if (!compiledPricel) CompileDisplayListPricel();
+
+            int w = GLWindow.WindowWidth;
+            int h = GLWindow.WindowHeight;
+            // Прицел
+            GLWindow.gl.MatrixMode(OpenGL.GL_PROJECTION);
+            GLWindow.gl.LoadIdentity();
+            GLWindow.gl.Ortho2D(0, w, h, 0);
+            GLWindow.gl.MatrixMode(OpenGL.GL_MODELVIEW);
+            GLWindow.gl.LoadIdentity();
+
+            GLRender.PushMatrix();
+            GLWindow.gl.Translate(w / 2 - 8, h / 2 - 8, 0);
+            GLRender.ListCall(dListсPricel);
+            GLRender.PopMatrix();
+        }
+        /// <summary>
+        /// Рендер курсора прицел
+        /// </summary>
+        private void CompileDisplayListPricel()
+        {
+            dListсPricel = GLRender.ListBegin();
+            GLRender.Texture2DDisable();
+            GLRender.LineWidth(2f);
+            GLRender.Color(new vec4(1, 1, 1, .8F));
+            GLRender.Begin(OpenGL.GL_LINES);
+            GLRender.Vertex(0, -8f, 0);
+            GLRender.Vertex(0, 8f, 0);
+            GLRender.Vertex(-8f, 0, 0);
+            GLRender.Vertex(8f, 0, 0);
+            GLRender.End();
+            GLRender.ListEnd();
+        }
+             
 
         //private LineMesh hitboxPlayer = new LineMesh();
 

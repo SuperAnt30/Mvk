@@ -18,7 +18,11 @@ namespace MvkServer.Entity
         /// Счётчик движения. Влияет на то, где в данный момент находятся ноги и руки при качании. 
         /// </summary>
         public float LimbSwing { get; protected set; } = 0;
-        
+        /// <summary>
+        /// Движение из-за смещения
+        /// </summary>
+        public vec3 MotionPush { get; set; } = new vec3(0);
+
         /// <summary>
         /// Нужна ли амплитуда конечностей
         /// </summary>
@@ -32,6 +36,23 @@ namespace MvkServer.Entity
         /// </summary>
         private float limbSwingAmountPrev = 0;
         /// <summary>
+        /// Анимация движения руки 0..1
+        /// </summary>
+        public float swingProgress = 0;
+        /// <summary>
+        /// Анимация движения руки предыдущего такта
+        /// </summary>
+        private float swingProgressPrev = 0;
+        /// <summary>
+        /// Счётчик тактов для анимации руки 
+        /// </summary>
+        private int swingProgressInt = 0;
+        /// <summary>
+        /// Запущен ли счётчик анимации руки
+        /// </summary>
+        private bool isSwingInProgress = false;
+
+        /// <summary>
         /// Количество тактов для запрета повторного прыжка
         /// </summary>
         private int jumpTicks = 0;
@@ -43,10 +64,8 @@ namespace MvkServer.Entity
         /// Результат падения, отладка!!!
         /// </summary>
         private float fallDistanceResult = 0;
-        /// <summary>
-        /// Отладка!!!
-        /// </summary>
-        private string strHVJ = "";
+
+        private vec3 motionDebug = new vec3(0);
 
         #region Input
 
@@ -61,20 +80,59 @@ namespace MvkServer.Entity
         /// <summary>
         /// Убрать нажатие
         /// </summary>
-        public void InputRemove(EnumInput input) => Input ^= input;
-        
+        public void InputRemove(EnumInput input)
+        {
+            if (Input.HasFlag(input)) Input ^= input;
+        }
+
         #endregion
 
-        /// <summary>
-        /// Вызывается для обновления позиции / логики объекта
-        /// </summary>
         public override void Update()
         {
             base.Update();
+            swingProgressPrev = swingProgress;
 
+            vec3 motionPrev = Motion;
+
+            bool isMotion = EntityUpdate();
+
+            LivingUpdate();
+
+            // Пометка что было какое-то движение, вращения, бег, сидеть и тп.
+            if (isMotion || !motionPrev.Equals(Motion))
+            {
+                UpdateLiving();
+            }
+
+            // Для вращении головы
+            HeadTurn(Motion);
+        }
+
+        protected bool EntityUpdate()
+        {
             bool isMotion = false;
-            // счётчик прыжка
-            if (jumpTicks > 0) jumpTicks--;
+
+            // метод определения если есть ускорение и мы не на воде, определяем по нижниму блоку какой спавн частиц и спавним их
+            // ... func_174830_Y
+
+            // метод проверки нахождения по кализии в воде ли мы, и меняем статус IsWater
+            // ... handleWaterMovement
+
+            // определяем горим ли мы, и раз в секунду %20, наносим урон
+            // ...
+
+            // определяем в лаве ли мы по кализии
+            // ... func_180799_ab
+
+            // если мы ниже -64 по Y убиваем игрока
+            // ... kill
+
+            // Если был толчёк, мы его дабавляем и обнуляем
+            if (!MotionPush.Equals(new vec3(0)))
+            {
+                Motion += MotionPush;
+                MotionPush = new vec3(0);
+            }
 
             // Обновить положение сидя
             if (!IsFlying && OnGround && Input.HasFlag(EnumInput.Down) && !IsSneaking)
@@ -84,42 +142,13 @@ namespace MvkServer.Entity
                 Sitting();
                 isMotion = true;
             }
-
-            // Sprinting
-            bool isSprinting = Input.HasFlag(EnumInput.Sprinting | EnumInput.Forward) && !IsSneaking;
-            if (IsSprinting != isSprinting)
-            {
-                IsSprinting = isSprinting;
-                isMotion = true;
-            }
-
-            // Перемещение, определяем скорости
-            float strafe = (Input.HasFlag(EnumInput.Right) ? 1f : 0) - (Input.HasFlag(EnumInput.Left) ? 1f : 0);
-            float forward = (Input.HasFlag(EnumInput.Back) ? 1f : 0f) - (Input.HasFlag(EnumInput.Forward) ? 1f : 0f);
-
-            float height = 0;
-            if (IsFlying)
-            {
-                height = (Input.HasFlag(EnumInput.Up) ? 1f : 0f) - (Input.HasFlag(EnumInput.Down) ? 1f : 0f);
-                height *= Speed.Vertical;
-            }
-            else if (Input.HasFlag(EnumInput.Up)) height = 1f;
-
-            //vec3 motion = MoveWithHeading(strafe * Speed.Strafe, forward * Speed.Forward, height);
-            vec3 motion = MoveWithHeading(strafe, forward, height);
-
-            bool onGroundOld = OnGround;
-            // Коллизия перемещения
-            MoveCheckCollision(motion);
-            if (onGroundOld != OnGround) isMotion = true;
-
             // Если хотим встать
             if (!Input.HasFlag(EnumInput.Down) && IsSneaking)
             {
                 // Проверка коллизии вверхней части при положении стоя
                 Standing();
                 // TODO:: хочется как-то ловить колизию положение встать в MoveCheckCollision
-                if (NoClip || !World.Collision.IsCollisionBody(this, new vec3(Position + Motion)))
+                if (NoClip || !World.Collision.IsCollisionBody(this, new vec3(Position)))
                 {
                     IsSneaking = false;
                     isMotion = true;
@@ -130,15 +159,224 @@ namespace MvkServer.Entity
                 }
             }
 
-            // Пометка что было какое-то движение, вращения, бег, сидеть и тп.
-            if (isMotion || Motion.x != 0 || Motion.y != 0 || Motion.z != 0)
+            // Sprinting
+            bool isSprinting = Input.HasFlag(EnumInput.Sprinting | EnumInput.Forward) && !IsSneaking;
+            if (IsSprinting != isSprinting)
             {
-                UpdateLiving();
+                IsSprinting = isSprinting;
+                isMotion = true;
             }
 
-            // Для вращении головы
-            HeadTurn(motion);
+            // Jumping
+            IsJumping = Input.HasFlag(EnumInput.Up);
+
+            return isMotion;
         }
+
+        protected void LivingUpdate()
+        {
+            // счётчик прыжка
+            if (jumpTicks > 0) jumpTicks--;
+
+            // Продумать перемещение по тактам, с параметром newPosRotationIncrements
+
+            // Если нет перемещения по тактам, запускаем трение воздуха
+            Motion = new vec3(Motion.x * .98f, Motion.y, Motion.z * .98f);
+
+            // Если мелочь убираем
+            Motion = new vec3(
+                Mth.Abs(Motion.x) < 0.005f ? 0 : Motion.x,
+                Mth.Abs(Motion.y) < 0.005f ? 0 : Motion.y,
+                Mth.Abs(Motion.z) < 0.005f ? 0 : Motion.z
+            );
+
+            // Если блокировка то блокируем кнопки и параметр прыжка
+            // ... his.moveStrafing = 0.0F; this.moveForward = 0.0F;
+
+            if (IsFlying)
+            {
+                //motion.y += vertical * Speed.Vertical * param;
+                //        //motion.y *= study;
+                float vertical = (Input.HasFlag(EnumInput.Up) ? 1f : 0f) - (Input.HasFlag(EnumInput.Down) ? 1f : 0f);
+                float y = Motion.y;
+                y += vertical * Speed.Vertical;
+                Motion = new vec3(Motion.x, y, Motion.z);
+                IsJumping = false;
+            }
+
+            // Прыжок, только выживание
+            else if (IsJumping)
+            {
+                // для воды свои правила, плыть вверх
+                //... updateAITick
+                // для лавы свои
+                //... func_180466_bG
+                // Для прыжка надо стоять на земле, и чтоб счётик прыжка был = 0
+                if (OnGround && jumpTicks == 0)
+                {
+                    Jump();
+                    jumpTicks = 10;
+                }
+            } else
+            {
+                jumpTicks = 0;
+            }
+
+            float strafe = (Input.HasFlag(EnumInput.Right) ? 1f : 0) - (Input.HasFlag(EnumInput.Left) ? 1f : 0);
+            float forward = (Input.HasFlag(EnumInput.Back) ? 1f : 0f) - (Input.HasFlag(EnumInput.Forward) ? 1f : 0f);
+
+            if (IsFlying)
+            {
+                float y = Motion.y;
+                MoveWithHeading(strafe, forward, .6f * Speed.Forward * (IsSprinting ? Speed.Sprinting : 1f));
+                Motion = new vec3(Motion.x, y * .6f, Motion.z);
+            }
+            else
+            {
+                MoveWithHeading(strafe, forward, .02f);
+            }
+        }
+
+        /// <summary>
+        /// Вызывается для обновления позиции / логики объекта
+        /// </summary>
+        //public override void Update()
+        //{
+        //    base.Update();
+        //    swingProgressPrev = swingProgress;
+
+        //    EntityUpdate();
+
+        //    bool isMotion = false;
+        //    // счётчик прыжка
+        //    if (jumpTicks > 0) jumpTicks--;
+
+        //    Motion *= .98f; // надо ,98 но для того как в майне надо * ,9616 где-то не учёл
+        //    // Если мелочь убираем
+        //    Motion = new vec3(
+        //        Mth.Abs(Motion.x) < 0.005f ? 0 : Motion.x, 
+        //        Mth.Abs(Motion.y) < 0.005f ? 0 : Motion.y, 
+        //        Mth.Abs(Motion.z) < 0.005f ? 0 : Motion.z
+        //    );
+
+        //    if (!IsFlying) Motion *= .9616f; // для того как в майне надо * ,9616 где-то не учёл
+
+        //    //// Если мелочь убираем
+        //    //if (Mth.Abs(Motion.x) < 0.005f) Motion = new vec3(0, Motion.y, Motion.z);
+        //    //if (Mth.Abs(Motion.y) < 0.005f) Motion = new vec3(Motion.x, 0, Motion.z);
+        //    //if (Mth.Abs(Motion.z) < 0.005f) Motion = new vec3(Motion.x, Motion.y, 0);
+
+        //    // Обновить положение сидя
+        //    if (!IsFlying && OnGround && Input.HasFlag(EnumInput.Down) && !IsSneaking)
+        //    {
+        //        // Только в выживании можно сесть
+        //        IsSneaking = true;
+        //        Sitting();
+        //        isMotion = true;
+        //    }
+
+        //    // Sprinting
+        //    bool isSprinting = Input.HasFlag(EnumInput.Sprinting | EnumInput.Forward) && !IsSneaking;
+        //    if (IsSprinting != isSprinting)
+        //    {
+        //        IsSprinting = isSprinting;
+        //        isMotion = true;
+        //    }
+
+        //    // Перемещение, определяем скорости
+        //    float strafe = (Input.HasFlag(EnumInput.Right) ? 1f : 0) - (Input.HasFlag(EnumInput.Left) ? 1f : 0);
+        //    float forward = (Input.HasFlag(EnumInput.Back) ? 1f : 0f) - (Input.HasFlag(EnumInput.Forward) ? 1f : 0f);
+        //    float height = IsFlying ? ((Input.HasFlag(EnumInput.Up) ? 1f : 0f) - (Input.HasFlag(EnumInput.Down) ? 1f : 0f))
+        //        : Input.HasFlag(EnumInput.Up) ? 1f : 0f;
+
+            
+        //    // Если был толчёк, мы его дабавляем и обнуляем
+        //    if (!MotionPush.Equals(new vec3(0)))
+        //    {
+        //        Motion += MotionPush;// * .2f;
+        //        MotionPush = new vec3(0);
+        //    }
+
+        //    if (IsFlying)
+        //    {
+        //        // Определение вертикального перемещения
+        //        //motion.y += vertical * Speed.Vertical * param;
+        //        //motion.y *= study;
+
+        //        IsJumping = false;
+        //    }
+        //    else
+        //    {
+        //        // Определение прыжка и высотного Y значения
+        //        IsJumping = Input.HasFlag(EnumInput.Up);
+        //        float y = OnGround ? -.2f : Motion.y - .16f;
+        //        //if (OnGround) motion.y = -0.2f;
+        //        //else motion.y = Motion.y - .16f;
+        //        Motion = new vec3(Motion.x, y, Motion.z);
+
+        //    }
+
+        //    // Прыжок, только выживание
+        //    if (IsJumping)
+        //    {
+        //        // для воды свои правила, плыть вверх
+        //        //...
+        //        // Для прыжка надо стоять на земле, и чтоб счётик прыжка был = 0
+        //        if (OnGround && jumpTicks == 0)
+        //        {
+        //            vec3 motionJump = Jump();
+        //            //motion.x += motionJump.x;
+        //            //motion.y = motionJump.y;
+        //            //motion.z += motionJump.z;
+        //            Motion = new vec3(Motion.x + motionJump.x, motionJump.y, Motion.z + motionJump.z);
+        //            jumpTicks = 10;
+        //        }
+        //    }
+
+        //    bool onGroundOld = OnGround;
+
+        //    vec3 motion = MoveWithHeading(strafe, forward);//, height);
+        //    if (onGroundOld != OnGround) isMotion = true;
+        //    Motion = motion;
+
+            
+
+            
+        //    // Коллизия перемещения
+        //    //MoveCheckCollision(motion);
+            
+
+        //    // Если хотим встать
+        //    if (!Input.HasFlag(EnumInput.Down) && IsSneaking)
+        //    {
+        //        // Проверка коллизии вверхней части при положении стоя
+        //        Standing();
+        //        // TODO:: хочется как-то ловить колизию положение встать в MoveCheckCollision
+        //        if (NoClip || !World.Collision.IsCollisionBody(this, new vec3(Position + Motion)))
+        //        {
+        //            IsSneaking = false;
+        //            isMotion = true;
+        //        }
+        //        else
+        //        {
+        //            Sitting();
+        //        }
+        //    }
+
+        //    // Если мелочь убираем
+        //    if (Mth.Abs(Motion.x) < 0.005f) Motion = new vec3(0, Motion.y, Motion.z);
+        //    if (Mth.Abs(Motion.y) < 0.005f) Motion = new vec3(Motion.x, 0, Motion.z);
+        //    if (Mth.Abs(Motion.z) < 0.005f) Motion = new vec3(Motion.x, Motion.y, 0);
+
+        //    // Пометка что было какое-то движение, вращения, бег, сидеть и тп.
+        //    if (isMotion || Motion.x != 0 || Motion.y != 0 || Motion.z != 0)
+        //    {
+        //        UpdateLiving();
+        //    }
+
+        //    // Для вращении головы
+        //    HeadTurn(motion);
+        //}
 
         /// <summary>
         /// Проверка колизии по вектору движения
@@ -146,14 +384,13 @@ namespace MvkServer.Entity
         /// <param name="motion">вектор движения</param>
         public void UpMoveCheckCollision(vec3 motion)
         {
-            MoveCheckCollision(motion);
-            SetPosition(Position + Motion);
+            MoveEntity(motion);
         }
 
         /// <summary>
         /// Обновление в каждом тике, если были требования по изминению позицыи, вращения, бег, сидеть и тп.
         /// </summary>
-        protected virtual void UpdateLiving() => SetPosition(Position + Motion);
+        protected virtual void UpdateLiving() { }// => SetPosition(Position + Motion);
 
         /// <summary>
         /// Поворот тела от движения и поворота головы 
@@ -163,92 +400,94 @@ namespace MvkServer.Entity
         /// <summary>
         /// Конвертация от направления движения в XYZ координаты с кооректировками скоростей
         /// </summary>
-        protected vec3 MoveWithHeading(float strafe, float forward, float vertical)
+        protected void MoveWithHeading(float strafe, float forward, float jumpMovementFactor)
         {
-            float friction = Mth.Max(Speed.Strafe, Speed.Forward);
-            // Ускорение или крастись
-            if (IsSprinting && forward < 0 && !IsSneaking)
-            {
-                // Бег 
-                //forward *= Speed.Sprinting;
-                friction *= Speed.Sprinting;
-            }
-            else if (!IsFlying && (forward != 0 || strafe != 0) && IsSneaking)
-            {
-                // Крадёмся
-                friction *= .3f;
-                //forward *= .3f;
-                //strafe *= .3f;
-            }
+            vec3 motion = new vec3();
 
-            strHVJ = string.Format("strafe:{0:0.00} forward:{1:0.00} height:{2:0.00} --- {3}", strafe, forward, vertical, friction);
+            // делим на три части, вода, лава, остальное
 
-            // Конвертация из направлений в xyz
-            vec3 motion = MotionAngle(strafe, forward, friction);
-
-            // Определение прыжка и высотного Y значения
-            if (IsFlying)
+            // расматриваем остальное
             {
-                motion.y = vertical;
-                IsJumping = false;
-            }
-            else
-            {
-                IsJumping = vertical == 1f;
-                if (OnGround) motion.y = -0.2f;
-                else motion.y = Motion.y - .16f;
-            }
+                // Коэффициент трения блока
+                float study = 0.91f; // для воздух
+                if (OnGround) study = 0.546f; // трение блока, определить на каком блоке стоим (.6f блок) * .91f
 
-            // Мягкость
-            motion.x *= .5f;
-            motion.y *= .98f;
-            motion.z *= .5f;
+                float param = 0.16277136f / (study * study * study);
 
-            // Прыжок, только выживание
-            if (IsJumping)
-            {
-                // для воды свои правила, плыть вверх
-                //...
-                // Для прыжка надо стоять на земле, и чтоб счётик прыжка был = 0
-                if (OnGround && jumpTicks == 0)
+                // трение, по умолчанию параметр ускорения падения вниз 
+                float friction = jumpMovementFactor;
+                if (OnGround)
                 {
-                    vec3 motionJump = Jump();
-                    motion.x += motionJump.x;
-                    motion.y = motionJump.y;
-                    motion.z += motionJump.z;
-                    jumpTicks = 10;
+                    // если на земле, определяем скорость, можно в отдельном методе, у каждого моба может быть свои параметры
+
+                    float speed = Mth.Max(Speed.Strafe * Mth.Abs(strafe), Speed.Forward * Mth.Abs(forward));
+                    if (IsSprinting && forward < 0 && !IsSneaking)
+                    {
+                        // Бег 
+                        speed *= Speed.Sprinting;
+                    }
+                    else if (!IsFlying && (forward != 0 || strafe != 0) && IsSneaking)
+                    {
+                        // Крадёмся
+                        speed *= Speed.Sneaking;
+                    }
+
+                    // корректировка скорости, с трением
+                    friction = speed * param;
                 }
+
+                motion = MotionAngle(strafe, forward, friction);
+
+                // Тут надо корректировать леcтницу, вверх вниз Motion.y
+                // ...
+
+                // Проверка столкновения
+                MoveEntity(motion);
+
+                motion = Motion;
+                // если есть горизонтальное столкновение и это лестница, то 
+                // ... Motion.y = 0.2f;
+
+                // Параметр падение 
+                motion.y -= .16f;
+
+                motion.y *= .98f;
+                motion.x *= study;
+                motion.z *= study;
             }
 
-            return motion;
+            // Тут расчёт амплитуды движения
+            // ... 
+
+            Motion = motion;
         }
 
         /// <summary>
         /// Задать смещение, с обрезкой малых чисел
         /// </summary>
-        protected void SetMotion(vec3 motion)
-        {
-            // Если мелочь убираем
-            if (Mth.Abs(motion.x) < 0.005f) motion.x = 0;
-            if (Mth.Abs(motion.y) < 0.005f) motion.y = 0;
-            if (Mth.Abs(motion.z) < 0.005f) motion.z = 0;
-            Motion = motion;
-        }
+        //protected void SetMotion(vec3 motion)
+        //{
+        //    // Если мелочь убираем
+        //    if (Mth.Abs(motion.x) < 0.005f) motion.x = 0;
+        //    if (Mth.Abs(motion.y) < 0.005f) motion.y = 0;
+        //    if (Mth.Abs(motion.z) < 0.005f) motion.z = 0;
+        //    Motion = motion;
+        //}
 
         /// <summary>
         /// Значения для првжка
         /// </summary>
-        protected vec3 Jump()
+        protected void Jump()
         {
             // Стартовое значение прыжка, чтоб на 6 так допрыгнут наивысшую точку в 2,5 блока
             vec3 motion = new vec3(0, .84f, 0);
             if (IsSprinting)
             {
-                // Если прыжок с бегом, то скорость увеличивается на 20%
-                motion.x += glm.sin(RotationYaw) * 0.2f;
-                motion.z -= glm.cos(RotationYaw) * 0.2f;
+                // Если прыжок с бегом, то скорость увеличивается
+                motion.x += glm.sin(RotationYaw) * 0.4f;
+                motion.z -= glm.cos(RotationYaw) * 0.4f;
             }
-            return motion;
+            Motion = new vec3(Motion.x + motion.x, motion.y, Motion.z + motion.z);
         }
 
         /// <summary>
@@ -280,20 +519,26 @@ namespace MvkServer.Entity
         /// </summary>
         protected virtual float GetRotationYaw() => RotationYaw;
 
+        protected void UpPositionMotion()
+        {
+            motionDebug = Motion;
+            SetPosition(Position + Motion);
+        }
+
         /// <summary>
         /// Проверка перемещения со столкновением
         /// </summary>
-        protected void MoveCheckCollision(vec3 motion)
+        protected void MoveEntity(vec3 motion)
         {
             // Без проверки столкновения
             if (NoClip)
             {
-                SetMotion(motion);
-                return;
+                Motion = motion;
+                UpPositionMotion();
             }
 
             AxisAlignedBB boundingBox = BoundingBox.Clone();
-            AxisAlignedBB aabbEntity = BoundingBox.Clone();
+            AxisAlignedBB aabbEntity = boundingBox.Clone();
             List<AxisAlignedBB> aabbs;
 
             float x0 = motion.x;
@@ -307,6 +552,7 @@ namespace MvkServer.Entity
             // Защита от падения с края блока если сидишь и являешься игроком
             if (OnGround && IsSneaking && this is EntityPlayer)
             {
+                // TODO::2022-02-01 замечена бага, иногда падаешь! По Х на 50000
                 // Шаг проверки смещения
                 float step = 0.05f;
                 for (; x != 0f && World.Collision.GetCollidingBoundingBoxes(boundingBox.Offset(new vec3(x, -1, 0))).Count == 0; x0 = x)
@@ -424,7 +670,8 @@ namespace MvkServer.Entity
                 else
                 {
                     // Авто прыжок
-                    y += stepHeight;
+                    SetPosition(Position + new vec3(0, y + stepHeight, 0));
+                    y = 0;
                 }
             }
 
@@ -450,8 +697,8 @@ namespace MvkServer.Entity
                 }
             }
 
-            // Обновить значения перемещения для следующего такта
-            SetMotion(new vec3(x, y, z));
+            Motion = new vec3(x0 != x ? 0 : x, y, z0 != z ? 0 : z);
+            UpPositionMotion();
         }
 
         /// <summary>
@@ -463,6 +710,21 @@ namespace MvkServer.Entity
             if (timeIndex == 1.0f) limbSwingAmountPrev = limbSwingAmount;
             if (limbSwingAmount.Equals(limbSwingAmountPrev)) return limbSwingAmount;
             return limbSwingAmountPrev + (limbSwingAmount - limbSwingAmountPrev) * timeIndex;
+        }
+
+        /// <summary>
+        /// Получить анимацию руки для кадра
+        /// </summary>
+        /// <param name="timeIndex">коэфициент между тактами</param>
+        public virtual float GetSwingProgressFrame(float timeIndex)
+        {
+            if (isSwingInProgress)
+            {
+                if (timeIndex == 1.0f) swingProgressPrev = swingProgress;
+                if (swingProgress.Equals(swingProgressPrev)) return swingProgress;
+                return swingProgressPrev + (swingProgress - swingProgressPrev) * timeIndex;
+            }
+            return 0;
         }
 
         /// <summary>
@@ -483,10 +745,60 @@ namespace MvkServer.Entity
             }
         }
 
+        /// <summary>
+        /// Скакой скоростью анимируется удар рукой, в тактах, менять можно от инструмента, чар и навыков
+        /// </summary>
+        private int GetArmSwingAnimationEnd() => 6; 
+
+        /// <summary>
+        /// Размахивает предметом, который держит игрок
+        /// </summary>
+        public void SwingItem()
+        {
+            if (!isSwingInProgress || swingProgressInt >= GetArmSwingAnimationEnd() / 2 || swingProgressInt < 0)
+            {
+                swingProgressInt = -1;
+                isSwingInProgress = true;
+
+                //if (this.worldObj instanceof WorldServer)
+                //{
+                //    ((WorldServer)this.worldObj).getEntityTracker().sendToAllTrackingEntity(this, new S0BPacketAnimation(this, 0));
+                //}
+            }
+        }
+
+        /// <summary>
+        /// Обновляет счетчики прогресса взмаха руки и прогресс анимации. 
+        /// </summary>
+        protected void UpdateArmSwingProgress()
+        {
+            int asa = GetArmSwingAnimationEnd();
+
+            if (isSwingInProgress)
+            {
+                swingProgressInt++;
+                if (swingProgressInt >= asa)
+                {
+                    swingProgressInt = 0;
+                    isSwingInProgress = false;
+                }
+            }
+            else
+            {
+                swingProgressInt = 0;
+            }
+
+            swingProgress = (float)swingProgressInt / (float)asa;
+        }
+
         public override string ToString()
         {
-            return string.Format("XYZ {7} ch:{12}\r\n{0}\r\nyaw:{8:0.00} H:{9:0.00} pitch:{10:0.00} \r\n{1}{2}{6}{4} boom:{5:0.00}\r\nMotion:{3}\r\n{11}",
-                strHVJ, // 0
+            vec3 m = motionDebug;
+            m.y = 0;
+            vec3 my = new vec3(0, motionDebug.y, 0);
+
+            return string.Format("XYZ {7} ch:{12}\r\n{0:0.000} | {13:0.000} м/c\r\nyaw:{8:0.00} H:{9:0.00} pitch:{10:0.00} \r\n{1}{2}{6}{4} boom:{5:0.00}\r\nMotion:{3}\r\n{11}",
+                glm.distance(m) * 10f, // 0
                 OnGround ? "__" : "", // 1
                 IsSprinting ? "[Sp]" : "", // 2
                 Motion, // 3
@@ -498,7 +810,8 @@ namespace MvkServer.Entity
                 0,//glm.degrees(RotationYawHead), // 9
                 glm.degrees(RotationPitch), // 10
                 IsCollidedHorizontally, // 11
-                GetChunkPos()
+                GetChunkPos(), // 12
+                glm.distance(my) * 10f
                 );
         }
     }

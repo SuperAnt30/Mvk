@@ -228,12 +228,12 @@ namespace MvkServer.Entity
         /// <summary>
         /// Скорость для режима полёта
         /// </summary>
-        protected virtual void SpeedFly() => Speed = new EntitySpeed(1.1f, .43f, .75f, 5.0f);
+        protected virtual void SpeedFly() => Speed = new EntitySpeed(.2f, .2f, .3f, 2.0f);
 
         /// <summary>
         /// Скорость для режима выживания
         /// </summary>
-        protected virtual void SpeedSurvival() => Speed = new EntitySpeed(.43f);
+        protected virtual void SpeedSurvival() => Speed = new EntitySpeed(.2f);//3837f);
 
         /// <summary>
         /// Положение стоя

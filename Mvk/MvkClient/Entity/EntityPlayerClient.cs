@@ -3,6 +3,7 @@ using MvkClient.World;
 using MvkServer.Entity.Player;
 using MvkServer.Glm;
 using MvkServer.Network.Packets;
+using MvkServer.Util;
 
 namespace MvkClient.Entity
 {
@@ -19,6 +20,10 @@ namespace MvkClient.Entity
         /// Скрыта ли сущность на экране
         /// </summary>
         public bool IsHidden { get; protected set; } = true;
+        /// <summary>
+        /// Проходит ли луч глаз основного игрок к этой сущности
+        /// </summary>
+        public bool IsRayEye { get; protected set; } = false;
         /// <summary>
         /// Объект времени c последнего тпс
         /// </summary>
@@ -66,6 +71,9 @@ namespace MvkClient.Entity
             OnGround = onGround;
             PositionPrev = Position;
             SetPosition(pos);
+
+            // Проверка толчка
+            CheckPush();
         }
 
         /// <summary>
@@ -81,6 +89,22 @@ namespace MvkClient.Entity
             //SetRotation(yawHead, pitch);
             //RotationYaw = yaw;
             //RotationPitch = pitch;
+        }
+
+        /// <summary>
+        /// Проверка толчка этой сущности основного игрока
+        /// </summary>
+        protected void CheckPush()
+        {
+            vec3 posPrev = PositionPrev;
+            vec3 pos = Position;
+            AxisAlignedBB aabb = ClientWorld.Player.BoundingBox.Clone();
+            // Толчёк происходит в момент когда прошлое положение было без колизи, а уже новое с колизией
+            if (!aabb.IntersectsWith(GetBoundingBox(posPrev)) && aabb.IntersectsWith(GetBoundingBox(pos)))
+            {
+                // Толчёк сущности entity по вектору
+                ClientWorld.Player.MotionPush += pos - posPrev;
+            }
         }
 
         public override string ToString()

@@ -123,10 +123,18 @@ namespace MvkServer.Management
         {
             foreach(EntityPlayerServer player in players.Values)
             {
-                if (player.SocketClient == socket)
-                {
-                    return player;
-                }
+                if (player.SocketClient == socket) return player;
+            }
+            return null;
+        }
+        /// <summary>
+        /// По id найти игрока
+        /// </summary>
+        public EntityPlayerServer GetPlayer(ushort id)
+        {
+            foreach (EntityPlayerServer player in players.Values)
+            {
+                if (player.Id == id) return player;
             }
             return null;
         }

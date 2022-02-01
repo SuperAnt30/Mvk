@@ -77,7 +77,7 @@ namespace MvkServer.World
         /// <param name="pos">позиция</param>
         public bool IsCollisionBody(EntityBase entity, vec3 pos)
         {
-            AxisAlignedBB aabb = entity.GetBoundingBox(pos);
+            AxisAlignedBB aabb = entity.GetBoundingBox(pos).Expand(new vec3(-0.01f));
             vec3i min = aabb.MinInt();
             vec3i max = aabb.MaxInt();
 

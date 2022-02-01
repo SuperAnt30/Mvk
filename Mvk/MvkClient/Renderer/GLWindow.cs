@@ -1,4 +1,5 @@
-﻿using MvkClient.Gui;
+﻿using MvkClient.Entity;
+using MvkClient.Gui;
 using MvkClient.Renderer.Shaders;
 using MvkClient.Util;
 using MvkClient.World;
@@ -78,9 +79,17 @@ namespace MvkClient.Renderer
         {
             DrawBegin();
             // тут мир
-            if (client.World != null) client.World.WorldRender.Draw();
+            if (client.World != null)
+            {
+                client.World.WorldRender.Draw();
+                if (client.Screen.IsEmptyScreen() && client.World.Player.ViewCamera == EnumViewCamera.Eye)
+                {
+                    client.World.WorldRender.DrawPricel();
+                }
+            }
             // тут gui
             client.Screen.DrawScreen();
+
             DrawEnd();
         }
 

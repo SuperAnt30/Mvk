@@ -39,6 +39,7 @@ namespace MvkClient.Network
                         case 0x15: Packet15((PacketS15Disconnect)packet); break;
                         case 0x20: Packet20((PacketB20Player)packet); break;
                         case 0x21: Packet21((PacketS21ChunckData)packet); break;
+                        //case 0x23: Packet23((PacketS23EntityUse)packet); break;
                         case 0xFF:
                             PacketTFFTest p1 = (PacketTFFTest)packet;
                             Debug.DStr = p1.Name;
@@ -125,5 +126,19 @@ namespace MvkClient.Network
 
         protected void Packet21(PacketS21ChunckData packet) 
             => ClientMain.World.ChunkPrClient.PacketChunckData(packet);
+
+        /// <summary>
+        /// Взаимодействие с сущностью
+        /// </summary>
+        //protected void Packet23(PacketS23EntityUse packet)
+        //{
+        //    if (packet.GetAction() == PacketC22EntityUse.EnumAction.Push)
+        //    {
+        //        vec3 vec = packet.GetPos();
+        //        vec.y = 0;
+        //        vec = vec.normalize() * .25f;
+        //        ClientMain.World.Player.MotionPush = vec;
+        //    }
+        //}
     }
 }

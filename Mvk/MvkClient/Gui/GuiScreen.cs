@@ -66,9 +66,14 @@ namespace MvkClient.Gui
         /// <summary>
         /// Нажатие клавиши мышки
         /// </summary>
-        public void MouseDown(MouseButton button, int x, int y)
+        public bool MouseDown(MouseButton button, int x, int y)
         {
-            if (screen != null) screen.MouseDown(button, x, y);
+            if (screen != null)
+            {
+                screen.MouseDown(button, x, y);
+                return true;
+            }
+            return false;
         }
 
         /// <summary>

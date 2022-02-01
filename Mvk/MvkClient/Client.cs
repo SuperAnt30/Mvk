@@ -199,8 +199,12 @@ namespace MvkClient
         {
             //locServer.TrancivePacket(new PacketTFFTest(key.ToString()));
             Debug.DInt = key;
-            
-            if (World != null && IsGamePlayAction()) World.Key.Down(key);
+
+            if (World != null && IsGamePlayAction())
+            {
+                if (key == 9) MouseGamePlay(false); // Tab
+                else if (isMouseGamePlay) World.Key.Down(key);
+            }
             else if (key == 114) Debug.IsDraw = !Debug.IsDraw; // F3
         }
         
@@ -218,7 +222,7 @@ namespace MvkClient
         /// <param name="key">индекс клавиши</param>
         public void KeyUp(int key)
         {
-            if (World != null) World.Key.Up(key);
+            if (World != null && isMouseGamePlay) World.Key.Up(key);
         }
 
         /// <summary>
@@ -231,12 +235,10 @@ namespace MvkClient
             {
                 isMouseGamePlay = action;
                 if (isMouseGamePlay) firstMouse = true;
-                else World.Player.InputNone();
                 CursorShow(!action);
             }
+            if (World != null && !action) World.Player.InputNone();
         }
-
-        public void MouseGamePlay() => MouseGamePlay(!isMouseGamePlay);
 
         /// <summary>
         /// Нажатие клавиши мышки
@@ -246,7 +248,13 @@ namespace MvkClient
             // Если надо, то включаем режим управления 3д
             MouseGamePlay(true);
             // Действия клика мышки передаём в GUI скрина
-            Screen.MouseDown(button, x, y);
+            if (!Screen.MouseDown(button, x, y))
+            {
+                if (World != null && IsGamePlayAction())
+                {
+                    World.MouseDown(button);
+                }
+            }
         }
 
         /// <summary>

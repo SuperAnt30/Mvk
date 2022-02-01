@@ -1,6 +1,7 @@
 ﻿using MvkServer.Entity.Player;
 using MvkServer.Glm;
 using MvkServer.Network.Packets;
+using System.Collections;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
@@ -27,7 +28,7 @@ namespace MvkServer.Network
                     case 0x11: Packet11(socket, (PacketC11LoginStart)packet); break;
                     case 0x13: Packet13(socket, (PacketC13ClientSetting)packet); break;
                     case 0x20: Packet20(socket, (PacketB20Player)packet); break;
-                   // case 0x22: Packet22(socket, (PacketC22Input)packet); break;
+                    //case 0x22: Packet22(socket, (PacketC22EntityUse)packet); break;
                     case 0xFF:
                         ServerMain.ResponsePacket(socket, new PacketTFFTest("Получил тест: " + ((PacketTFFTest)packet).Name));
                         break;
@@ -76,15 +77,18 @@ namespace MvkServer.Network
         }
 
         /// <summary>
-        /// Нажатие клавиш игрока
+        /// Взаимодействие с сущностью
         /// </summary>
-        //protected void Packet22(Socket socket, PacketC22Input packet)
+        //protected void Packet22(Socket socket, PacketC22EntityUse packet)
         //{
-        //    //EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
-        //    //if (entityPlayer != null)
-        //    //{
-        //    //    entityPlayer.Mov.Key(packet.GetKey());
-        //    //}
+        //    EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
+        //    EntityPlayerServer entity = ServerMain.World.Players.GetPlayer(packet.GetId());
+            
+        //    if (entityPlayer != null && entity != null)
+        //    {
+        //        ServerMain.ResponsePacket(entity.SocketClient, packet.GetAction() == PacketC22EntityUse.EnumAction.Push
+        //            ? new PacketS23EntityUse(packet.GetPos()) : new PacketS23EntityUse(packet.GetAction()));
+        //    }
         //}
     }
 }
