@@ -332,7 +332,8 @@ namespace MvkClient
                     break;
                 case ObjectKey.Error: Screen.ScreenError(e.Tag.ToString()); break;// Ошибка
                 case ObjectKey.RenderDebug: Debug.RenderDebug(); break;
-                case ObjectKey.GameBegin: CursorShow(false); break;
+                case ObjectKey.GameMode: CursorShow(false); break;
+                case ObjectKey.GameOver: Screen.GameOver(e.Tag.ToString()); break;
             }
         }
 
@@ -344,7 +345,7 @@ namespace MvkClient
         {
             Screen.ScreenProcess(Language.T("gui.process"));
             locServer.StartServerNet(ip);
-            World = new WorldClient(this);
+            BeginWorld();
         }
         /// <summary>
         /// Загрузить мир
@@ -353,11 +354,23 @@ namespace MvkClient
         public void LoadWorld(int slot)
         {
             locServer.StartServer(slot);
-            World = new WorldClient(this);
+            BeginWorld();
 
             //TODO:: надо отсюда начать запускать сервер, который создаст мир, и продублирует на клиенте мир.
             // Продумать tps только на стороне сервера, но должна быть сенхронизация с клиентом
             // Синхронизация времени раз в секунду
+        }
+
+        protected void BeginWorld()
+        {
+            World = new WorldClient(this);
+            //World.GuiGameOver += World_GuiGameOver;
+        }
+
+        private void World_GuiGameOver(object sender, EventArgs e)
+        {
+           // Screen.GameOver();
+            //throw new NotImplementedException();
         }
 
         private void Server_ObjectKeyTick(object sender, ObjectKeyEventArgs e)
@@ -403,9 +416,29 @@ namespace MvkClient
         public void GameModeBegin()
         {
             tickerTps.Start();
-            Screen.GameMode();
-            OnThreadSend(new ObjectKeyEventArgs(ObjectKey.GameBegin));
+            GameMode();
         }
+
+        /// <summary>
+        /// Убрать Gui, переход в режим игры
+        /// </summary>
+        public void GameMode()
+        {
+            Screen.GameMode();
+            OnThreadSend(new ObjectKeyEventArgs(ObjectKey.GameMode));
+        }
+
+        /// <summary>
+        /// Задать GUI
+        /// </summary>
+        /// <param name="key">Вариант</param>
+        public void SetScreen(ObjectKey key) => OnThreadSend(new ObjectKeyEventArgs(key));
+        /// <summary>
+        /// Задать GUI
+        /// </summary>
+        /// <param name="key">Вариант</param>
+        /// <param name="obj">Дополнительный объект</param>
+        public void SetScreen(ObjectKey key, object obj) => OnThreadSend(new ObjectKeyEventArgs(key, obj));
 
         /// <summary>
         /// Задать время с сервера

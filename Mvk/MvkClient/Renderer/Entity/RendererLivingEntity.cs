@@ -3,7 +3,9 @@ using MvkClient.Entity;
 using MvkClient.Renderer.Font;
 using MvkClient.Renderer.Model;
 using MvkServer.Entity;
+using MvkServer.Entity.Player;
 using MvkServer.Glm;
+using MvkServer.Util;
 
 namespace MvkClient.Renderer.Entity
 {
@@ -27,6 +29,8 @@ namespace MvkClient.Renderer.Entity
         public void DoRender(EntityLiving entity, vec3 offset, float timeIndex)
         {
             vec3 pos = entity.GetPositionFrame(timeIndex);
+            float yawBody = entity.GetRotationYawBodyFrame(timeIndex);
+            float yawHead = entity.GetRotationYawFrame(timeIndex);
             model.SetSwingProgress(entity.GetSwingProgressFrame(timeIndex));
 
             GLRender.PushMatrix();
@@ -39,17 +43,17 @@ namespace MvkClient.Renderer.Entity
                 GLRender.Translate(pos.x - offset.x, pos.y - offset.y, pos.z - offset.z);
                 GLRender.PushMatrix();
                 {
+                    RotateCorpse(entity, timeIndex);
                     GLRender.Scale(scale, scale, scale);
-                    GLRender.Translate(0, 1.500f, 0);
-                    GLRender.Rotate(180f, 0, 0, 1);
-                    float yaw = entity.GetRotationYawBodyFrame(timeIndex);
-                    GLRender.Rotate(glm.degrees(yaw), 0, 1, 0);
-                    yaw -= entity.GetRotationYawFrame(timeIndex);
+                    GLRender.Translate(0, -1.508f, 0);
+                   
+                    GLRender.Rotate(glm.degrees(yawBody), 0, 1, 0);
+                    yawBody -= yawHead;
 
                     float ageInTicks = renderManager.World.ClientMain.TickCounter + timeIndex;
 
                     RenderModel(entity, entity.LimbSwing, entity.GetLimbSwingAmountFrame(timeIndex), ageInTicks,
-                        -yaw, entity.GetRotationPitchFrame(timeIndex), .0625f);
+                        -yawBody, entity.GetRotationPitchFrame(timeIndex), .0625f);
                 }
                 GLRender.PopMatrix();
                 RenderLivingLabel(entity);
@@ -90,14 +94,14 @@ namespace MvkClient.Renderer.Entity
                 float scale = 0.0167f * size;
                 FontSize font = FontSize.Font8;
                 int ws = FontRenderer.WidthString(entity.Name, font) / 2;
-
+                
                 GLRender.PushMatrix();
                 {
                     GLRender.DepthDisable();
                     GLRender.Translate(0, entity.Height + .5f, 0);
                     GLRender.Rotate(glm.degrees(-renderManager.CameraRotationYaw), 0, 1, 0);
                     GLRender.Rotate(glm.degrees(renderManager.CameraRotationPitch), 1, 0, 0);
-                    GLRender.Scale(scale, -scale, scale);
+                    GLRender.Scale(renderManager.World.Player.ViewCamera == EnumViewCamera.Front ? -scale : scale, -scale, scale);
                     GLRender.Texture2DDisable();
                     GLRender.Rectangle(-ws - 1, -1, ws + 1, 8, new vec4(0, 0, 0, .25f));
                     GLRender.Texture2DEnable();
@@ -107,6 +111,26 @@ namespace MvkClient.Renderer.Entity
                     GLRender.DepthEnable();
                 }
                 GLRender.PopMatrix();
+            }
+        }
+
+
+        /// <summary>
+        /// Разворот вертикальный, сущности
+        /// тут же анимация падения при смерти
+        /// </summary>
+        /// <param name="entity">Объект сущности</param>
+        /// <param name="timeIndex">Получить коэффициент времени от прошлого TPS клиента в диапазоне 0 .. 1</param>
+        protected void RotateCorpse(EntityLiving entity, float timeIndex)
+        {
+            GLRender.Rotate(180f, 0, 0, 1);
+
+            if (entity.DeathTime > 0)
+            {
+                // Если сущность умирает, анимация падения на бок
+                float angle = Mth.Sqrt((entity.DeathTime + timeIndex - 1f) / 20f * 1.6f);
+                if (angle > 1.0f) angle = 1.0f;
+                GLRender.Rotate(angle * 90f, 0, 0, 1);
             }
         }
 

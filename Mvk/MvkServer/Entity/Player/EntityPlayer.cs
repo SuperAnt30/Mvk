@@ -13,10 +13,6 @@ namespace MvkServer.Entity.Player
         /// </summary>
         public string UUID { get; protected set; }
         /// <summary>
-        /// Порядковый номер игрока на сервере, с момента запуска сервера
-        /// </summary>
-        public ushort Id { get; protected set; }
-        /// <summary>
         /// Обзор чанков
         /// </summary>
         public int OverviewChunk { get; protected set; } = MvkGlobal.OVERVIEW_CHUNK_START;

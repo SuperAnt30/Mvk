@@ -24,6 +24,8 @@ namespace MvkServer.Network
                 case 0x13: return new PacketC13ClientSetting();
                 case 0x14: return new PacketS14TimeUpdate();
                 case 0x15: return new PacketS15Disconnect();
+                case 0x16: return new PacketC16ClientStatus();
+                case 0x17: return new PacketS17Health();
                 case 0x20: return new PacketB20Player();
                 case 0x21: return new PacketS21ChunckData();
                 //case 0x22: return new PacketC22EntityUse();

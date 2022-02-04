@@ -50,8 +50,12 @@
         /// </summary>
         RenderDebug,
         /// <summary>
-        /// Начало игры
+        /// Режим игры, скрыт курсор
         /// </summary>
-        GameBegin
+        GameMode,
+        /// <summary>
+        /// Режим GUI, конец игры
+        /// </summary>
+        GameOver
     }
 }

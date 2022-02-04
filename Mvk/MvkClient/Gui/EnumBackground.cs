@@ -20,6 +20,10 @@
         /// <summary>
         /// Фон в игре, инвентарь и прочее
         /// </summary>
-        Game
+        Game,
+        /// <summary>
+        /// Фон в игре, при смерте
+        /// </summary>
+        GameOver
     }
 }

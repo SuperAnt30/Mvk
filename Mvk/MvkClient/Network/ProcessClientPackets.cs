@@ -37,6 +37,7 @@ namespace MvkClient.Network
                         case 0x12: Packet12((PacketS12Success)packet); break;
                         case 0x14: Packet14((PacketS14TimeUpdate)packet); break;
                         case 0x15: Packet15((PacketS15Disconnect)packet); break;
+                        case 0x17: Packet17((PacketS17Health)packet); break;
                         case 0x20: Packet20((PacketB20Player)packet); break;
                         case 0x21: Packet21((PacketS21ChunckData)packet); break;
                         //case 0x23: Packet23((PacketS23EntityUse)packet); break;
@@ -103,13 +104,18 @@ namespace MvkClient.Network
             ClientMain.World.RemovePlayerMP(packet.GetId());
         }
 
+        protected void Packet17(PacketS17Health packet)
+        {
+            ClientMain.World.Player.SetHealth(packet.GetHealth());
+        }
+
         /// <summary>
         /// Пакет положения игрока
         /// </summary>
         protected void Packet20(PacketB20Player packet)
         {
             byte type = packet.Type();
-            if (type == 2 || type == 3)
+            if (type > 9)
             {
                 ushort id = packet.GetId();
                 if (id != 0 && ClientMain.World.Player.Id != id)
@@ -117,10 +123,18 @@ namespace MvkClient.Network
                     EntityPlayerMP entity = ClientMain.World.GetPlayerMP(id);
                     if (entity != null)
                     {
-                        if (type == 2) entity.SetPositionServer(packet.GetPos(), packet.IsSneaking(), packet.OnGround());
-                        else entity.SetRotationServer(packet.GetYawHead(), packet.GetYawBody(), packet.GetPitch());
+                        if (type == 10) entity.SetPositionServer(packet.GetPos(), packet.IsSneaking(), packet.OnGround());
+                        else if (type == 11) entity.SetRotationServer(packet.GetYawHead(), packet.GetYawBody(), packet.GetPitch());
+                        else if (type == 12)
+                        {
+                            entity.SwingItem(); // анимация руки игрока
+                        }
                     }
                 }
+            } else if (type == 3)
+            {
+                ClientMain.World.Player.SetPosition(packet.GetPos());
+                ClientMain.World.Player.RespawnClient();
             }
         }
 

@@ -135,11 +135,13 @@ namespace MvkClient.Entity
             Fov.Update();
             // Расчёт амплитуды конечностей, при движении
             UpLimbSwing();
-            // Тут временно, просчёт взмаха руки
+            // Просчёт взмаха руки
             UpdateArmSwingProgress();
 
             // Скрыть прорисовку себя если вид с глаз
             IsHidden = ViewCamera == EnumViewCamera.Eye;
+
+            
         }
 
         /// <summary>
@@ -371,6 +373,28 @@ namespace MvkClient.Entity
         public void Action()
         {
             SwingItem();
+            //Health = 0;
+            ClientWorld.ClientMain.TrancivePacket(new PacketB20Player().Animation());
+        }
+
+        /// <summary>
+        /// Респавн после смерти
+        /// </summary>
+        public void Respawn()
+        {
+            ClientWorld.ClientMain.TrancivePacket(new PacketC16ClientStatus(PacketC16ClientStatus.EnumState.Respawn));
+            //Health = 20;
+            //DeathTime = 0;
+            //IsDead = false;
+            //RespawnClient();
+        }
+
+        public void RespawnClient()
+        {
+            Health = 20;
+            DeathTime = 0;
+            IsDead = false;
+            ClientWorld.ClientMain.GameMode();
         }
 
         #region Frame

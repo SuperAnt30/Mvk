@@ -10,6 +10,11 @@ namespace MvkClient.Gui
 {
     public class Label : Control
     {
+        /// <summary>
+        /// Масшатб
+        /// </summary>
+        public float Scale { get; set; } = 1f;
+
         public Label(string text, FontSize size) : base(text) => this.size = size;
 
         /// <summary>
@@ -25,14 +30,24 @@ namespace MvkClient.Gui
             GLWindow.Texture.BindTexture(Assets.ConvertFontToTexture(size));
             vec4 color = Enabled ? new vec4(1f) : new vec4(.6f, .6f, .6f, 1f);
 
-            string[] stringSeparators = new string[] { "\r\n" };
-            string[] strs = Text.Split(stringSeparators, StringSplitOptions.None);
-            int h = 0;
-            foreach (string str in strs)
+            GLRender.PushMatrix();
             {
-                FontRenderer.RenderString(Position.x + GetXAlight(str, 0), Position.y + 14 + h, color, str, size);
-                h += FontAdvance.VertAdvance[(int)size] + 4;
+                int w2 = Width / 2;
+                int h2 = Height / 2;
+                GLRender.Translate(Position.x + w2, Position.y + h2, 0);
+                GLRender.Scale(Scale);
+                GLRender.Translate(-w2, -h2, 0);
+
+                string[] stringSeparators = new string[] { "\r\n" };
+                string[] strs = Text.Split(stringSeparators, StringSplitOptions.None);
+                int h = 0;
+                foreach (string str in strs)
+                {
+                    FontRenderer.RenderString(GetXAlight(str, 0), 14 + h, color, str, size);
+                    h += FontAdvance.VertAdvance[(int)size] + 4;
+                }
             }
+            GLRender.PopMatrix();
         }
 
         /// <summary>

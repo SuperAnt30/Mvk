@@ -22,6 +22,8 @@ namespace MvkClient.Entity
         {
             // Расчёт амплитуды конечностей, при движении
             UpLimbSwing();
+            // Просчёт взмаха руки
+            UpdateArmSwingProgress();
 
             // Видна ли сущность, прорисовывать ли её на экране
             IsHidden = !ClientWorld.Player.FrustumCulling.IsBoxInFrustum(

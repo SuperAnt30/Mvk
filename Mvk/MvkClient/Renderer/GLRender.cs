@@ -129,8 +129,11 @@ namespace MvkClient.Renderer
         public static void Color(float rgb) => gl.Color(rgb, rgb, rgb);
 
         public static void Scale(float x, float y, float z) => gl.Scale(x, y, z);
+        public static void Scale(float scale) => gl.Scale(scale, scale, scale);
+
         public static void Translate(float x, float y, float z) => gl.Translate(x, y, z);
         public static void Translate(vec3 pos) => gl.Translate(pos.x, pos.y, pos.z);
+
         public static void Rotate(float angle, float x, float y, float z) => gl.Rotate(angle, x, y, z);
 
         public static void Texture2DEnable() => gl.Enable(OpenGL.GL_TEXTURE_2D);

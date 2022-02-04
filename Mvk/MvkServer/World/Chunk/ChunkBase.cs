@@ -65,6 +65,14 @@ namespace MvkServer.World.Chunk
             StorageArraysClear();
             //TODO:: Тест генерации
 
+            Random random = new Random();
+
+            if (random.Next(20) == 1)
+            {
+                IsChunkLoaded = true;
+                return;
+            }
+
             for (int y0 = 0; y0 < 24; y0++)
             {
                 int sy = y0 >> 4;

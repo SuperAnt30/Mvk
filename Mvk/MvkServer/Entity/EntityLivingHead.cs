@@ -79,43 +79,44 @@ namespace MvkServer.Entity
         /// <summary>
         /// Поворот тела от движения и поворота головы 
         /// </summary>
-        protected override void HeadTurn(vec3 motion)
+        protected override void HeadTurn()
         {
-            float yawOffset;
-            // Определяем двигается ли сущность
-            bool bf = Input.HasFlag(EnumInput.Forward);
-            bool bb = Input.HasFlag(EnumInput.Back);
-            bool bl = Input.HasFlag(EnumInput.Left);
-            bool br = Input.HasFlag(EnumInput.Right);
-            //bool movingForward = Mov.Forward || Mov.Back || Mov.Left || Mov.Right;
+            float yawOffset = RotationYaw;
 
-            if (bf || bb || bl || br)
+            if (swingProgress > 0)
             {
-                // Определяем угол направления в зависимости куда движемся
-                yawOffset = glm.atan2(motion.z, motion.x);
-                if (bf) yawOffset += glm.pi90;
-                else if (bb) yawOffset -= glm.pi90;
-                else if (bl) yawOffset += glm.pi135;
-                else if (br) yawOffset += glm.pi45;
-
-                // Плавность поворота тела когда перемещаемся, до 15 градусов за такт
-                RotationYaw = UpdateRotation(RotationYaw, yawOffset, .26f) % glm.pi360;
+                // Анимация движении руки
+                yawOffset = RotationYawHead;
             }
             else
             {
-                // Если не движется берём угол головы
-                yawOffset = RotationYawHead;
+                float xDis = Position.x - PositionPrev.x;
+                float zDis = Position.z - PositionPrev.z;
+                float movDis = xDis * xDis + zDis * zDis;
+                if (movDis > 0.0025f)
+                {
+                    // Движение, высчитываем угол направления
+                    yawOffset = glm.atan2(zDis, xDis) + glm.pi90;
+                    // Реверс для бега назад
+                    float yawRev = glm.wrapAngleToPi(yawOffset - RotationYaw);
+                    if (yawRev < -1.8f || yawRev > 1.8f) yawOffset += glm.pi;
+                }
+            } 
+            
+            float yaw2 = glm.wrapAngleToPi(yawOffset - RotationYaw);
+            RotationYaw += yaw2 * .3f;
+            float yaw3 = glm.wrapAngleToPi(RotationYawHead - RotationYaw);
 
-                // Если не перемещаемся находим дельту поворота между телом и головой
-                float delta = RotationYawHead - RotationYaw;
-                while (delta < -glm.pi) delta += glm.pi360;
-                while (delta >= glm.pi) delta -= glm.pi360;
+            float angleR = glm.pi45;
+            if (yaw3 < -angleR) yaw3 = -angleR;
+            if (yaw3 > angleR) yaw3 = angleR;
 
-                // Смещаем тело если дельта выше 60 градусов
-                float angleR = 1.05f; // 60гр
-                if (delta > angleR) RotationYaw = (RotationYaw + delta - angleR) % glm.pi360;
-                else if (delta < -angleR) RotationYaw = (RotationYaw + delta + angleR) % glm.pi360;
-            }
+            RotationYaw = RotationYawHead - yaw3;
+
+            // Смещаем тело если дельта выше 60 градусов
+            if (yaw3 * yaw3 > 1.1025f) RotationYaw += yaw3 * .2f;
+
+            RotationYaw = glm.wrapAngleToPi(RotationYaw);
         }
 
         /// <summary>
@@ -133,6 +134,31 @@ namespace MvkServer.Entity
             if (offset < -increment) offset = -increment;
 
             return angle + offset;
+        }
+
+
+        public override string ToString()
+        {
+            vec3 m = motionDebug;
+            m.y = 0;
+            vec3 my = new vec3(0, motionDebug.y, 0);
+
+            return string.Format("XYZ {7} ch:{12}\r\n{0:0.000} | {13:0.000} м/c\r\nyaw:{8:0.00} H:{9:0.00} pitch:{10:0.00} \r\n{1}{2}{6}{4} boom:{5:0.00}\r\nMotion:{3}\r\n{11}",
+                glm.distance(m) * 10f, // 0
+                OnGround ? "__" : "", // 1
+                IsSprinting ? "[Sp]" : "", // 2
+                Motion, // 3
+                IsJumping ? "[J]" : "", // 4
+                fallDistanceResult, // 5
+                IsSneaking ? "[Sn]" : "", // 6
+                Position, // 7
+                glm.degrees(RotationYaw), // 8
+                glm.degrees(RotationYawHead), // 9
+                glm.degrees(RotationPitch), // 10
+                IsCollidedHorizontally, // 11
+                GetChunkPos(), // 12
+                glm.distance(my) * 10f
+                );
         }
     }
 }

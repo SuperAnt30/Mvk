@@ -73,10 +73,10 @@ namespace MvkServer.Management
             {
                 lastPlayerId++;
                 // TODO::Тут проверяем место положение персонажа, и заносим при запуске
-                Random random = new Random();
+                
                 entityPlayer.SetId(lastPlayerId);
                 entityPlayer.SetRotation(-0.9f, -.8f);
-                entityPlayer.SetPosition(new vec3(random.Next(-16, 16) + 50000, 30, random.Next(-16, 16)));
+                SpawnPositionTest(entityPlayer);
                 entityPlayer.SetChunkPosManaged(entityPlayer.GetChunkPos());
                 AddMountedMovingPlayer(entityPlayer);
                 players.Add(entityPlayer.UUID, entityPlayer);
@@ -84,6 +84,12 @@ namespace MvkServer.Management
                 return true;
             }
             return false;
+        }
+
+        protected void SpawnPositionTest(EntityPlayerServer entityPlayer)
+        {
+            Random random = new Random();
+            entityPlayer.SetPosition(new vec3(random.Next(-16, 16) + 50000, 30, random.Next(-16, 16)));
         }
         /// <summary>
         /// Удалить игрока
@@ -244,6 +250,24 @@ namespace MvkServer.Management
                 player.SetOverviewChunk(packet.GetOverviewChunk(), 1);
                 AddMountedMovingPlayer(player);
                 FilterChunkLoadQueue(player);
+            }
+        }
+
+        /// <summary>
+        /// Пакет статуса клиента
+        /// </summary>
+        public void ClientStatus(Socket socket, PacketC16ClientStatus.EnumState state)
+        {
+            EntityPlayerServer player = GetPlayer(socket);
+            if (player != null)
+            {
+                if (state == PacketC16ClientStatus.EnumState.Respawn)
+                {
+                    // Респавн игрока
+                    SpawnPositionTest(player);
+                    player.SetHealth(20);
+                    ResponsePacket(player, new PacketB20Player().Respawn(player.Position, player.RotationYawHead, player.RotationPitch));
+                }
             }
         }
 

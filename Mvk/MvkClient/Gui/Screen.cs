@@ -193,7 +193,10 @@ namespace MvkClient.Gui
             else
             {
                 gl.Disable(OpenGL.GL_TEXTURE_2D);
-                vec4 colBg = background == EnumBackground.Loading ? new vec4(1f, 1f, 1f, 1f) : new vec4(.3f, .3f, .3f, .5f);
+                vec4 colBg;
+                if (background == EnumBackground.GameOver) colBg = new vec4(.4f, .1f, .1f, .5f);
+                else if (background == EnumBackground.Loading) colBg = new vec4(1f, 1f, 1f, 1f);
+                else colBg = new vec4(.3f, .3f, .3f, .5f);
                 GLRender.Rectangle(0, 0, Width, Height, colBg);
             }
         }

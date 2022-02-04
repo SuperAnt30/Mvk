@@ -19,8 +19,11 @@ namespace MvkServer.Network.Packets
         /// тип запроса
         /// 0 - pos
         /// 1 - yaw, pitch
-        /// 2 - pos, name
-        /// 3 - yaw, pitch, name
+        /// 2 - анимашка
+        /// 3 - pos, yaw, pitch (респавн)
+        /// 10 - pos, id
+        /// 11 - yaw, pitch, id
+        /// 12 - анимашка id
         /// </summary>
         public byte Type() => type;
 
@@ -47,6 +50,25 @@ namespace MvkServer.Network.Packets
             return this;
         }
         /// <summary>
+        /// Отправляем анимацию
+        /// </summary>
+        public PacketB20Player Animation()
+        {
+            type = 2;
+            return this;
+        }
+        /// <summary>
+        /// Отправляем респавн с сервера клиенту
+        /// </summary>
+        public PacketB20Player Respawn(vec3 pos, float yaw, float pitch)
+        {
+            this.pos = pos;
+            yawHead = yaw;
+            this.pitch = pitch;
+            type = 3;
+            return this;
+        }
+        /// <summary>
         /// Отправляем координату позиции с сервера клиенту
         /// </summary>
         public PacketB20Player Position(vec3 pos, bool sneaking, bool onGround, ushort id)
@@ -55,7 +77,7 @@ namespace MvkServer.Network.Packets
             this.sneaking = sneaking;
             this.onGround = onGround;
             this.id = id;
-            type = 2;
+            type = 10;
             return this;
         }
         /// <summary>
@@ -67,7 +89,16 @@ namespace MvkServer.Network.Packets
             this.yawBody = yawBody;
             this.pitch = pitch;
             this.id = id;
-            type = 3;
+            type = 11;
+            return this;
+        }
+        /// <summary>
+        /// Отправляем анимацию серверу
+        /// </summary>
+        public PacketB20Player Animation(ushort id)
+        {
+            this.id = id;
+            type = 12;
             return this;
         }
         /// <summary>
@@ -84,16 +115,22 @@ namespace MvkServer.Network.Packets
         public void ReadPacket(StreamBase stream)
         {
             type = stream.ReadByte();
-            if (type > 1) id = stream.ReadUShort();
-            if (type == 0 || type == 2)
+            if (type > 9) id = stream.ReadUShort();
+            if (type == 0 || type == 10)
             {
                 pos = new vec3(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat());
                 sneaking = stream.ReadBool();
                 onGround = stream.ReadBool();
-            } else
+            } else if (type == 1 || type == 11)
             {
                 yawHead = stream.ReadFloat();
                 yawBody = stream.ReadFloat();
+                pitch = stream.ReadFloat();
+            }
+            else if (type == 3)
+            {
+                pos = new vec3(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat());
+                yawHead = stream.ReadFloat();
                 pitch = stream.ReadFloat();
             }
         }
@@ -101,8 +138,8 @@ namespace MvkServer.Network.Packets
         public void WritePacket(StreamBase stream)
         {
             stream.WriteByte(type);
-            if (type > 1) stream.WriteUShort(id);
-            if (type == 0 || type == 2)
+            if (type > 9) stream.WriteUShort(id);
+            if (type == 0 || type == 10)
             {
                 stream.WriteFloat(pos.x);
                 stream.WriteFloat(pos.y);
@@ -110,10 +147,18 @@ namespace MvkServer.Network.Packets
                 stream.WriteBool(sneaking);
                 stream.WriteBool(onGround);
             }
-            else
+            else if(type == 1 || type == 11)
             {
                 stream.WriteFloat(yawHead);
                 stream.WriteFloat(yawBody);
+                stream.WriteFloat(pitch);
+            }
+            else if (type == 3)
+            {
+                stream.WriteFloat(pos.x);
+                stream.WriteFloat(pos.y);
+                stream.WriteFloat(pos.z);
+                stream.WriteFloat(yawHead);
                 stream.WriteFloat(pitch);
             }
         }

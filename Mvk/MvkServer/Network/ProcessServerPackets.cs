@@ -27,6 +27,7 @@ namespace MvkServer.Network
                 {
                     case 0x11: Packet11(socket, (PacketC11LoginStart)packet); break;
                     case 0x13: Packet13(socket, (PacketC13ClientSetting)packet); break;
+                    case 0x16: Packet16(socket, (PacketC16ClientStatus)packet); break;
                     case 0x20: Packet20(socket, (PacketB20Player)packet); break;
                     //case 0x22: Packet22(socket, (PacketC22EntityUse)packet); break;
                     case 0xFF:
@@ -53,6 +54,14 @@ namespace MvkServer.Network
         }
 
         /// <summary>
+        /// Пакет статуса клиента
+        /// </summary>
+        protected void Packet16(Socket socket, PacketC16ClientStatus packet)
+        {
+            ServerMain.World.Players.ClientStatus(socket, packet.GetState());
+        }
+
+        /// <summary>
         /// Пакет положения игрока
         /// </summary>
         protected void Packet20(Socket socket, PacketB20Player packet)
@@ -71,6 +80,12 @@ namespace MvkServer.Network
                         entityPlayer.SetRotationHead(packet.GetYawHead(), packet.GetYawBody(), packet.GetPitch());
                         //entityPlayer.SetRotation(packet.GetYawHead(), packet.GetPitch());
                         //ServerMain.World.Players.ResponsePacketAll(new PacketB20Player().YawPitch(packet.GetYawHead(), packet.GetYawBody(), packet.GetPitch(), entityPlayer.Id));
+                        break;
+                    case 2:
+                        // Анимация игрока
+                        entityPlayer.SwingItem();
+                        entityPlayer.SetHealth(entityPlayer.Health - 4);
+                        ServerMain.ResponsePacket(socket, new PacketS17Health(entityPlayer.Health));
                         break;
                 }
             }

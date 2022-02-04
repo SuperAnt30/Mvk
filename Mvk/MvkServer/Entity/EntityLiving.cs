@@ -1,6 +1,8 @@
 ﻿using MvkServer.Entity.Player;
 using MvkServer.Glm;
+using MvkServer.Network.Packets;
 using MvkServer.Util;
+using MvkServer.World;
 using System.Collections.Generic;
 
 namespace MvkServer.Entity
@@ -51,7 +53,7 @@ namespace MvkServer.Entity
         /// Запущен ли счётчик анимации руки
         /// </summary>
         private bool isSwingInProgress = false;
-
+        
         /// <summary>
         /// Количество тактов для запрета повторного прыжка
         /// </summary>
@@ -63,9 +65,11 @@ namespace MvkServer.Entity
         /// <summary>
         /// Результат падения, отладка!!!
         /// </summary>
-        private float fallDistanceResult = 0;
+        protected float fallDistanceResult = 0;
 
-        private vec3 motionDebug = new vec3(0);
+        protected vec3 motionDebug = new vec3(0);
+
+        
 
         #region Input
 
@@ -90,7 +94,7 @@ namespace MvkServer.Entity
         public override void Update()
         {
             base.Update();
-            swingProgressPrev = swingProgress;
+            
 
             vec3 motionPrev = Motion;
 
@@ -105,7 +109,7 @@ namespace MvkServer.Entity
             }
 
             // Для вращении головы
-            HeadTurn(Motion);
+            HeadTurn();
         }
 
         protected bool EntityUpdate()
@@ -125,7 +129,10 @@ namespace MvkServer.Entity
             // ... func_180799_ab
 
             // если мы ниже -64 по Y убиваем игрока
-            // ... kill
+            if (Position.y > 128 || Position.y < -64) Kill();
+
+            // если нет хп обновлям смертельную картинку
+            if (Health <= 0f) DeathUpdate();
 
             // Если был толчёк, мы его дабавляем и обнуляем
             if (!MotionPush.Equals(new vec3(0)))
@@ -192,6 +199,7 @@ namespace MvkServer.Entity
 
             // Если блокировка то блокируем кнопки и параметр прыжка
             // ... his.moveStrafing = 0.0F; this.moveForward = 0.0F;
+            if (Health <= 0) InputNone();
 
             if (IsFlying)
             {
@@ -395,7 +403,7 @@ namespace MvkServer.Entity
         /// <summary>
         /// Поворот тела от движения и поворота головы 
         /// </summary>
-        protected virtual void HeadTurn(vec3 motion) { }
+        protected virtual void HeadTurn() { }
 
         /// <summary>
         /// Конвертация от направления движения в XYZ координаты с кооректировками скоростей
@@ -458,6 +466,7 @@ namespace MvkServer.Entity
 
             // Тут расчёт амплитуды движения
             // ... 
+
 
             Motion = motion;
         }
@@ -760,10 +769,10 @@ namespace MvkServer.Entity
                 swingProgressInt = -1;
                 isSwingInProgress = true;
 
-                //if (this.worldObj instanceof WorldServer)
-                //{
-                //    ((WorldServer)this.worldObj).getEntityTracker().sendToAllTrackingEntity(this, new S0BPacketAnimation(this, 0));
-                //}
+                if (World is WorldServer)
+                {
+                    ((WorldServer)World).Players.ResponsePacketAll(new PacketB20Player().Animation(Id), Id);
+                }
             }
         }
 
@@ -772,6 +781,8 @@ namespace MvkServer.Entity
         /// </summary>
         protected void UpdateArmSwingProgress()
         {
+            swingProgressPrev = swingProgress;
+
             int asa = GetArmSwingAnimationEnd();
 
             if (isSwingInProgress)
@@ -791,28 +802,31 @@ namespace MvkServer.Entity
             swingProgress = (float)swingProgressInt / (float)asa;
         }
 
-        public override string ToString()
-        {
-            vec3 m = motionDebug;
-            m.y = 0;
-            vec3 my = new vec3(0, motionDebug.y, 0);
+       
 
-            return string.Format("XYZ {7} ch:{12}\r\n{0:0.000} | {13:0.000} м/c\r\nyaw:{8:0.00} H:{9:0.00} pitch:{10:0.00} \r\n{1}{2}{6}{4} boom:{5:0.00}\r\nMotion:{3}\r\n{11}",
-                glm.distance(m) * 10f, // 0
-                OnGround ? "__" : "", // 1
-                IsSprinting ? "[Sp]" : "", // 2
-                Motion, // 3
-                IsJumping ? "[J]" : "", // 4
-                fallDistanceResult, // 5
-                IsSneaking ? "[Sn]" : "", // 6
-                Position, // 7
-                glm.degrees(RotationYaw), // 8
-                0,//glm.degrees(RotationYawHead), // 9
-                glm.degrees(RotationPitch), // 10
-                IsCollidedHorizontally, // 11
-                GetChunkPos(), // 12
-                glm.distance(my) * 10f
-                );
-        }
+
+        //public override string ToString()
+        //{
+        //    vec3 m = motionDebug;
+        //    m.y = 0;
+        //    vec3 my = new vec3(0, motionDebug.y, 0);
+
+        //    return string.Format("XYZ {7} ch:{12}\r\n{0:0.000} | {13:0.000} м/c\r\nyaw:{8:0.00} H:{9:0.00} pitch:{10:0.00} \r\n{1}{2}{6}{4} boom:{5:0.00}\r\nMotion:{3}\r\n{11}",
+        //        glm.distance(m) * 10f, // 0
+        //        OnGround ? "__" : "", // 1
+        //        IsSprinting ? "[Sp]" : "", // 2
+        //        Motion, // 3
+        //        IsJumping ? "[J]" : "", // 4
+        //        fallDistanceResult, // 5
+        //        IsSneaking ? "[Sn]" : "", // 6
+        //        Position, // 7
+        //        glm.degrees(RotationYaw), // 8
+        //        0,//glm.degrees(RotationYawHead), // 9
+        //        glm.degrees(RotationPitch), // 10
+        //        IsCollidedHorizontally, // 11
+        //        GetChunkPos(), // 12
+        //        glm.distance(my) * 10f
+        //        );
+        //}
     }
 }

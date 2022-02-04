@@ -37,6 +37,8 @@
     <Compile Include="Entity\EntityLiving.cs" />
     <Compile Include="Entity\EntityLivingHead.cs" />
     <Compile Include="Entity\EnumEntities.cs" />
+    <Compile Include="Network\Packets\PacketC16ClientStatus.cs" />
+    <Compile Include="Network\Packets\PacketS17Health.cs" />
     <Compile Include="Network\Packets\PacketS23EntityUse.cs" />
     <Compile Include="Util\EnumInput.cs" />
     <Compile Include="Entity\EntitySpeed.cs" />

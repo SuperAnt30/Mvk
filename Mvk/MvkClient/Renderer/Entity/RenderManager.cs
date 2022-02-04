@@ -69,7 +69,7 @@ namespace MvkClient.Renderer.Entity
         /// </summary>
         public void RenderEntity(EntityPlayerClient entity, float timeIndex)
         {
-            if (!entity.IsHidden)
+            if (!entity.IsHidden && !entity.IsDead)
             {
                 World.CountEntitiesShowAdd();
                 RendererLivingEntity render = GetEntityRenderObject(entity);

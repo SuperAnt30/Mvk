@@ -99,6 +99,12 @@ namespace MvkClient.World
 
                 // Обновить игрока
                 Player.Update();
+                
+                if (Player.IsDead && !ClientMain.Screen.IsScreenGameOver())
+                {
+                    // GameOver
+                    ClientMain.SetScreen(ObjectKey.GameOver, "Boom");
+                }
 
                 // Обновить остальных сущностей
                 List<EntityPlayerMP> entitiesLook = new List<EntityPlayerMP>();
@@ -254,8 +260,6 @@ namespace MvkClient.World
                 }
             }
         }
-
-        
 
         #region Debug
 

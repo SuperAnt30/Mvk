@@ -14,6 +14,10 @@ namespace MvkServer.Entity
         /// </summary>
         public WorldBase World { get; protected set; }
         /// <summary>
+        /// Порядковый номер сущности на сервере, с момента запуска сервера
+        /// </summary>
+        public ushort Id { get; protected set; }
+        /// <summary>
         /// Имя
         /// </summary>
         public string Name { get; protected set; } = "";
@@ -81,6 +85,18 @@ namespace MvkServer.Entity
         /// Тип сущности
         /// </summary>
         public EnumEntities Type { get; protected set; } = EnumEntities.None;
+        /// <summary>
+        /// Сущность мертва, не активна
+        /// </summary>
+        public bool IsDead { get; protected set; } = false;
+        /// <summary>
+        /// Оставшееся время эта сущность должна вести себя как «мертвая», то есть иметь в мире труп.
+        /// </summary>
+        public int DeathTime { get; protected set; } = 0;
+        /// <summary>
+        /// Уровень здоровья
+        /// </summary>
+        public float Health { get; protected set; } = 20;
 
         /// <summary>
         /// Истинно, если после перемещения этот объект столкнулся с чем-то по оси X или Z. 
@@ -94,6 +110,7 @@ namespace MvkServer.Entity
         /// Истинно, если после перемещения эта сущность столкнулась с чем-то либо вертикально, либо горизонтально 
         /// </summary>
         public bool IsCollided { get; protected set; } = false;
+
         /// <summary>
         /// Пометка что было движение и подобное для сервера, чтоб отправлять пакеты
         /// </summary>
@@ -187,6 +204,21 @@ namespace MvkServer.Entity
             UpBoundingBox();
         }
 
+        /// <summary>
+        /// Будет уничтожен следующим тиком
+        /// </summary>
+        public void SetDead() => IsDead = true;
+
+        /// <summary>
+        /// Задать новое значение здоровья
+        /// </summary>
+        public void SetHealth(float health) => Health = health;
+
+        /// <summary>
+        /// Убить сущность
+        /// </summary>
+        public void Kill() => SetDead();
+
         #endregion
 
         /// <summary>
@@ -255,9 +287,17 @@ namespace MvkServer.Entity
         /// </summary>
         protected vec3 GetRay(float yaw, float pitch)
         {
+            //float var3 = glm.cos(-yaw - glm.pi);
+            //float var4 = glm.sin(-yaw - glm.pi);
+            //float var5 = -glm.cos(-pitch);
+            //float var6 = glm.sin(-pitch);
+            //return new vec3(var4 * var5, var6, var3 * var5);
+
             float pitchxz = glm.cos(pitch);
             return new vec3(glm.sin(yaw) * pitchxz, glm.sin(pitch), -glm.cos(yaw) * pitchxz);
         }
+
+
 
         #region Frame
 
@@ -335,5 +375,52 @@ namespace MvkServer.Entity
             RotationYawPrev = RotationYaw;
             RotationPitchPrev = RotationPitch;
         }
+
+        /// <summary>
+        /// Управляет таймером смерти сущности, сферой опыта и созданием частиц
+        /// </summary>
+        protected void DeathUpdate()
+        {
+            DeathTime++;
+
+            if (DeathTime >= 20)
+            {
+                SetDead();
+                //DeathTime = 0;
+                //Health = 20;
+            //    int var1;
+
+                //    if (!this.worldObj.isRemote && (this.recentlyHit > 0 || this.isPlayer()) && this.func_146066_aG() && this.worldObj.getGameRules().getGameRuleBooleanValue("doMobLoot"))
+                //    {
+                //        var1 = this.getExperiencePoints(this.attackingPlayer);
+
+                //        while (var1 > 0)
+                //        {
+                //            int var2 = EntityXPOrb.getXPSplit(var1);
+                //            var1 -= var2;
+                //            this.worldObj.spawnEntityInWorld(new EntityXPOrb(this.worldObj, this.posX, this.posY, this.posZ, var2));
+                //        }
+                //    }
+
+                //    this.setDead();
+
+                //    for (var1 = 0; var1 < 20; ++var1)
+                //    {
+                //        double var8 = this.rand.nextGaussian() * 0.02D;
+                //        double var4 = this.rand.nextGaussian() * 0.02D;
+                //        double var6 = this.rand.nextGaussian() * 0.02D;
+                //        this.worldObj.spawnParticle(EnumParticleTypes.EXPLOSION_NORMAL, this.posX + (double)(this.rand.nextFloat() * this.width * 2.0F) - (double)this.width, this.posY + (double)(this.rand.nextFloat() * this.height), this.posZ + (double)(this.rand.nextFloat() * this.width * 2.0F) - (double)this.width, var8, var4, var6, new int[0]);
+                //    }
+            }
+        }
+
+        //public void Respawn()
+        //{
+        //    Health = 20;
+        //    DeathTime = 0;
+        //    IsDead = false;
+        //}
+
+
     }
 }

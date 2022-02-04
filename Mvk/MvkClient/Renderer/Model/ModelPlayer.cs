@@ -64,6 +64,7 @@ namespace MvkClient.Renderer.Model
         protected override void SetRotationAngles(EntityLiving entity, float limbSwing,
             float limbSwingAmount, float ageInTicks, float headYaw, float headPitch, float scale)
         {
+            boxBody.RotateAngleY = 0;
             boxHead.RotateAngleY = headYaw;
             boxHead.RotateAngleX = -headPitch;
             boxLegRight.RotateAngleX = glm.cos(limbSwing * 0.6662f) * 1.4f * limbSwingAmount;
@@ -74,6 +75,7 @@ namespace MvkClient.Renderer.Model
             boxArmRight.RotateAngleZ = 0.0f;
             boxArmLeft.RotateAngleY = 0.0f;
             boxArmLeft.RotateAngleZ = 0.0f;
+            
 
             //if (Сидим в транспорте)
             //{
@@ -97,10 +99,6 @@ namespace MvkClient.Renderer.Model
                 float swingProgress = SwingProgress;
                 float sp = swingProgress;
                 boxBody.RotateAngleY = glm.sin(Mth.Sqrt(sp) * glm.pi360) * .2f;
-                boxArmRight.RotationPointZ = glm.sin(boxBody.RotateAngleY) * 5f;
-                boxArmRight.RotationPointX = -glm.cos(boxBody.RotateAngleY) * 5f;
-                boxArmLeft.RotationPointZ = -glm.sin(boxBody.RotateAngleY) * 5f;
-                boxArmLeft.RotationPointX = glm.cos(boxBody.RotateAngleY) * 5f;
                 boxArmRight.RotateAngleY += boxBody.RotateAngleY;
                 boxArmLeft.RotateAngleY += boxBody.RotateAngleY;
                 boxArmLeft.RotateAngleX += boxBody.RotateAngleY;
@@ -114,6 +112,12 @@ namespace MvkClient.Renderer.Model
                 boxArmRight.RotateAngleY += boxBody.RotateAngleY * 2f;
                 boxArmRight.RotateAngleZ += glm.sin(swingProgress * glm.pi) * -.4f;
             }
+
+            // Вращение рук в зависимости от торса
+            boxArmRight.RotationPointZ = glm.sin(boxBody.RotateAngleY) * 5f;
+            boxArmRight.RotationPointX = -glm.cos(boxBody.RotateAngleY) * 5f;
+            boxArmLeft.RotationPointZ = -glm.sin(boxBody.RotateAngleY) * 5f;
+            boxArmLeft.RotationPointX = glm.cos(boxBody.RotateAngleY) * 5f;
 
             if (entity.IsSneaking)
             {

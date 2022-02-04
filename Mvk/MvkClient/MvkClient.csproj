@@ -78,6 +78,7 @@
     <Compile Include="Gui\EnumBackground.cs" />
     <Compile Include="Gui\EnumScreenKey.cs" />
     <Compile Include="Gui\GuiScreen.cs" />
+    <Compile Include="Gui\ScreenGameOver.cs" />
     <Compile Include="Gui\ScreenInGameMenu.cs" />
     <Compile Include="Gui\ScreenLoading.cs" />
     <Compile Include="Gui\ScreenMultiplayer.cs" />

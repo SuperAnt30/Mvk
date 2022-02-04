@@ -33,6 +33,10 @@ namespace MvkClient.Gui
         /// </summary>
         public bool IsScreenPause() 
             => screen != null && (screen.GetType() == typeof(ScreenInGameMenu) || screen.GetType() == typeof(ScreenOptions));
+        /// <summary>
+        /// Является ли скрин конец игры
+        /// </summary>
+        public bool IsScreenGameOver() => screen != null && screen.GetType() == typeof(ScreenGameOver);
 
         /// <summary>
         /// Изменён размер окна
@@ -122,6 +126,11 @@ namespace MvkClient.Gui
         /// Окно ошибки
         /// </summary>
         public void ScreenError(string text) => Exchange(new ScreenError(ClientMain, text));
+        /// <summary>
+        /// Конец игры
+        /// </summary>
+        public void GameOver(string text) => Exchange(new ScreenGameOver(ClientMain, text));
+
         /// <summary>
         /// Удалить экран
         /// </summary>

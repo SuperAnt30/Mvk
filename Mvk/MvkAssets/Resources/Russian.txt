@@ -2,6 +2,7 @@ gui.singleplayer:Одиночная игра
 gui.multiplayer:Сетевая игра
 gui.options:Настройки
 gui.exit:Выход
+gui.exit.world:Выход из мира
 gui.nikname:Имя игрока
 gui.fps:FPS
 gui.maxfps:Максимум FPS
@@ -21,11 +22,12 @@ gui.process:Процесс...
 gui.loading.world:Загрузка мира {0:0.0} %
 gui.ip:IP адрес
 gui.back.game:Вернуться в игру
-gui.exit.world:Выход из мира
 gui.language:Язык
 gui.error:Ошибка
 gui.menu:В меню
 gui.error.server.disconnect:Сервер разорвал соединение
 gui.net:Открыть сеть
 gui.net.on:Сеть открыта
+gui.game.over:Вы умерли!
+gui.respawn:Возродиться
 world.player.duplicate:Игрок с таким именем уже в игре!

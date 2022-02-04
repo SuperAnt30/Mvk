@@ -44,10 +44,7 @@ namespace MvkServer.Glm
         /// <summary>
         /// Получить растояние вектора
         /// </summary>
-        public static float distance(vec3 v1)
-        {
-            return Mth.Sqrt(v1.x * v1.x + v1.y * v1.y + v1.z * v1.z);
-        }
+        public static float distance(vec3 v1) => Mth.Sqrt(v1.x * v1.x + v1.y * v1.y + v1.z * v1.z);
 
         /// <summary>
         /// Получить растояние между двумя точками
@@ -58,6 +55,11 @@ namespace MvkServer.Glm
             float var4 = v1.y - v2.y;
             return Mth.Sqrt(var2 * var2 + var4 * var4);
         }
+
+        /// <summary>
+        /// Получить растояние вектора
+        /// </summary>
+        public static float distance(vec2 v1) => Mth.Sqrt(v1.x * v1.x + v1.y * v1.y);
 
         public static vec2 normalize(vec2 v)
         {
