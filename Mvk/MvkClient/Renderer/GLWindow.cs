@@ -81,11 +81,18 @@ namespace MvkClient.Renderer
             // тут мир
             if (client.World != null)
             {
-                client.World.WorldRender.Draw();
-                if (client.Screen.IsEmptyScreen() && client.World.Player.ViewCamera == EnumViewCamera.Eye)
+                // время от TPS клиента
+                float timeIndex = client.World.TimeIndex();
+
+                client.World.WorldRender.Draw(timeIndex);
+                if (client.Screen.IsEmptyScreen())// && client.World.Player.ViewCamera == EnumViewCamera.Eye)
                 {
                     client.World.WorldRender.DrawPricel();
+                    if (client.World.Player.DamageTime > 0 
+                        && client.World.Player.ViewCamera == EnumViewCamera.Eye) client.World.WorldRender.DrawEff(client.World.Player.DamageTime, timeIndex);
                 }
+
+                
             }
             // тут gui
             client.Screen.DrawScreen();

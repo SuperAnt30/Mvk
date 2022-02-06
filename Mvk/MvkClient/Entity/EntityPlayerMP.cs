@@ -20,6 +20,10 @@ namespace MvkClient.Entity
         /// </summary>
         public override void Update()
         {
+            // если нет хп обновлям смертельную картинку
+            if (Health <= 0f) DeathUpdate();
+            // Счётчик получения урона для анимации
+            if (DamageTime > 0) DamageTime--;
             // Расчёт амплитуды конечностей, при движении
             UpLimbSwing();
             // Просчёт взмаха руки

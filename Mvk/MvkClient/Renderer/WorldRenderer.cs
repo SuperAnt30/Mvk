@@ -6,6 +6,7 @@ using MvkClient.Util;
 using MvkClient.World;
 using MvkServer;
 using MvkServer.Glm;
+using MvkServer.Util;
 using SharpGL;
 using System.Threading.Tasks;
 
@@ -40,11 +41,8 @@ namespace MvkClient.Renderer
         /// <summary>
         /// Прорисовка мира
         /// </summary>
-        public void Draw()
+        public void Draw(float timeIndex)
         {
-            // время от TPS клиента
-            float timeIndex = World.TimeIndex();
-
             if (World.Player.Projection == null) World.Player.UpProjection();
             if (World.Player.LookAt == null) World.Player.UpLookAt(timeIndex);
 
@@ -147,6 +145,27 @@ namespace MvkClient.Renderer
             }
         }
 
+        public void DrawEff(float damageTime, float timeIndex)
+        {
+            float dt = Mth.Sqrt((damageTime + timeIndex - 1f) / 5f * 1.6f);
+            if (dt > 1f) dt = 1f;
+
+            int w = GLWindow.WindowWidth;
+            int h = GLWindow.WindowHeight;
+            // Прицел
+            GLWindow.gl.MatrixMode(OpenGL.GL_PROJECTION);
+            GLWindow.gl.LoadIdentity();
+            GLWindow.gl.Ortho2D(0, w, h, 0);
+            GLWindow.gl.MatrixMode(OpenGL.GL_MODELVIEW);
+            GLWindow.gl.LoadIdentity();
+
+            GLRender.PushMatrix();
+            GLRender.Texture2DDisable();
+            GLRender.Rectangle(0, 0, w, h, new vec4(0.7f, 0.4f, 0.3f, 0.7f * dt));
+            GLRender.PopMatrix();
+        }
+             
+
         /// <summary>
         /// Прорисовать курсор прицела
         /// </summary>
@@ -163,10 +182,39 @@ namespace MvkClient.Renderer
             GLWindow.gl.MatrixMode(OpenGL.GL_MODELVIEW);
             GLWindow.gl.LoadIdentity();
 
+            if (World.Player.ViewCamera == EnumViewCamera.Eye)
+            {
+                GLRender.PushMatrix();
+                GLWindow.gl.Translate(w / 2 - 8, h / 2 - 8, 0);
+                GLRender.ListCall(dListсPricel);
+                GLRender.PopMatrix();
+            }
+
             GLRender.PushMatrix();
-            GLWindow.gl.Translate(w / 2 - 8, h / 2 - 8, 0);
-            GLRender.ListCall(dListсPricel);
+            GLRender.Texture2DDisable();
+            GLRender.LineWidth(1f);
+            GLRender.Color(new vec3(0));
+            for (int i = 0; i < 20; i++)
+            {
+                GLRender.Begin(OpenGL.GL_LINE_STRIP);
+                GLRender.Vertex(30, h - 46 - i * 20, 0);
+                GLRender.Vertex(46, h - 46 - i * 20, 0);
+                GLRender.Vertex(46, h - 30 - i * 20, 0);
+                GLRender.Vertex(30, h - 30 - i * 20, 0);
+                GLRender.Vertex(30, h - 46 - i * 20, 0);
+                GLRender.End();
+            }
+
+            int count = Mth.Floor(World.Player.Health);
+
+            for (int i = 0; i < count; i++)
+            {
+                GLRender.Rectangle(31, h - 45 - i * 20, 45, h - 31 - i * 20, new vec4(.9f, .4f, .4f, .7f));
+            }
+
+
             GLRender.PopMatrix();
+
         }
         /// <summary>
         /// Рендер курсора прицел

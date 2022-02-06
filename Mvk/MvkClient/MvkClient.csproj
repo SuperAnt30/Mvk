@@ -108,6 +108,7 @@
     <Compile Include="Renderer\Model\ModelBase.cs" />
     <Compile Include="Renderer\Model\ModelBox.cs" />
     <Compile Include="Renderer\Model\ModelChicken.cs" />
+    <Compile Include="Renderer\Model\ModelPlayerHand.cs" />
     <Compile Include="Renderer\Model\ModelPlayer.cs" />
     <Compile Include="Renderer\Model\ModelRender.cs" />
     <Compile Include="Renderer\Model\TexturedQuad.cs" />

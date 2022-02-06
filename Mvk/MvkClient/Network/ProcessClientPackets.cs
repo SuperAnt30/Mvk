@@ -1,6 +1,7 @@
 ﻿using MvkClient.Entity;
 using MvkClient.Renderer.Chunk;
 using MvkClient.Setitings;
+using MvkServer.Entity;
 using MvkServer.Glm;
 using MvkServer.Network;
 using MvkServer.Network.Packets;
@@ -40,7 +41,7 @@ namespace MvkClient.Network
                         case 0x17: Packet17((PacketS17Health)packet); break;
                         case 0x20: Packet20((PacketB20Player)packet); break;
                         case 0x21: Packet21((PacketS21ChunckData)packet); break;
-                        //case 0x23: Packet23((PacketS23EntityUse)packet); break;
+                        case 0x23: Packet23((PacketS23EntityUse)packet); break;
                         case 0xFF:
                             PacketTFFTest p1 = (PacketTFFTest)packet;
                             Debug.DStr = p1.Name;
@@ -83,6 +84,7 @@ namespace MvkClient.Network
             else
             {
                 // Удачный вход сетевого игрока, типа приветствие
+                // Или после смерти
                 EntityPlayerMP entity = new EntityPlayerMP(ClientMain.World);
                 entity.OnPacketS12Success(packet);
                 ClientMain.World.SetPlayerMP(entity);
@@ -106,7 +108,18 @@ namespace MvkClient.Network
 
         protected void Packet17(PacketS17Health packet)
         {
-            ClientMain.World.Player.SetHealth(packet.GetHealth());
+            EntityLiving entity;
+            if (packet.GetId() == ClientMain.World.Player.Id)
+            {
+                entity = ClientMain.World.Player;
+            } else
+            {
+                entity = ClientMain.World.GetPlayerMP(packet.GetId());
+            }
+            if (entity != null)
+            {
+                entity.SetHealth(packet.GetHealth(), true);
+            }
         }
 
         /// <summary>
@@ -144,15 +157,12 @@ namespace MvkClient.Network
         /// <summary>
         /// Взаимодействие с сущностью
         /// </summary>
-        //protected void Packet23(PacketS23EntityUse packet)
-        //{
-        //    if (packet.GetAction() == PacketC22EntityUse.EnumAction.Push)
-        //    {
-        //        vec3 vec = packet.GetPos();
-        //        vec.y = 0;
-        //        vec = vec.normalize() * .25f;
-        //        ClientMain.World.Player.MotionPush = vec;
-        //    }
-        //}
+        protected void Packet23(PacketS23EntityUse packet)
+        {
+            if (packet.GetAction() == PacketS23EntityUse.EnumAction.Push)
+            {
+                ClientMain.World.Player.MotionPush = packet.GetVec();
+            }
+        }
     }
 }

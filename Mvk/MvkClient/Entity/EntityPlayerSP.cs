@@ -9,6 +9,7 @@ using MvkServer.Network.Packets;
 using MvkServer.Util;
 using SharpGL;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -61,8 +62,6 @@ namespace MvkClient.Entity
         /// </summary>
         public EnumViewCamera ViewCamera { get; protected set; } = EnumViewCamera.Eye;
 
-        
-
         protected vec3 positionFrame;
         protected float pitchFrame;
         protected float yawHeadFrame;
@@ -75,10 +74,16 @@ namespace MvkClient.Entity
         /// </summary>
         protected vec3[] lookAtDL;
 
+        /// <summary>
+        /// Счётчик паузы в тактах между ударами
+        /// </summary>
+        protected int damagePause = 0;
+
         public EntityPlayerSP(WorldClient world) : base(world)
         {
             Fov = new SmoothFrame(1.22f);
             Eye = new SmoothFrame(GetEyeHeight());
+            IsHidden = false;
             interpolation.Start();
         }
 
@@ -138,10 +143,10 @@ namespace MvkClient.Entity
             // Просчёт взмаха руки
             UpdateArmSwingProgress();
 
-            // Скрыть прорисовку себя если вид с глаз
-            IsHidden = ViewCamera == EnumViewCamera.Eye;
+            if (damagePause > 0) damagePause--;
 
-            
+            // Скрыть прорисовку себя если вид с глаз
+            Type = Health > 0 && ViewCamera == EnumViewCamera.Eye ? EnumEntities.PlayerHand : EnumEntities.Player;
         }
 
         /// <summary>
@@ -171,10 +176,9 @@ namespace MvkClient.Entity
                 float yawHead = RotationYawHead;
                 float yawBody = RotationYaw;
                 float pitch = RotationPitch;
-                Task.Factory.StartNew(() =>
-                {
+               // Task.Factory.StartNew(() => {
                     ClientWorld.ClientMain.TrancivePacket(new PacketB20Player().YawPitch(yawHead, yawBody, pitch));
-                });
+                //});
                 return true;
             }
             return false;
@@ -209,16 +213,18 @@ namespace MvkClient.Entity
 
             if (ViewCamera == EnumViewCamera.Back)
             {
-                // вид сзади, но надо check на кализию камеры
-                //vec3 right = glm.cross(up, front).normalize();
-                //vec3 f2 = (front * -1f - right * .3f).normalize();
-                //pos = GetPositionCamera(pos, f2);
-                pos = GetPositionCamera(pos, front * -1f);
+                // вид сзади
+                pos = GetPositionCamera(pos, front * -1f, MvkGlobal.CAMERA_DIST);
             } else if (ViewCamera == EnumViewCamera.Front)
             {
-                // вид сзади, но надо check на кализию камеры
-                pos = GetPositionCamera(pos, front);
+                // вид спереди
+                pos = GetPositionCamera(pos, front, MvkGlobal.CAMERA_DIST);
                 front *= -1f;
+            } else
+            {
+                //vec3 right = glm.cross(up, front).normalize();
+                //vec3 f2 = (front * -1f - right * .7f).normalize();
+                //pos = GetPositionCamera(pos, f2, 2f);
             }
 
             if (!IsFlying && MvkGlobal.WIGGLE_EFFECT)
@@ -360,11 +366,11 @@ namespace MvkClient.Entity
         /// </summary>
         /// <param name="pos">позиция глаз</param>
         /// <param name="vec">направляющий вектор к расположению камеры</param>
-        protected vec3 GetPositionCamera(vec3 pos, vec3 vec)
+        protected vec3 GetPositionCamera(vec3 pos, vec3 vec, float dis)
         {
             vec3 offset = ClientWorld.RenderEntityManager.CameraOffset;
-            MovingObjectPosition moving = World.RayCast(pos + offset, vec, MvkGlobal.CAMERA_DIST);
-            return pos + vec * (moving.IsBlock() ? glm.distance(pos, moving.RayHit + new vec3(moving.Norm) * .5f - offset) : MvkGlobal.CAMERA_DIST);
+            MovingObjectPosition moving = World.RayCast(pos + offset, vec, dis);
+            return pos + vec * (moving.IsBlock() ? glm.distance(pos, moving.RayHit + new vec3(moving.Norm) * .5f - offset) : dis);
         }
 
         /// <summary>
@@ -372,9 +378,41 @@ namespace MvkClient.Entity
         /// </summary>
         public void Action()
         {
-            SwingItem();
-            //Health = 0;
-            ClientWorld.ClientMain.TrancivePacket(new PacketB20Player().Animation());
+            if (damagePause == 0)
+            {
+                damagePause = 10; // удар в 0,5 секунды
+
+                SwingItem();
+                //Health = 0;
+                ClientWorld.ClientMain.TrancivePacket(new PacketB20Player().Animation());
+
+                // Удар по сущности
+                //if (EntitiesLook.Length > 0)
+                {
+
+                    // Рамка удара
+                    AxisAlignedBB aabb = GetBoundingBox(positionFrame + RayLook * Width * 1.8f);
+
+                    Hashtable pe = ClientWorld.PlayerEntities.Clone() as Hashtable;
+                    foreach (EntityPlayerMP entity in pe.Values)
+                    {
+                        if (!entity.IsDead && aabb.IntersectsWith(entity.BoundingBox))
+                        {
+                            ClientWorld.ClientMain.TrancivePacket(new PacketC22EntityUse(entity.Id, entity.Position - Position));
+                        }
+                    }
+
+                    //EntityPlayerMP[] entities = EntitiesLook.Clone() as EntityPlayerMP[];
+                    //foreach (EntityPlayerMP entity in entities)
+                    //{
+                    //    // растояние от удара, надо заменить на проверку AABB рукиудара и AABB сущности
+                    //    if (glm.distance(Position, entity.Position) < 1.5f) 
+                    //    {
+                    //        ClientWorld.ClientMain.TrancivePacket(new PacketC22EntityUse(entity.Id, Position - PositionPrev));
+                    //    }
+                    //}
+                }
+            }
         }
 
         /// <summary>
@@ -395,6 +433,14 @@ namespace MvkClient.Entity
             DeathTime = 0;
             IsDead = false;
             ClientWorld.ClientMain.GameMode();
+        }
+
+        /// <summary>
+        /// Падение
+        /// </summary>
+        protected override void Fall(float distance)
+        {
+            ClientWorld.ClientMain.TrancivePacket(new PacketB20Player().Fall(distance));
         }
 
         #region Frame

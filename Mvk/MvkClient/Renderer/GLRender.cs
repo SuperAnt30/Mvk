@@ -125,6 +125,7 @@ namespace MvkClient.Renderer
 
         public static void Color(float r, float g, float b, float a) => gl.Color(r, g, b, a);
         public static void Color(vec4 color) => gl.Color(color.x, color.y, color.z, color.w);
+        public static void Color(vec3 color) => gl.Color(color.x, color.y, color.z);
         public static void Color(float r, float g, float b) => gl.Color(r, g, b);
         public static void Color(float rgb) => gl.Color(rgb, rgb, rgb);
 

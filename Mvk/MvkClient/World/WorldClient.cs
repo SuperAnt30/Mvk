@@ -100,7 +100,7 @@ namespace MvkClient.World
                 // Обновить игрока
                 Player.Update();
                 
-                if (Player.IsDead && !ClientMain.Screen.IsScreenGameOver())
+                if ((Player.IsDead || Player.Health == 0) && !ClientMain.Screen.IsScreenGameOver())
                 {
                     // GameOver
                     ClientMain.SetScreen(ObjectKey.GameOver, "Boom");
@@ -109,11 +109,14 @@ namespace MvkClient.World
                 // Обновить остальных сущностей
                 List<EntityPlayerMP> entitiesLook = new List<EntityPlayerMP>();
                 Hashtable pe = PlayerEntities.Clone() as Hashtable;
+                List<ushort> deads = new List<ushort>();
                 foreach (EntityPlayerMP entity in pe.Values)
                 {
                     entity.Update();
-                    if (entity.IsRayEye) entitiesLook.Add(entity);
+                    if (entity.IsDead) deads.Add(entity.Id);
+                    else if (entity.IsRayEye) entitiesLook.Add(entity);
                 }
+                foreach (ushort id in deads) RemovePlayerMP(id);
                 Player.SetEntitiesLook(entitiesLook);
 
                 if (time - previousTotalWorldTime > MvkGlobal.CHUNK_CLEANING_TIME)

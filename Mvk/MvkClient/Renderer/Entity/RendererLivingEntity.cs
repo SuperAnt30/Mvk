@@ -37,7 +37,17 @@ namespace MvkClient.Renderer.Entity
             {
                 
                 GLRender.CullDisable();
-                GLRender.Color(1f, 1f, 1f);
+
+                vec3 color = new vec3(1);
+                if (entity.DamageTime > 0)
+                {
+                    float dt = Mth.Sqrt((entity.DamageTime + timeIndex - 1f) / 5f * 1.6f);
+                    if (dt > 1f) dt = 1f;
+                    dt *= .4f;
+                    color = new vec3(1f, 1f - dt, 1f - dt);
+                }
+
+                GLRender.Color(color);// entity.DamageTime > 0 ? new vec3(1f, .8f, .8f) : new vec3(1f));
                 BindTexture();
 
                 GLRender.Translate(pos.x - offset.x, pos.y - offset.y, pos.z - offset.z);
