@@ -1,18 +1,18 @@
-﻿namespace MvkServer.Network.Packets
+﻿namespace MvkServer.Network.Packets.Client
 {
-    public struct PacketC13ClientSetting : IPacket
+    public struct PacketC15ClientSetting : IPacket
     {
         /// <summary>
         /// Обзор чанков
         /// </summary>
         private int overviewChunk;
 
-        public PacketC13ClientSetting(int overviewChunk)
+        public int GetOverviewChunk() => overviewChunk;
+
+        public PacketC15ClientSetting(int overviewChunk)
         {
             this.overviewChunk = overviewChunk;
         }
-
-        public int GetOverviewChunk() => overviewChunk;
 
         public void ReadPacket(StreamBase stream)
         {

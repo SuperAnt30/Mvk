@@ -5,9 +5,11 @@ using MvkClient.Renderer.Shaders;
 using MvkClient.Util;
 using MvkClient.World;
 using MvkServer;
+using MvkServer.Entity;
 using MvkServer.Glm;
 using MvkServer.Util;
 using SharpGL;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace MvkClient.Renderer
@@ -17,6 +19,10 @@ namespace MvkClient.Renderer
     /// </summary>
     public class WorldRenderer
     {
+        /// <summary>
+        /// Основной клиент
+        /// </summary>
+        public Client ClientMain { get; protected set; }
         /// <summary>
         /// Клиентский объект мира
         /// </summary>
@@ -36,6 +42,7 @@ namespace MvkClient.Renderer
         public WorldRenderer(WorldClient world)
         {
             World = world;
+            ClientMain = world.ClientMain;
         }
 
         /// <summary>
@@ -43,17 +50,17 @@ namespace MvkClient.Renderer
         /// </summary>
         public void Draw(float timeIndex)
         {
-            if (World.Player.Projection == null) World.Player.UpProjection();
-            if (World.Player.LookAt == null) World.Player.UpLookAt(timeIndex);
+            if (ClientMain.Player.Projection == null) ClientMain.Player.UpProjection();
+            if (ClientMain.Player.LookAt == null) ClientMain.Player.UpLookAt(timeIndex);
 
             // Обновить кадр основного игрока, камера и прочее
-            World.Player.UpdateFrame(timeIndex);
+            ClientMain.Player.UpdateFrame(timeIndex);
 
             // Воксели VBO
-            DrawVoxel(timeIndex);
+            List<ChunkRender> chunks = DrawVoxel(timeIndex);
 
             // Сущности DisplayList
-            DrawEntities(timeIndex);
+            DrawEntities(chunks, timeIndex);
 
             
 
@@ -65,24 +72,25 @@ namespace MvkClient.Renderer
         /// <summary>
         /// Прорисовка вокселей VBO
         /// </summary>
-        private void DrawVoxel(float timeIndex)
+        private List<ChunkRender> DrawVoxel(float timeIndex)
         {
             long time = Client.Time();
-
             GLWindow.Texture.BindTexture(AssetsTexture.Atlas);
             ShaderVoxel shader = GLWindow.Shaders.ShVoxel;
             shader.Bind(GLWindow.gl);
-            shader.SetUniformMatrix4(GLWindow.gl, "projection", World.Player.Projection);
-            shader.SetUniformMatrix4(GLWindow.gl, "lookat", World.Player.LookAt);
+            shader.SetUniformMatrix4(GLWindow.gl, "projection", ClientMain.Player.Projection);
+            shader.SetUniformMatrix4(GLWindow.gl, "lookat", ClientMain.Player.LookAt);
             //shader.SetUniform3(GLWindow.gl, "pos", 0, -24, 0);
 
             int countRender = MvkGlobal.COUNT_RENDER_CHUNK_FRAME;
             bool fastTime = Client.Time() - time <= MvkGlobal.COUNT_RENDER_CHUNK_FRAME;
 
-            for (int i = 0; i < World.Player.ChunkFC.Length; i++)
+            List<ChunkRender> chunks = new List<ChunkRender>();
+
+            for (int i = 0; i < ClientMain.Player.ChunkFC.Length; i++)
             {
                 bool fast = fastTime || countRender == MvkGlobal.COUNT_RENDER_CHUNK_FRAME;
-                FrustumStruct fs = World.Player.ChunkFC[i];
+                FrustumStruct fs = ClientMain.Player.ChunkFC[i];
                 if (fs.IsChunk())
                 {
                     ChunkRender chunk = fs.GetChunk();
@@ -103,7 +111,12 @@ namespace MvkClient.Renderer
                             -World.RenderEntityManager.CameraOffset.y,
                             (chunk.Position.y << 4) - World.RenderEntityManager.CameraOffset.z);
                         chunk.Draw(fast);
+                        chunks.Add(chunk);
                     }
+
+                    // Тут бы сущность
+                   // DrawEntities2(chunk.ListEntities, timeIndex);
+                    
                 }
                 else
                 {
@@ -119,30 +132,60 @@ namespace MvkClient.Renderer
             if (addInitFrustumCulling > 100)
             {
                 addInitFrustumCulling = 0;
-                World.Player.CheckChunkFrustumCulling();
+                ClientMain.Player.CheckChunkFrustumCulling();
+            }
+
+            return chunks;
+        }
+
+
+        private void DrawEntities2(MapListEntity[] entities, float timeIndex)
+        {
+            for (int i = 0; i < entities.Length; i++)
+            {
+                if (!entities[i].IsEmpty())
+                {
+                    for (int j = 0; j < entities[i].Count; j++)
+                    {
+                        EntityPlayerClient entity = (EntityPlayerClient)entities[i].GetAt(j);
+                        if (entity.Name != ClientMain.Player.Name)
+                        {
+                            World.RenderEntityManager.RenderEntity(entity, entity.TimeIndex());
+                        }
+                    }
+                }
             }
         }
 
         /// <summary>
         /// Прорисовка сущностей DisplayList
         /// </summary>
-        private void DrawEntities(float timeIndex)
+        private void DrawEntities(List<ChunkRender> chunks, float timeIndex)
         {
             // Матрица камеры
-            World.Player.CameraMatrixProjection();
+            ClientMain.Player.CameraMatrixProjection();
 
             World.CountEntitiesShowBegin();
             // Основной игрок, вид сзади или спереди
-            World.RenderEntityManager.RenderEntity(World.Player, timeIndex);
+            World.RenderEntityManager.RenderEntity(ClientMain.Player, timeIndex);
 
             // Остальные сущности
-            foreach (EntityPlayerClient entity in World.PlayerEntities.Values)
+            foreach(ChunkRender chunk in chunks)
             {
-                if (entity.Name != World.Player.Name)
-                {
-                    World.RenderEntityManager.RenderEntity(entity, entity.TimeIndex());
-                }
+                DrawEntities2(chunk.ListEntities, timeIndex);
             }
+            
+
+            // TODO::!!!
+            //foreach (EntityPlayerClient entity in World.PlayerEntities.Values)
+            //{
+            //    if (entity.Name != ClientMain.Player.Name)
+            //    {
+            //        World.RenderEntityManager.RenderEntity(entity, entity.TimeIndex());
+            //    }
+            //}
+
+           // foreach(World.)
         }
 
         public void DrawEff(float damageTime, float timeIndex)
@@ -182,7 +225,7 @@ namespace MvkClient.Renderer
             GLWindow.gl.MatrixMode(OpenGL.GL_MODELVIEW);
             GLWindow.gl.LoadIdentity();
 
-            if (World.Player.ViewCamera == EnumViewCamera.Eye)
+            if (ClientMain.Player.ViewCamera == EnumViewCamera.Eye)
             {
                 GLRender.PushMatrix();
                 GLWindow.gl.Translate(w / 2 - 8, h / 2 - 8, 0);
@@ -205,7 +248,7 @@ namespace MvkClient.Renderer
                 GLRender.End();
             }
 
-            int count = Mth.Floor(World.Player.Health);
+            int count = Mth.Floor(ClientMain.Player.Health);
 
             for (int i = 0; i < count; i++)
             {

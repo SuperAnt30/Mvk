@@ -12,7 +12,7 @@ namespace MvkServer.World.Chunk
         /// <summary>
         /// Список чанков которые надо выгрузить
         /// </summary>
-        public MapList DroppedChunks { get; protected set; } = new MapList();
+        public MapListVec2i DroppedChunks { get; protected set; } = new MapListVec2i();
 
         public ChunkProviderServer(WorldServer worldIn) => world = worldIn;
 

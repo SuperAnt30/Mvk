@@ -1,10 +1,10 @@
-﻿namespace MvkServer.Network.Packets
+﻿namespace MvkServer.Network.Packets.Server
 {
-    public struct PacketS14TimeUpdate : IPacket
+    public struct PacketS03TimeUpdate : IPacket
     {
         private uint time;
 
-        public PacketS14TimeUpdate(uint time)
+        public PacketS03TimeUpdate(uint time)
         {
             this.time = time;
         }

@@ -1,18 +1,15 @@
-﻿namespace MvkServer.Network.Packets
+﻿namespace MvkServer.Network.Packets.Server
 {
-    public struct PacketS15Disconnect : IPacket
+    public struct PacketSF1Disconnect : IPacket
     {
         private ushort id;
 
-        public PacketS15Disconnect(ushort id)
+        public ushort GetId() => id;
+
+        public PacketSF1Disconnect(ushort id)
         {
             this.id = id;
         }
-
-        /// <summary>
-        /// id игрока
-        /// </summary>
-        public ushort GetId() => id;
 
         public void ReadPacket(StreamBase stream)
         {

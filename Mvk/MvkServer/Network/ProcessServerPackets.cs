@@ -1,7 +1,8 @@
 ﻿using MvkServer.Entity.Player;
 using MvkServer.Glm;
 using MvkServer.Network.Packets;
-using System.Collections;
+using MvkServer.Network.Packets.Client;
+using MvkServer.Network.Packets.Server;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
@@ -17,6 +18,11 @@ namespace MvkServer.Network
         /// </summary>
         public Server ServerMain { get; protected set; }
 
+        private long networkTickCount;
+        private long lastPingTime;
+        private long lastSentPingPacket;
+        private uint pingKeySend;
+
         public ProcessServerPackets(Server server) => ServerMain = server;
 
         protected override void ReceivePacketServer(Socket socket, IPacket packet)
@@ -25,11 +31,17 @@ namespace MvkServer.Network
             {
                 switch (GetId(packet))
                 {
-                    case 0x11: Packet11(socket, (PacketC11LoginStart)packet); break;
-                    case 0x13: Packet13(socket, (PacketC13ClientSetting)packet); break;
-                    case 0x16: Packet16(socket, (PacketC16ClientStatus)packet); break;
-                    case 0x20: Packet20(socket, (PacketB20Player)packet); break;
-                    //case 0x22: Packet22(socket, (PacketC22EntityUse)packet); break;
+                    case 0x00: Handle00Ping(socket, (PacketC00Ping)packet); break;
+                    case 0x01: Handle01KeepAlive(socket, (PacketC01KeepAlive)packet); break;
+                    case 0x02: Handle02LoginStart(socket, (PacketC02LoginStart)packet); break;
+                    case 0x03: Handle03UseEntity(socket, (PacketC03UseEntity)packet); break;
+                    case 0x04: Handle04PlayerPosition(socket, (PacketC04PlayerPosition)packet); break;
+                    case 0x05: Handle05PlayerLook(socket, (PacketC05PlayerLook)packet); break;
+                    case 0x06: Handle06PlayerPosLook(socket, (PacketC06PlayerPosLook)packet); break;
+                    case 0x0A: Handle0AAnimation(socket, (PacketC0AAnimation)packet); break;
+                    case 0x0C: Handle0CPlayerAction(socket, (PacketC0CPlayerAction)packet); break;
+                    case 0x15: Handle15ClientSetting(socket, (PacketC15ClientSetting)packet); break;
+                    case 0x16: Handle16ClientStatus(socket, (PacketC16ClientStatus)packet); break;
                     case 0xFF:
                         ServerMain.ResponsePacket(socket, new PacketTFFTest("Получил тест: " + ((PacketTFFTest)packet).Name));
                         break;
@@ -38,17 +50,138 @@ namespace MvkServer.Network
         }
 
         /// <summary>
+        /// Такт сервера
+        /// </summary>
+        public void Update()
+        {
+            networkTickCount++;
+            if (networkTickCount - lastSentPingPacket > 40)
+            {
+                lastSentPingPacket = networkTickCount;
+                lastPingTime = ServerMain.Time();
+                pingKeySend = (uint)lastPingTime;
+                ServerMain.ResponsePacketAll(new PacketS01KeepAlive(pingKeySend));
+            }
+        }
+
+        /// <summary>
+        /// Ping-pong
+        /// </summary>
+        private void Handle00Ping(Socket socket, PacketC00Ping packet) => ServerMain.ResponsePacket(socket, new PacketS00Pong(packet.GetClientTime()));
+
+        /// <summary>
+        /// KeepAlive
+        /// </summary>
+        private void Handle01KeepAlive(Socket socket, PacketC01KeepAlive packet)
+        {
+            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
+            if (packet.GetTime() == pingKeySend && entityPlayer != null)
+            {
+                entityPlayer.SetPing(lastPingTime);
+            }
+        }
+
+        /// <summary>
         /// Пакет проверки логина
         /// </summary>
-        protected void Packet11(Socket socket, PacketC11LoginStart packet)
+        private void Handle02LoginStart(Socket socket, PacketC02LoginStart packet)
         {
             ServerMain.World.Players.LoginStart(new EntityPlayerServer(ServerMain, socket, packet.GetName(), ServerMain.World));
         }
 
         /// <summary>
+        /// Взаимодействие с сущностью
+        /// </summary>
+        private void Handle03UseEntity(Socket socket, PacketC03UseEntity packet)
+        {
+            EntityPlayerServer entity = ServerMain.World.Players.GetPlayer(packet.GetId());
+
+            if (entity != null)
+            {
+                // Урон
+                if (packet.GetAction() == PacketC03UseEntity.EnumAction.Attack)
+                {
+                    float damage = 1f;
+                    entity.SetHealth(entity.Health - damage);
+                    vec3 vec = packet.GetVec() * .5f;
+                    vec.y = .84f;
+                    ServerMain.World.Players.ResponsePacket(entity, new PacketS12EntityVelocity(entity.Id, vec));
+                    ResponseHealth(entity);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Пакет позиции игрока
+        /// </summary>
+        private void Handle04PlayerPosition(Socket socket, PacketC04PlayerPosition packet)
+        {
+            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
+            if (entityPlayer != null)
+            {
+                entityPlayer.SetPosition(packet.GetPos());
+                entityPlayer.SetSneakOnGround(packet.IsSneaking(), entityPlayer.OnGround);
+            }
+        }
+
+        /// <summary>
+        /// Пакет камеры игрока
+        /// </summary>
+        private void Handle05PlayerLook(Socket socket, PacketC05PlayerLook packet)
+        {
+            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
+            if (entityPlayer != null)
+            {
+                entityPlayer.SetRotationHead(packet.GetYaw(), entityPlayer.RotationYaw, packet.GetPitch());
+                entityPlayer.SetSneakOnGround(packet.IsSneaking(), entityPlayer.OnGround);
+            }
+        }
+
+        /// <summary>
+        /// Пакет позиции и камеры игрока
+        /// </summary>
+        private void Handle06PlayerPosLook(Socket socket, PacketC06PlayerPosLook packet)
+        {
+            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
+            if (entityPlayer != null)
+            {
+                entityPlayer.SetPosition(packet.GetPos());
+                entityPlayer.SetRotationHead(packet.GetYaw(), entityPlayer.RotationYaw, packet.GetPitch());
+                entityPlayer.SetSneakOnGround(packet.IsSneaking(), entityPlayer.OnGround);
+            }
+        }
+
+        /// <summary>
+        /// Пакет анимации игрока
+        /// </summary>
+        private void Handle0AAnimation(Socket socket, PacketC0AAnimation packet)
+        {
+            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
+            if (entityPlayer != null) entityPlayer.SwingItem();
+        }
+
+        /// <summary>
+        /// Пакет действия игрока
+        /// </summary>
+        private void Handle0CPlayerAction(Socket socket, PacketC0CPlayerAction packet)
+        {
+            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
+            if (entityPlayer != null && packet.GetAction() == PacketC0CPlayerAction.EnumAction.Fall)
+            {
+                // Падение с высоты
+                if (packet.GetParam() >= 5)
+                {
+                    float damage = packet.GetParam() - 5;
+                    entityPlayer.SetHealth(entityPlayer.Health - damage);
+                    ResponseHealth(entityPlayer);
+                }
+            }
+        }
+
+        /// <summary>
         /// Пакет настроек клиента
         /// </summary>
-        protected void Packet13(Socket socket, PacketC13ClientSetting packet)
+        private void Handle15ClientSetting(Socket socket, PacketC15ClientSetting packet)
         {
             ServerMain.World.Players.ClientSetting(socket, packet);
         }
@@ -56,54 +189,31 @@ namespace MvkServer.Network
         /// <summary>
         /// Пакет статуса клиента
         /// </summary>
-        protected void Packet16(Socket socket, PacketC16ClientStatus packet)
+        private void Handle16ClientStatus(Socket socket, PacketC16ClientStatus packet)
         {
             ServerMain.World.Players.ClientStatus(socket, packet.GetState());
         }
 
         /// <summary>
-        /// Пакет положения игрока
+        /// Отправить изменение по здоровью
         /// </summary>
-        protected void Packet20(Socket socket, PacketB20Player packet)
+        private void ResponseHealth(EntityPlayerServer entity)
         {
-            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
-            if (entityPlayer != null)
+            ServerMain.World.Players.ResponsePacket(entity, new PacketS06UpdateHealth(entity.Health));
+
+            if (entity.Health > 0)
             {
-                switch(packet.Type())
-                {
-                    case 0:
-                        entityPlayer.SetPosition(packet.GetPos());
-                        entityPlayer.SetSneakOnGround(packet.IsSneaking(), packet.OnGround());
-                        //ServerMain.World.Players.ResponsePacketAll(new PacketB20Player().Position(packet.GetPos(), packet.IsSneaking(), entityPlayer.Id));
-                        break;
-                    case 1:
-                        entityPlayer.SetRotationHead(packet.GetYawHead(), packet.GetYawBody(), packet.GetPitch());
-                        //entityPlayer.SetRotation(packet.GetYawHead(), packet.GetPitch());
-                        //ServerMain.World.Players.ResponsePacketAll(new PacketB20Player().YawPitch(packet.GetYawHead(), packet.GetYawBody(), packet.GetPitch(), entityPlayer.Id));
-                        break;
-                    case 2:
-                        // Анимация игрока
-                        entityPlayer.SwingItem();
-                        entityPlayer.SetHealth(entityPlayer.Health - 4);
-                        ServerMain.ResponsePacket(socket, new PacketS17Health(entityPlayer.Health));
-                        break;
-                }
+                // Анимация урона
+                ServerMain.World.Players.ResponsePacketAll(new PacketS0BAnimation(entity.Id,
+                    PacketS0BAnimation.EnumAnimation.Hurt), entity.Id);
+            } else
+            {
+                // Начала смерти
+                ServerMain.World.Players.ResponsePacketAll(new PacketS19EntityStatus(entity.Id,
+                    PacketS19EntityStatus.EnumStatus.Die), entity.Id);
             }
         }
 
-        /// <summary>
-        /// Взаимодействие с сущностью
-        /// </summary>
-        //protected void Packet22(Socket socket, PacketC22EntityUse packet)
-        //{
-        //    EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
-        //    EntityPlayerServer entity = ServerMain.World.Players.GetPlayer(packet.GetId());
-            
-        //    if (entityPlayer != null && entity != null)
-        //    {
-        //        ServerMain.ResponsePacket(entity.SocketClient, packet.GetAction() == PacketC22EntityUse.EnumAction.Push
-        //            ? new PacketS23EntityUse(packet.GetPos()) : new PacketS23EntityUse(packet.GetAction()));
-        //    }
-        //}
+        
     }
 }

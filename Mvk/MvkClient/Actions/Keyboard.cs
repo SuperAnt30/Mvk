@@ -6,7 +6,11 @@ namespace MvkClient.Actions
 {
     public class Keyboard
     {
-        // <summary>
+        /// <summary>
+        /// Основной клиент
+        /// </summary>
+        public Client ClientMain { get; protected set; }
+        /// <summary>
         /// Клиентский объект мира
         /// </summary>
         public WorldClient World { get; protected set; }
@@ -27,6 +31,7 @@ namespace MvkClient.Actions
         public Keyboard(WorldClient world)
         {
             World = world;
+            ClientMain = world.ClientMain;
             stopwatch.Start();
         }
 
@@ -36,15 +41,15 @@ namespace MvkClient.Actions
         /// <param name="key">индекс клавиши</param>
         public void Down(int key)
         {
-            if (key == 32 && !World.Player.Input.HasFlag(EnumInput.Up))
+            if (key == 32 && !ClientMain.Player.Input.HasFlag(EnumInput.Up))
             {
                 long ms = stopwatch.ElapsedMilliseconds;
                 stopwatch.Restart();
                 if (ms < 300 && key == keyPrev)
                 {
                     // дабл клик пробела
-                    if (World.Player.IsFlying) World.Player.ModeSurvival();
-                    else if (!World.Player.IsSneaking) World.Player.ModeFly();
+                    if (ClientMain.Player.IsFlying) ClientMain.Player.ModeSurvival();
+                    else if (!ClientMain.Player.IsSneaking) ClientMain.Player.ModeFly();
                 }
             }
             keyPrev = key;
@@ -53,9 +58,9 @@ namespace MvkClient.Actions
             if (key == 66 && keyF3) World.RenderEntityManager.IsHiddenHitbox = !World.RenderEntityManager.IsHiddenHitbox; // F3+B
             else if (key == 114) keyF3 = true; // F3
             else if (key == 27 || key == 18) World.ClientMain.Screen.InGameMenu(); // Esc или Alt
-            else if (key == 116) World.Player.ViewCameraNext(); // F5
+            else if (key == 116) ClientMain.Player.ViewCameraNext(); // F5
             //else if (key == 117) // F6
-            else World.Player.InputAdd(KeyActionToInput(key));
+            else ClientMain.Player.InputAdd(KeyActionToInput(key));
         }
 
         /// <summary>
@@ -69,7 +74,7 @@ namespace MvkClient.Actions
                 keyF3 = false;
                 if (keyPrev == 114) Debug.IsDraw = !Debug.IsDraw; // Нажимали только F3
             }
-            else World.Player.InputRemove(KeyActionToInput(key));
+            else ClientMain.Player.InputRemove(KeyActionToInput(key));
         }
 
         /// <summary>

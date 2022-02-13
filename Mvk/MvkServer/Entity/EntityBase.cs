@@ -97,6 +97,10 @@ namespace MvkServer.Entity
         /// Уровень здоровья
         /// </summary>
         public float Health { get; protected set; } = 20;
+        /// <summary>
+        /// Оставшееся время эта сущность должна вести себя как травмированная, то есть маргает красным
+        /// </summary>
+        public int DamageTime { get; protected set; } = 0;
 
         /// <summary>
         /// Истинно, если после перемещения этот объект столкнулся с чем-то по оси X или Z. 
@@ -110,6 +114,28 @@ namespace MvkServer.Entity
         /// Истинно, если после перемещения эта сущность столкнулась с чем-то либо вертикально, либо горизонтально 
         /// </summary>
         public bool IsCollided { get; protected set; } = false;
+
+        /// <summary>
+        /// Был ли эта сущность добавлена в чанк, в котором он находится? 
+        /// </summary>
+        public bool AddedToChunk { get; set; } = false;
+        /// <summary>
+        /// Позиция в чанке
+        /// </summary>
+        public vec2i PositionChunk { get; private set; }
+        /// <summary>
+        /// Позиция псевдо чанка
+        /// </summary>
+        public int PositionChunkY { get; private set; }
+
+        /// <summary>
+        /// Сколько тиков эта сущность пробежала с тех пор, как была жива 
+        /// </summary>
+        public int TicksExisted { get; private set; } = 0;
+        /// <summary>
+        /// Флаг спавна, пометка начального спавна игрока 
+        /// </summary>
+        public bool FlagSpawn { get; set; } = false;
 
         /// <summary>
         /// Пометка что было движение и подобное для сервера, чтоб отправлять пакеты
@@ -149,14 +175,6 @@ namespace MvkServer.Entity
         /// </summary>
         public vec3i GetBlockPos() => new vec3i(Position);
         /// <summary>
-        /// В каком чанке находится
-        /// </summary>
-        public vec2i GetChunkPos() => new vec2i(Mth.Floor(Position.x) >> 4, Mth.Floor(Position.z) >> 4);
-        /// <summary>
-        /// Позиция псевдо чанка
-        /// </summary>
-        public int GetChunkY() => Mth.Floor(Position.y) >> 4;
-        /// <summary>
         /// Получить ограничительную рамку на выбранной позиции
         /// </summary>
         public AxisAlignedBB GetBoundingBox(vec3 pos) => new AxisAlignedBB(pos - new vec3(Width, 0, Width), pos + new vec3(Width, Height, Width));
@@ -165,7 +183,18 @@ namespace MvkServer.Entity
         /// </summary>
         public float GetEyeHeight() => Height * 0.85f;
 
+        /// <summary>
+        /// Получить координаты в каком чанке находится по текущей Position
+        /// </summary>
+        public vec2i GetChunkPos() => new vec2i(Mth.Floor(Position.x) >> 4, Mth.Floor(Position.z) >> 4);
+        /// <summary>
+        /// Получить координату псевдо чанка находится по текущей Position
+        /// </summary>
+        public int GetChunkY() => Mth.Floor(Position.y) >> 4;
+
         #endregion
+
+        
 
         #region Set Methods
 
@@ -212,7 +241,26 @@ namespace MvkServer.Entity
         /// <summary>
         /// Задать новое значение здоровья
         /// </summary>
-        public void SetHealth(float health) => Health = health;
+        public void SetHealth(float health) => Health = health < 0 ? 0 : health;
+
+        /// <summary>
+        /// Начать анимацию боли
+        /// </summary>
+        public void PerformHurtAnimation() => DamageTime = 5; // количество тактов
+
+        /// <summary>
+        /// Задать плоожение в чанке
+        /// </summary>
+        public void SetPositionChunk(int x, int y, int z)
+        {
+            PositionChunk = new vec2i(x, z);
+            PositionChunkY = y;
+        }
+
+        /// <summary>
+        /// Задать индекс
+        /// </summary>
+        public void SetEntityId(ushort id) => Id = id;
 
         /// <summary>
         /// Убить сущность
@@ -220,6 +268,11 @@ namespace MvkServer.Entity
         public void Kill() => SetDead();
 
         #endregion
+
+        /// <summary>
+        /// Добавить тик жизни к сущности
+        /// </summary>
+        public void TicksExistedMore() => TicksExisted++;
 
         /// <summary>
         /// Проверить градусы
@@ -297,6 +350,14 @@ namespace MvkServer.Entity
             return new vec3(glm.sin(yaw) * pitchxz, glm.sin(pitch), -glm.cos(yaw) * pitchxz);
         }
 
+        /// <summary>
+        /// Обновить значения позиции чанка по тикущим значениям
+        /// </summary>
+        public void UpPositionChunk()
+        {
+            PositionChunkY = GetChunkY();
+            PositionChunk = GetChunkPos();
+        }
 
 
         #region Frame

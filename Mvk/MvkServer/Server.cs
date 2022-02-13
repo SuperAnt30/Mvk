@@ -2,6 +2,8 @@
 using MvkServer.Glm;
 using MvkServer.Network;
 using MvkServer.Network.Packets;
+using MvkServer.Network.Packets.Client;
+using MvkServer.Network.Packets.Server;
 using MvkServer.Util;
 using MvkServer.World;
 using System;
@@ -88,7 +90,7 @@ namespace MvkServer
             frequencyMs = Stopwatch.Frequency / 1000;
             stopwatchTps.Start();
             // Отправляем основному игроку пинг
-            ResponsePacket(null, new PacketS10Connection(""));
+            ResponsePacket(null, new PacketSF0Connection(""));
         }
 
         #region Net
@@ -123,7 +125,7 @@ namespace MvkServer
             else if (e.Packet.Status == StatusNet.Connect)
             {
                 // Отправляем игроку пинг
-                ResponsePacket(e.Packet.WorkSocket, new PacketS10Connection(""));
+                ResponsePacket(e.Packet.WorkSocket, new PacketSF0Connection(""));
             }
         }
 
@@ -140,6 +142,12 @@ namespace MvkServer
         /// Обновить количество клиентов
         /// </summary>
         public void UpCountClients() => strNet = IsRunNet() ? "net[" + World.Players.PlayerCount + "]" : "";
+
+
+        /// <summary>
+        /// Запрос завершонный
+        /// </summary>
+        public bool SendCompleted() => server != null && server.SendCompleted;
 
         /// <summary>
         /// Отправить пакет клиенту
@@ -168,11 +176,19 @@ namespace MvkServer
             }
         }
 
+        /// <summary>
+        /// Отправить пакет всем клиентам
+        /// </summary>
+        public void ResponsePacketAll(IPacket packet)
+        {
+            if (World != null) World.Players.ResponsePacketAll(packet);
+        }
+
         #endregion
 
-        
 
-        
+
+
 
         /// <summary>
         /// Запрос остановки сервера
@@ -303,11 +319,18 @@ namespace MvkServer
             long realTime = stopwatchTps.ElapsedTicks;
             TickCounter++;
 
+            packets.Update();
             // Выполнение такта
 
             //Random r = new Random();
             //int rn = r.Next(100);
             //Thread.Sleep(rn);
+
+            // Прошла минута, или 1200 тактов
+            if (TickCounter % 1200 == 0)
+            {
+                Log.Tick();
+            }
 
 
             // Прошла секунда, или 20 тактов
@@ -315,8 +338,8 @@ namespace MvkServer
             {
                 UpCountClients();
 
-                World.Players.ResponsePacketAll(new PacketS14TimeUpdate(TickCounter), -1);
-                
+                World.Players.ResponsePacketAll(new PacketS03TimeUpdate(TickCounter));
+
                 //this.serverConfigManager.sendPacketToAllPlayersInDimension(new S03PacketTimeUpdate(
                 //var4.getTotalWorldTime(), 
                 //var4.getWorldTime(), 
@@ -324,15 +347,24 @@ namespace MvkServer
 
                 //var4.provider.getDimensionId());
             }
-
+            
             try
             {
                 World.Tick();
-                World.Players.UpdatePlayerInstances();
             }
             catch (Exception e)
             {
-                Log.Error("Server.Tick {0}", e.Message);
+                Log.Error("Server.Error.Tick {0}", e.Message);
+                throw;
+            }
+
+            try
+            {
+                World.UpdateEntities();
+            }
+            catch (Exception e)
+            {
+                Log.Error("Server.Error.UpdateEntities {0}", e.Message);
                 throw;
             }
 
@@ -373,6 +405,11 @@ namespace MvkServer
             isGamePaused = !IsRunNet() && value;
             OnLogDebug(ToStringDebugTps());
         }
+
+        /// <summary>
+        /// Получить время в милисекундах с момента запуска проекта
+        /// </summary>
+        public long Time() => stopwatchTps.ElapsedMilliseconds;
 
         /// <summary>
         /// Строка для дебага, формируется по запросу

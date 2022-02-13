@@ -2,6 +2,7 @@
 using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World.Block;
+using MvkServer.World.Chunk;
 using System.Collections.Generic;
 
 namespace MvkServer.World
@@ -19,12 +20,27 @@ namespace MvkServer.World
         public CollisionBase(WorldBase world) => World = world;
 
         /// <summary>
+        /// Получить блок в глобальной координате
+        /// </summary>
+        protected BlockBase GetBlockBase(int x, int y, int z)
+        {
+            if (y >= 0 && y <= 255)
+            {
+                ChunkBase chunk = World.GetChunk(new vec2i(x >> 4, z >> 4));
+                if (chunk != null)
+                {
+                    return chunk.GetBlock0(new vec3i(x & 15, y, z & 15));
+                }
+            }
+            // Для колизи важно, если чанк не загружен, то блоки все с колизией, так-как начнём падать
+            return Blocks.GetBlock(EnumBlock.None, new BlockPos(x, y, z));
+        }
+
+        /// <summary>
         /// Возвращает список ограничивающих рамок, которые сталкиваются с aabb,
         /// /*за исключением переданного столкновения сущности.*/
         /// </summary>
-        /// <param name="entity"></param>
-        /// <param name="aabb"></param>
-        /// <returns></returns>
+        /// <param name="aabb">проверяемая рамка</param>
         public List<AxisAlignedBB> GetCollidingBoundingBoxes(AxisAlignedBB aabb)
         {
             List<AxisAlignedBB> list = new List<AxisAlignedBB>();
@@ -37,7 +53,7 @@ namespace MvkServer.World
                 {
                     for (int z = min.z; z <= max.z; z++)
                     {
-                        BlockBase block = World.GetBlock(new vec3i(x, y, z));
+                        BlockBase block = GetBlockBase(x, y, z);
                         if (block.IsCollidable)
                         {
                             list.AddRange(block.GetCollisionBoxesToList());
@@ -51,12 +67,12 @@ namespace MvkServer.World
         /// <summary>
         /// Обработка колизии блока, особенно важен когда блок не цельный
         /// </summary>
-        /// <param name="blockPos">координата блока</param>
+        /// <param name="xyz">координата блока</param>
         /// <param name="aabb">проверяемая рамка</param>
         /// <returns>true - пересечение имеется</returns>
-        protected bool BlockCollision(vec3i blockPos, AxisAlignedBB aabb)
+        protected bool BlockCollision(int x, int y, int z, AxisAlignedBB aabb)
         {
-            BlockBase block = World.GetBlock(blockPos);
+            BlockBase block = GetBlockBase(x, y, z);
             if (block.IsCollidable)
             {
                 // Цельный блок на коллизию
@@ -87,7 +103,7 @@ namespace MvkServer.World
                 {
                     for (int z = min.z; z <= max.z; z++)
                     {
-                        if (BlockCollision(new vec3i(x, y, z), aabb)) return true;
+                        if (BlockCollision(x, y, z, aabb)) return true;
                     }
                 }
             }

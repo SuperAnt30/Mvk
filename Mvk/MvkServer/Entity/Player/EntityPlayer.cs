@@ -41,7 +41,7 @@ namespace MvkServer.Entity.Player
         {
             OverviewChunk = overviewChunk;
             DistSqrt = MvkStatic.GetSqrt(overviewChunk + plusDistSqrt);
-            UpProjection();
+           // UpProjection(); // Fix Это была вроде проблема когда не загружалась сеть
         }
 
         /// <summary>
@@ -54,14 +54,5 @@ namespace MvkServer.Entity.Player
         /// </summary>
         public void SetChunkPosManaged(vec2i pos) => ChunkPosManaged = pos;
 
-        /// <summary>
-        /// Проверка смещения чанка на выбранное положение
-        /// </summary>
-        public bool CheckPosManaged(int bias)
-        {
-            vec2i chunk = GetChunkPos();
-            return Mth.Abs(chunk.x - ChunkPosManaged.x) >= bias || Mth.Abs(chunk.y - ChunkPosManaged.y) >= bias;
-        }
-            
     }
 }

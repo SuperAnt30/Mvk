@@ -1,5 +1,6 @@
 ﻿using MvkServer.Glm;
 using MvkServer.Network.Packets;
+using MvkServer.Network.Packets.Server;
 using MvkServer.Util;
 using MvkServer.World;
 using MvkServer.World.Chunk;
@@ -27,7 +28,16 @@ namespace MvkServer.Entity.Player
         /// <summary>
         /// Cписок, содержащий все чанки которые нужны клиенту согласно его обзору для загрузки
         /// </summary>
-        public MapList LoadedChunks { get; protected set; } = new MapList();
+        public MapListVec2i LoadedChunks { get; protected set; } = new MapListVec2i();
+
+        /// <summary>
+        /// Пинг клиента в мс
+        /// </summary>
+        public int Ping { get; protected set; } = -1;
+
+        // protected long pingPrev;
+
+        protected Profiler profiler;
 
         // должен быть список чанков которые может видеть игрок
         // должен быть список чанков которые надо догрузить игроку
@@ -39,12 +49,18 @@ namespace MvkServer.Entity.Player
             SocketClient = socket;
             Name = name;
             UUID = GetHash(name);
+            profiler = new Profiler(server.Log);
         }
 
         /// <summary>
         /// Задать порядковый номер на сервере
         /// </summary>
         public void SetId(ushort id) => Id = id;
+
+        /// <summary>
+        /// Задать время пинга
+        /// </summary>
+        public void SetPing(long time) => Ping = (Ping * 3 + (int)(ServerMain.Time() - time)) / 4;
 
         /// <summary>
         /// Задать положение сидя и на земле ли
@@ -66,51 +82,79 @@ namespace MvkServer.Entity.Player
             return BitConverter.ToString(hash).Replace("-", string.Empty).ToLower();
         }
 
+        protected int pingChunk = 0;
+
         /// <summary>
         /// Вызывается для обновления позиции / логики объекта
         /// </summary>
         public override void Update()
         {
-            //base.Update();
+            // Tут base.Update не надо, так-как это обрабатывается на клиенте, 
+            // тут отправление перемещение игрокам если оно надо
+
+            if (isMotionServer)
+            {
+                // TODO:: скорее всего надо вынести в Update уровень выше, чтоб и мобы так же работали
+                // было изменение, надо отправить данные всем клиентам кроме тикущего
+                ServerMain.World.Players.ResponsePacketAll(new PacketS14EntityMotion(this), Id);
+                isMotionServer = false;
+            }
+        }
+
+        /// <summary>
+        /// Вызывается только на сервере у игроков для передачи перемещения
+        /// </summary>
+        public void UpdatePlayer()
+        {
             try
             {
-                if (isMotionServer)
-                {
-                    // было изменение, надо отправить данные на сервер
-                    ServerMain.World.Players.ResponsePacketAll(new PacketB20Player().Position(Position, IsSneaking, OnGround, Id), Id);
-                    ServerMain.World.Players.ResponsePacketAll(new PacketB20Player().YawPitch(RotationYawHead, RotationYaw, RotationPitch, Id), Id);
-                    isMotionServer = false;
-                }
-                //if (isMotion)
-                //{
-                //    isMotion = false;
-                //    vec3 pos = Position + Motion;
-                //    SetPosition(pos);
-                //    if (isMotionHitbox)
-                //    {
-                //        isMotionHitbox = false;
-                //        ServerMain.ResponsePacket(SocketClient, new PacketB20Player().Position(pos, Height, Width, ""));
-                //    }
-                //    else
-                //    {
-                //        ServerMain.World.Players.ResponsePacketAll(new PacketB20Player().Position(pos, Name));
-                //        //ServerMain.ResponsePacket(SocketClient, new PacketB20Player().Position(pos, ""));
-                //    }
-                //}
-
                 int i = 0;
-                while (LoadedChunks.Count > 0 && i < MvkGlobal.COUNT_PACKET_CHUNK_TPS)
+                pingChunk--;
+
+                // TODO::2022-02-08 протестировать корректность загрузки чанков по пингу, именно по сети!
+                while (LoadedChunks.Count > 0 && i < MvkGlobal.COUNT_PACKET_CHUNK_TPS && pingChunk <= 0)
                 {
+                    profiler.StartSection("LoadChunk");
                     // передача пакетов чанков по сети
                     vec2i pos = LoadedChunks.FirstRemove();
                     ChunkBase chunk = ServerMain.World.ChunkPrServ.LoadChunk(pos);
 
                     if (chunk != null)
                     {
-                        ServerMain.ResponsePacket(SocketClient, new PacketS21ChunckData(chunk));
+                        profiler.EndStartSection("PacketS21ChunckData");
+                        PacketS21ChunckData packet = new PacketS21ChunckData(chunk);
+                        profiler.EndStartSection("ResponsePacket");
+                        ServerMain.ResponsePacket(SocketClient, packet);
+
+                        EntityLiving[] entities = chunk.GetEntities();
+                        if (entities.Length > 0)
+                        {
+                            for(int e = 0; e < entities.Length; e++)
+                            {
+                                ServerMain.ResponsePacket(SocketClient, new PacketS0CSpawnPlayer((EntityPlayer)entities[e]));
+                            }
+                        }
+
                         i++;
+                        // TODO:: Нужен алгорит загрузки чанков по пингу
+                        pingChunk = Ping > 50 ? 10 : 0;
                     }
+                    profiler.EndSection();
                 }
+
+                if (isMotionServer)
+                {
+                    //ServerMain.World.Players.ResponsePacketAll(
+                    //    new PacketB20Player().PositionYawPitch(Position, RotationYawHead, RotationYaw, RotationPitch, IsSneaking, OnGround, Id),
+                    //    Id
+                    //);
+                    profiler.StartSection("UpdateMountedMovingPlayer");
+                    // обновлять фрагменты чанков вокруг игрока, перемещаемого логикой сервера
+                    ((WorldServer)World).Players.UpdateMountedMovingPlayer(this);
+                    profiler.EndSection();
+                   // isMotionServer = false;
+                }
+
             }
             catch (Exception e)
             {

@@ -27,10 +27,6 @@ namespace MvkClient.World
         /// </summary>
         public Client ClientMain { get; protected set; }
         /// <summary>
-        /// Объект клиента
-        /// </summary>
-        public EntityPlayerSP Player { get; protected set; }
-        /// <summary>
         /// Посредник клиентоского чанка
         /// </summary>
         public ChunkProviderClient ChunkPrClient => ChunkPr as ChunkProviderClient;
@@ -43,9 +39,19 @@ namespace MvkClient.World
         /// </summary>
         public RenderManager RenderEntityManager { get; protected set; }
         /// <summary>
+        /// Список все объекты для этого клиента, как порожденные, так и непорожденные
+        /// </summary>
+        public MapListEntity EntityList { get; protected set; } = new MapListEntity();
+        /// <summary>
+        /// Содержит все объекты для этого клиента, которые не были созданы из-за отсутствия фрагмента. 
+        /// Игра будет пытаться создать до 10 ожидающих объектов с каждым последующим тиком, 
+        /// пока очередь появления не опустеет. 
+        /// </summary>
+        public MapListEntity EntitySpawnQueue { get; protected set; } = new MapListEntity();
+        /// <summary>
         /// Список сущностей игроков
         /// </summary>
-        public Hashtable PlayerEntities { get; protected set; } = new Hashtable();
+      //  public Hashtable PlayerEntities { get; protected set; } = new Hashtable();
         /// <summary>
         /// Объект нажатия клавиатуры
         /// </summary>
@@ -79,8 +85,8 @@ namespace MvkClient.World
             interpolation.Start();
             WorldRender = new WorldRenderer(this);
             RenderEntityManager = new RenderManager(this);
-            Player = new EntityPlayerSP(this);
-            Player.SetOverviewChunk(Setting.OverviewChunk, 0);
+            ClientMain.PlayerCreate(this);
+            ClientMain.Player.SetOverviewChunk(Setting.OverviewChunk, 0);
             Key = new Keyboard(this);
             UpStrPlayers();
         }
@@ -97,38 +103,43 @@ namespace MvkClient.World
 
                 base.Tick();
 
-                // Обновить игрока
-                Player.Update();
-                
-                if ((Player.IsDead || Player.Health == 0) && !ClientMain.Screen.IsScreenGameOver())
+                // Добавляем спавн новых сущностей
+                while(EntitySpawnQueue.Count > 0)
                 {
-                    // GameOver
-                    ClientMain.SetScreen(ObjectKey.GameOver, "Boom");
+                    EntityLiving entity = EntitySpawnQueue.FirstRemove();
+
+                    if (!LoadedEntityList.Contains(entity))
+                    {
+                        SpawnEntityInWorld(entity);
+                    }
                 }
 
                 // Обновить остальных сущностей
-                List<EntityPlayerMP> entitiesLook = new List<EntityPlayerMP>();
-                Hashtable pe = PlayerEntities.Clone() as Hashtable;
-                List<ushort> deads = new List<ushort>();
-                foreach (EntityPlayerMP entity in pe.Values)
-                {
-                    entity.Update();
-                    if (entity.IsDead) deads.Add(entity.Id);
-                    else if (entity.IsRayEye) entitiesLook.Add(entity);
-                }
-                foreach (ushort id in deads) RemovePlayerMP(id);
-                Player.SetEntitiesLook(entitiesLook);
+                // TODO::!!!
+                //List<EntityPlayerMP> entitiesLook = new List<EntityPlayerMP>();
+                //Hashtable pe = PlayerEntities.Clone() as Hashtable;
+                //List<ushort> deads = new List<ushort>();
+                //foreach (EntityPlayerMP entity in pe.Values)
+                //{
+                //    entity.Update();
+                //    if (entity.IsDead) deads.Add(entity.Id);
+                //    else if (entity.IsRayEye) entitiesLook.Add(entity);
+                //}
+                //foreach (ushort id in deads) RemovePlayerMP(id);
+                //ClientMain.Player.SetEntitiesLook(entitiesLook);
 
-                if (time - previousTotalWorldTime > MvkGlobal.CHUNK_CLEANING_TIME)
-                {
-                    previousTotalWorldTime = time;
-                    ChunkPrClient.FixOverviewChunk(Player);
-                }
+
+                // Дополнительная чистка, если какие-то чанки не почистились!
+                //if (time - previousTotalWorldTime > MvkGlobal.CHUNK_CLEANING_TIME)
+                //{
+                //    previousTotalWorldTime = time;
+                //    ChunkPrClient.FixOverviewChunk(ClientMain.Player);
+                //}
 
                 // Выгрузка чанков в тике
                 ChunkPrClient.ChunksTickUnloadLoad();
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
                 throw;
             }
@@ -165,76 +176,93 @@ namespace MvkClient.World
         /// <summary>
         /// Получить объект игрока по сети, по имени
         /// </summary>
-        public EntityPlayerMP GetPlayerMP(ushort id)
+        //public EntityPlayerMP GetPlayerMP(ushort id) => PlayerEntities.Get(id) as EntityPlayerMP;
+
+        /// <summary>
+        /// Возвращает сущностьь с заданным идентификатором или null, если он не существует в этом мире.
+        /// </summary>
+        public EntityLiving GetEntityByID(ushort id)
         {
-            if (PlayerEntities.ContainsKey(id))
-            {
-                return PlayerEntities[id] as EntityPlayerMP;
-            }
-            return null;
+            if (id == ClientMain.Player.Id) return ClientMain.Player;
+            return LoadedEntityList.Get(id) as EntityLiving;
         }
 
         /// <summary>
-        /// Заменить объект игрока по сети
+        /// Добавить сопоставление идентификатора сущности с entityHashSet
         /// </summary>
-        public void SetPlayerMP(EntityPlayerMP entity)
+        public void AddEntityToWorld(ushort id, EntityLiving entity)
         {
-            if (!PlayerEntities.ContainsKey(entity.Id))
+            EntityLiving entityId = GetEntityByID(id);
+
+            if (entityId != null) RemoveEntity(entityId);
+
+            EntityList.Add(entity);
+            entity.SetEntityId(id);
+
+            if (!SpawnEntityInWorld(entity))
             {
-                PlayerEntities.Add(entity.Id, entity);
+                EntitySpawnQueue.Add(entity);
             }
-            else
-            {
-                PlayerEntities[entity.Id] = entity;
-            }
-            UpStrPlayers();
+
+            LoadedEntityList.Add(entity);
         }
+
+        public EntityLiving RemoveEntityFromWorld(ushort id)
+        {
+            EntityLiving entity = GetEntityByID(id);
+            if (entity != null)
+            {
+                EntityList.Remove(entity);
+                RemoveEntity(entity);
+            }
+
+            return entity;
+        }
+        ///// <summary>
+        ///// Заменить объект игрока по сети
+        ///// </summary>
+        //public void SetPlayerMP(EntityPlayerMP entity)
+        //{
+        //    SpawnEntityInWorld(entity);
+        //    //PlayerEntities.Add(entity);
+        //    // TODO::!!!
+        //    //if (!PlayerEntities.ContainsKey(entity.Id))
+        //    //{
+        //    //    PlayerEntities.Add(entity.Id, entity);
+        //    //}
+        //    //else
+        //    //{
+        //    //    PlayerEntities[entity.Id] = entity;
+        //    //}
+        //    UpStrPlayers();
+        //}
 
         /// <summary>
         /// Удалить игрока с базы
         /// </summary>
-        public void RemovePlayerMP(ushort id)
-        {
-            lock(locker) PlayerEntities.Remove(id);
-            UpStrPlayers();
-        }
+        //public void RemovePlayerMP(ushort id)
+        //{
+        //    EntityLiving entity = GetEntityByID(id);// GetPlayerMP(id);
+        //    if (entity != null) RemoveEntity(entity);
+        //    // TODO::!!!
+        //    //PlayerEntities
+        //    //lock (locker) PlayerEntities.Remove(id);
+        //    UpStrPlayers();
+        //}
 
-        public void MouseDown(MouseButton button)
-        {
-            if (button == MouseButton.Left)
-            {
-                vec3 pos = Player.GetPositionFrame();
-                pos.y += Player.GetEyeHeightFrame();
-                vec3 dir = Player.RayLook;//.GetLookFrame();
-               
-                MovingObjectPosition moving = RayCast(pos, dir, 10f);
-                MovingObjectPosition movingE = RayCastEntity();
-
-                Player.Action();
-                //Stopwatch stopwatch0 = new Stopwatch();
-                //stopwatch0.Start();
-
-                //int j = 0;
-                //float fj = 0f;
-                //for (int i = 0; i < 40000000; i++) fj = fj / 2.7f * i; //j++;
-
-                //float tf = (stopwatch0.ElapsedTicks / (float)Stopwatch.Frequency) * 1000f;
-                // луч
-                Debug.DStr = moving.ToString() + "\r\n" + movingE.ToString(); // + " --" + string.Format("{0:0.00}",tf);
-
-            }
-        }
+        public void MouseDown(MouseButton button) { }
 
         /// <summary>
         /// Получить попадает ли в луч сущность, выбрать самую близкую
         /// </summary>
         public MovingObjectPosition RayCastEntity()
         {
+            // TODO::RayCastEntity ЗАМЕНИТЬ!!!
             MovingObjectPosition moving = new MovingObjectPosition();
-            if (Player.EntitiesLook.Length > 0)
+            if (ClientMain.Player.EntitiesLook.Length > 0)
             {
-                EntityPlayerMP[] entities = Player.EntitiesLook.Clone() as EntityPlayerMP[];
-                vec3 pos = Player.GetPositionFrame();
+                EntityPlayerMP[] entities = ClientMain.Player.EntitiesLook.Clone() as EntityPlayerMP[];
+                vec3 pos = ClientMain.Player.GetPositionFrame();
                 float dis = 1000f;
                 foreach (EntityPlayerMP entity in entities)
                 {
@@ -249,19 +277,67 @@ namespace MvkClient.World
             return moving;
         }
 
+        #region Entity
+
+        protected override void OnEntityAdded(EntityLiving entity)
+        {
+            base.OnEntityAdded(entity);
+            EntitySpawnQueue.Remove(entity);
+        }
+
+        protected override void OnEntityRemoved(EntityLiving entity)
+        {
+            base.OnEntityRemoved(entity);
+
+            if (EntityList.Contains(entity))
+            {
+                if (!entity.IsDead)
+                {
+                    EntitySpawnQueue.Add(entity);
+                }
+                else
+                {
+                    EntityList.Remove(entity);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Запланировать удаление сущности в следующем тике
+        /// </summary>
+        public override void RemoveEntity(EntityLiving entity)
+        {
+            base.RemoveEntity(entity);
+            EntityList.Remove(entity);
+        }
+
+        /// <summary>
+        /// Вызывается, когда объект появляется в мире. Это включает в себя игроков
+        /// </summary>
+        public override bool SpawnEntityInWorld(EntityLiving entity)
+        {
+            bool spawn = base.SpawnEntityInWorld(entity);
+            EntityList.Add(entity);
+            if (!spawn) EntitySpawnQueue.Add(entity);
+            return spawn;
+        }
+
+        #endregion
+
         /// <summary>
         /// Обновить перечень игроков, отладка
         /// </summary>
         protected void UpStrPlayers()
         {
             strPlayers = "[" + PlayerEntities.Count + "] ";
-            if (PlayerEntities.Count > 0)
-            {
-                foreach (EntityPlayerMP entity in PlayerEntities.Values)
-                {
-                    strPlayers += entity.Name + " ";
-                }
-            }
+            // TODO::!!!
+            //if (PlayerEntities.Count > 0)
+            //{
+            //    foreach (EntityPlayerMP entity in PlayerEntities.Values)
+            //    {
+            //        strPlayers += entity.Name + " ";
+            //    }
+            //}
         }
 
         #region Debug
@@ -276,9 +352,9 @@ namespace MvkClient.World
         /// </summary>
         public override string ToStringDebug()
         {
-            return string.Format("t {2} {0} E:{4}/{5}\r\n{3} {1}",
-                ChunkPrClient.ToString(), Player, ClientMain.TickCounter / 20, 
-                strPlayers, PlayerEntities.Count + 1, entitiesCountShow);
+            return string.Format("t {2} {0} E:{4}/{5}\r\n{3} {1} @!{6}/{7}",
+                ChunkPrClient.ToString(), ClientMain.Player, ClientMain.TickCounter / 20, 
+                strPlayers, PlayerEntities.Count + 1, entitiesCountShow, EntityList.Count, base.ToStringDebug());
         }
     }
 }

@@ -13,6 +13,7 @@
         /// <summary>
         /// Время чистки чанков на сервере и клиенте, в тактах
         /// 6000 = 5 min
+        /// 400 = 20 sec
         /// </summary>
         public const int CHUNK_CLEANING_TIME = 400; // 6000;
 
@@ -23,14 +24,19 @@
         public const bool IS_DRAW_DEBUG_CHUNK = false;
 
         /// <summary>
+        /// Активация имитации задержки локальной сети
+        /// </summary>
+        public const bool IS_DENUG_SLEEP_NET = false;
+
+        /// <summary>
         /// Cколько пакетов чанков передавать по сети за один ТПС
         /// </summary>
-        public const int COUNT_PACKET_CHUNK_TPS = 12;
+        public const int COUNT_PACKET_CHUNK_TPS = 10;
 
         /// <summary>
         /// Cколько чанков рендерим в один кадр
         /// </summary>
-        public const int COUNT_RENDER_CHUNK_FRAME = 10;
+        public const int COUNT_RENDER_CHUNK_FRAME = 5;
 
         /// <summary>
         /// Эффект покачивания при движении

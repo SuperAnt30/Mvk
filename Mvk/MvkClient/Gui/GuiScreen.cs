@@ -103,7 +103,7 @@ namespace MvkClient.Gui
         {
             if (screen != null) screen.Delete();
             ClientMain.SetWishFps(20);
-            if (ClientMain.World != null) ClientMain.World.Player.InputNone();
+            if (ClientMain.World != null) ClientMain.Player.InputNone();
             screen = screenNew;
             screen.Finished += MenuScreen_Finished;
             screen.Initialize();

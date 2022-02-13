@@ -1,4 +1,4 @@
-﻿namespace MvkServer.Network.Packets
+﻿namespace MvkServer.Network.Packets.Client
 {
     public struct PacketC16ClientStatus : IPacket
     {
@@ -7,12 +7,11 @@
         /// </summary>
         private EnumState state;
 
-        public PacketC16ClientStatus(EnumState state) => this.state = state;
-
         public EnumState GetState() => state;
 
-        public void ReadPacket(StreamBase stream) => state = (EnumState)stream.ReadByte();
+        public PacketC16ClientStatus(EnumState state) => this.state = state;
 
+        public void ReadPacket(StreamBase stream) => state = (EnumState)stream.ReadByte();
         public void WritePacket(StreamBase stream) => stream.WriteByte((byte)state);
 
         /// <summary>

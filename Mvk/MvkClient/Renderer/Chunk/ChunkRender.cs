@@ -29,13 +29,14 @@ namespace MvkClient.Renderer.Chunk
         /// </summary>
         protected float[] bufferDense = new float[0];
 
-        public ChunkRender(WorldClient worldIn, vec2i pos) 
+        public ChunkRender(WorldClient worldIn, vec2i pos) :base (worldIn, pos)
         {
             World = worldIn;
-            Position = pos;
-            for (int y = 0; y < StorageArrays.Length; y++)
+            //Position = pos;
+            for (int y = 0; y < COUNT_HEIGHT; y++)
             {
-                StorageArrays[y] = new ChunkStorage(y);
+            //    StorageArrays[y] = new ChunkStorage(y);
+
                 MeshDense[y] = new ChunkMesh();
             }
         }

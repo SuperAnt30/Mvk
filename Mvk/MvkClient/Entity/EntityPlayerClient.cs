@@ -13,6 +13,10 @@ namespace MvkClient.Entity
     public abstract class EntityPlayerClient : EntityPlayer
     {
         /// <summary>
+        /// Основной клиент
+        /// </summary>
+        public Client ClientMain { get; protected set; }
+        /// <summary>
         /// Клиентский объект мира
         /// </summary>
         public WorldClient ClientWorld { get; protected set; }
@@ -33,21 +37,27 @@ namespace MvkClient.Entity
         {
             ClientWorld = world;
             World = world;
+            ClientMain = world.ClientMain;
             interpolation.Start();
         }
 
         /// <summary>
-        /// Входящие данные запуска игрока
+        /// Задать данные игрока
         /// </summary>
-        public void OnPacketS12Success(PacketS12Success packet)
+        public void SetDataPlayer(ushort id, string uuid, string name)
         {
-            Name = packet.Name;
-            UUID = packet.GetUuid();
-            Id = packet.GetId();
-            SetPosition(packet.Pos);
-            RotationYawLast = RotationYawPrev = RotationYaw = RotationYawHead = RotationYawHeadPrev = packet.Yaw;
-            RotationPitchLast = RotationPitchPrev = RotationPitch = packet.Pitch;
-            //SetRotation(packet.Yaw, packet.Pitch);
+            Name = name;
+            UUID = uuid;
+            Id = id;
+        }
+        /// <summary>
+        /// Задать место положение игрока, при спавне, телепорте и тп
+        /// </summary>
+        public void SetPosLook(vec3 pos, float yaw, float pitch)
+        {
+            SetPosition(pos);
+            RotationYawLast = RotationYawPrev = RotationYaw = RotationYawHead = RotationYawHeadPrev = yaw;
+            RotationPitchLast = RotationPitchPrev = RotationPitch = pitch;
             PositionPrev = Position;
         }
 
@@ -60,35 +70,25 @@ namespace MvkClient.Entity
         /// <summary>
         /// Задать позицию от сервера
         /// </summary>
-        public void SetPositionServer(vec3 pos, bool sneaking, bool onGround)
+        public void SetMotionServer(vec3 pos, float yaw, float pitch, bool sneaking)
         {
-           // interpolation.Restart();
             if (IsSneaking != sneaking)
             {
                 IsSneaking = sneaking;
                 if (IsSneaking) Sitting(); else Standing();
             }
-            OnGround = onGround;
             PositionPrev = Position;
             SetPosition(pos);
 
-            // Проверка толчка
-            CheckPush();
-        }
-
-        /// <summary>
-        /// Задать вращение от сервера
-        /// </summary>
-        public void SetRotationServer(float yawHead, float yawBody, float pitch)
-        {
-            interpolation.Restart();
             RotationPitchPrev = RotationPitch;
             RotationYawPrev = RotationYaw;
             RotationYawHeadPrev = RotationYawHead;
-            SetRotationHead(yawHead, yawBody, pitch);
-            //SetRotation(yawHead, pitch);
-            //RotationYaw = yaw;
-            //RotationPitch = pitch;
+            SetRotationHead(yaw, RotationYaw, pitch);
+
+            // Проверка толчка
+            CheckPush();
+
+            interpolation.Restart();
         }
 
         /// <summary>
@@ -98,12 +98,12 @@ namespace MvkClient.Entity
         {
             vec3 posPrev = PositionPrev;
             vec3 pos = Position;
-            AxisAlignedBB aabb = ClientWorld.Player.BoundingBox.Clone();
+            AxisAlignedBB aabb = ClientMain.Player.BoundingBox.Clone();
             // Толчёк происходит в момент когда прошлое положение было без колизи, а уже новое с колизией
             if (!aabb.IntersectsWith(GetBoundingBox(posPrev)) && aabb.IntersectsWith(GetBoundingBox(pos)))
             {
                 // Толчёк сущности entity по вектору
-                ClientWorld.Player.MotionPush += pos - posPrev;
+                ClientMain.Player.MotionPush += pos - posPrev;
             }
         }
 

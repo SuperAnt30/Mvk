@@ -6,6 +6,10 @@
     public enum EnumBlock
     {
         /// <summary>
+        /// Отсутствие блока, он же воздух, но с коллизией, пройти через него нельзя
+        /// </summary>
+        None = -1,
+        /// <summary>
         /// Воздух
         /// </summary>
         Air = 0,

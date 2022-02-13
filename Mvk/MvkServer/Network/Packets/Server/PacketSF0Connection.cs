@@ -1,13 +1,13 @@
-﻿namespace MvkServer.Network.Packets
+﻿namespace MvkServer.Network.Packets.Server
 {
-    public struct PacketS10Connection : IPacket
+    public struct PacketSF0Connection : IPacket
     {
         private string cause;
 
         /// <summary>
         /// Если причина не указана, то клиент соединился, отправляем пинг, если есть причина, то дисконект
         /// </summary>
-        public PacketS10Connection(string cause) => this.cause = cause;
+        public PacketSF0Connection(string cause) => this.cause = cause;
 
         public bool IsConnect() => cause == "";
         public string GetCause() => cause;

@@ -12,6 +12,10 @@ namespace MvkClient.Renderer.Entity
     public class RenderManager
     {
         /// <summary>
+        /// Основной клиент
+        /// </summary>
+        public Client ClientMain { get; protected set; }
+        /// <summary>
         /// Клиентский объект мира
         /// </summary>
         public WorldClient World { get; protected set; }
@@ -40,6 +44,7 @@ namespace MvkClient.Renderer.Entity
         public RenderManager(WorldClient world)
         {
             World = world;
+            ClientMain = world.ClientMain;
             entities.Add(EnumEntities.Player, new RenderPlayer(this, new ModelPlayer()));
             entities.Add(EnumEntities.PlayerHand, new RenderPlayer(this, new ModelPlayerHand()));
             entities.Add(EnumEntities.Chicken, new RenderChicken(this, new ModelChicken()));

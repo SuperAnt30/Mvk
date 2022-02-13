@@ -13,6 +13,7 @@ namespace MvkServer.World.Block
         {
             switch (eBlock)
             {
+                case EnumBlock.None: return new BlockAir(true);
                 case EnumBlock.Air: return new BlockAir();
                 case EnumBlock.Stone: return new BlockStone();
                 case EnumBlock.Cobblestone: return new BlockCobblestone();

@@ -1,7 +1,9 @@
-﻿using MvkServer.Glm;
+﻿using MvkServer.Entity;
+using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World.Block;
 using System;
+using System.Collections.Generic;
 
 namespace MvkServer.World.Chunk
 {
@@ -11,9 +13,13 @@ namespace MvkServer.World.Chunk
     public class ChunkBase
     {
         /// <summary>
+        /// Количество псевдо чанков
+        /// </summary>
+        protected const int COUNT_HEIGHT = 16;
+        /// <summary>
         /// Данные чанка
         /// </summary>
-        public ChunkStorage[] StorageArrays { get; protected set; } = new ChunkStorage[16];
+        public ChunkStorage[] StorageArrays { get; protected set; } = new ChunkStorage[COUNT_HEIGHT];
         /// <summary>
         /// Сылка на объект мира
         /// </summary>
@@ -26,6 +32,11 @@ namespace MvkServer.World.Chunk
         /// Загружен ли чанк
         /// </summary>
         public bool IsChunkLoaded { get; protected set; } = false;
+        /// <summary>
+        /// Список сущностей в каждом псевдочанке
+        /// </summary>
+        public MapListEntity[] ListEntities { get; protected set; } = new MapListEntity[COUNT_HEIGHT];
+
         /// <summary>
         /// Столбцы биомов
         /// </summary>
@@ -51,9 +62,10 @@ namespace MvkServer.World.Chunk
         {
             World = worldIn;
             Position = pos;
-            for (int y = 0; y < StorageArrays.Length; y++)
+            for (int y = 0; y < COUNT_HEIGHT; y++)
             {
                 StorageArrays[y] = new ChunkStorage(y);
+                ListEntities[y] = new MapListEntity();
             }
         }
 
@@ -65,13 +77,13 @@ namespace MvkServer.World.Chunk
             StorageArraysClear();
             //TODO:: Тест генерации
 
-            Random random = new Random();
+            //Random random = new Random();
 
-            if (random.Next(20) == 1)
-            {
-                IsChunkLoaded = true;
-                return;
-            }
+            //if (random.Next(20) == 1)
+            //{
+            //    IsChunkLoaded = true;
+            //    return;
+            //}
 
             for (int y0 = 0; y0 < 24; y0++)
             {
@@ -152,6 +164,10 @@ namespace MvkServer.World.Chunk
         public void ChunkUnload()
         {
             IsChunkLoaded = false;
+            for (int i = 0; i < ListEntities.Length; i++)
+            {
+                World.UnloadEntities(ListEntities[i]);
+            }
             // Продумать, для клиента просто удалить, для сервера записать и удалить
             //Save();
             //StorageArraysClear();
@@ -165,9 +181,10 @@ namespace MvkServer.World.Chunk
         /// </summary>
         protected void StorageArraysClear()
         {
-            for (int y = 0; y < StorageArrays.Length; y++)
+            for (int y = 0; y < COUNT_HEIGHT; y++)
             {
                 StorageArrays[y].Clear();
+                ListEntities[y].Clear();
             }
         }
 
@@ -205,6 +222,7 @@ namespace MvkServer.World.Chunk
         /// </summary>
         public bool IsOldTime() => DateTime.Now.Ticks - updateTime > 100000000;
 
+        #region Block
 
         /// <summary>
         /// Получить блок по координатам чанка XZ 0..15, Y 0..255
@@ -222,6 +240,74 @@ namespace MvkServer.World.Chunk
         {
             if (pos.x >> 4 == 0 && pos.z >> 4 == 0) return StorageArrays[pos.y >> 4].GetEBlock(pos.x, pos.y & 15, pos.z);
             return EnumBlock.Air;
+        }
+
+        #endregion
+
+        #region Entity
+
+        /// <summary>
+        /// Добавить сущность в чанк
+        /// </summary>
+        public void AddEntity(EntityLiving entity)
+        {
+            int x = Mth.Floor(entity.Position.x) >> 4;
+            int z = Mth.Floor(entity.Position.z) >> 4;
+
+            if (x != Position.x || z != Position.y)
+            {
+                World.Log.Log("Неверное местоположение! ({0}, {1}) должно быть ({2}), {3}", x, z, Position, entity.Type);
+                entity.SetDead();
+                return;
+            }
+
+            int y = Mth.Floor(entity.Position.y) >> 4;
+            if (y < 0) y = 0;
+            if (y >= COUNT_HEIGHT) y = COUNT_HEIGHT - 1;
+
+            entity.SetPositionChunk(Position.x, y, Position.y);
+            ListEntities[y].Add(entity);
+        }
+
+        /// <summary>
+        /// Удаляет сущность из конкретного псевдочанка
+        /// </summary>
+        /// <param name="entity">сущность</param>
+        /// <param name="y">уровень псевдочанка</param>
+        public void RemoveEntityAtIndex(EntityLiving entity, int y)
+        {
+            if (y < 0) y = 0;
+            if (y >= COUNT_HEIGHT) y = COUNT_HEIGHT - 1;
+            ListEntities[y].Remove(entity);
+        }
+
+        /// <summary>
+        ///  Удаляет сущность, используя его координату y в качестве индекса
+        /// </summary>
+        /// <param name="entity">сущность</param>
+        public void RemoveEntity(EntityLiving entity) => RemoveEntityAtIndex(entity, entity.PositionChunk.y);
+
+        /// <summary>
+        /// Получить список id всех сущностей в чанке
+        /// </summary>
+        public EntityLiving[] GetEntities()
+        {
+            List<EntityLiving> list = new List<EntityLiving>();
+            for (int y = 0; y < COUNT_HEIGHT; y++)
+            {
+                list.AddRange(ListEntities[y].GetList());
+            }
+            return list.ToArray();
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Обновление в такте
+        /// </summary>
+        public void Update()
+        {
+
         }
     }
 }

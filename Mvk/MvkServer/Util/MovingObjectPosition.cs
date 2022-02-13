@@ -89,7 +89,12 @@ namespace MvkServer.Util
 
         public override string ToString()
         {
-            return string.Format("{0} {1} {2}", type, Hit, RayHit);
+            string str = "";
+            if (type == MovingObjectType.Entity)
+            {
+                str = Entity.Name + " " + Entity.Health;
+            }
+            return string.Format("{0} {3} {1} {2}", type, Hit, RayHit, str);
         }
     }
 }

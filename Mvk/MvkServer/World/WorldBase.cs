@@ -1,7 +1,10 @@
-﻿using MvkServer.Glm;
+﻿using MvkServer.Entity;
+using MvkServer.Entity.Player;
+using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World.Block;
 using MvkServer.World.Chunk;
+using System;
 using System.Collections;
 
 namespace MvkServer.World
@@ -12,6 +15,15 @@ namespace MvkServer.World
     public abstract class WorldBase
     {
         /// <summary>
+        /// Объект лога
+        /// </summary>
+        public Logger Log { get; protected set; }
+        /// <summary>
+        /// Объект отладки по задержке в лог
+        /// </summary>
+        protected Profiler profiler;
+
+        /// <summary>
         /// Посредник чанков
         /// </summary>
         public ChunkProvider ChunkPr { get; protected set; }
@@ -19,10 +31,26 @@ namespace MvkServer.World
         /// Объект проверки коллизии
         /// </summary>
         public CollisionBase Collision { get; protected set; }
-        
 
+        /// <summary>
+        /// Список всех сущностей во всех загруженных в данный момент чанках 
+        /// </summary>
+        public MapListEntity LoadedEntityList { get; protected set; } = new MapListEntity();
+        /// <summary>
+        /// Список сущностей которые надо выгрузить
+        /// </summary>
+        public MapListEntity UnloadedEntityList { get; protected set; } = new MapListEntity();
+        /// <summary>
+        /// Список игроков в мире
+        /// </summary>
+        public MapListEntity PlayerEntities { get; protected set; } = new MapListEntity();
 
-        protected WorldBase() => Collision = new CollisionBase(this);
+        protected WorldBase()
+        {
+            Collision = new CollisionBase(this);
+            Log = new Logger();
+            profiler = new Profiler(Log);
+        }
 
         /// <summary>
         /// Обработка каждый тик
@@ -32,10 +60,206 @@ namespace MvkServer.World
 
         }
 
+        #region Entity
+
+        /// <summary>
+        /// Загрузить коллекцию сущностей
+        /// </summary>
+        public void LoadEntities(MapListEntity entityCollection)
+        {
+            LoadedEntityList.AddRange(entityCollection);
+            while (entityCollection.Count > 0)
+            {
+                OnEntityAdded(entityCollection.FirstRemove());
+            }
+        }
+
+        /// <summary>
+        /// Выгрузить коллекцию сущностей
+        /// </summary>
+        public void UnloadEntities(MapListEntity entities) => UnloadedEntityList.AddRange(entities);
+
+        /// <summary>
+        /// Обновляет (и очищает) объекты и объекты чанка 
+        /// </summary>
+        public virtual void UpdateEntities()
+        {
+            profiler.StartSection("EntitiesRemove");
+
+            LoadedEntityList.RemoveRange(UnloadedEntityList);
+
+            for (int i = 0; i < UnloadedEntityList.Count; i++)
+            {
+                EntityLiving entity = UnloadedEntityList.GetAt(i);
+                if (entity.AddedToChunk && ChunkPr.IsChunk(entity.PositionChunk))
+                {
+                    GetChunk(entity.PositionChunk).RemoveEntity(entity);
+                }
+                OnEntityRemoved(entity);
+            }
+
+            UnloadedEntityList.Clear();
+
+            profiler.EndStartSection("EntityTick");
+
+            // колекция для удаления
+            MapListEntity entityRemove = new MapListEntity();
+            for (int i = 0; i < LoadedEntityList.Count; i++)
+            {
+                EntityLiving entity = LoadedEntityList.GetAt(i);
+
+                if (!entity.IsDead)
+                {
+                    try
+                    {
+                        UpdateEntity(entity);
+                    }
+                    catch (Exception e)
+                    {
+                        //Log.Error("Server.Error.Tick {0}", e.Message);
+                        throw;
+                    }
+                }
+                else 
+                {
+                    entityRemove.Add(entity);
+                }
+            }
+
+            profiler.EndStartSection("EntityRemove");
+
+            // Удаляем
+            while (entityRemove.Count > 0)
+            {
+                EntityLiving entity = entityRemove.FirstRemove();
+                if (entity.AddedToChunk && ChunkPr.IsChunk(entity.PositionChunk))
+                {
+                    GetChunk(entity.PositionChunk).RemoveEntity(entity);
+                }
+                LoadedEntityList.Remove(entity);
+                OnEntityRemoved(entity);
+            }
+
+            profiler.EndSection();
+        }
+
+        private void UpdateEntity(EntityLiving entity)
+        {
+            vec2i posCh = entity.GetChunkPos();
+            //byte var5 = 32;
+
+            // Проверка о наличии соседних чанков
+            //if (IsAreaLoaded(x - var5, 0, z - var5, x + var5, 0, z + var5, true))
+            {
+                //entity.lastTickPosX = entity.posX;
+                //entity.lastTickPosY = entity.posY;
+                //entity.lastTickPosZ = entity.posZ;
+                //entity.prevRotationYaw = entity.rotationYaw;
+                //entity.prevRotationPitch = entity.rotationPitch;
+
+                if (entity.AddedToChunk)
+                {
+                    entity.TicksExistedMore();
+                    entity.Update();
+                }
+
+                posCh = entity.GetChunkPos();
+                float y = entity.GetChunkY(); 
+
+                if (!entity.AddedToChunk || !posCh.Equals(entity.PositionChunk) || y != entity.PositionChunkY)
+                {
+                    if (entity.AddedToChunk && ChunkPr.IsChunk(entity.PositionChunk))
+                    {
+                        // Удаляем из старого псевдо чанка
+                        GetChunk(entity.PositionChunk).RemoveEntityAtIndex(entity, entity.PositionChunkY);
+                    }
+                    if (ChunkPr.IsChunk(posCh))
+                    {
+                        // Добавляем в новый псевдочанк
+                        entity.AddedToChunk = true;
+                        GetChunk(posCh).AddEntity(entity);
+                    }
+                    else
+                    {
+                        // Если нет чанка помечаем что сущность без чанка
+                        entity.AddedToChunk = false;
+                    }
+                }
+            }
+        }
+
+        protected virtual void OnEntityAdded(EntityLiving entity)
+        {
+            //for (int i = 0; i < this.worldAccesses.size(); ++i)
+            //{
+            //    ((IWorldAccess)this.worldAccesses.get(var2)).OnEntityAdded(entity);
+            //}
+        }
+
+        protected virtual void OnEntityRemoved(EntityLiving entity)
+        {
+            //for (int i = 0; i < this.worldAccesses.size(); ++i)
+            //{
+            //    ((IWorldAccess)this.worldAccesses.get(i)).OnEntityRemoved(entity);
+            //}
+        }
+
+        /// <summary>
+        /// Запланировать удаление сущности в следующем тике
+        /// </summary>
+        public virtual void RemoveEntity(EntityLiving entity)
+        {
+            entity.SetDead();
+            if (entity is EntityPlayer)
+            {
+                PlayerEntities.Remove(entity);
+                // Флаг сна всех игроков
+                //UpdateAllPlayersSleepingFlag();
+                OnEntityRemoved(entity);
+            }
+        }
+
+        /// <summary>
+        /// Вызывается, когда объект появляется в мире. Это включает в себя игроков
+        /// </summary>
+        public virtual bool SpawnEntityInWorld(EntityLiving entity)
+        {
+            vec2i posCh = entity.GetChunkPos();
+            bool flagSpawn = entity.FlagSpawn;
+
+            if (entity is EntityPlayer) flagSpawn = true;
+
+            if (!flagSpawn && !ChunkPr.IsChunk(posCh))
+            {
+                return false;
+            }
+            else
+            {
+                if (entity is EntityPlayer)
+                {
+                    EntityPlayer entityPlayer = (EntityPlayer)entity;
+                    PlayerEntities.Add(entityPlayer);
+                    // Флаг сна всех игроков
+                    //UpdateAllPlayersSleepingFlag();
+                }
+
+                ChunkBase chunk = GetChunk(posCh);
+                if (chunk != null) chunk.AddEntity(entity);
+                LoadedEntityList.Add(entity);
+                OnEntityAdded(entity);
+                return true;
+            }
+        }
+
+        #endregion
+
         /// <summary>
         /// Строка для дебага
         /// </summary>
-        public virtual string ToStringDebug() => "";
+        public virtual string ToStringDebug()
+        {
+            return string.Format("{0}/{1}", LoadedEntityList.Count, UnloadedEntityList.Count);
+        }
 
         /// <summary>
         /// Получить чанк по координатам чанка

@@ -6,6 +6,8 @@ using MvkServer;
 using MvkServer.Entity;
 using MvkServer.Glm;
 using MvkServer.Network.Packets;
+using MvkServer.Network.Packets.Client;
+using MvkServer.Network.Packets.Server;
 using MvkServer.Util;
 using SharpGL;
 using System;
@@ -128,6 +130,10 @@ namespace MvkClient.Entity
         /// </summary>
         public override void Update()
         {
+            // Такты изминения глаз при присидании, и угол обзора при ускорении. Должны быть до base.Update()
+            Eye.Update();
+            Fov.Update();
+
             base.Update();
 
             if (RotationEquals()) IsFrustumCulling = true;
@@ -136,8 +142,8 @@ namespace MvkClient.Entity
                 IsFrustumCulling = true;
                 isMotionServer = false;
             }
-            Eye.Update();
-            Fov.Update();
+            // Для вращении головы
+            HeadTurn();
             // Расчёт амплитуды конечностей, при движении
             UpLimbSwing();
             // Просчёт взмаха руки
@@ -152,12 +158,13 @@ namespace MvkClient.Entity
         /// <summary>
         /// Обновление в каждом тике, если были требования по изминению позицыи, вращения, бег, сидеть и тп.
         /// </summary>
-        protected override void UpdateLiving()
+        protected override void UpdateIsMotion()
         {
-            base.UpdateLiving();
+            base.UpdateIsMotion();
             Eye.Set(GetEyeHeight(), 4);
             Fov.Set(IsSprinting ? 1.22f : 1.43f, 4);
-            ClientWorld.ClientMain.TrancivePacket(new PacketB20Player().Position(Position, IsSneaking, OnGround));
+            //ClientWorld.ClientMain.TrancivePacket(new PacketB20Player().Position(Position, IsSneaking, OnGround));
+            ClientWorld.ClientMain.TrancivePacket(new PacketC04PlayerPosition(Position, IsSneaking));
         }
 
         /// <summary>
@@ -176,9 +183,7 @@ namespace MvkClient.Entity
                 float yawHead = RotationYawHead;
                 float yawBody = RotationYaw;
                 float pitch = RotationPitch;
-               // Task.Factory.StartNew(() => {
-                    ClientWorld.ClientMain.TrancivePacket(new PacketB20Player().YawPitch(yawHead, yawBody, pitch));
-                //});
+                ClientWorld.ClientMain.TrancivePacket(new PacketC05PlayerLook(yawHead, pitch, IsSneaking));
                 return true;
             }
             return false;
@@ -384,7 +389,8 @@ namespace MvkClient.Entity
 
                 SwingItem();
                 //Health = 0;
-                ClientWorld.ClientMain.TrancivePacket(new PacketB20Player().Animation());
+                //ClientWorld.ClientMain.TrancivePacket(new PacketS0BAnimation(Id, PacketS0BAnimation.EnumAnimation.SwingItem));
+                ClientWorld.ClientMain.TrancivePacket(new PacketC0AAnimation());
 
                 // Удар по сущности
                 //if (EntitiesLook.Length > 0)
@@ -393,14 +399,31 @@ namespace MvkClient.Entity
                     // Рамка удара
                     AxisAlignedBB aabb = GetBoundingBox(positionFrame + RayLook * Width * 1.8f);
 
-                    Hashtable pe = ClientWorld.PlayerEntities.Clone() as Hashtable;
-                    foreach (EntityPlayerMP entity in pe.Values)
+                    // TODO::!!!
+                    for (int i = 0; i < ClientWorld.PlayerEntities.Count; i++)
                     {
+                        EntityLiving entity = ClientWorld.PlayerEntities.GetAt(i);
                         if (!entity.IsDead && aabb.IntersectsWith(entity.BoundingBox))
                         {
-                            ClientWorld.ClientMain.TrancivePacket(new PacketC22EntityUse(entity.Id, entity.Position - Position));
+                            ClientWorld.ClientMain.TrancivePacket(new PacketC03UseEntity(entity.Id, entity.Position - Position));
                         }
                     }
+                    //foreach (EntityPlayerMP entity in pe.Values)
+                    //{
+                    //    if (!entity.IsDead && aabb.IntersectsWith(entity.BoundingBox))
+                    //    {
+                    //        ClientWorld.ClientMain.TrancivePacket(new PacketC22EntityUse(entity.Id, entity.Position - Position));
+                    //    }
+                    //}
+                    //Hashtable pe = ClientWorld.PlayerEntities.Clone() as Hashtable;
+
+                    //foreach (EntityPlayerMP entity in pe.Values)
+                    //{
+                    //    if (!entity.IsDead && aabb.IntersectsWith(entity.BoundingBox))
+                    //    {
+                    //        ClientWorld.ClientMain.TrancivePacket(new PacketC22EntityUse(entity.Id, entity.Position - Position));
+                    //    }
+                    //}
 
                     //EntityPlayerMP[] entities = EntitiesLook.Clone() as EntityPlayerMP[];
                     //foreach (EntityPlayerMP entity in entities)
@@ -440,7 +463,7 @@ namespace MvkClient.Entity
         /// </summary>
         protected override void Fall(float distance)
         {
-            ClientWorld.ClientMain.TrancivePacket(new PacketB20Player().Fall(distance));
+            ClientWorld.ClientMain.TrancivePacket(new PacketC0CPlayerAction(PacketC0CPlayerAction.EnumAction.Fall, distance));
         }
 
         #region Frame

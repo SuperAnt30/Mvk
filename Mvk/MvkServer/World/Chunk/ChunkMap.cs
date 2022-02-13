@@ -104,7 +104,7 @@ namespace MvkServer.World.Chunk
         /// <summary>
         /// Добавить в список мусор удаляющих чанков для сервера!
         /// </summary>
-        public void DroopedChunkStatusMin(MapList droppedChunks, Hashtable playersClone)
+        public void DroopedChunkStatusMin(MapListVec2i droppedChunks, Hashtable playersClone)
         {
             Hashtable ht = map.Clone() as Hashtable;
             foreach (ChunkBase chunk in ht.Values)

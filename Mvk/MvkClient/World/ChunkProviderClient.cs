@@ -2,6 +2,7 @@
 using MvkServer.Entity.Player;
 using MvkServer.Glm;
 using MvkServer.Network.Packets;
+using MvkServer.Network.Packets.Client;
 using MvkServer.World.Chunk;
 using System.Collections;
 using System.Collections.Generic;
@@ -55,7 +56,7 @@ namespace MvkClient.World
             Hashtable ht = chunkMapping.CloneMap();
             foreach (ChunkRender chunk in ht.Values)
             {
-                if ((reset && !chunk.Position.Equals(ClientWorld.Player.GetChunkPos())) || !reset)
+                if ((reset && !chunk.Position.Equals(ClientWorld.ClientMain.Player.GetChunkPos())) || !reset)
                 {
                     UnloadChunk(chunk);
                 }
@@ -132,7 +133,7 @@ namespace MvkClient.World
                 isResetLoadingChunk = false;
                 addChunks.Clear();
                 //ClientWorld.Player.UpFrustumCulling();
-                ClientWorld.ClientMain.TrancivePacket(new PacketC13ClientSetting(ClientWorld.Player.OverviewChunk));
+                ClientWorld.ClientMain.TrancivePacket(new PacketC15ClientSetting(ClientWorld.ClientMain.Player.OverviewChunk));
             }
             // Загрузка
             count = 50;

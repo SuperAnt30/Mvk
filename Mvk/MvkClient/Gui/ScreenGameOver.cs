@@ -17,7 +17,7 @@ namespace MvkClient.Gui
             label = new Label(Language.T("gui.game.over"), FontSize.Font16) { Scale = 2.0f };
             labelText = new Label(text, FontSize.Font12);
             buttonRespawn = new Button(Language.T("gui.respawn"));
-            buttonRespawn.Click += (sender, e) => ClientMain.World.Player.Respawn();
+            buttonRespawn.Click += (sender, e) => ClientMain.Player.Respawn();
             //InitButtonClick(buttonRespawn);
             buttonExit = new Button(Language.T("gui.exit.world"));
             buttonExit.Click += (sender, e) => ClientMain.ExitingWorld("");

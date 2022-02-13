@@ -1,18 +1,41 @@
 ﻿namespace MvkServer.Network.Packets
 {
-    public struct PacketS17Health : IPacket
-    {
-        /// <summary>
-        /// Здоровье игрока
-        /// </summary>
-        private float health;
+    //public struct PacketS17Health : IPacket
+    //{
+    //    private ushort id;
 
-        public PacketS17Health(float health) => this.health = health;
+    //    /// <summary>
+    //    /// Здоровье игрока
+    //    /// </summary>
+    //    private float health;
+    //    /// <summary>
+    //    /// был нанесён урон
+    //    /// </summary>
+    //    private bool damage;
 
-        public float GetHealth() => health;
+    //    public PacketS17Health(float health, bool damage, ushort id)
+    //    {
+    //        this.health = health;
+    //        this.damage = damage;
+    //        this.id = id;
+    //    }
 
-        public void ReadPacket(StreamBase stream) => health = stream.ReadFloat();
+    //    public ushort GetId() => id;
+    //    public bool GetDamage() => damage;
+    //    public float GetHealth() => health;
 
-        public void WritePacket(StreamBase stream) => stream.WriteFloat(health);
-    }
+    //    public void ReadPacket(StreamBase stream)
+    //    {
+    //        id = stream.ReadUShort();
+    //        health = stream.ReadFloat();
+    //        damage = stream.ReadBool();
+    //    }
+
+    //    public void WritePacket(StreamBase stream)
+    //    {
+    //        stream.WriteUShort(id);
+    //        stream.WriteFloat(health);
+    //        stream.WriteBool(damage);
+    //    }
+    //}
 }

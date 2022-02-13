@@ -1,6 +1,7 @@
 ﻿using MvkServer.Entity.Player;
 using MvkServer.Glm;
 using MvkServer.Network.Packets;
+using MvkServer.Network.Packets.Server;
 using MvkServer.Util;
 using MvkServer.World;
 using System.Collections.Generic;
@@ -95,21 +96,14 @@ namespace MvkServer.Entity
         {
             base.Update();
             
-
             vec3 motionPrev = Motion;
 
             bool isMotion = EntityUpdate();
 
-            LivingUpdate();
+            if (!IsDead) LivingUpdate();
 
             // Пометка что было какое-то движение, вращения, бег, сидеть и тп.
-            if (isMotion || !motionPrev.Equals(Motion))
-            {
-                UpdateLiving();
-            }
-
-            // Для вращении головы
-            HeadTurn();
+            if (isMotion || !motionPrev.Equals(Motion)) UpdateIsMotion();
         }
 
         protected bool EntityUpdate()
@@ -133,6 +127,9 @@ namespace MvkServer.Entity
 
             // если нет хп обновлям смертельную картинку
             if (Health <= 0f) DeathUpdate();
+
+            // Счётчик получения урона для анимации
+            if (DamageTime > 0) DamageTime--;
 
             // Если был толчёк, мы его дабавляем и обнуляем
             if (!MotionPush.Equals(new vec3(0)))
@@ -241,7 +238,7 @@ namespace MvkServer.Entity
             }
             else
             {
-                MoveWithHeading(strafe, forward, .02f);
+                MoveWithHeading(strafe, forward, .04f);
             }
         }
 
@@ -398,7 +395,7 @@ namespace MvkServer.Entity
         /// <summary>
         /// Обновление в каждом тике, если были требования по изминению позицыи, вращения, бег, сидеть и тп.
         /// </summary>
-        protected virtual void UpdateLiving() { }// => SetPosition(Position + Motion);
+        protected virtual void UpdateIsMotion() { }
 
         /// <summary>
         /// Поворот тела от движения и поворота головы 
@@ -417,9 +414,12 @@ namespace MvkServer.Entity
             // расматриваем остальное
             {
                 // Коэффициент трения блока
+                //float study = .954f;// 0.91f; // для воздух
+                //if (OnGround) study = 0.739F;// 0.546f; // трение блока, определить на каком блоке стоим (.6f блок) * .91f
                 float study = 0.91f; // для воздух
                 if (OnGround) study = 0.546f; // трение блока, определить на каком блоке стоим (.6f блок) * .91f
 
+                //float param = 0.403583419f / (study * study * study);
                 float param = 0.16277136f / (study * study * study);
 
                 // трение, по умолчанию параметр ускорения падения вниз 
@@ -458,6 +458,7 @@ namespace MvkServer.Entity
 
                 // Параметр падение 
                 motion.y -= .16f;
+                //motion.y -= .08f;
 
                 motion.y *= .98f;
                 motion.x *= study;
@@ -490,11 +491,14 @@ namespace MvkServer.Entity
         {
             // Стартовое значение прыжка, чтоб на 6 так допрыгнут наивысшую точку в 2,5 блока
             vec3 motion = new vec3(0, .84f, 0);
+            //vec3 motion = new vec3(0, .42f, 0);
             if (IsSprinting)
             {
                 // Если прыжок с бегом, то скорость увеличивается
                 motion.x += glm.sin(RotationYaw) * 0.4f;
                 motion.z -= glm.cos(RotationYaw) * 0.4f;
+                //motion.x += glm.sin(RotationYaw) * 0.2f;
+                //motion.z -= glm.cos(RotationYaw) * 0.2f;
             }
             Motion = new vec3(Motion.x + motion.x, motion.y, Motion.z + motion.z);
         }
@@ -702,6 +706,7 @@ namespace MvkServer.Entity
                 {
                     // Упал
                     fallDistanceResult = fallDistance;
+                    Fall(fallDistance);
                     fallDistance = 0f;
                 }
             }
@@ -771,7 +776,8 @@ namespace MvkServer.Entity
 
                 if (World is WorldServer)
                 {
-                    ((WorldServer)World).Players.ResponsePacketAll(new PacketB20Player().Animation(Id), Id);
+                    ((WorldServer)World).Players.ResponsePacketAll(new PacketS0BAnimation(Id, PacketS0BAnimation.EnumAnimation.SwingItem), Id);
+                    //((WorldServer)World).Players.ResponsePacketAll(new PacketB20Player().Animation(Id), Id);
                 }
             }
         }
@@ -802,8 +808,10 @@ namespace MvkServer.Entity
             swingProgress = (float)swingProgressInt / (float)asa;
         }
 
-       
-
+        /// <summary>
+        /// Падение
+        /// </summary>
+        protected virtual void Fall(float distance) { }
 
         //public override string ToString()
         //{

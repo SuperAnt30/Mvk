@@ -91,11 +91,11 @@ namespace MvkClient.Renderer.Entity
         /// </summary>
         protected void RenderLivingLabel(EntityLiving entity)
         {
-            if (entity.Name == "" || entity == renderManager.World.Player) return;
+            if (entity.Name == "" || entity == renderManager.ClientMain.Player) return;
 
             string text = entity.Name;
 
-            EntityPlayerSP player = renderManager.World.Player;
+            EntityPlayerSP player = renderManager.ClientMain.Player;
             float dis = glm.distance(renderManager.CameraPosition, entity.Position);
 
             if (dis <= 64) // дистанция между сущностями
@@ -111,7 +111,7 @@ namespace MvkClient.Renderer.Entity
                     GLRender.Translate(0, entity.Height + .5f, 0);
                     GLRender.Rotate(glm.degrees(-renderManager.CameraRotationYaw), 0, 1, 0);
                     GLRender.Rotate(glm.degrees(renderManager.CameraRotationPitch), 1, 0, 0);
-                    GLRender.Scale(renderManager.World.Player.ViewCamera == EnumViewCamera.Front ? -scale : scale, -scale, scale);
+                    GLRender.Scale(renderManager.ClientMain.Player.ViewCamera == EnumViewCamera.Front ? -scale : scale, -scale, scale);
                     GLRender.Texture2DDisable();
                     GLRender.Rectangle(-ws - 1, -1, ws + 1, 8, new vec4(0, 0, 0, .25f));
                     GLRender.Texture2DEnable();

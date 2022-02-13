@@ -1,6 +1,7 @@
 ﻿using MvkAssets;
 using MvkClient.Actions;
 using MvkClient.Audio;
+using MvkClient.Entity;
 using MvkClient.Gui;
 using MvkClient.Network;
 using MvkClient.Renderer;
@@ -10,6 +11,7 @@ using MvkClient.World;
 using MvkServer;
 using MvkServer.Glm;
 using MvkServer.Network;
+using MvkServer.Network.Packets.Client;
 using MvkServer.Util;
 using SharpGL;
 using System;
@@ -39,9 +41,19 @@ namespace MvkClient
         /// Screen Gui
         /// </summary>
         public GuiScreen Screen { get; private set; }
+        /// <summary>
+        /// Объект клиента
+        /// </summary>
+        public EntityPlayerSP Player { get; protected set; }
+        /// <summary>
+        /// Пинг к серверу
+        /// </summary>
+        public int Ping { get; protected set; } = -1;
 
-        
-
+        /// <summary>
+        /// Счётчик тиков без синхронизации с сервером, отсчёт от запуска программы
+        /// </summary>
+        protected uint tickCounterClient = 0;
         /// <summary>
         /// Тикер Fps
         /// </summary>
@@ -188,7 +200,7 @@ namespace MvkClient
         {
             GLWindow.Resized(width, height);
             Screen.Resized();
-            if (IsGamePlay) World.Player.UpProjection();
+            if (IsGamePlay && Player != null) Player.UpProjection();
         }
 
         /// <summary>
@@ -237,7 +249,7 @@ namespace MvkClient
                 if (isMouseGamePlay) firstMouse = true;
                 CursorShow(!action);
             }
-            if (World != null && !action) World.Player.InputNone();
+            if (Player != null && !action) Player.InputNone();
         }
 
         /// <summary>
@@ -250,9 +262,22 @@ namespace MvkClient
             // Действия клика мышки передаём в GUI скрина
             if (!Screen.MouseDown(button, x, y))
             {
-                if (World != null && IsGamePlayAction())
+                if (World != null && Player != null && IsGamePlayAction())
                 {
                     World.MouseDown(button);
+                    if (button == MouseButton.Left)
+                    {
+                        vec3 pos = Player.GetPositionFrame();
+                        pos.y += Player.GetEyeHeightFrame();
+                        vec3 dir = Player.RayLook;//.GetLookFrame();
+
+                        MovingObjectPosition moving = World.RayCast(pos, dir, 10f);
+                        MovingObjectPosition movingE = World.RayCastEntity();
+
+                        Player.Action();
+                        // луч
+                        Debug.DStr = moving.ToString() + "\r\n" + movingE.ToString(); // + " --" + string.Format("{0:0.00}",tf);
+                    }
                 }
             }
         }
@@ -275,7 +300,7 @@ namespace MvkClient
         /// <returns>true - сбросить на центр</returns>
         public bool MouseMove(int x, int y, int deltaX, int deltaY)
         {
-            if (IsGamePlayAction() && isMouseGamePlay)
+            if (IsGamePlayAction() && isMouseGamePlay && Player != null)
             {
                 if (firstMouse)
                 {
@@ -283,7 +308,7 @@ namespace MvkClient
                     deltaX = 0;
                     deltaY = 0;
                 }
-                World.Player.MouseMove(deltaX, deltaY);
+                Player.MouseMove(deltaX, deltaY);
                 return true;
             }
             Screen.MouseMove(x, y);
@@ -470,11 +495,15 @@ namespace MvkClient
         /// Режим игры, режим активного управления 3d
         /// </summary>
         public bool IsGamePlayAction() => IsGamePlay && Screen.IsEmptyScreen();
+        /// <summary>
+        /// Задать время пинга
+        /// </summary>
+        public void SetPing(long time) => Ping = (Ping * 3 + (int)(Time() - time)) / 4;
 
         /// <summary>
         /// Дебага, формируется по запросу
         /// </summary>
-        protected void StringDebugTps() => Debug.strClient = (!IsGamePlay || World == null) ? "" : World.ToStringDebug();
+        protected void StringDebugTps() => Debug.strClient = (!IsGamePlay || World == null) ? "" : "ping: " + Ping + " ms\r\n" + World.ToStringDebug();
 
         /// <summary>
         /// Такт каждого ФПС
@@ -506,11 +535,38 @@ namespace MvkClient
                 if (!isGamePaused)
                 {
                     //Log.Log(TickCounter.ToString());
+                    tickCounterClient++;
                     TickCounter++;
 
-                    World.Tick();
+                    // Обновить игрока
+                    Player.Update();
+                    if ((Player.IsDead || Player.Health == 0) && !Screen.IsScreenGameOver())
+                    {
+                        // GameOver надо указать причину смерти
+                        SetScreen(ObjectKey.GameOver, "Boom");
+                    }
 
-                    if (TickCounter % 4 == 0)
+                    try
+                    {
+                        World.Tick();
+                    }
+                    catch (Exception ex)
+                    {
+                        //Log.Error("Server.Error.Tick {0}", ex.Message);
+                        throw;
+                    }
+
+                    try
+                    {
+                        World.UpdateEntities();
+                    }
+                    catch (Exception ex)
+                    {
+                        //Log.Error("Server.Error.UpdateEntities {0}", ex.Message);
+                        throw;
+                    }
+
+                    if (tickCounterClient % 4 == 0)
                     {
                         // лог статистика за это время
 
@@ -520,6 +576,12 @@ namespace MvkClient
                             Debug.ListChunks.listChunkPlayer = World.ChunkPr.GetListDebug();
                             Debug.ListChunks.isRender = true;
                         }
+                    }
+
+                    if (tickCounterClient % 40 == 0)
+                    {
+                        // Раз в секунду перепинговка
+                        TrancivePacket(new PacketC00Ping(Time()));
                     }
                 }
 
@@ -536,6 +598,8 @@ namespace MvkClient
             }
 
         }
+
+
 
         /// <summary>
         /// Изменён GUI скрин
@@ -574,6 +638,19 @@ namespace MvkClient
         /// Получить время в милисекундах с момента запуска проекта
         /// </summary>
         public static long Time() => stopwatch.ElapsedMilliseconds;
+
+        #region Player
+
+        /// <summary>
+        /// Создать Игрока
+        /// </summary>
+        public void PlayerCreate(WorldClient world) => Player = new EntityPlayerSP(world);
+        /// <summary>
+        /// Удалить игрока
+        /// </summary>
+        public void PlayerRemove() => Player = null;
+
+        #endregion
 
         #region Event
 

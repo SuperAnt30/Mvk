@@ -95,7 +95,33 @@ namespace MvkServer.Network
             {
                 Disconnect();
             }
+            else if (e.Packet.Status == StatusNet.Receive)
+            {
+                DebugSleep(e.Leght);
+            }
             base.RbReceive(sender, e);
+        }
+
+        /// <summary>
+        /// Имитация задержки локальной сети
+        /// </summary>
+        /// <param name="count">длинна передоваемого пакета</param>
+        protected void DebugSleep(int count)
+        {
+            if (MvkGlobal.IS_DENUG_SLEEP_NET)
+            {
+                Random random = new Random();
+                System.Threading.Thread.Sleep(count > 100 ? 50 : random.Next(5, 20));
+            }
+        }
+
+        /// <summary>
+        /// Отправить пакет
+        /// </summary>
+        public override void SendPacket(byte[] bytes)
+        {
+            //DebugSleep(bytes.Length); // туту нельзя, появляется пауза в клиенте в основном потоке
+            base.SendPacket(bytes);
         }
 
         /// <summary>

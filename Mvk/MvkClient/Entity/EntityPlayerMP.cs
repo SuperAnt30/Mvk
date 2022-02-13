@@ -13,6 +13,7 @@ namespace MvkClient.Entity
         public EntityPlayerMP(WorldClient world) : base(world)
         {
             interpolation.Start();
+            IsHidden = false;
         }
 
         /// <summary>
@@ -24,26 +25,28 @@ namespace MvkClient.Entity
             if (Health <= 0f) DeathUpdate();
             // Счётчик получения урона для анимации
             if (DamageTime > 0) DamageTime--;
+            // Для вращении головы
+            HeadTurn();
             // Расчёт амплитуды конечностей, при движении
             UpLimbSwing();
             // Просчёт взмаха руки
             UpdateArmSwingProgress();
 
             // Видна ли сущность, прорисовывать ли её на экране
-            IsHidden = !ClientWorld.Player.FrustumCulling.IsBoxInFrustum(
-                BoundingBox.Offset(ClientWorld.RenderEntityManager.CameraOffset * -1f));
+            //IsHidden = !ClientMain.Player.FrustumCulling.IsBoxInFrustum(
+            //    BoundingBox.Offset(ClientWorld.RenderEntityManager.CameraOffset * -1f));
 
             // Проверка луча игрока к сущности
             bool isRayEye = false;
             // Максимальная дистанция луча
             float maxDist = 32f;
 
-            vec3 pos = ClientWorld.Player.Position;
+            vec3 pos = ClientMain.Player.Position;
 
             if (!IsHidden && glm.distance(Position, pos) < maxDist)
             {
-                pos.y += ClientWorld.Player.GetEyeHeight();
-                vec3 dir = ClientWorld.Player.RayLook;
+                pos.y += ClientMain.Player.GetEyeHeight();
+                vec3 dir = ClientMain.Player.RayLook;
                 RayCross ray = new RayCross(pos, dir, maxDist);
                 isRayEye = ray.CrossLineToRectangle(BoundingBox.Clone());
             }

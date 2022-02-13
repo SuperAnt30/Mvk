@@ -14,6 +14,10 @@ namespace MvkServer.Network
         /// Получить активный сокет, он же выбранный для сервера
         /// </summary>
         public Socket ActiveSocket { get; protected set; } = null;
+        /// <summary>
+        /// Запрос завершонный
+        /// </summary>
+        public bool SendCompleted { get; protected set; } = true;
 
         protected SocketBase() { }
         public SocketBase(int port) => Port = port;
@@ -28,6 +32,31 @@ namespace MvkServer.Network
         /// </summary>
         /// <param name="bytes">данные в массиве байт</param>
         /// <returns>результат отправки</returns>
+        //protected bool SenderOld(Socket socket, byte[] bytes)
+        //{
+        //    if (!IsConnected || bytes.Length == 0)
+        //    {
+        //        return false;
+        //    }
+        //    try
+        //    {
+        //        // Отправляем пакет
+        //        socket.Send(ReceivingBytes.BytesSender(bytes));
+        //        return true;
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        // Возвращаем ошибку
+        //        OnError(new ErrorEventArgs(e));
+        //        return false;
+        //    }
+        //}
+
+        /// <summary>
+        /// Метод отправки пакетов запроса
+        /// </summary>
+        /// <param name="bytes">данные в массиве байт</param>
+        /// <returns>результат отправки</returns>
         protected bool Sender(Socket socket, byte[] bytes)
         {
             if (!IsConnected || bytes.Length == 0)
@@ -36,8 +65,15 @@ namespace MvkServer.Network
             }
             try
             {
-                // Отправляем пакет
-                socket.Send(ReceivingBytes.BytesSender(bytes));
+                byte[] buffer = ReceivingBytes.BytesSender(bytes);
+                SocketAsyncEventArgs e = new SocketAsyncEventArgs();
+                e.SetBuffer(buffer, 0, buffer.Length);
+                // TODO:: SendAsync продумать 
+                e.Completed += new EventHandler<SocketAsyncEventArgs>(SendCallback);
+
+                SendCompleted = false;
+                // Отправляем асихронный пакет
+                socket.SendAsync(e);
                 return true;
             }
             catch (Exception e)
@@ -48,10 +84,19 @@ namespace MvkServer.Network
             }
         }
 
+        private void SendCallback(object sender, SocketAsyncEventArgs e)
+        {
+            if (e.SocketError != SocketError.Success)
+            {
+                OnError(new ErrorEventArgs(new Exception(string.Format("Socket Error: {0}", e.SocketError))));
+            }
+            SendCompleted = true;
+        }
+
         /// <summary>
         /// Отправить пакет
         /// </summary>
-        public void SendPacket(byte[] bytes) => Sender(ActiveSocket, bytes);
+        public virtual void SendPacket(byte[] bytes) => Sender(ActiveSocket, bytes);
 
         /// <summary>
         /// Ответ готовности сообщения

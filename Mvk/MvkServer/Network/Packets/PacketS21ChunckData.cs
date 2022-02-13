@@ -18,7 +18,6 @@ namespace MvkServer.Network.Packets
             //и по параметру псевдо чанков
             // height определяем максимальную высоту
             height = 6;
-
             // 16 * 16 * 16 * 3 * 16
             buffer = new byte[height * 12288];
             int i = 0;

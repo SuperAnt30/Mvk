@@ -1,50 +1,69 @@
-﻿using MvkServer.Glm;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 
 namespace MvkServer.Util
 {
-    /// <summary>
-    /// Карта загрузок чанка
-    /// </summary>
-    public class MapList
+    public abstract class MapList
     {
         protected Hashtable map = new Hashtable();
-        protected List<vec2i> list = new List<vec2i>();
+        protected List<object> list = new List<object>();
 
         /// <summary>
-        /// Добавить чанк
+        /// Добавить
         /// </summary>
-        public void Add(vec2i pos)
+        protected void Add(object obj)
         {
-            if (!map.ContainsKey(pos))
+            if (!map.ContainsKey(obj))
             {
-                map.Add(pos, true);
-                list.Add(pos);
+                map.Add(obj, true);
+                list.Add(obj);
+            }
+        }
+
+        /// <summary>
+        /// Добавить
+        /// </summary>
+        protected void Add(object key, object obj)
+        {
+            if (!list.Contains(obj))
+            {
+                if (map.ContainsKey(key))
+                {
+                    list.Remove(map[key]);
+                    map.Remove(key);
+                }
+                map.Add(key, obj);
+                list.Add(obj);
             }
         }
         /// <summary>
-        /// Удалить чанк
+        /// Удалить
         /// </summary>
-        public void Remove(vec2i pos)
+        protected void Remove(object obj)
         {
-            if (map.ContainsKey(pos))
+            if (map.ContainsKey(obj))
             {
-                map.Remove(pos);
-                list.Remove(pos);
+                map.Remove(obj);
+                list.Remove(obj);
             }
         }
 
         /// <summary>
         /// Получить первое значение по списку и удалить его
         /// </summary>
-        public vec2i FirstRemove()
+        protected object FirstRemove()
         {
-            vec2i pos = list[0];
+            object obj = list[0];
             list.RemoveAt(0);
-            map.Remove(pos);
-            return pos;
+            map.Remove(obj);
+            return obj;
         }
+
+        /// <summary>
+        /// Проверить наличие
+        /// </summary>
+        protected bool Contains(object obj) => map.ContainsKey(obj);
+
 
         /// <summary>
         /// Клон карты
@@ -64,5 +83,10 @@ namespace MvkServer.Util
         /// Количество элементов
         /// </summary>
         public int Count => list.Count;
+
+        /// <summary>
+        /// Пустой ли список
+        /// </summary>
+        public bool IsEmpty() => list.Count == 0;
     }
 }

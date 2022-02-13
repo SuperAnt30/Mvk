@@ -11,8 +11,12 @@
         /// </summary>
         Player = 1,
         /// <summary>
+        /// Рука игрока
+        /// </summary>
+        PlayerHand = 2,
+        /// <summary>
         /// Курица
         /// </summary>
-        Chicken = 2
+        Chicken = 3
     }
 }

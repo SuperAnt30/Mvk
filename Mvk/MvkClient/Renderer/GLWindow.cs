@@ -1,10 +1,5 @@
 ﻿using MvkClient.Entity;
-using MvkClient.Gui;
 using MvkClient.Renderer.Shaders;
-using MvkClient.Util;
-using MvkClient.World;
-using MvkServer.Entity.Player;
-using MvkServer.Glm;
 using MvkServer.Util;
 using SharpGL;
 using System.Diagnostics;
@@ -83,13 +78,12 @@ namespace MvkClient.Renderer
             {
                 // время от TPS клиента
                 float timeIndex = client.World.TimeIndex();
-
                 client.World.WorldRender.Draw(timeIndex);
                 if (client.Screen.IsEmptyScreen())// && client.World.Player.ViewCamera == EnumViewCamera.Eye)
                 {
                     client.World.WorldRender.DrawPricel();
-                    if (client.World.Player.DamageTime > 0 
-                        && client.World.Player.ViewCamera == EnumViewCamera.Eye) client.World.WorldRender.DrawEff(client.World.Player.DamageTime, timeIndex);
+                    if (client.Player.DamageTime > 0 
+                        && client.Player.ViewCamera == EnumViewCamera.Eye) client.World.WorldRender.DrawEff(client.Player.DamageTime, timeIndex);
                 }
 
                 
