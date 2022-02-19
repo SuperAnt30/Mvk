@@ -19,7 +19,19 @@ namespace MvkServer.World.Chunk
         /// <summary>
         /// Загрузить чанк
         /// </summary>
-        public ChunkBase LoadChunk(vec2i pos) => GetStatusChunk(pos, 4);
+        public ChunkBase LoadChunk(vec2i pos)
+        {
+            
+            DroppedChunks.Remove(pos);
+            ChunkBase chunk = GetChunk(pos);
+            if (chunk == null || chunk.DoneStatus < 4)
+            {
+                ((WorldServer)world).countGetChunck++;
+                chunk = GetStatusChunk(pos, 4);
+            }
+            chunk.OnChunkLoad();
+            return chunk;
+        }
 
         /// <summary>
         /// Получить чанк по статусу, если статуса не хватает, догружаем рядом лежащие пока не получим нужный статус
@@ -32,6 +44,7 @@ namespace MvkServer.World.Chunk
             {
                 chunk = new ChunkBase(world, pos);
                 chunk.ChunkLoadGen();
+                //chunk.OnChunkLoad();
                 chunkMapping.Set(chunk);
             }
             //TODO :: оптимизировать надо!!! чтоб проходы были быстрее
@@ -59,7 +72,7 @@ namespace MvkServer.World.Chunk
                 ChunkBase chunk = chunkMapping.Get(pos);
                 if (chunk != null)
                 {
-                    chunk.ChunkUnload();
+                    chunk.OnChunkUnload();
                     // TODO::Тут сохраняем чанк
                     chunkMapping.Remove(pos);
                     i++;

@@ -1,5 +1,6 @@
 ﻿using MvkServer.Glm;
 using MvkServer.Util;
+using MvkServer.World;
 
 namespace MvkServer.Entity.Player
 {
@@ -26,13 +27,16 @@ namespace MvkServer.Entity.Player
         public vec2i ChunkPosManaged { get; protected set; } = new vec2i();
 
 
-        protected EntityPlayer()
+        protected EntityPlayer(WorldBase world) : base(world)
         {
-            Standing();
-            SpeedSurvival();
             Type = EnumEntities.Player;
             StepHeight = 1.2f;
         }
+
+        /// <summary>
+        /// Максимальное значение здоровья сущности
+        /// </summary>
+        protected override float GetHelathMax() => 20;
 
         /// <summary>
         /// Задать обзор чанков у клиента

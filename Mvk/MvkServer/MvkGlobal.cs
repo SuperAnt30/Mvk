@@ -8,7 +8,7 @@
         /// <summary>
         /// При загрузке мира, сколько загружается обзор мира
         /// </summary>
-        public const int OVERVIEW_CHUNK_START = 12;
+        public const int OVERVIEW_CHUNK_START = 5;//12;
 
         /// <summary>
         /// Время чистки чанков на сервере и клиенте, в тактах
@@ -20,13 +20,16 @@
         /// <summary>
         /// Визуальная отладка прогрузки чанков
         /// </summary>
-        //public const bool IS_DRAW_DEBUG_CHUNK = true;
-        public const bool IS_DRAW_DEBUG_CHUNK = false;
-
+        public const bool IS_DRAW_DEBUG_CHUNK = true;
+        //public const bool IS_DRAW_DEBUG_CHUNK = false;
         /// <summary>
         /// Активация имитации задержки локальной сети
         /// </summary>
-        public const bool IS_DENUG_SLEEP_NET = false;
+        public const bool IS_DEBUG_SLEEP_NET = false;
+        /// <summary>
+        /// Ник по сети с постфиксом Net
+        /// </summary>
+        public const bool IS_DEBUG_NICKNAME = true;
 
         /// <summary>
         /// Cколько пакетов чанков передавать по сети за один ТПС

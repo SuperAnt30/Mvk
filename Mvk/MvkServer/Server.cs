@@ -50,7 +50,14 @@ namespace MvkServer
         /// Хранение тактов за 1/5 секунды игры, для статистики определения среднего времени такта
         /// </summary>
         protected long[] tickTimeArray = new long[4];
+
+        /// <summary>
+        /// Принято пакетов
+        /// </summary>
         protected int tickRx = 0;
+        /// <summary>
+        /// Передано пакетов
+        /// </summary>
         protected int tickTx = 0;
         /// <summary>
         /// статус запуска сервера
@@ -90,7 +97,7 @@ namespace MvkServer
             frequencyMs = Stopwatch.Frequency / 1000;
             stopwatchTps.Start();
             // Отправляем основному игроку пинг
-            ResponsePacket(null, new PacketSF0Connection(""));
+            ResponsePacket2(null, new PacketSF0Connection(""));
         }
 
         #region Net
@@ -125,7 +132,7 @@ namespace MvkServer
             else if (e.Packet.Status == StatusNet.Connect)
             {
                 // Отправляем игроку пинг
-                ResponsePacket(e.Packet.WorkSocket, new PacketSF0Connection(""));
+                ResponsePacket2(e.Packet.WorkSocket, new PacketSF0Connection(""));
             }
         }
 
@@ -135,7 +142,7 @@ namespace MvkServer
         public void LocalReceivePacket(Socket socket, byte[] buffer)
         {
             tickRx++;
-            packets.ReceiveBufferServer(socket, buffer);
+            packets.ReceiveBuffer(socket, buffer);
         }
 
         /// <summary>
@@ -152,7 +159,7 @@ namespace MvkServer
         /// <summary>
         /// Отправить пакет клиенту
         /// </summary>
-        public void ResponsePacket(Socket socket, IPacket packet)
+        public void ResponsePacket2(Socket socket, IPacket packet)
         {
             using (MemoryStream writeStream = new MemoryStream())
             {
@@ -181,7 +188,10 @@ namespace MvkServer
         /// </summary>
         public void ResponsePacketAll(IPacket packet)
         {
-            if (World != null) World.Players.ResponsePacketAll(packet);
+            if (World != null)
+            {
+                World.Players.ResponsePacketAll(packet);
+            }
         }
 
         #endregion
@@ -251,8 +261,9 @@ namespace MvkServer
                     ServerIsInRunLoop = true;
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Log.Error(ex.Message);
                 // ошибки в сервере для краша
             }
             finally
@@ -338,7 +349,7 @@ namespace MvkServer
             {
                 UpCountClients();
 
-                World.Players.ResponsePacketAll(new PacketS03TimeUpdate(TickCounter));
+                ResponsePacketAll(new PacketS03TimeUpdate(TickCounter));
 
                 //this.serverConfigManager.sendPacketToAllPlayersInDimension(new S03PacketTimeUpdate(
                 //var4.getTotalWorldTime(), 
@@ -368,6 +379,9 @@ namespace MvkServer
                 throw;
             }
 
+            World.UpdateTrackedEntities();
+
+
             // ---------------
             long differenceTime = stopwatchTps.ElapsedTicks - realTime;
 
@@ -384,6 +398,7 @@ namespace MvkServer
                     {
                         listChunkServer = World.ChunkPr.GetListDebug(),
                         listChunkPlayers = World.Players.GetListDebug(),
+                        listChunkPlayerEntity = World.ChunkPr.GetListEntityDebug(),
                         isRender = true
                     };
                     OnLogDebugCh(chunks);

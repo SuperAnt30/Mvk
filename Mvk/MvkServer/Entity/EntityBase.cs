@@ -1,4 +1,5 @@
-﻿using MvkServer.Glm;
+﻿using MvkServer.Entity.Player;
+using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World;
 
@@ -25,6 +26,10 @@ namespace MvkServer.Entity
         /// Позиция объекта
         /// </summary>
         public vec3 Position { get; private set; }
+        /// <summary>
+        /// Позиция на последнем тике для рендера
+        /// </summary>
+        public vec3 LastTickPos { get; set; }
         /// <summary>
         /// Поворот вокруг своей оси
         /// </summary>
@@ -96,7 +101,7 @@ namespace MvkServer.Entity
         /// <summary>
         /// Уровень здоровья
         /// </summary>
-        public float Health { get; protected set; } = 20;
+        public float Health { get; protected set; }
         /// <summary>
         /// Оставшееся время эта сущность должна вести себя как травмированная, то есть маргает красным
         /// </summary>
@@ -140,7 +145,7 @@ namespace MvkServer.Entity
         /// <summary>
         /// Пометка что было движение и подобное для сервера, чтоб отправлять пакеты
         /// </summary>
-        protected bool isMotionServer = false;
+        public bool isMotionServer = false;
         // TODO:: можно подумать о флаге для данного параметра, типа pos, Sneaking, yawHead, yawBody, pitch
 
         #region PervLast
@@ -168,6 +173,15 @@ namespace MvkServer.Entity
 
         #endregion
 
+        
+        public EntityBase(WorldBase world)
+        {
+            World = world;
+            Health = GetHelathMax();
+            Standing();
+            SpeedSurvival();
+        }
+
         #region Get Methods
 
         /// <summary>
@@ -181,7 +195,7 @@ namespace MvkServer.Entity
         /// <summary>
         /// Высота глаз
         /// </summary>
-        public float GetEyeHeight() => Height * 0.85f;
+        public virtual float GetEyeHeight() => Height * 0.85f;
 
         /// <summary>
         /// Получить координаты в каком чанке находится по текущей Position
@@ -191,10 +205,30 @@ namespace MvkServer.Entity
         /// Получить координату псевдо чанка находится по текущей Position
         /// </summary>
         public int GetChunkY() => Mth.Floor(Position.y) >> 4;
+        
+        /// <summary>
+        /// Вращение головы
+        /// </summary>
+        public virtual float GetRotationYawHead() => 0;
 
+        /// <summary>
+        /// Максимальное значение здоровья сущности
+        /// </summary>
+        protected virtual float GetHelathMax() => 10;
+
+        /// <summary>
+        /// Получает квадрат расстояния до положения
+        /// </summary>
+        //public double GetDistanceSq(vec3 pos)
+        //{
+        //    float x = Position.x - pos.x;
+        //    float y = Position.y - pos.y;
+        //    float z = Position.z - pos.z;
+        //    return x * x + y * y + z * z;
+        //}
         #endregion
 
-        
+
 
         #region Set Methods
 
@@ -266,6 +300,16 @@ namespace MvkServer.Entity
         /// Убить сущность
         /// </summary>
         public void Kill() => SetDead();
+
+        /// <summary>
+        /// Возобновить сущность
+        /// </summary>
+        public virtual void Respawn()
+        {
+            Health = GetHelathMax();
+            DeathTime = 0;
+            IsDead = false;
+        }
 
         #endregion
 
@@ -366,29 +410,34 @@ namespace MvkServer.Entity
         /// Получить вектор направления камеры
         /// </summary>
         /// <param name="timeIndex">Коэфициент между тактами</param>
-        public virtual vec3 GetLookFrame(float timeIndex) => GetLookBodyFrame(timeIndex);
+        public virtual vec3 GetLookFrame2(float timeIndex) => GetLookBodyFrame2(timeIndex);
 
         /// <summary>
         /// Получить вектор направления камеры тела
         /// </summary>
         /// <param name="timeIndex">Коэфициент между тактами</param>
-        public virtual vec3 GetLookBodyFrame(float timeIndex) 
-            => GetRay(GetRotationYawFrame(timeIndex), GetRotationPitchFrame(timeIndex));
+        public virtual vec3 GetLookBodyFrame2(float timeIndex) 
+            => GetRay(GetRotationYawFrame2(timeIndex), GetRotationPitchFrame2(timeIndex));
 
         /// <summary>
         /// Получить угол Yaw для кадра
         /// </summary>
         /// <param name="timeIndex">Коэфициент между тактами</param>
-        public virtual float GetRotationYawFrame(float timeIndex) => GetRotationYawBodyFrame(timeIndex);
+        public virtual float GetRotationYawFrame2(float timeIndex) => GetRotationYawBodyFrame2(timeIndex);
+
+        public virtual vec3 GetPositionFrame2(float timeIndex)
+        {
+            if (timeIndex >= 1.0f || Position.Equals(LastTickPos)) return Position;
+            return LastTickPos + (Position - LastTickPos) * timeIndex;
+        }
 
         /// <summary>
         /// Получить угол YawBody для кадра
         /// </summary>
         /// <param name="timeIndex">Коэфициент между тактами</param>
-        public float GetRotationYawBodyFrame(float timeIndex)
+        public float GetRotationYawBodyFrame2(float timeIndex)
         {
-            if (timeIndex == 1.0f) RotationYawPrev = RotationYaw;
-            if (RotationYawPrev == RotationYaw) return RotationYaw;
+            if (timeIndex >= 1.0f || RotationYawPrev == RotationYaw) return RotationYaw;
             return RotationYawPrev + (RotationYaw - RotationYawPrev) * timeIndex;
         }
 
@@ -396,23 +445,46 @@ namespace MvkServer.Entity
         /// Получить угол Pitch для кадра
         /// </summary>
         /// <param name="timeIndex">Коэфициент между тактами</param>
-        public float GetRotationPitchFrame(float timeIndex)
+        public float GetRotationPitchFrame2(float timeIndex)
         {
-            if (timeIndex == 1.0f) RotationPitchPrev = RotationPitch;
-            if (RotationPitchPrev == RotationPitch) return RotationPitch;
+            if (timeIndex >= 1.0f || RotationPitchPrev == RotationPitch) return RotationPitch;
             return RotationPitchPrev + (RotationPitch - RotationPitchPrev) * timeIndex;
         }
+
+        ///// <summary>
+        ///// Получить угол YawBody для кадра
+        ///// </summary>
+        ///// <param name="timeIndex">Коэфициент между тактами</param>
+        //public float GetRotationYawBodyFrame(float timeIndex)
+        //{
+        //    if (timeIndex == 1.0f) RotationYawPrev = RotationYaw;
+        //    if (RotationYawPrev == RotationYaw) return RotationYaw;
+        //    return RotationYawPrev + (RotationYaw - RotationYawPrev) * timeIndex;
+        //}
+
+        ///// <summary>
+        ///// Получить угол Pitch для кадра
+        ///// </summary>
+        ///// <param name="timeIndex">Коэфициент между тактами</param>
+        //public float GetRotationPitchFrame(float timeIndex)
+        //{
+        //    if (timeIndex == 1.0f) RotationPitchPrev = RotationPitch;
+        //    if (RotationPitchPrev == RotationPitch) return RotationPitch;
+        //    return RotationPitchPrev + (RotationPitch - RotationPitchPrev) * timeIndex;
+        //}
 
         /// <summary>
         /// Получить позицию сущности для кадра
         /// </summary>
         /// <param name="timeIndex">коэфициент между тактами</param>
-        public virtual vec3 GetPositionFrame(float timeIndex)
-        {
-            if (timeIndex == 1.0f)  PositionPrev = Position;
-            if (Position.Equals(PositionPrev)) return Position;
-            return PositionPrev + (Position - PositionPrev) * timeIndex;
-        }
+        //public virtual vec3 GetPositionFrame(float timeIndex)
+        //{
+        //    if (timeIndex == 1.0f)  PositionPrev = Position;
+        //    if (Position.Equals(PositionPrev)) return Position;
+        //    return PositionPrev + (Position - PositionPrev) * timeIndex;
+        //}
+
+
 
         /// <summary>
         /// Получить позицию глаз сущности для кадра
@@ -432,9 +504,9 @@ namespace MvkServer.Entity
         /// </summary>
         public virtual void Update()
         {
-            PositionPrev = Position;
-            RotationYawPrev = RotationYaw;
-            RotationPitchPrev = RotationPitch;
+            //PositionPrev = Position;
+            //RotationYawPrev = RotationYaw;
+            //RotationPitchPrev = RotationPitch;
         }
 
         /// <summary>
@@ -473,6 +545,16 @@ namespace MvkServer.Entity
                 //        this.worldObj.spawnParticle(EnumParticleTypes.EXPLOSION_NORMAL, this.posX + (double)(this.rand.nextFloat() * this.width * 2.0F) - (double)this.width, this.posY + (double)(this.rand.nextFloat() * this.height), this.posZ + (double)(this.rand.nextFloat() * this.width * 2.0F) - (double)this.width, var8, var4, var6, new int[0]);
                 //    }
             }
+        }
+
+        /// <summary>
+        /// Обновить атрибутв в начале тика
+        /// </summary>
+        public virtual void UpPrev()
+        {
+            LastTickPos = Position;
+            RotationPitchPrev = RotationPitch;
+            RotationYawPrev = RotationYaw;
         }
 
         //public void Respawn()

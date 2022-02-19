@@ -15,7 +15,7 @@ namespace MvkServer.World.Chunk
         /// <summary>
         /// Количество псевдо чанков
         /// </summary>
-        protected const int COUNT_HEIGHT = 16;
+        public const int COUNT_HEIGHT = 16;
         /// <summary>
         /// Данные чанка
         /// </summary>
@@ -153,7 +153,7 @@ namespace MvkServer.World.Chunk
             StorageArrays[1].SetEBlock(xv, 10, zv, EnumBlock.Stone);
             StorageArrays[1].SetEBlock(xv, 11, zv, EnumBlock.Stone);
 
-            IsChunkLoaded = true;// LoadinData();
+            //IsChunkLoaded = true;// LoadinData();
             // Продумать, для клиента запрос для сервера данных чанка, 
             // для сервера чанк пытается загрузиться, если он не создан то создаём
         }
@@ -161,12 +161,12 @@ namespace MvkServer.World.Chunk
         /// <summary>
         /// Выгружаем чанк
         /// </summary>
-        public void ChunkUnload()
+        public void OnChunkUnload()
         {
             IsChunkLoaded = false;
-            for (int i = 0; i < ListEntities.Length; i++)
+            for (int y = 0; y < COUNT_HEIGHT; y++)
             {
-                World.UnloadEntities(ListEntities[i]);
+                World.UnloadEntities(ListEntities[y]);
             }
             // Продумать, для клиента просто удалить, для сервера записать и удалить
             //Save();
@@ -176,6 +176,21 @@ namespace MvkServer.World.Chunk
             //    StorageArrays[y].Delete();
             //}
         }
+
+        public void OnChunkLoad()
+        {
+            //ChunkLoadGen();
+            IsChunkLoaded = true;
+
+            for (int y = 0; y < COUNT_HEIGHT; y++)
+            {
+                // Продумать загрузку чанка у сущности тип 
+                // ListEntities[y].GetAt(0).OnChunkLoad();
+
+                World.LoadEntities(ListEntities[y]);
+            }
+        }
+
         /// <summary>
         /// Очистить данные чанков
         /// </summary>
@@ -285,7 +300,7 @@ namespace MvkServer.World.Chunk
         ///  Удаляет сущность, используя его координату y в качестве индекса
         /// </summary>
         /// <param name="entity">сущность</param>
-        public void RemoveEntity(EntityLiving entity) => RemoveEntityAtIndex(entity, entity.PositionChunk.y);
+        public void RemoveEntity(EntityLiving entity) => RemoveEntityAtIndex(entity, entity.PositionChunkY);
 
         /// <summary>
         /// Получить список id всех сущностей в чанке
@@ -295,9 +310,30 @@ namespace MvkServer.World.Chunk
             List<EntityLiving> list = new List<EntityLiving>();
             for (int y = 0; y < COUNT_HEIGHT; y++)
             {
-                list.AddRange(ListEntities[y].GetList());
+                for (int i = 0; i < ListEntities[y].Count; i++)
+                {
+                    EntityLiving entity = ListEntities[y].GetAt(i);
+                    if (entity != null && entity.AddedToChunk)
+                    {
+                        list.Add(entity);
+                    }
+                }
+                //list.AddRange(ListEntities[y].GetList());
             }
             return list.ToArray();
+        }
+
+        /// <summary>
+        /// Получить количество сущностей в чанке
+        /// </summary>
+        public int CountEntity()
+        {
+            int count = 0;
+            for (int y = 0; y < COUNT_HEIGHT; y++)
+            {
+                count += ListEntities[y].Count;
+            }
+            return count;
         }
 
         #endregion

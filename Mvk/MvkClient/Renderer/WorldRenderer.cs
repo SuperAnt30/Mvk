@@ -147,10 +147,10 @@ namespace MvkClient.Renderer
                 {
                     for (int j = 0; j < entities[i].Count; j++)
                     {
-                        EntityPlayerClient entity = (EntityPlayerClient)entities[i].GetAt(j);
+                        EntityLiving entity = entities[i].GetAt(j);
                         if (entity.Name != ClientMain.Player.Name)
                         {
-                            World.RenderEntityManager.RenderEntity(entity, entity.TimeIndex());
+                            World.RenderEntityManager.RenderEntity(entity, timeIndex);// entity.TimeIndex());
                         }
                     }
                 }
@@ -174,18 +174,6 @@ namespace MvkClient.Renderer
             {
                 DrawEntities2(chunk.ListEntities, timeIndex);
             }
-            
-
-            // TODO::!!!
-            //foreach (EntityPlayerClient entity in World.PlayerEntities.Values)
-            //{
-            //    if (entity.Name != ClientMain.Player.Name)
-            //    {
-            //        World.RenderEntityManager.RenderEntity(entity, entity.TimeIndex());
-            //    }
-            //}
-
-           // foreach(World.)
         }
 
         public void DrawEff(float damageTime, float timeIndex)

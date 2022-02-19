@@ -9,6 +9,15 @@ namespace MvkServer.Util
         protected List<object> list = new List<object>();
 
         /// <summary>
+        /// Получить объект по порядковому номеру
+        /// </summary>
+        protected object GetAt(int index)
+        {
+            if (index >= 0 && index < Count) return list[index];
+            return null;
+        }
+
+        /// <summary>
         /// Добавить
         /// </summary>
         protected void Add(object obj)
@@ -36,6 +45,7 @@ namespace MvkServer.Util
                 list.Add(obj);
             }
         }
+
         /// <summary>
         /// Удалить
         /// </summary>
@@ -45,6 +55,35 @@ namespace MvkServer.Util
             {
                 map.Remove(obj);
                 list.Remove(obj);
+            }
+        }
+
+        /// <summary>
+        /// Удалить
+        /// </summary>
+        protected void Remove(object key, object obj)
+        {
+            if (map.ContainsKey(key))
+            {
+                map.Remove(key);
+            }
+            if (list.Contains(obj))
+            {
+                list.Remove(obj);
+            }
+        }
+
+        /// <summary>
+        /// Удалить список
+        /// </summary>
+        public void RemoveRange(MapList list)
+        {
+            if (list.Count > 0)
+            {
+                for (int i = 0; i < list.Count; i++)
+                {
+                    Remove(list.GetAt(i));
+                }
             }
         }
 
@@ -88,5 +127,8 @@ namespace MvkServer.Util
         /// Пустой ли список
         /// </summary>
         public bool IsEmpty() => list.Count == 0;
+
+
+        public override string ToString() => Count.ToString();
     }
 }

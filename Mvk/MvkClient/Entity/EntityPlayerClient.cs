@@ -23,22 +23,20 @@ namespace MvkClient.Entity
         /// <summary>
         /// Скрыта ли сущность на экране
         /// </summary>
-        public bool IsHidden { get; protected set; } = true;
+       // public bool IsHidden { get; protected set; } = true;
         /// <summary>
         /// Проходит ли луч глаз основного игрок к этой сущности
         /// </summary>
-        public bool IsRayEye { get; protected set; } = false;
+      //  public bool IsRayEye { get; protected set; } = false;
         /// <summary>
         /// Объект времени c последнего тпс
         /// </summary>
-        protected InterpolationTime interpolation = new InterpolationTime();
+       // protected InterpolationTime interpolation = new InterpolationTime();
 
-        public EntityPlayerClient(WorldClient world) : base()
+        public EntityPlayerClient(WorldClient world) : base(world)
         {
             ClientWorld = world;
-            World = world;
             ClientMain = world.ClientMain;
-            interpolation.Start();
         }
 
         /// <summary>
@@ -56,39 +54,26 @@ namespace MvkClient.Entity
         public void SetPosLook(vec3 pos, float yaw, float pitch)
         {
             SetPosition(pos);
+            
             RotationYawLast = RotationYawPrev = RotationYaw = RotationYawHead = RotationYawHeadPrev = yaw;
             RotationPitchLast = RotationPitchPrev = RotationPitch = pitch;
-            PositionPrev = Position;
+            PositionPrev = LastTickPos = Position;
         }
 
-        /// <summary>
-        /// Получить коэффициент времени от прошлого пакета перемещения сервера в диапазоне 0 .. 1
-        /// где 0 это начало, 1 финиш
-        /// </summary>
-        public float TimeIndex() => interpolation.TimeIndex();
+        ///// <summary>
+        ///// Получить коэффициент времени от прошлого пакета перемещения сервера в диапазоне 0 .. 1
+        ///// где 0 это начало, 1 финиш
+        ///// </summary>
+        //public float TimeIndex() => interpolation.TimeIndex();
 
         /// <summary>
         /// Задать позицию от сервера
         /// </summary>
-        public void SetMotionServer(vec3 pos, float yaw, float pitch, bool sneaking)
+        public override void SetMotionServer(vec3 pos, float yaw, float pitch, bool sneaking)
         {
-            if (IsSneaking != sneaking)
-            {
-                IsSneaking = sneaking;
-                if (IsSneaking) Sitting(); else Standing();
-            }
-            PositionPrev = Position;
-            SetPosition(pos);
-
-            RotationPitchPrev = RotationPitch;
-            RotationYawPrev = RotationYaw;
-            RotationYawHeadPrev = RotationYawHead;
-            SetRotationHead(yaw, RotationYaw, pitch);
-
+            base.SetMotionServer(pos, yaw, pitch, sneaking);
             // Проверка толчка
             CheckPush();
-
-            interpolation.Restart();
         }
 
         /// <summary>

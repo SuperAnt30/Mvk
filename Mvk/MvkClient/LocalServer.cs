@@ -98,6 +98,7 @@ namespace MvkClient
                     DebugChunk list = (DebugChunk)e.Tag;
                     Debug.ListChunks.listChunkServer = list.listChunkServer;
                     Debug.ListChunks.listChunkPlayers = list.listChunkPlayers;
+                    Debug.ListChunks.listChunkPlayerEntity = list.listChunkPlayerEntity;
                     Debug.ListChunks.isRender = true;
                 }
             };

@@ -1,4 +1,5 @@
-﻿using MvkServer.Entity.Player;
+﻿using MvkServer.Entity.Mob;
+using MvkServer.Entity.Player;
 using MvkServer.Glm;
 using MvkServer.Network.Packets;
 using MvkServer.Network.Packets.Server;
@@ -25,6 +26,8 @@ namespace MvkServer.Entity
         /// Движение из-за смещения
         /// </summary>
         public vec3 MotionPush { get; set; } = new vec3(0);
+
+        
 
         /// <summary>
         /// Нужна ли амплитуда конечностей
@@ -70,7 +73,16 @@ namespace MvkServer.Entity
 
         protected vec3 motionDebug = new vec3(0);
 
-        
+        /// <summary>
+        /// Объект времени c последнего тпс
+        /// </summary>
+      //  private InterpolationTime interpolation = new InterpolationTime();
+
+        public EntityLiving(WorldBase world) : base(world)
+        {
+            //interpolation.Start();
+        }
+
 
         #region Input
 
@@ -92,24 +104,50 @@ namespace MvkServer.Entity
 
         #endregion
 
+        /// <summary>
+        /// Надо ли обрабатывать LivingUpdate, для мобов на сервере, и игроки у себя
+        /// </summary>
+        protected virtual bool IsLivingUpdate()
+        {
+            bool server = World is WorldServer;
+            bool player = this is EntityChicken;
+            return server && player;
+        }
+
         public override void Update()
         {
             base.Update();
             
-            vec3 motionPrev = Motion;
+            //vec3 motionPrev = Motion;
 
-            bool isMotion = EntityUpdate();
+            EntityUpdate();
 
-            if (!IsDead) LivingUpdate();
+            // Если 
+            if (!IsDead && IsLivingUpdate())
+            {
+                LivingUpdate();
 
-            // Пометка что было какое-то движение, вращения, бег, сидеть и тп.
-            if (isMotion || !motionPrev.Equals(Motion)) UpdateIsMotion();
+                // Пометка что было какое-то движение, вращения, бег, сидеть и тп.
+                // Параметр стартового падения между -0.16 и  -0.15
+                if (Motion.x != 0 || Motion.z != 0 || Motion.y > -.15f || Motion.y < -.16f || !OnGround)
+                {
+                    UpdateIsMotion();
+                    //isMotionServer = true;
+                }
+                
+            }
+
+            // Расчёт амплитуды движения
+            UpLimbSwing();
+
+            //// Расчёт амплитуды конечностей, при движении
+            //UpLimbSwing();
+            //// Просчёт взмаха руки
+            //UpdateArmSwingProgress();
         }
 
-        protected bool EntityUpdate()
+        protected void EntityUpdate()
         {
-            bool isMotion = false;
-
             // метод определения если есть ускорение и мы не на воде, определяем по нижниму блоку какой спавн частиц и спавним их
             // ... func_174830_Y
 
@@ -134,74 +172,25 @@ namespace MvkServer.Entity
             // Если был толчёк, мы его дабавляем и обнуляем
             if (!MotionPush.Equals(new vec3(0)))
             {
-                Motion += MotionPush;
+                vec3 motionPush = MotionPush;
                 MotionPush = new vec3(0);
+                // Защита от дабл прыжка, и если сущность летает, нет броска
+                if (Motion.y > 0 || IsFlying) motionPush.y = 0;
+                Motion += motionPush;
             }
-
-            // Обновить положение сидя
-            if (!IsFlying && OnGround && Input.HasFlag(EnumInput.Down) && !IsSneaking)
-            {
-                // Только в выживании можно сесть
-                IsSneaking = true;
-                Sitting();
-                isMotion = true;
-            }
-            // Если хотим встать
-            if (!Input.HasFlag(EnumInput.Down) && IsSneaking)
-            {
-                // Проверка коллизии вверхней части при положении стоя
-                Standing();
-                // TODO:: хочется как-то ловить колизию положение встать в MoveCheckCollision
-                if (NoClip || !World.Collision.IsCollisionBody(this, new vec3(Position)))
-                {
-                    IsSneaking = false;
-                    isMotion = true;
-                }
-                else
-                {
-                    Sitting();
-                }
-            }
-
-            // Sprinting
-            bool isSprinting = Input.HasFlag(EnumInput.Sprinting | EnumInput.Forward) && !IsSneaking;
-            if (IsSprinting != isSprinting)
-            {
-                IsSprinting = isSprinting;
-                isMotion = true;
-            }
-
-            // Jumping
-            IsJumping = Input.HasFlag(EnumInput.Up);
-
-            return isMotion;
         }
 
-        protected void LivingUpdate()
+        /// <summary>
+        /// Обновляет активное действие, и возращает strafe, forward, vertical через vec3
+        /// </summary>
+        /// <returns>strafe, forward</returns>
+        protected vec2 UpdateEntityActionState()
         {
-            // счётчик прыжка
-            if (jumpTicks > 0) jumpTicks--;
-
-            // Продумать перемещение по тактам, с параметром newPosRotationIncrements
-
-            // Если нет перемещения по тактам, запускаем трение воздуха
-            Motion = new vec3(Motion.x * .98f, Motion.y, Motion.z * .98f);
-
-            // Если мелочь убираем
-            Motion = new vec3(
-                Mth.Abs(Motion.x) < 0.005f ? 0 : Motion.x,
-                Mth.Abs(Motion.y) < 0.005f ? 0 : Motion.y,
-                Mth.Abs(Motion.z) < 0.005f ? 0 : Motion.z
-            );
-
-            // Если блокировка то блокируем кнопки и параметр прыжка
-            // ... his.moveStrafing = 0.0F; this.moveForward = 0.0F;
-            if (Health <= 0) InputNone();
+            float strafe = 0f;
+            float forward = 0f;
 
             if (IsFlying)
             {
-                //motion.y += vertical * Speed.Vertical * param;
-                //        //motion.y *= study;
                 float vertical = (Input.HasFlag(EnumInput.Up) ? 1f : 0f) - (Input.HasFlag(EnumInput.Down) ? 1f : 0f);
                 float y = Motion.y;
                 y += vertical * Speed.Vertical;
@@ -222,13 +211,89 @@ namespace MvkServer.Entity
                     Jump();
                     jumpTicks = 10;
                 }
-            } else
+            }
+            else
             {
                 jumpTicks = 0;
             }
 
-            float strafe = (Input.HasFlag(EnumInput.Right) ? 1f : 0) - (Input.HasFlag(EnumInput.Left) ? 1f : 0);
-            float forward = (Input.HasFlag(EnumInput.Back) ? 1f : 0f) - (Input.HasFlag(EnumInput.Forward) ? 1f : 0f);
+            strafe = (Input.HasFlag(EnumInput.Right) ? 1f : 0) - (Input.HasFlag(EnumInput.Left) ? 1f : 0);
+            forward = (Input.HasFlag(EnumInput.Back) ? 1f : 0f) - (Input.HasFlag(EnumInput.Forward) ? 1f : 0f);
+
+            // Обновить положение сидя
+            if (!IsFlying && OnGround && Input.HasFlag(EnumInput.Down) && !IsSneaking)
+            {
+                // Только в выживании можно сесть
+                IsSneaking = true;
+                Sitting();
+            }
+            // Если хотим встать
+            if (!Input.HasFlag(EnumInput.Down) && IsSneaking)
+            {
+                // Проверка коллизии вверхней части при положении стоя
+                Standing();
+                // TODO:: хочется как-то ловить колизию положение встать в MoveCheckCollision
+                if (NoClip || !World.Collision.IsCollisionBody(this, new vec3(Position)))
+                {
+                    IsSneaking = false;
+                }
+                else
+                {
+                    Sitting();
+                }
+            }
+
+            // Sprinting
+            bool isSprinting = Input.HasFlag(EnumInput.Sprinting | EnumInput.Forward) && !IsSneaking;
+            if (IsSprinting != isSprinting)
+            {
+                IsSprinting = isSprinting;
+            }
+
+            // Jumping
+            IsJumping = Input.HasFlag(EnumInput.Up);
+
+            return new vec2(strafe, forward);
+        }
+
+        /// <summary>
+        /// Метод отвечает за жизнь сущности, точнее её управление, перемещения, мобы Ai
+        /// должен работать у клиента для EntityPlayerSP и на сервере для мобов
+        /// так же может работать у клиента для всех сущностей эффектов вне сервера.
+        /// </summary>
+        protected void LivingUpdate()
+        {
+            // счётчик прыжка
+            if (jumpTicks > 0) jumpTicks--;
+
+            // Продумать перемещение по тактам, с параметром newPosRotationIncrements
+
+            // Если нет перемещения по тактам, запускаем трение воздуха
+            Motion = new vec3(Motion.x * .98f, Motion.y, Motion.z * .98f);
+
+            // Если мелочь убираем
+            Motion = new vec3(
+                Mth.Abs(Motion.x) < 0.005f ? 0 : Motion.x,
+                Mth.Abs(Motion.y) < 0.005f ? 0 : Motion.y,
+                Mth.Abs(Motion.z) < 0.005f ? 0 : Motion.z
+            );
+
+            float strafe = 0f;
+            float forward = 0f;
+
+            if (!IsMovementBlocked())
+            {
+                // Если нет блокировки
+                vec2 sf = UpdateEntityActionState();
+                strafe = sf.x;
+                forward = sf.y;
+            }
+
+           // if (Health <= 0) InputNone();
+
+            // Тут правильнее сделать метод updateEntityActionState 
+            // где SP присваивает strafe и forward
+            // или сервер Ai для мобов
 
             if (IsFlying)
             {
@@ -243,147 +308,6 @@ namespace MvkServer.Entity
         }
 
         /// <summary>
-        /// Вызывается для обновления позиции / логики объекта
-        /// </summary>
-        //public override void Update()
-        //{
-        //    base.Update();
-        //    swingProgressPrev = swingProgress;
-
-        //    EntityUpdate();
-
-        //    bool isMotion = false;
-        //    // счётчик прыжка
-        //    if (jumpTicks > 0) jumpTicks--;
-
-        //    Motion *= .98f; // надо ,98 но для того как в майне надо * ,9616 где-то не учёл
-        //    // Если мелочь убираем
-        //    Motion = new vec3(
-        //        Mth.Abs(Motion.x) < 0.005f ? 0 : Motion.x, 
-        //        Mth.Abs(Motion.y) < 0.005f ? 0 : Motion.y, 
-        //        Mth.Abs(Motion.z) < 0.005f ? 0 : Motion.z
-        //    );
-
-        //    if (!IsFlying) Motion *= .9616f; // для того как в майне надо * ,9616 где-то не учёл
-
-        //    //// Если мелочь убираем
-        //    //if (Mth.Abs(Motion.x) < 0.005f) Motion = new vec3(0, Motion.y, Motion.z);
-        //    //if (Mth.Abs(Motion.y) < 0.005f) Motion = new vec3(Motion.x, 0, Motion.z);
-        //    //if (Mth.Abs(Motion.z) < 0.005f) Motion = new vec3(Motion.x, Motion.y, 0);
-
-        //    // Обновить положение сидя
-        //    if (!IsFlying && OnGround && Input.HasFlag(EnumInput.Down) && !IsSneaking)
-        //    {
-        //        // Только в выживании можно сесть
-        //        IsSneaking = true;
-        //        Sitting();
-        //        isMotion = true;
-        //    }
-
-        //    // Sprinting
-        //    bool isSprinting = Input.HasFlag(EnumInput.Sprinting | EnumInput.Forward) && !IsSneaking;
-        //    if (IsSprinting != isSprinting)
-        //    {
-        //        IsSprinting = isSprinting;
-        //        isMotion = true;
-        //    }
-
-        //    // Перемещение, определяем скорости
-        //    float strafe = (Input.HasFlag(EnumInput.Right) ? 1f : 0) - (Input.HasFlag(EnumInput.Left) ? 1f : 0);
-        //    float forward = (Input.HasFlag(EnumInput.Back) ? 1f : 0f) - (Input.HasFlag(EnumInput.Forward) ? 1f : 0f);
-        //    float height = IsFlying ? ((Input.HasFlag(EnumInput.Up) ? 1f : 0f) - (Input.HasFlag(EnumInput.Down) ? 1f : 0f))
-        //        : Input.HasFlag(EnumInput.Up) ? 1f : 0f;
-
-            
-        //    // Если был толчёк, мы его дабавляем и обнуляем
-        //    if (!MotionPush.Equals(new vec3(0)))
-        //    {
-        //        Motion += MotionPush;// * .2f;
-        //        MotionPush = new vec3(0);
-        //    }
-
-        //    if (IsFlying)
-        //    {
-        //        // Определение вертикального перемещения
-        //        //motion.y += vertical * Speed.Vertical * param;
-        //        //motion.y *= study;
-
-        //        IsJumping = false;
-        //    }
-        //    else
-        //    {
-        //        // Определение прыжка и высотного Y значения
-        //        IsJumping = Input.HasFlag(EnumInput.Up);
-        //        float y = OnGround ? -.2f : Motion.y - .16f;
-        //        //if (OnGround) motion.y = -0.2f;
-        //        //else motion.y = Motion.y - .16f;
-        //        Motion = new vec3(Motion.x, y, Motion.z);
-
-        //    }
-
-        //    // Прыжок, только выживание
-        //    if (IsJumping)
-        //    {
-        //        // для воды свои правила, плыть вверх
-        //        //...
-        //        // Для прыжка надо стоять на земле, и чтоб счётик прыжка был = 0
-        //        if (OnGround && jumpTicks == 0)
-        //        {
-        //            vec3 motionJump = Jump();
-        //            //motion.x += motionJump.x;
-        //            //motion.y = motionJump.y;
-        //            //motion.z += motionJump.z;
-        //            Motion = new vec3(Motion.x + motionJump.x, motionJump.y, Motion.z + motionJump.z);
-        //            jumpTicks = 10;
-        //        }
-        //    }
-
-        //    bool onGroundOld = OnGround;
-
-        //    vec3 motion = MoveWithHeading(strafe, forward);//, height);
-        //    if (onGroundOld != OnGround) isMotion = true;
-        //    Motion = motion;
-
-            
-
-            
-        //    // Коллизия перемещения
-        //    //MoveCheckCollision(motion);
-            
-
-        //    // Если хотим встать
-        //    if (!Input.HasFlag(EnumInput.Down) && IsSneaking)
-        //    {
-        //        // Проверка коллизии вверхней части при положении стоя
-        //        Standing();
-        //        // TODO:: хочется как-то ловить колизию положение встать в MoveCheckCollision
-        //        if (NoClip || !World.Collision.IsCollisionBody(this, new vec3(Position + Motion)))
-        //        {
-        //            IsSneaking = false;
-        //            isMotion = true;
-        //        }
-        //        else
-        //        {
-        //            Sitting();
-        //        }
-        //    }
-
-        //    // Если мелочь убираем
-        //    if (Mth.Abs(Motion.x) < 0.005f) Motion = new vec3(0, Motion.y, Motion.z);
-        //    if (Mth.Abs(Motion.y) < 0.005f) Motion = new vec3(Motion.x, 0, Motion.z);
-        //    if (Mth.Abs(Motion.z) < 0.005f) Motion = new vec3(Motion.x, Motion.y, 0);
-
-        //    // Пометка что было какое-то движение, вращения, бег, сидеть и тп.
-        //    if (isMotion || Motion.x != 0 || Motion.y != 0 || Motion.z != 0)
-        //    {
-        //        UpdateLiving();
-        //    }
-
-        //    // Для вращении головы
-        //    HeadTurn(motion);
-        //}
-
-        /// <summary>
         /// Проверка колизии по вектору движения
         /// </summary>
         /// <param name="motion">вектор движения</param>
@@ -391,6 +315,11 @@ namespace MvkServer.Entity
         {
             MoveEntity(motion);
         }
+
+        /// <summary>
+        /// Мертвые и спящие существа не могут двигаться
+        /// </summary>
+        protected bool IsMovementBlocked() => Health <= 0f;
 
         /// <summary>
         /// Обновление в каждом тике, если были требования по изминению позицыи, вращения, бег, сидеть и тп.
@@ -465,24 +394,10 @@ namespace MvkServer.Entity
                 motion.z *= study;
             }
 
-            // Тут расчёт амплитуды движения
-            // ... 
-
+            
 
             Motion = motion;
         }
-
-        /// <summary>
-        /// Задать смещение, с обрезкой малых чисел
-        /// </summary>
-        //protected void SetMotion(vec3 motion)
-        //{
-        //    // Если мелочь убираем
-        //    if (Mth.Abs(motion.x) < 0.005f) motion.x = 0;
-        //    if (Mth.Abs(motion.y) < 0.005f) motion.y = 0;
-        //    if (Mth.Abs(motion.z) < 0.005f) motion.z = 0;
-        //    Motion = motion;
-        //}
 
         /// <summary>
         /// Значения для првжка
@@ -721,8 +636,7 @@ namespace MvkServer.Entity
         /// <param name="timeIndex">коэфициент между тактами</param>
         public float GetLimbSwingAmountFrame(float timeIndex)
         {
-            if (timeIndex == 1.0f) limbSwingAmountPrev = limbSwingAmount;
-            if (limbSwingAmount.Equals(limbSwingAmountPrev)) return limbSwingAmount;
+            if (timeIndex >= 1.0f || limbSwingAmount.Equals(limbSwingAmountPrev)) return limbSwingAmount;
             return limbSwingAmountPrev + (limbSwingAmount - limbSwingAmountPrev) * timeIndex;
         }
 
@@ -734,8 +648,7 @@ namespace MvkServer.Entity
         {
             if (isSwingInProgress)
             {
-                if (timeIndex == 1.0f) swingProgressPrev = swingProgress;
-                if (swingProgress.Equals(swingProgressPrev)) return swingProgress;
+                if (timeIndex >= 1.0f || swingProgress.Equals(swingProgressPrev)) return swingProgress;
                 return swingProgressPrev + (swingProgress - swingProgressPrev) * timeIndex;
             }
             return 0;
@@ -776,8 +689,8 @@ namespace MvkServer.Entity
 
                 if (World is WorldServer)
                 {
-                    ((WorldServer)World).Players.ResponsePacketAll(new PacketS0BAnimation(Id, PacketS0BAnimation.EnumAnimation.SwingItem), Id);
-                    //((WorldServer)World).Players.ResponsePacketAll(new PacketB20Player().Animation(Id), Id);
+                    ((WorldServer)World).Tracker.SendToAllTrackingEntity(this, new PacketS0BAnimation(Id, PacketS0BAnimation.EnumAnimation.SwingItem));
+                    //((WorldServer)World).Players.ResponsePacketAll(new PacketS0BAnimation(Id, PacketS0BAnimation.EnumAnimation.SwingItem), Id);
                 }
             }
         }
@@ -813,28 +726,36 @@ namespace MvkServer.Entity
         /// </summary>
         protected virtual void Fall(float distance) { }
 
-        //public override string ToString()
-        //{
-        //    vec3 m = motionDebug;
-        //    m.y = 0;
-        //    vec3 my = new vec3(0, motionDebug.y, 0);
+        /// <summary>
+        /// Получить коэффициент времени от прошлого пакета перемещения сервера в диапазоне 0 .. 1
+        /// где 0 это начало, 1 финиш
+        /// </summary>
+       // public float TimeIndex() => interpolation.TimeIndex();
+        /// <summary>
+        /// Коэффициент интерполяции перезапускаем
+        /// </summary>
+       // protected void InterolationReset() => interpolation.Restart();
 
-        //    return string.Format("XYZ {7} ch:{12}\r\n{0:0.000} | {13:0.000} м/c\r\nyaw:{8:0.00} H:{9:0.00} pitch:{10:0.00} \r\n{1}{2}{6}{4} boom:{5:0.00}\r\nMotion:{3}\r\n{11}",
-        //        glm.distance(m) * 10f, // 0
-        //        OnGround ? "__" : "", // 1
-        //        IsSprinting ? "[Sp]" : "", // 2
-        //        Motion, // 3
-        //        IsJumping ? "[J]" : "", // 4
-        //        fallDistanceResult, // 5
-        //        IsSneaking ? "[Sn]" : "", // 6
-        //        Position, // 7
-        //        glm.degrees(RotationYaw), // 8
-        //        0,//glm.degrees(RotationYawHead), // 9
-        //        glm.degrees(RotationPitch), // 10
-        //        IsCollidedHorizontally, // 11
-        //        GetChunkPos(), // 12
-        //        glm.distance(my) * 10f
-        //        );
-        //}
+        /// <summary>
+        /// Задать позицию от сервера
+        /// </summary>
+        public virtual void SetMotionServer(vec3 pos, float yaw, float pitch, bool sneaking)
+        {
+            if (IsSneaking != sneaking)
+            {
+                IsSneaking = sneaking;
+                if (IsSneaking) Sitting(); else Standing();
+            }
+            PositionPrev = Position;
+            SetPosition(pos);
+
+            //RotationPitchPrev = RotationPitch;
+            //RotationYawPrev = RotationYaw;
+
+            //interpolation.Restart();
+            //InterolationReset();
+        }
+
+        
     }
 }

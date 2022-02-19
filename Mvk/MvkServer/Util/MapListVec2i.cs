@@ -19,5 +19,9 @@ namespace MvkServer.Util
         /// Получить первое значение по списку и удалить его
         /// </summary>
         public new vec2i FirstRemove() => (vec2i)base.FirstRemove();
+        /// <summary>
+        /// Проверить наличие вектор
+        /// </summary>
+        public bool Contains(vec2i pos) => base.Contains(pos);
     }
 }

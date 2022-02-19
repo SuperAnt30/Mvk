@@ -2,24 +2,64 @@
 using MvkServer.Network.Packets.Client;
 using MvkServer.Network.Packets.Server;
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
+using System.Reflection;
 
 namespace MvkServer.Network
 {
     /// <summary>
     /// Обработка сетевых пакетов
     /// </summary>
-    public class ProcessPackets
+    public abstract class ProcessPackets
     {
+        private Dictionary<byte, IPacket> dPacket = new Dictionary<byte, IPacket>();
+        private Dictionary<byte, Type> dType = new Dictionary<byte, Type>();
+
+        private bool isClient;
+
+        protected ProcessPackets(bool client)
+        {
+            isClient = client;
+            Type typeBlock = typeof(IPacket);
+            Type[] types = Assembly.GetAssembly(typeBlock).GetTypes();
+            IEnumerable<Type> packetList = types.Where(type => typeBlock.IsAssignableFrom(type));
+            foreach (var packet in packetList)
+            {
+                if (!packet.IsInterface)
+                {
+                    
+                    IPacket packetObject = (Activator.CreateInstance(packet) as IPacket);
+                    if (IsKey(packetObject, client ? "S" : "C"))
+                    {
+                        byte id = GetId(packetObject);
+                        dType.Add(id, packetObject.GetType());
+                        //dPacket.TryAdd(id, packetObject);
+                    }
+                }
+            }
+        }
         /// <summary>
         /// Объявление всех объектов пакетов
         /// </summary>
         /// <param name="id">Ключ пакета</param>
         /// <param name="isClient">Пакет от клиента</param>
-        protected IPacket Init(byte id, bool isClient)
+        protected IPacket Init(byte id)
         {
-            if (isClient)
+            //try
+            //{
+            //    return (Activator.CreateInstance(dType[id]) as IPacket);
+            //    //return dPacket[id];
+            //}
+            //catch (Exception ex)
+            //{
+            //    throw;
+            //}
+
+            if (!isClient)
             {
                 // Пакеты от клиента
                 switch (id)
@@ -53,6 +93,7 @@ namespace MvkServer.Network
                     case 0x08: return new PacketS08PlayerPosLook();
                     case 0x0B: return new PacketS0BAnimation();
                     case 0x0C: return new PacketS0CSpawnPlayer();
+                    case 0x0F: return new PacketS0FSpawnMob();
                     case 0x12: return new PacketS12EntityVelocity();
                     case 0x13: return new PacketS13DestroyEntities();
                     case 0x14: return new PacketS14EntityMotion();
@@ -67,9 +108,24 @@ namespace MvkServer.Network
             switch (id)
             {
                 case 0x21: return new PacketS21ChunckData();
-                case 0xFF: return new PacketTFFTest();
             }
             return null;
+        }
+
+        /// <summary>
+        /// Получить id по имени объекта
+        /// </summary>
+        protected bool IsKey(IPacket packet, string check)
+        {
+            try
+            {
+                string hex = packet.ToString().Substring(packet.ToString().Substring(26, 1) == "P" ? 32 : 39, 1);
+                return hex == check;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
 
         /// <summary>
@@ -91,15 +147,15 @@ namespace MvkServer.Network
         /// <summary>
         /// Передача данных для клиента
         /// </summary>
-        public void ReceiveBufferClient(byte[] buffer) => ReceivePacket(true, null, buffer);
-        /// <summary>
-        /// Передача данных для сервера
-        /// </summary>
-        public void ReceiveBufferServer(Socket socket, byte[] buffer) => ReceivePacket(false, socket, buffer);
+        //public void ReceiveBufferClient(byte[] buffer) => ReceivePacket(null, buffer);
+        ///// <summary>
+        ///// Передача данных для сервера
+        ///// </summary>
+        //public void ReceiveBufferServer(Socket socket, byte[] buffer) => ReceivePacket(socket, buffer);
 
-        protected void ReceivePacket(bool isClient, Socket socket, byte[] buffer)
+        protected void ReceivePacket(Socket socket, byte[] buffer)
         {
-            IPacket packet = Init(buffer[0], !isClient);
+            IPacket packet = Init(buffer[0]);
             if (packet == null) return;
             try
             {

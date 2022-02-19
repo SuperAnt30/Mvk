@@ -1,4 +1,5 @@
-﻿using MvkServer.Entity.Player;
+﻿using MvkServer.Entity;
+using MvkServer.Entity.Player;
 using MvkServer.Glm;
 using MvkServer.Network.Packets;
 using MvkServer.Network.Packets.Client;
@@ -23,7 +24,12 @@ namespace MvkServer.Network
         private long lastSentPingPacket;
         private uint pingKeySend;
 
-        public ProcessServerPackets(Server server) => ServerMain = server;
+        public ProcessServerPackets(Server server) : base(false) => ServerMain = server;
+
+        /// <summary>
+        /// Передача данных для сервера
+        /// </summary>
+        public void ReceiveBuffer(Socket socket, byte[] buffer) => ReceivePacket(socket, buffer);
 
         protected override void ReceivePacketServer(Socket socket, IPacket packet)
         {
@@ -42,9 +48,6 @@ namespace MvkServer.Network
                     case 0x0C: Handle0CPlayerAction(socket, (PacketC0CPlayerAction)packet); break;
                     case 0x15: Handle15ClientSetting(socket, (PacketC15ClientSetting)packet); break;
                     case 0x16: Handle16ClientStatus(socket, (PacketC16ClientStatus)packet); break;
-                    case 0xFF:
-                        ServerMain.ResponsePacket(socket, new PacketTFFTest("Получил тест: " + ((PacketTFFTest)packet).Name));
-                        break;
                 }
             });
         }
@@ -67,7 +70,7 @@ namespace MvkServer.Network
         /// <summary>
         /// Ping-pong
         /// </summary>
-        private void Handle00Ping(Socket socket, PacketC00Ping packet) => ServerMain.ResponsePacket(socket, new PacketS00Pong(packet.GetClientTime()));
+        private void Handle00Ping(Socket socket, PacketC00Ping packet) => ServerMain.ResponsePacket2(socket, new PacketS00Pong(packet.GetClientTime()));
 
         /// <summary>
         /// KeepAlive
@@ -94,7 +97,8 @@ namespace MvkServer.Network
         /// </summary>
         private void Handle03UseEntity(Socket socket, PacketC03UseEntity packet)
         {
-            EntityPlayerServer entity = ServerMain.World.Players.GetPlayer(packet.GetId());
+            EntityLiving entity = ServerMain.World.LoadedEntityList.Get(packet.GetId());
+            //EntityPlayerServer entity = ServerMain.World.Players.GetPlayer(packet.GetId());
 
             if (entity != null)
             {
@@ -105,7 +109,13 @@ namespace MvkServer.Network
                     entity.SetHealth(entity.Health - damage);
                     vec3 vec = packet.GetVec() * .5f;
                     vec.y = .84f;
-                    ServerMain.World.Players.ResponsePacket(entity, new PacketS12EntityVelocity(entity.Id, vec));
+                    if (entity is EntityPlayerServer)
+                    {
+                        ((EntityPlayerServer)entity).SendPacket(new PacketS12EntityVelocity(entity.Id, vec));
+                    } else
+                    {
+                        entity.MotionPush = vec;
+                    }
                     ResponseHealth(entity);
                 }
             }
@@ -197,20 +207,23 @@ namespace MvkServer.Network
         /// <summary>
         /// Отправить изменение по здоровью
         /// </summary>
-        private void ResponseHealth(EntityPlayerServer entity)
+        private void ResponseHealth(EntityLiving entity)
         {
-            ServerMain.World.Players.ResponsePacket(entity, new PacketS06UpdateHealth(entity.Health));
+            if (entity is EntityPlayerServer)
+            {
+                ((EntityPlayerServer)entity).SendPacket(new PacketS06UpdateHealth(entity.Health));
+            }
 
             if (entity.Health > 0)
             {
                 // Анимация урона
-                ServerMain.World.Players.ResponsePacketAll(new PacketS0BAnimation(entity.Id,
-                    PacketS0BAnimation.EnumAnimation.Hurt), entity.Id);
+                ServerMain.World.Tracker.SendToAllTrackingEntity(entity, new PacketS0BAnimation(entity.Id,
+                    PacketS0BAnimation.EnumAnimation.Hurt));
             } else
             {
                 // Начала смерти
-                ServerMain.World.Players.ResponsePacketAll(new PacketS19EntityStatus(entity.Id,
-                    PacketS19EntityStatus.EnumStatus.Die), entity.Id);
+                ServerMain.World.Tracker.SendToAllTrackingEntity(entity, new PacketS19EntityStatus(entity.Id,
+                    PacketS19EntityStatus.EnumStatus.Die));
             }
         }
 

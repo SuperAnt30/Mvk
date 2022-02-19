@@ -28,9 +28,9 @@ namespace MvkClient.Renderer.Entity
 
         public void DoRender(EntityLiving entity, vec3 offset, float timeIndex)
         {
-            vec3 pos = entity.GetPositionFrame(timeIndex);
-            float yawBody = entity.GetRotationYawBodyFrame(timeIndex);
-            float yawHead = entity.GetRotationYawFrame(timeIndex);
+            vec3 pos = entity.GetPositionFrame2(timeIndex);
+            float yawBody = entity.GetRotationYawBodyFrame2(timeIndex);
+            float yawHead = entity.GetRotationYawFrame2(timeIndex);
             model.SetSwingProgress(entity.GetSwingProgressFrame(timeIndex));
 
             GLRender.PushMatrix();
@@ -63,7 +63,7 @@ namespace MvkClient.Renderer.Entity
                     float ageInTicks = renderManager.World.ClientMain.TickCounter + timeIndex;
 
                     RenderModel(entity, entity.LimbSwing, entity.GetLimbSwingAmountFrame(timeIndex), ageInTicks,
-                        -yawBody, entity.GetRotationPitchFrame(timeIndex), .0625f);
+                        -yawBody, entity.GetRotationPitchFrame2(timeIndex), .0625f);
                 }
                 GLRender.PopMatrix();
                 RenderLivingLabel(entity);

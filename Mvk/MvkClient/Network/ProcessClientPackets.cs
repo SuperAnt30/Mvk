@@ -1,6 +1,8 @@
 ﻿using MvkClient.Entity;
 using MvkClient.Setitings;
 using MvkServer.Entity;
+using MvkServer.Entity.Mob;
+using MvkServer.Glm;
 using MvkServer.Network;
 using MvkServer.Network.Packets;
 using MvkServer.Network.Packets.Client;
@@ -19,7 +21,12 @@ namespace MvkClient.Network
         /// </summary>
         public Client ClientMain { get; protected set; }
 
-        public ProcessClientPackets(Client client) => ClientMain = client;
+        public ProcessClientPackets(Client client) : base(true) => ClientMain = client;
+
+        /// <summary>
+        /// Передача данных для клиента
+        /// </summary>
+        public void ReceiveBuffer(byte[] buffer) => ReceivePacket(null, buffer);
 
         protected override void ReceivePacketClient(IPacket packet)
         {
@@ -43,6 +50,7 @@ namespace MvkClient.Network
                         case 0x08: Handle08PlayerPosLook((PacketS08PlayerPosLook)packet); break;
                         case 0x0B: Handle0BAnimation((PacketS0BAnimation)packet); break;
                         case 0x0C: Handle0CSpawnPlayer((PacketS0CSpawnPlayer)packet); break;
+                        case 0x0F: Handle0FSpawnMob((PacketS0FSpawnMob)packet); break;
                         case 0x12: Handle12EntityVelocity((PacketS12EntityVelocity)packet); break;
                         case 0x13: Handle13DestroyEntities((PacketS13DestroyEntities)packet); break;
                         case 0x14: Handle14EntityMotion((PacketS14EntityMotion)packet); break;
@@ -51,10 +59,6 @@ namespace MvkClient.Network
 
                         case 0xF1: HandleF1Disconnect((PacketSF1Disconnect)packet); break;
 
-                        case 0xFF:
-                            PacketTFFTest p1 = (PacketTFFTest)packet;
-                            Debug.DStr = p1.Name;
-                            break;
                     }
                 }
             });
@@ -75,10 +79,15 @@ namespace MvkClient.Network
         /// </summary>
         private void Handle02JoinGame(PacketS02JoinGame packet)
         {
-            ClientMain.Player.SetDataPlayer(packet.GetId(), packet.GetUuid(), Setting.Nickname);
+            ClientMain.Player.SetDataPlayer(packet.GetId(), packet.GetUuid(), ToNikname());
             ClientMain.GameModeBegin();
             // отправляем настройки
             ClientMain.TrancivePacket(new PacketC15ClientSetting(Setting.OverviewChunk));
+
+            //EntityChicken entityChicken = new EntityChicken(ClientMain.World);
+            //entityChicken.SetEntityId(101);
+            //entityChicken.SetPosition(ClientMain.Player.Position + new vec3(3, 0, 0));
+            //ClientMain.World.SpawnEntityInWorld(entityChicken);
         }
 
         /// <summary>
@@ -103,7 +112,7 @@ namespace MvkClient.Network
         /// </summary>
         private void Handle07Respawn(PacketS07Respawn packet)
         {
-            ClientMain.Player.RespawnClient();
+            ClientMain.Player.Respawn();
         }
 
         /// <summary>
@@ -142,11 +151,36 @@ namespace MvkClient.Network
             entity.SetDataPlayer(packet.GetId(), packet.GetUuid(), packet.GetName());
             entity.SetPosLook(packet.GetPos(), packet.GetYaw(), packet.GetPitch());
 
-            entity.FlagSpawn = true;
+            //entity.FlagSpawn = true;
             ClientMain.World.SpawnEntityInWorld(entity);
-            entity.FlagSpawn = false;
+
+            //EntityChicken entityChicken = new EntityChicken(ClientMain.World);
+            //entityChicken.SetEntityId(101);
+            //entityChicken.SetPosition(packet.GetPos() + new vec3(3, 0, 0));
+            //ClientMain.World.SpawnEntityInWorld(entityChicken);
+            //entity.FlagSpawn = false;
         }
 
+        /// <summary>
+        /// Пакет спавна мобов
+        /// </summary>
+        private void Handle0FSpawnMob(PacketS0FSpawnMob packet)
+        {
+            EntityLiving entity = new EntityChicken(ClientMain.World);
+            entity.SetEntityId(packet.GetId());
+            entity.SetPosition(packet.GetPos());//, packet.GetYaw(), packet.GetPitch());
+
+            //entity.FlagSpawn = true;
+            ClientMain.World.SpawnEntityInWorld(entity);
+
+            //EntityChicken entityChicken = new EntityChicken(ClientMain.World);
+            //entityChicken.SetEntityId(101);
+            //entityChicken.SetPosition(packet.GetPos() + new vec3(3, 0, 0));
+            //ClientMain.World.SpawnEntityInWorld(entityChicken);
+            //entity.FlagSpawn = false;
+        }
+
+        
         private void Handle12EntityVelocity(PacketS12EntityVelocity packet)
         {
             EntityLiving entity = ClientMain.World.GetEntityByID(packet.GetId());
@@ -173,7 +207,7 @@ namespace MvkClient.Network
         /// </summary>
         private void Handle14EntityMotion(PacketS14EntityMotion packet)
         {
-            EntityPlayerMP entity = (EntityPlayerMP)ClientMain.World.GetEntityByID(packet.GetId());
+            EntityLiving entity = ClientMain.World.GetEntityByID(packet.GetId());
             if (entity != null)
             {
                 entity.SetMotionServer(
@@ -211,7 +245,7 @@ namespace MvkClient.Network
             if (packet.IsConnect())
             {
                 // connect
-                ClientMain.TrancivePacket(new PacketC02LoginStart(Setting.Nickname));// + (ClientMain.IsServerLocalRun() ? "" : "2")));
+                ClientMain.TrancivePacket(new PacketC02LoginStart(ToNikname()));
             }
             else
             {
@@ -220,6 +254,11 @@ namespace MvkClient.Network
             }
         }
 
+        /// <summary>
+        /// Для дебага, ник в сети с пометкой
+        /// </summary>
+        private string ToNikname() 
+            => Setting.Nickname + (!MvkServer.MvkGlobal.IS_DEBUG_NICKNAME || ClientMain.IsServerLocalRun() ? "" : "-Net");
         /// <summary>
         /// Дисконект игрока
         /// </summary>

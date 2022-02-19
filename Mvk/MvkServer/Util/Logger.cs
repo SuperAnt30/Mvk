@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 
 namespace MvkServer.Util
@@ -10,8 +9,6 @@ namespace MvkServer.Util
     public class Logger
     {
         private string fileName;
-        //protected Stopwatch stopwatch;
-        //protected long time;
         private string log;
         private string path = "Logs" + Path.DirectorySeparatorChar;
         private static object locker = new object();
@@ -22,8 +19,6 @@ namespace MvkServer.Util
         public Logger(string prefixFileName)
         {
             isEmpty = false;
-            //stopwatch = new Stopwatch();
-            //stopwatch.Start();
             string sd = DateTime.Now.ToString("yyyy-MM-dd");
             int i = 1;
 
@@ -41,15 +36,6 @@ namespace MvkServer.Util
             if (isEmpty) return;
             
             log += $"[{DateTime.Now.ToLongTimeString()}] " + string.Format(logMessage, args) + "\r\n";
-
-            //if (time < stopwatch.ElapsedMilliseconds)
-            //{
-            //    // TODO:: !!!нельзя писать тут, так как в разных потоках может быть. В идеали надо в tick сервера засунуть с интервалом.
-            //    Save(log);
-            //    log = "";
-            //    // Таймер, чтоб чаще раз 5 секунд не записывать
-            //    time = stopwatch.ElapsedMilliseconds + 10000;
-            //}
         }
 
         public void Error(string logMessage, params object[] args)

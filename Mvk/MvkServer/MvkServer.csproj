@@ -34,6 +34,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Entity\EntityBase.cs" />
+    <Compile Include="Entity\EntityTracker.cs" />
+    <Compile Include="Entity\EntityTrackerEntry.cs" />
+    <Compile Include="Entity\MapListEntityTrackerEntry.cs" />
     <Compile Include="Entity\MapListEntity.cs" />
     <Compile Include="Entity\EntityLiving.cs" />
     <Compile Include="Entity\EntityLivingHead.cs" />
@@ -54,6 +57,7 @@
     <Compile Include="Network\Packets\Client\PacketC16ClientStatus.cs" />
     <Compile Include="Network\Packets\Server\PacketS07Respawn.cs" />
     <Compile Include="Network\Packets\Server\PacketS0BAnimation.cs" />
+    <Compile Include="Network\Packets\Server\PacketS0FSpawnMob.cs" />
     <Compile Include="Network\Packets\Server\PacketS12EntityVelocity.cs" />
     <Compile Include="Network\Packets\Server\PacketS13DestroyEntities.cs" />
     <Compile Include="Network\Packets\Server\PacketS14EntityMotion.cs" />
@@ -69,6 +73,9 @@
     <Compile Include="Network\Packets\Server\PacketS03TimeUpdate.cs" />
     <Compile Include="Util\ArrayDistance.cs" />
     <Compile Include="Util\AxisAlignedBB.cs" />
+    <Compile Include="Util\InterpolationTime.cs" />
+    <Compile Include="Util\MapListKeyId.cs" />
+    <Compile Include="Util\MapListId.cs" />
     <Compile Include="Util\MapListVec2i.cs" />
     <Compile Include="Util\MovingObjectPosition.cs" />
     <Compile Include="Util\MvkStatic.cs" />
@@ -109,7 +116,6 @@
     <Compile Include="Network\ITransfer.cs" />
     <Compile Include="Network\Packets\Server\PacketSF0Connection.cs" />
     <Compile Include="Network\Packets\PacketS21ChunckData.cs" />
-    <Compile Include="Network\Packets\PacketTFFTest.cs" />
     <Compile Include="Network\ProcessPackets.cs" />
     <Compile Include="Network\ProcessServerPackets.cs" />
     <Compile Include="Network\ReceivingBytes.cs" />

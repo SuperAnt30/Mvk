@@ -68,9 +68,9 @@ namespace MvkServer.World
         public void LoadEntities(MapListEntity entityCollection)
         {
             LoadedEntityList.AddRange(entityCollection);
-            while (entityCollection.Count > 0)
+            for (int i = 0; i < entityCollection.Count; i++)
             {
-                OnEntityAdded(entityCollection.FirstRemove());
+                OnEntityAdded(entityCollection.GetAt(i));
             }
         }
 
@@ -151,6 +151,8 @@ namespace MvkServer.World
             // Проверка о наличии соседних чанков
             //if (IsAreaLoaded(x - var5, 0, z - var5, x + var5, 0, z + var5, true))
             {
+                entity.UpPrev();
+
                 //entity.lastTickPosX = entity.posX;
                 //entity.lastTickPosY = entity.posY;
                 //entity.lastTickPosZ = entity.posZ;
@@ -229,11 +231,24 @@ namespace MvkServer.World
 
             if (entity is EntityPlayer) flagSpawn = true;
 
-            if (!flagSpawn && !ChunkPr.IsChunk(posCh))
+
+            //ChunkBase chunk = null;
+            bool isChunk = false;
+            //if (this is WorldServer)
+            //{
+            //    chunk = ((WorldServer)this).ChunkPrServ.LoadChunk(posCh);
+            //    isChunk = chunk != null;
+            //}
+            //else
             {
-                return false;
+                isChunk = ChunkPr.IsChunk(posCh);
             }
-            else
+            
+            //if (!flagSpawn && !isChunk)
+            //{
+            //    return false;
+            //}
+            //else
             {
                 if (entity is EntityPlayer)
                 {
@@ -243,8 +258,14 @@ namespace MvkServer.World
                     //UpdateAllPlayersSleepingFlag();
                 }
 
+                //if (!isChunk)
                 ChunkBase chunk = GetChunk(posCh);
                 if (chunk != null) chunk.AddEntity(entity);
+                else
+                {
+                    
+                   // return false;
+                }
                 LoadedEntityList.Add(entity);
                 OnEntityAdded(entity);
                 return true;

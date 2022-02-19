@@ -108,7 +108,7 @@ namespace MvkServer.Network
         /// <param name="count">длинна передоваемого пакета</param>
         protected void DebugSleep(int count)
         {
-            if (MvkGlobal.IS_DENUG_SLEEP_NET)
+            if (MvkGlobal.IS_DEBUG_SLEEP_NET)
             {
                 Random random = new Random();
                 System.Threading.Thread.Sleep(count > 100 ? 50 : random.Next(5, 20));

@@ -93,7 +93,8 @@ namespace MvkClient
                         new vec4(.3f, .8f, .6f, 1f),
                         new vec4(.2f, .9f, .5f, 1f),
                         new vec4(.9f, .9f, .9f, 1f),
-                        new vec4(.0f, .0f, .6f, 1f)
+                        new vec4(.0f, .0f, .6f, 1f),
+                        new vec4(.9f, .0f, .0f, 1f),
                     };
                     int size = 8;
 
@@ -105,6 +106,15 @@ namespace MvkClient
                             GLRender.Rectangle(pos.x + x, -pos.y + z, pos.x + x + size, -pos.y + z + size, colPr[p.y]);
                         }
                     }
+                    if (ListChunks.listChunkPlayerEntity != null)
+                    {
+                        foreach (vec3i p in ListChunks.listChunkPlayerEntity)
+                        {
+                            vec2i pos = new vec2i(p.x * size, p.z * size);
+                            GLRender.Rectangle(pos.x + x, -pos.y + z, pos.x + x + size, -pos.y + z + size, colPr[p.y]);
+                        }
+                    }
+                    
                     if (ListChunks.listChunkPlayers != null)
                     {
                         foreach (vec2i p in ListChunks.listChunkPlayers)

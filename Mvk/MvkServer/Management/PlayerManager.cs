@@ -1,4 +1,5 @@
 ﻿using MvkServer.Entity;
+using MvkServer.Entity.Mob;
 using MvkServer.Entity.Player;
 using MvkServer.Glm;
 using MvkServer.Network;
@@ -61,22 +62,22 @@ namespace MvkServer.Management
         /// <summary>
         /// Отправить пакет клиенту
         /// </summary>
-        public void ResponsePacket(EntityPlayerServer entityPlayer, IPacket packet) 
-            => World.ServerMain.ResponsePacket(entityPlayer.SocketClient, packet);
+        //public void ResponsePacket(EntityPlayerServer entityPlayer, IPacket packet) 
+        //    => World.ServerMain.ResponsePacket(entityPlayer.SocketClient, packet);
 
-        /// <summary>
-        /// Отправить пакеты всех игрокам
-        /// </summary>
-        public void ResponsePacketAll(IPacket packet) => ResponsePacketAll(packet, -1);
-        /// <summary>
-        /// Отправить пакеты всех игрокам
-        /// </summary>
-        public void ResponsePacketAll(IPacket packet, int id)
+        ///// <summary>
+        ///// Отправить пакеты всех игрокам
+        ///// </summary>
+        //public void ResponsePacketAll(IPacket packet) => ResponsePacketAll(packet, -1);
+        ///// <summary>
+        ///// Отправить пакеты всех игрокам
+        ///// </summary>
+        public void ResponsePacketAll(IPacket packet)
         {
             Hashtable ht = players.Clone() as Hashtable;
             foreach (EntityPlayerServer player in ht.Values)
             {
-                if (id <= 0 || player.Id != id) ResponsePacket(player, packet);
+                player.SendPacket(packet);
             }
         }
 
@@ -90,7 +91,7 @@ namespace MvkServer.Management
                 lastPlayerId++;
                 // TODO::Тут проверяем место положение персонажа, и заносим при запуске
                 
-                entityPlayer.SetId(lastPlayerId);
+                entityPlayer.SetEntityId(lastPlayerId);
                 entityPlayer.SetRotation(-0.9f, -.8f);
                 SpawnPositionTest(entityPlayer);
                 entityPlayer.SetChunkPosManaged(entityPlayer.GetChunkPos());
@@ -99,7 +100,20 @@ namespace MvkServer.Management
                 FilterChunkLoadQueue(entityPlayer);
 
                 entityPlayer.UpPositionChunk();
-                World.LoadedEntityList.Add(entityPlayer);
+               // World.PlayerEntities.Add(entityPlayer);
+                // World.LoadedEntityList.Add(entityPlayer);
+
+                //entityPlayer.FlagSpawn = true;
+                World.SpawnEntityInWorld(entityPlayer);
+                //entityPlayer.FlagSpawn = false;
+
+                lastPlayerId++;
+                EntityChicken entityChicken = new EntityChicken(World);
+                entityChicken.SetEntityId(lastPlayerId);
+                entityChicken.SetPosition(entityPlayer.Position + new vec3(3, 5, 0));
+                World.SpawnEntityInWorld(entityChicken);
+                //ClientMain.World.SpawnEntityInWorld(entityChicken);
+
                 return true;
             }
             return false;
@@ -135,10 +149,12 @@ namespace MvkServer.Management
             if (entityPlayer != null && players.ContainsKey(entityPlayer.UUID))
             {
                 World.ServerMain.Log.Log("server.player.entry.repeat {0} [{1}]", entityPlayer.Name, entityPlayer.UUID);
+                World.Tracker.RemovePlayerFromTrackers(entityPlayer);
                 RemoveMountedMovingPlayer(entityPlayer);
-                players.Remove(entityPlayer.UUID);
                 World.RemoveEntity(entityPlayer);
-                ResponsePacketAll(new PacketSF1Disconnect(entityPlayer.Id), entityPlayer.Id);
+                players.Remove(entityPlayer.UUID);
+
+                //ResponsePacketAll(new PacketSF1Disconnect(entityPlayer.Id), entityPlayer.Id);
             }
         }
 
@@ -173,6 +189,18 @@ namespace MvkServer.Management
         /// ПустойЮ нет игроков
         /// </summary>
         public bool IsEmpty() => players.Count == 0;
+
+        /// <summary>
+        /// Находится ли игрок в этом чанке
+        /// </summary>
+        /// <param name="entityPlayer">игрок</param>
+        /// <param name="pos">позиция чанка</param>
+        public bool IsPlayerWatchingChunk(EntityPlayerServer entityPlayer, vec2i pos)
+        {
+            ChunkCoordPlayers chunkPlayer = GetChunkCoordPlayers(pos, false);
+                return chunkPlayer != null && chunkPlayer.Contains(entityPlayer) 
+                && entityPlayer.LoadedChunks.Contains(chunkPlayer.Position);
+        }
 
         /// <summary>
         /// Получить основного игрока который создал сервер
@@ -232,7 +260,7 @@ namespace MvkServer.Management
             {
                 World.ServerMain.Log.Log("server.player.entry.duplicate {0} [{1}]", entityPlayer.Name, entityPlayer.UUID);
                 // Игрок с таким именем в игре!
-                ResponsePacket(entityPlayer, new PacketSF0Connection("world.player.duplicate"));
+                entityPlayer.SendPacket(new PacketSF0Connection("world.player.duplicate"));
             }
             return;
         }
@@ -255,11 +283,14 @@ namespace MvkServer.Management
         /// </summary>
         protected void ResponsePacketJoinGame(EntityPlayerServer player)
         {
-            ResponsePacket(player, new PacketS02JoinGame(player.Id, player.UUID));
-            ResponsePacket(player, new PacketS08PlayerPosLook(player.Position, player.RotationYawHead, player.RotationPitch));
-            ResponsePacket(player, new PacketS03TimeUpdate(World.ServerMain.TickCounter));
+            player.SendPacket(new PacketS02JoinGame(player.Id, player.UUID));
+            player.SendPacket(new PacketS08PlayerPosLook(player.Position, player.RotationYawHead, player.RotationPitch));
+            player.SendPacket(new PacketS03TimeUpdate(World.ServerMain.TickCounter));
 
-            ResponsePacketAll(new PacketS0CSpawnPlayer(player), player.Id);
+
+        //    World.SpawnEntityInWorld(player);
+
+             //ResponsePacketAll(new PacketS0CSpawnPlayer(player), player.Id);
 
             // Так же отправляем всех игроков новому игроку
             //Hashtable ht = players.Clone() as Hashtable;
@@ -312,13 +343,20 @@ namespace MvkServer.Management
                 {
                     // Респавн игрока
                     SpawnPositionTest(player);
-                    player.SetHealth(20);
+                    player.Respawn();
+                    player.SendPacket(new PacketS07Respawn());
+                    player.SendPacket(new PacketS08PlayerPosLook(player.Position, player.RotationYawHead, player.RotationPitch));
+
+                    World.SpawnEntityInWorld(player);
+                    //World.Tracker.SendToAllTrackingEntity(player, new PacketS0CSpawnPlayer(player));
+
                     //ResponsePacket(player, new PacketB20Player().Respawn(player.Position, player.RotationYawHead, player.RotationPitch));
                     //ResponsePacketAll(new PacketS12Success(player), player.Id);
                     //ResponsePacketAll(new PacketS17Health(player.Health, false, player.Id));
-                    World.ServerMain.ResponsePacket(socket, new PacketS07Respawn());
-                    World.ServerMain.ResponsePacket(socket, new PacketS08PlayerPosLook(player.Position, player.RotationYawHead, player.RotationPitch));
-                    ResponsePacketAll(new PacketS0CSpawnPlayer(player), player.Id);
+
+                    //World.ServerMain.ResponsePacket(socket, new PacketS07Respawn());
+                    //World.ServerMain.ResponsePacket(socket, new PacketS08PlayerPosLook(player.Position, player.RotationYawHead, player.RotationPitch));
+                    //ResponsePacketAll(new PacketS0CSpawnPlayer(player), player.Id);
                 }
             }
         }
@@ -410,7 +448,7 @@ namespace MvkServer.Management
                                     // отправить игроку что чанк удалить
                                     vec2i posch = new vec2i(ccp.Position);
 
-                                    World.ServerMain.ResponsePacket(entityPlayer.SocketClient, new PacketS21ChunckData(posch));
+                                    entityPlayer.SendPacket(new PacketS21ChunckData(posch));
 
                                     //ChunkBase chunk = World.GetChunk(posch);
                                     //if (chunk != null)
@@ -574,7 +612,7 @@ namespace MvkServer.Management
             {
                 foreach (EntityPlayerServer entity in players.Values)
                 {
-                    strPlayers += entity.Name + " [p" + entity.Ping + "|h" + entity.Health + "]";
+                    strPlayers += entity.Name + " [p" + entity.Ping + "|" + (entity.IsDead ? "Dead" : ("h" + entity.Health)) + "]";
                 }
             }
             return strPlayers;

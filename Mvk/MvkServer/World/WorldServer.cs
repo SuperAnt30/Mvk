@@ -1,7 +1,8 @@
-﻿using MvkServer.Entity.Player;
+﻿using MvkServer.Entity;
 using MvkServer.Management;
 using MvkServer.Util;
 using MvkServer.World.Chunk;
+using System;
 
 namespace MvkServer.World
 {
@@ -18,6 +19,10 @@ namespace MvkServer.World
         /// Объект клиентов
         /// </summary>
         public PlayerManager Players { get; protected set; }
+        /// <summary>
+        /// Трекер сущностей
+        /// </summary>
+        public EntityTracker Tracker { get; protected set; }
 
         /// <summary>
         /// Счётчик для обновления сущностей
@@ -34,6 +39,7 @@ namespace MvkServer.World
             ServerMain = server;
             ChunkPr = new ChunkProviderServer(this);
             Players = new PlayerManager(this);
+            Tracker = new EntityTracker(this);
             Log = ServerMain.Log;
             profiler = new Profiler(Log);
         }
@@ -60,6 +66,8 @@ namespace MvkServer.World
             profiler.EndSection();
         }
 
+        #region Entity
+
         /// <summary>
         /// Обновляет (и очищает) объекты и объекты чанка 
         /// </summary>
@@ -80,19 +88,46 @@ namespace MvkServer.World
         }
 
         /// <summary>
+        /// Обновить трекер сущностей
+        /// </summary>
+        public void UpdateTrackedEntities()
+        {
+            profiler.StartSection("Tracker");
+            Tracker.UpdateTrackedEntities();
+            profiler.EndSection();
+        }
+
+        protected override void OnEntityAdded(EntityLiving entity)
+        {
+            base.OnEntityAdded(entity);
+            Tracker.EntityAdd(entity);
+        }
+
+        protected override void OnEntityRemoved(EntityLiving entity)
+        {
+            base.OnEntityRemoved(entity);
+            Tracker.EntityRemove(entity);
+        }
+
+        #endregion
+
+
+        public int countGetChunck = 0;
+
+        /// <summary>
         /// Строка для дебага
         /// </summary>
         public override string ToStringDebug()
         {
             try
             {
-                return string.Format("Ch {0}-{2} Pl {1} @!{4}\r\n{3}",
+                return string.Format("Ch {0}-{2} Pl {1} @!{4}\r\n{3} ||| E: {5}, Ch: {6}\r\n{7}",
                     ChunkPr.Count, Players.PlayerCount, Players.chunkCoordPlayers.Count, Players.ToStringDebug()
-                    , base.ToStringDebug());
+                    , base.ToStringDebug(), ChunkPr.GetCountEntityDebug(), countGetChunck, Tracker);
             }
-            catch
+            catch(Exception e)
             {
-                return "error";
+                return "error: " + e.Message;
             }
         }
     }

@@ -1,4 +1,5 @@
-﻿using MvkServer.Glm;
+﻿using MvkServer.Entity;
+using MvkServer.Glm;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -61,6 +62,34 @@ namespace MvkServer.World.Chunk
                 list.Add(new vec3i(chunk.Position.x, chunk.DoneStatus, chunk.Position.y));
             }
             return list;
+        }
+        /// <summary>
+        /// Список чанков где сущность для отладки
+        /// </summary>
+        [Obsolete("Список чанков где сущность только для отладки")]
+        public List<vec3i> GetListEntityDebug()
+        {
+            Hashtable ht = chunkMapping.CloneMap();
+            List<vec3i> list = new List<vec3i>();
+            foreach (ChunkBase chunk in ht.Values)
+            {
+                if (chunk.CountEntity() > 0) // Для дебага сущностей в чанке
+                    list.Add(new vec3i(chunk.Position.x, 7, chunk.Position.y));
+            }
+            return list;
+        }
+
+        [Obsolete("Список сущностей в мире в чанках только для отладки")]
+        public int GetCountEntityDebug()
+        {
+            Hashtable ht = chunkMapping.CloneMap();
+            List<EntityLiving> list = new List<EntityLiving>();
+
+            foreach (ChunkBase chunk in ht.Values)
+            {
+                list.AddRange(chunk.GetEntities());
+            }
+            return list.Count;
         }
     }
 }

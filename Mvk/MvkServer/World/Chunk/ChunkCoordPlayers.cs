@@ -21,6 +21,11 @@ namespace MvkServer.World.Chunk
         public ChunkCoordPlayers(vec2i pos) => Position = pos;
 
         /// <summary>
+        /// Проверить имеется ли игрок в этом чанке
+        /// </summary>
+        public bool Contains(EntityPlayerServer player) => players.Contains(player);
+
+        /// <summary>
         /// Добавить игрока в конкретный чанк
         /// </summary>
         public void AddPlayer(EntityPlayerServer player)

@@ -118,7 +118,7 @@ namespace MvkClient
 
             locServer = new LocalServer();
             locServer.ObjectKeyTick += Server_ObjectKeyTick;
-            locServer.RecievePacket += (sender, e) => packets.ReceiveBufferClient(e.Packet.Bytes);
+            locServer.RecievePacket += (sender, e) => packets.ReceiveBuffer(e.Packet.Bytes);
         }
 
         /// <summary>
@@ -380,7 +380,7 @@ namespace MvkClient
         {
             locServer.StartServer(slot);
             BeginWorld();
-
+            OpenNet();
             //TODO:: надо отсюда начать запускать сервер, который создаст мир, и продублирует на клиенте мир.
             // Продумать tps только на стороне сервера, но должна быть сенхронизация с клиентом
             // Синхронизация времени раз в секунду

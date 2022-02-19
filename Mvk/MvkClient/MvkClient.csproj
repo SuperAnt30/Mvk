@@ -139,7 +139,6 @@
     <Compile Include="Util\CursorExtensions.cs" />
     <Compile Include="Util\Frustum.cs" />
     <Compile Include="Util\FrustumStruct.cs" />
-    <Compile Include="Util\InterpolationTime.cs" />
     <Compile Include="Util\ObjectKeyEvent.cs" />
     <Compile Include="Util\Ticker.cs" />
     <Compile Include="World\ChunkProviderClient.cs" />

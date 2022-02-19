@@ -12,8 +12,7 @@ namespace MvkClient.Entity
     {
         public EntityPlayerMP(WorldClient world) : base(world)
         {
-            interpolation.Start();
-            IsHidden = false;
+         //   IsHidden = false;
         }
 
         /// <summary>
@@ -21,36 +20,39 @@ namespace MvkClient.Entity
         /// </summary>
         public override void Update()
         {
+            base.Update();
+            //return;
             // если нет хп обновлям смертельную картинку
-            if (Health <= 0f) DeathUpdate();
-            // Счётчик получения урона для анимации
-            if (DamageTime > 0) DamageTime--;
-            // Для вращении головы
-            HeadTurn();
+            //if (Health <= 0f) DeathUpdate();
+            //// Счётчик получения урона для анимации
+            //if (DamageTime > 0) DamageTime--;
+            
             // Расчёт амплитуды конечностей, при движении
-            UpLimbSwing();
+            //UpLimbSwing();
             // Просчёт взмаха руки
             UpdateArmSwingProgress();
+            // Для вращении головы
+            HeadTurn();
 
             // Видна ли сущность, прорисовывать ли её на экране
             //IsHidden = !ClientMain.Player.FrustumCulling.IsBoxInFrustum(
             //    BoundingBox.Offset(ClientWorld.RenderEntityManager.CameraOffset * -1f));
 
             // Проверка луча игрока к сущности
-            bool isRayEye = false;
+            //bool isRayEye = false;
             // Максимальная дистанция луча
-            float maxDist = 32f;
+            //float maxDist = 32f;
 
-            vec3 pos = ClientMain.Player.Position;
+            //vec3 pos = ClientMain.Player.Position;
 
-            if (!IsHidden && glm.distance(Position, pos) < maxDist)
-            {
-                pos.y += ClientMain.Player.GetEyeHeight();
-                vec3 dir = ClientMain.Player.RayLook;
-                RayCross ray = new RayCross(pos, dir, maxDist);
-                isRayEye = ray.CrossLineToRectangle(BoundingBox.Clone());
-            }
-            IsRayEye = isRayEye;
+            //if (!IsHidden && glm.distance(Position, pos) < maxDist)
+            //{
+            //    pos.y += ClientMain.Player.GetEyeHeight();
+            //    vec3 dir = ClientMain.Player.RayLook;
+            //    RayCross ray = new RayCross(pos, dir, maxDist);
+            //    isRayEye = ray.CrossLineToRectangle(BoundingBox.Clone());
+            //}
+            //IsRayEye = isRayEye;
         }
 
     }

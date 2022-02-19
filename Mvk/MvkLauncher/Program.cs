@@ -14,9 +14,16 @@ namespace MvkLauncher
         [STAThread]
         static void Main()
         {
+            // Строчка для масштаба
+            SetProcessDPIAware();
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new FormLauncher());
         }
+
+        // Метод для масштаба
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool SetProcessDPIAware();
     }
 }

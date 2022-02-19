@@ -1,9 +1,8 @@
 ﻿using MvkServer.Util;
-using System.Collections;
 
 namespace MvkServer.Entity
 {
-    public class MapListEntity : MapList
+    public class MapListEntity : MapListKeyId
     {
         /// <summary>
         /// Добавить сущность
@@ -12,15 +11,11 @@ namespace MvkServer.Entity
         /// <summary>
         /// Удалить сущность
         /// </summary>
-        public void Remove(EntityLiving entity)
-        {
-            if (map.ContainsKey(entity.Id)) map.Remove(entity.Id);
-            if (list.Contains(entity)) list.Remove(entity);
-        }
+        public void Remove(EntityLiving entity) => Remove(entity.Id, entity);
         /// <summary>
         /// Проверить наличие сущности
         /// </summary>
-        public bool Contains(EntityLiving entity) => base.Contains(entity);
+        public bool ContainsValue(EntityLiving entity) => base.ContainsValue(entity);
         /// <summary>
         /// Получить первое значение по списку и удалить его
         /// </summary>
@@ -34,70 +29,31 @@ namespace MvkServer.Entity
             {
                 for (int i = 0; i < list.Count; i++)
                 {
-                    Add(list.GetAt(i));
+                    EntityLiving entity = list.GetAt(i);
+                    Add(entity);
                 }
             }
         }
         /// <summary>
         /// Удалить список сущностей
         /// </summary>
-        public void RemoveRange(MapListEntity list)
-        {
-            if (list.Count > 0)
-            {
-                for (int i = 0; i < list.Count; i++)
-                {
-                    Remove(list.GetAt(i));
-                }
-            }
-        }
+        public void RemoveRange(MapListEntity list) => base.RemoveRange(list);
         /// <summary>
         /// Получить сущность по порядковому номеру
         /// </summary>
-        public EntityLiving GetAt(int index)
-        {
-            if (index >= 0 && index < Count) return (EntityLiving)list[index];
-            return null;
-        }
-
+        public new EntityLiving GetAt(int index) => (EntityLiving)base.GetAt(index);
         /// <summary>
         /// Получить сущность по id сущности
         /// </summary>
-        public object Get(ushort id)
-        {
-            if (map.ContainsKey(id)) return map[id];
-            return null;
-        }
-
+        public new EntityLiving Get(ushort id) => (EntityLiving)base.Get(id);
         /// <summary>
         /// Получить список
         /// </summary>
         public EntityLiving[] GetList()
         {
             EntityLiving[] ar = new EntityLiving[list.Count];
-            int i = 0;
-            foreach (EntityLiving entity in list)
-            {
-                ar[i] = entity;
-                i++;
-            }
+            list.CopyTo(ar);
             return ar;
         }
-        /// <summary>
-        /// Получить список id
-        /// </summary>
-        public ushort[] GetListId()
-        {
-            ushort[] ar = new ushort[map.Keys.Count];
-            int i = 0;
-            foreach (DictionaryEntry de in map)
-            {
-                ar[i] = (ushort)de.Key;
-                i++;
-            }
-            return ar;
-        }
-
-        public override string ToString() => Count.ToString();
     }
 }

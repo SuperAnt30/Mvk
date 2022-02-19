@@ -66,10 +66,6 @@ namespace MvkClient.World
         /// </summary>
         protected uint previousTotalWorldTime;
         /// <summary>
-        /// Перечень игроков, отладка
-        /// </summary>
-        protected string strPlayers = "";
-        /// <summary>
         /// Количество прорисованных сущностей, для отладки
         /// </summary>
         protected int entitiesCountShow = 0;
@@ -88,7 +84,6 @@ namespace MvkClient.World
             ClientMain.PlayerCreate(this);
             ClientMain.Player.SetOverviewChunk(Setting.OverviewChunk, 0);
             Key = new Keyboard(this);
-            UpStrPlayers();
         }
 
         /// <summary>
@@ -102,31 +97,16 @@ namespace MvkClient.World
                 uint time = ClientMain.TickCounter;
 
                 base.Tick();
-
                 // Добавляем спавн новых сущностей
-                while(EntitySpawnQueue.Count > 0)
+                while (EntitySpawnQueue.Count > 0) // count < 10 сделать до 10 сущностей в такт
                 {
                     EntityLiving entity = EntitySpawnQueue.FirstRemove();
 
-                    if (!LoadedEntityList.Contains(entity))
+                    if (!LoadedEntityList.ContainsValue(entity))
                     {
                         SpawnEntityInWorld(entity);
                     }
                 }
-
-                // Обновить остальных сущностей
-                // TODO::!!!
-                //List<EntityPlayerMP> entitiesLook = new List<EntityPlayerMP>();
-                //Hashtable pe = PlayerEntities.Clone() as Hashtable;
-                //List<ushort> deads = new List<ushort>();
-                //foreach (EntityPlayerMP entity in pe.Values)
-                //{
-                //    entity.Update();
-                //    if (entity.IsDead) deads.Add(entity.Id);
-                //    else if (entity.IsRayEye) entitiesLook.Add(entity);
-                //}
-                //foreach (ushort id in deads) RemovePlayerMP(id);
-                //ClientMain.Player.SetEntitiesLook(entitiesLook);
 
 
                 // Дополнительная чистка, если какие-то чанки не почистились!
@@ -218,37 +198,6 @@ namespace MvkClient.World
 
             return entity;
         }
-        ///// <summary>
-        ///// Заменить объект игрока по сети
-        ///// </summary>
-        //public void SetPlayerMP(EntityPlayerMP entity)
-        //{
-        //    SpawnEntityInWorld(entity);
-        //    //PlayerEntities.Add(entity);
-        //    // TODO::!!!
-        //    //if (!PlayerEntities.ContainsKey(entity.Id))
-        //    //{
-        //    //    PlayerEntities.Add(entity.Id, entity);
-        //    //}
-        //    //else
-        //    //{
-        //    //    PlayerEntities[entity.Id] = entity;
-        //    //}
-        //    UpStrPlayers();
-        //}
-
-        /// <summary>
-        /// Удалить игрока с базы
-        /// </summary>
-        //public void RemovePlayerMP(ushort id)
-        //{
-        //    EntityLiving entity = GetEntityByID(id);// GetPlayerMP(id);
-        //    if (entity != null) RemoveEntity(entity);
-        //    // TODO::!!!
-        //    //PlayerEntities
-        //    //lock (locker) PlayerEntities.Remove(id);
-        //    UpStrPlayers();
-        //}
 
         public void MouseDown(MouseButton button) { }
 
@@ -257,16 +206,17 @@ namespace MvkClient.World
         /// </summary>
         public MovingObjectPosition RayCastEntity()
         {
+            float timeIndex = TimeIndex();
             // TODO::RayCastEntity ЗАМЕНИТЬ!!!
             MovingObjectPosition moving = new MovingObjectPosition();
             if (ClientMain.Player.EntitiesLook.Length > 0)
             {
                 EntityPlayerMP[] entities = ClientMain.Player.EntitiesLook.Clone() as EntityPlayerMP[];
-                vec3 pos = ClientMain.Player.GetPositionFrame();
+                vec3 pos = ClientMain.Player.GetPositionFrame2(timeIndex);
                 float dis = 1000f;
                 foreach (EntityPlayerMP entity in entities)
                 {
-                    float disR = glm.distance(pos, entity.GetPositionFrame(entity.TimeIndex()));
+                    float disR = glm.distance(pos, entity.GetPositionFrame2(timeIndex));
                     if (dis > disR)
                     {
                         dis = disR;
@@ -289,7 +239,7 @@ namespace MvkClient.World
         {
             base.OnEntityRemoved(entity);
 
-            if (EntityList.Contains(entity))
+            if (EntityList.ContainsValue(entity))
             {
                 if (!entity.IsDead)
                 {
@@ -324,22 +274,6 @@ namespace MvkClient.World
 
         #endregion
 
-        /// <summary>
-        /// Обновить перечень игроков, отладка
-        /// </summary>
-        protected void UpStrPlayers()
-        {
-            strPlayers = "[" + PlayerEntities.Count + "] ";
-            // TODO::!!!
-            //if (PlayerEntities.Count > 0)
-            //{
-            //    foreach (EntityPlayerMP entity in PlayerEntities.Values)
-            //    {
-            //        strPlayers += entity.Name + " ";
-            //    }
-            //}
-        }
-
         #region Debug
 
         public void CountEntitiesShowBegin() => entitiesCountShow = 0;
@@ -352,9 +286,16 @@ namespace MvkClient.World
         /// </summary>
         public override string ToStringDebug()
         {
-            return string.Format("t {2} {0} E:{4}/{5}\r\n{3} {1} @!{6}/{7}",
-                ChunkPrClient.ToString(), ClientMain.Player, ClientMain.TickCounter / 20, 
-                strPlayers, PlayerEntities.Count + 1, entitiesCountShow, EntityList.Count, base.ToStringDebug());
+            return string.Format("t {2} {0} E:{4}/{5}\r\n{1}\r\n@!{6}/{7}",
+                ChunkPrClient.ToString(), // 0
+                ClientMain.Player,  // 1
+                ClientMain.TickCounter / 20,  // 2
+                "", // 3
+                PlayerEntities.Count + 1, // 4
+                entitiesCountShow, // 5
+                EntityList.Count, // 6
+                base.ToStringDebug() // 7
+            );
         }
     }
 }

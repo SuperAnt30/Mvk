@@ -101,7 +101,7 @@ namespace MvkClient.World
                 vec2i pos = chunk.Position;
                 if (chunk.IsChunkLoaded)
                 {
-                    chunk.ChunkUnload();
+                    chunk.OnChunkUnload();
                     // заносим в массив чистки чанков по сетки для основного потока
                     if (chunk != null)
                     {

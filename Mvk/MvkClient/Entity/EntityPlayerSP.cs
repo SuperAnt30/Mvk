@@ -64,7 +64,7 @@ namespace MvkClient.Entity
         /// </summary>
         public EnumViewCamera ViewCamera { get; protected set; } = EnumViewCamera.Eye;
 
-        protected vec3 positionFrame;
+        protected vec3 positionFrame2;
         protected float pitchFrame;
         protected float yawHeadFrame;
         protected float yawBodyFrame;
@@ -85,8 +85,7 @@ namespace MvkClient.Entity
         {
             Fov = new SmoothFrame(1.22f);
             Eye = new SmoothFrame(GetEyeHeight());
-            IsHidden = false;
-            interpolation.Start();
+           // IsHidden = false;
         }
 
         #region DisplayList
@@ -126,6 +125,11 @@ namespace MvkClient.Entity
         #endregion
 
         /// <summary>
+        /// Надо ли обрабатывать LivingUpdate, для мобов на сервере, и игроки у себя
+        /// </summary>
+        protected override bool IsLivingUpdate() => true;
+
+        /// <summary>
         /// Вызывается для обновления позиции / логики объекта
         /// </summary>
         public override void Update()
@@ -133,6 +137,9 @@ namespace MvkClient.Entity
             // Такты изминения глаз при присидании, и угол обзора при ускорении. Должны быть до base.Update()
             Eye.Update();
             Fov.Update();
+
+            PositionPrev = Position;
+            UpPrev();
 
             base.Update();
 
@@ -142,12 +149,18 @@ namespace MvkClient.Entity
                 IsFrustumCulling = true;
                 isMotionServer = false;
             }
-            // Для вращении головы
-            HeadTurn();
-            // Расчёт амплитуды конечностей, при движении
-            UpLimbSwing();
+
             // Просчёт взмаха руки
             UpdateArmSwingProgress();
+            // Для вращении головы
+            HeadTurn();
+
+            // Для вращении головы
+            //HeadTurn();
+            // Расчёт амплитуды конечностей, при движении
+            //UpLimbSwing();
+            //// Просчёт взмаха руки
+            //UpdateArmSwingProgress();
 
             if (damagePause > 0) damagePause--;
 
@@ -212,8 +225,8 @@ namespace MvkClient.Entity
         /// </summary>
         public bool UpLookAt(float timeIndex)
         {
-            vec3 pos = new vec3(0, GetEyeHeightFrame() + GetPositionFrame(timeIndex).y, 0);
-            vec3 front = GetLookFrame(timeIndex).normalize();
+            vec3 pos = new vec3(0, GetEyeHeightFrame() + GetPositionFrame2(timeIndex).y, 0);
+            vec3 front = GetLookFrame2(timeIndex).normalize();
             vec3 up = new vec3(0, 1, 0);
 
             if (ViewCamera == EnumViewCamera.Back)
@@ -277,12 +290,12 @@ namespace MvkClient.Entity
             Eye.UpdateFrame(timeIndex);
 
             eyeFrame = Eye.ValueFrame;
-            positionFrame = base.GetPositionFrame(timeIndex);
-            yawBodyFrame = GetRotationYawBodyFrame(timeIndex);
-            yawHeadFrame = GetRotationYawFrame(timeIndex);
-            pitchFrame = GetRotationPitchFrame(timeIndex);
+            positionFrame2 = base.GetPositionFrame2(timeIndex);
+            yawBodyFrame = GetRotationYawBodyFrame2(timeIndex);
+            yawHeadFrame = GetRotationYawFrame2(timeIndex);
+            pitchFrame = GetRotationPitchFrame2(timeIndex);
 
-            ClientWorld.RenderEntityManager.SetCamera(positionFrame, yawHeadFrame, pitchFrame);
+            ClientWorld.RenderEntityManager.SetCamera(positionFrame2, yawHeadFrame, pitchFrame);
 
             // Изменяем матрицу глаз игрока
             if (UpLookAt(timeIndex) || IsFrustumCulling)
@@ -308,7 +321,7 @@ namespace MvkClient.Entity
 
             int countAll = 0;
             int countFC = 0;
-            vec2i chunkPos = new vec2i(Mth.Floor(positionFrame.x) >> 4, Mth.Floor(positionFrame.z) >> 4);
+            vec2i chunkPos = new vec2i(Mth.Floor(positionFrame2.x) >> 4, Mth.Floor(positionFrame2.z) >> 4);
             List<FrustumStruct> listC = new List<FrustumStruct>();
 
             for (int i = 0; i < DistSqrt.Length; i++)
@@ -397,12 +410,11 @@ namespace MvkClient.Entity
                 {
 
                     // Рамка удара
-                    AxisAlignedBB aabb = GetBoundingBox(positionFrame + RayLook * Width * 1.8f);
+                    AxisAlignedBB aabb = GetBoundingBox(positionFrame2 + RayLook * Width * 1.8f);
 
-                    // TODO::!!!
-                    for (int i = 0; i < ClientWorld.PlayerEntities.Count; i++)
+                    for (int i = 0; i < ClientWorld.EntityList.Count; i++)
                     {
-                        EntityLiving entity = ClientWorld.PlayerEntities.GetAt(i);
+                        EntityLiving entity = ClientWorld.EntityList.GetAt(i);
                         if (!entity.IsDead && aabb.IntersectsWith(entity.BoundingBox))
                         {
                             ClientWorld.ClientMain.TrancivePacket(new PacketC03UseEntity(entity.Id, entity.Position - Position));
@@ -438,23 +450,9 @@ namespace MvkClient.Entity
             }
         }
 
-        /// <summary>
-        /// Респавн после смерти
-        /// </summary>
-        public void Respawn()
+        public override void Respawn()
         {
-            ClientWorld.ClientMain.TrancivePacket(new PacketC16ClientStatus(PacketC16ClientStatus.EnumState.Respawn));
-            //Health = 20;
-            //DeathTime = 0;
-            //IsDead = false;
-            //RespawnClient();
-        }
-
-        public void RespawnClient()
-        {
-            Health = 20;
-            DeathTime = 0;
-            IsDead = false;
+            base.Respawn();
             ClientWorld.ClientMain.GameMode();
         }
 
@@ -477,23 +475,23 @@ namespace MvkClient.Entity
         /// Получить позицию сущности для кадра
         /// </summary>
         /// <param name="timeIndex">коэфициент между тактами</param>
-        public override vec3 GetPositionFrame(float timeIndex) => positionFrame;
+        //public override vec3 GetPositionFrame(float timeIndex) => positionFrame;
         /// <summary>
         /// Получить позицию сущности для кадра
         /// </summary>
-        public vec3 GetPositionFrame() => positionFrame;
+        public vec3 GetPositionFrame() => positionFrame2;
 
         /// <summary>
         /// Получить вектор направления камеры тела для кадра
         /// </summary>
         /// <param name="timeIndex">Коэфициент между тактами</param>
-        public override vec3 GetLookBodyFrame(float timeIndex) => GetRay(yawBodyFrame, pitchFrame);
+        public override vec3 GetLookBodyFrame2(float timeIndex) => GetRay(yawBodyFrame, pitchFrame);
 
         /// <summary>
         /// Получить вектор направления камеры от головы для кадра
         /// </summary>
         /// <param name="timeIndex">Коэфициент между тактами</param>
-        public override vec3 GetLookFrame(float timeIndex) => GetRay(yawHeadFrame, pitchFrame);
+        public override vec3 GetLookFrame2(float timeIndex) => GetRay(yawHeadFrame, pitchFrame);
 
         #endregion
     }

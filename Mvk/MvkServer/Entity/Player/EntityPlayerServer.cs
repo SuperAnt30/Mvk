@@ -1,10 +1,12 @@
 ﻿using MvkServer.Glm;
+using MvkServer.Network;
 using MvkServer.Network.Packets;
 using MvkServer.Network.Packets.Server;
 using MvkServer.Util;
 using MvkServer.World;
 using MvkServer.World.Chunk;
 using System;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
@@ -37,25 +39,24 @@ namespace MvkServer.Entity.Player
 
         // protected long pingPrev;
 
-        protected Profiler profiler;
+        private Profiler profiler;
+
+        /// <summary>
+        /// Список сущностей не игрок, которые в ближайшем тике будут удалены
+        /// </summary>
+        private MapListId destroyedItemsNetCache = new MapListId();
 
         // должен быть список чанков которые может видеть игрок
         // должен быть список чанков которые надо догрузить игроку
 
-        public EntityPlayerServer(Server server, Socket socket, string name, WorldBase world) : base()
+        public EntityPlayerServer(Server server, Socket socket, string name, WorldBase world) : base(world)
         {
-            World = world; 
             ServerMain = server;
             SocketClient = socket;
             Name = name;
             UUID = GetHash(name);
             profiler = new Profiler(server.Log);
         }
-
-        /// <summary>
-        /// Задать порядковый номер на сервере
-        /// </summary>
-        public void SetId(ushort id) => Id = id;
 
         /// <summary>
         /// Задать время пинга
@@ -92,13 +93,27 @@ namespace MvkServer.Entity.Player
             // Tут base.Update не надо, так-как это обрабатывается на клиенте, 
             // тут отправление перемещение игрокам если оно надо
 
-            if (isMotionServer)
+            // если нет хп обновлям смертельную картинку
+            if (Health <= 0f) DeathUpdate();
+
+            // Отправляем запрос на удаление сущностей которые не видим
+            if (destroyedItemsNetCache.Count > 0)
             {
-                // TODO:: скорее всего надо вынести в Update уровень выше, чтоб и мобы так же работали
-                // было изменение, надо отправить данные всем клиентам кроме тикущего
-                ServerMain.World.Players.ResponsePacketAll(new PacketS14EntityMotion(this), Id);
-                isMotionServer = false;
+                List<ushort> ids = new List<ushort>();
+                while (destroyedItemsNetCache.Count > 0)
+                {
+                    ids.Add(destroyedItemsNetCache.FirstRemove());
+                }
+                SendPacket(new PacketS13DestroyEntities(ids.ToArray()));
             }
+
+            //if (isMotionServer)
+            //{
+            ////    // TODO:: скорее всего надо вынести в Update уровень выше, чтоб и мобы так же работали
+            ////    // было изменение, надо отправить данные всем клиентам кроме тикущего
+            //    ServerMain.World.Players.ResponsePacketAll(new PacketS14EntityMotion(this), Id);
+            //    isMotionServer = false;
+            //}
         }
 
         /// <summary>
@@ -124,16 +139,18 @@ namespace MvkServer.Entity.Player
                         profiler.EndStartSection("PacketS21ChunckData");
                         PacketS21ChunckData packet = new PacketS21ChunckData(chunk);
                         profiler.EndStartSection("ResponsePacket");
-                        ServerMain.ResponsePacket(SocketClient, packet);
+                        SendPacket(packet);
 
-                        EntityLiving[] entities = chunk.GetEntities();
-                        if (entities.Length > 0)
-                        {
-                            for(int e = 0; e < entities.Length; e++)
-                            {
-                                ServerMain.ResponsePacket(SocketClient, new PacketS0CSpawnPlayer((EntityPlayer)entities[e]));
-                            }
-                        }
+
+                        // TODO:: это надо заменить!!! На трекер
+                        //EntityLiving[] entities = chunk.GetEntities();
+                        //if (entities.Length > 0)
+                        //{
+                        //    for (int e = 0; e < entities.Length; e++)
+                        //    {
+                        //        ServerMain.ResponsePacket(SocketClient, new PacketS0CSpawnPlayer((EntityPlayer)entities[e]));
+                        //    }
+                        //}
 
                         i++;
                         // TODO:: Нужен алгорит загрузки чанков по пингу
@@ -152,7 +169,7 @@ namespace MvkServer.Entity.Player
                     // обновлять фрагменты чанков вокруг игрока, перемещаемого логикой сервера
                     ((WorldServer)World).Players.UpdateMountedMovingPlayer(this);
                     profiler.EndSection();
-                   // isMotionServer = false;
+                    // isMotionServer = false;
                 }
 
             }
@@ -161,6 +178,32 @@ namespace MvkServer.Entity.Player
                 ServerMain.Log.Error("EntityPlayerServer.Update {0}", e.Message);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Сущность которую надо удалить у клиента
+        /// </summary>
+        public void SendRemoveEntity(EntityLiving entity)
+        {
+            if (entity is EntityPlayer)
+            {
+                SendPacket(new PacketS13DestroyEntities(new ushort[] { entity.Id }));
+            }
+            else
+            {
+                destroyedItemsNetCache.Add(entity.Id);
+            }
+        }
+
+        /// <summary>
+        /// Отправить сетевой пакет этому игроку
+        /// </summary>
+        public void SendPacket(IPacket packet) => ServerMain.ResponsePacket2(SocketClient, packet);
+
+
+        public override string ToString()
+        {
+            return "#" + Id + " " + Name + "\r\n" + base.ToString();
         }
     }
 }

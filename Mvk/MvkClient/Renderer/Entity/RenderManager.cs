@@ -62,7 +62,7 @@ namespace MvkClient.Renderer.Entity
             CameraOffset = new vec3(pos.x, 0, pos.z);
         }
 
-        protected RendererLivingEntity GetEntityRenderObject(EntityPlayerClient entity)
+        protected RendererLivingEntity GetEntityRenderObject(EntityLiving entity)
         {
             if (entities.ContainsKey(entity.Type))
             {
@@ -74,9 +74,9 @@ namespace MvkClient.Renderer.Entity
         /// <summary>
         /// Сгенерировать сущность на экране
         /// </summary>
-        public void RenderEntity(EntityPlayerClient entity, float timeIndex)
+        public void RenderEntity(EntityLiving entity, float timeIndex)
         {
-            if (!entity.IsHidden && !entity.IsDead)
+            if (!entity.IsDead)
             {
                 World.CountEntitiesShowAdd();
                 RendererLivingEntity render = GetEntityRenderObject(entity);
@@ -95,10 +95,10 @@ namespace MvkClient.Renderer.Entity
         /// <summary>
         /// Отрисовать рамку хитбокса сущности, для отладки
         /// </summary>
-        protected void RenderEntityBoundingBox(EntityPlayerClient entity, vec3 offset, float timeIndex)
+        protected void RenderEntityBoundingBox(EntityLiving entity, vec3 offset, float timeIndex)
         {
-            vec3 pos0 = entity.GetPositionFrame(timeIndex);
-            vec3 look = entity.GetLookFrame(timeIndex);
+            vec3 pos0 = entity.GetPositionFrame2(timeIndex);
+            vec3 look = entity.GetLookFrame2(timeIndex);
             AxisAlignedBB aabb = entity.GetBoundingBox(new vec3(0));
             float eye = entity.GetEyeHeight() + aabb.Min.y;
             float width = entity.Width;
