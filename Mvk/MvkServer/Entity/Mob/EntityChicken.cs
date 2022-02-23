@@ -36,6 +36,9 @@ namespace MvkServer.Entity.Mob
         /// </summary>
         protected override float GetHelathMax() => 5;
 
+        int iii = 0;
+        int iii2 = 0;
+        bool f = true;
         /// <summary>
         /// Вызывается для обновления позиции / логики объекта
         /// </summary>
@@ -43,17 +46,47 @@ namespace MvkServer.Entity.Mob
         {
             base.Update();
 
+            if (!OnGround)
+            {
+                // При падении лапки двигаются в разы медленее
+                limbSwingAmount *= 0.25f;
+            }
+
             if (World is WorldServer)
             {
-                ChunkBase chunk = World.GetChunk(GetChunkPos());
-                if (chunk != null && chunk.CountEntity() > 1)
+                iii--;
+                if (iii <= 0)
                 {
-                    Input = Util.EnumInput.Forward;
+                    SetRotationHead(RotationYawHead + glm.radians(rand.Next(180) - 90), RotationPitch);
+                    iii = rand.Next(200) + 50;
                 }
-                else
+                iii2--;
+                if (iii2 <= 0)
                 {
-                    Input = Util.EnumInput.None;
+                    Input = f ? Util.EnumInput.Forward : Util.EnumInput.None;
+                    f = !f;
+                    iii2 = rand.Next(200) + 100;
+                    if (f) iii2 += 200;
                 }
+                //ChunkBase chunk = World.GetChunk(GetChunkPos());
+                //if (chunk != null && chunk.CountEntity() > 1)
+                //{
+                //    Input = Util.EnumInput.Forward;
+                //}
+                //else
+                //{
+                //    Input = Util.EnumInput.None;
+                //}
+            }
+        }
+
+        protected override void LivingUpdate()
+        {
+            base.LivingUpdate();
+            if (!OnGround && Motion.y < 0)
+            {
+                // При падение, курица махая крыльями падает медленее
+                Motion = new vec3(Motion.x, Motion.y * .6f, Motion.z);
             }
         }
     }

@@ -97,7 +97,7 @@ namespace MvkServer.Network
         /// </summary>
         private void Handle03UseEntity(Socket socket, PacketC03UseEntity packet)
         {
-            EntityLiving entity = ServerMain.World.LoadedEntityList.Get(packet.GetId());
+            EntityLiving entity = (EntityLiving)ServerMain.World.LoadedEntityList.Get(packet.GetId());
             //EntityPlayerServer entity = ServerMain.World.Players.GetPlayer(packet.GetId());
 
             if (entity != null)
@@ -129,8 +129,8 @@ namespace MvkServer.Network
             EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
             if (entityPlayer != null)
             {
-                entityPlayer.SetPosition(packet.GetPos());
                 entityPlayer.SetSneakOnGround(packet.IsSneaking(), entityPlayer.OnGround);
+                entityPlayer.SetPosition(packet.GetPos());
             }
         }
 
@@ -142,8 +142,8 @@ namespace MvkServer.Network
             EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
             if (entityPlayer != null)
             {
-                entityPlayer.SetRotationHead(packet.GetYaw(), entityPlayer.RotationYaw, packet.GetPitch());
                 entityPlayer.SetSneakOnGround(packet.IsSneaking(), entityPlayer.OnGround);
+                entityPlayer.SetRotationHead(packet.GetYaw(), packet.GetPitch());
             }
         }
 
@@ -155,9 +155,9 @@ namespace MvkServer.Network
             EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
             if (entityPlayer != null)
             {
-                entityPlayer.SetPosition(packet.GetPos());
-                entityPlayer.SetRotationHead(packet.GetYaw(), entityPlayer.RotationYaw, packet.GetPitch());
                 entityPlayer.SetSneakOnGround(packet.IsSneaking(), entityPlayer.OnGround);
+                entityPlayer.SetPosition(packet.GetPos());
+                entityPlayer.SetRotationHead(packet.GetYaw(), packet.GetPitch());
             }
         }
 

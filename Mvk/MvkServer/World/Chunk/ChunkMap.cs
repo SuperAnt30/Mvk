@@ -55,8 +55,9 @@ namespace MvkServer.World.Chunk
                     map.Add(chunk.Position, chunk);
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
+                Logger.Crach(ex);
                 throw;
             }
         }

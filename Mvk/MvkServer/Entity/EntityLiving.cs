@@ -1,19 +1,24 @@
 ﻿using MvkServer.Entity.Mob;
-using MvkServer.Entity.Player;
 using MvkServer.Glm;
-using MvkServer.Network.Packets;
 using MvkServer.Network.Packets.Server;
 using MvkServer.Util;
 using MvkServer.World;
-using System.Collections.Generic;
 
 namespace MvkServer.Entity
 {
     /// <summary>
     /// Объект жизни сущьности, отвечает за движение вращение и прочее
     /// </summary>
-    public abstract class EntityLiving : EntityBase
+    public abstract class EntityLiving : EntityLook
     {
+        /// <summary>
+        /// Имя
+        /// </summary>
+        public string Name { get; protected set; } = "";
+        /// <summary>
+        /// Тип сущности
+        /// </summary>
+        public EnumEntities Type { get; protected set; } = EnumEntities.None;
         /// <summary>
         /// Объект ввода кликов клавиатуры
         /// </summary>
@@ -26,21 +31,80 @@ namespace MvkServer.Entity
         /// Движение из-за смещения
         /// </summary>
         public vec3 MotionPush { get; set; } = new vec3(0);
-
-        
-
         /// <summary>
-        /// Нужна ли амплитуда конечностей
+        /// Бежим
         /// </summary>
-        protected bool isLimbSwing = true;
+        public bool IsSprinting { get; protected set; } = false;
+        /// <summary>
+        /// Результат сидеть
+        /// </summary>
+        public bool IsSneaking { get; protected set; } = false;
+        /// <summary>
+        /// Прыгаем
+        /// </summary>
+        public bool IsJumping { get; protected set; } = false;
+        /// <summary>
+        /// Оставшееся время эта сущность должна вести себя как «мертвая», то есть иметь в мире труп.
+        /// </summary>
+        public int DeathTime { get; protected set; } = 0;
+        /// <summary>
+        /// Уровень здоровья
+        /// </summary>
+        public float Health { get; protected set; }
+        /// <summary>
+        /// Оставшееся время эта сущность должна вести себя как травмированная, то есть маргает красным
+        /// </summary>
+        public int DamageTime { get; protected set; } = 0;
+        /// <summary>
+        /// Был ли эта сущность добавлена в чанк, в котором он находится? 
+        /// </summary>
+        public bool AddedToChunk { get; set; } = false;
+        /// <summary>
+        /// Позиция данных с сервера
+        /// </summary>
+        public vec3 PositionServer { get; protected set; }
+        /// <summary>
+        /// Значение поворота вокруг своей оси с сервера
+        /// </summary>
+        public float RotationYawServer { get; protected set; }
+        /// <summary>
+        /// Значение поворота вверх вниз с сервера
+        /// </summary>
+        public float RotationPitchServer { get; protected set; }
+        /// <summary>
+        /// Позиция в чанке
+        /// </summary>
+        public vec2i PositionChunk { get; private set; }
+        /// <summary>
+        /// Позиция псевдо чанка
+        /// </summary>
+        public int PositionChunkY { get; private set; }
+        /// <summary>
+        /// Сколько тиков эта сущность пробежала с тех пор, как была жива 
+        /// </summary>
+        public int TicksExisted { get; private set; } = 0;
+        /// <summary>
+        /// Флаг спавна, пометка начального спавна игрока 
+        /// ПОКА НЕ ЗНАЮ ЗАЧЕМ я это сделал!!!
+        /// </summary>
+        public bool FlagSpawn { get; set; } = false;
+        /// <summary>
+        /// Пометка что было движение и подобное для сервера, чтоб отправлять пакеты
+        /// </summary>
+        public EnumActionChanged ActionChanged { get; set; } = EnumActionChanged.None;
+        /// <summary>
+        /// Объект скорости сущности
+        /// </summary>
+        public EntitySpeed Speed { get; protected set; }
+
         /// <summary>
         /// Скорость движения. Влияет на то, где в данный момент находятся ноги и руки при качании. 
         /// </summary>
-        private float limbSwingAmount = 0;
+        protected float limbSwingAmount = 0;
         /// <summary>
         /// Скорость движения на предыдущем тике. Влияет на то, где в данный момент находятся ноги и руки при качании. 
         /// </summary>
-        private float limbSwingAmountPrev = 0;
+        protected float limbSwingAmountPrev = 0;
         /// <summary>
         /// Анимация движения руки 0..1
         /// </summary>
@@ -71,18 +135,17 @@ namespace MvkServer.Entity
         /// </summary>
         protected float fallDistanceResult = 0;
 
-        protected vec3 motionDebug = new vec3(0);
-
-        /// <summary>
-        /// Объект времени c последнего тпс
-        /// </summary>
-      //  private InterpolationTime interpolation = new InterpolationTime();
-
         public EntityLiving(WorldBase world) : base(world)
         {
-            //interpolation.Start();
+            Health = GetHelathMax();
+            Standing();
+            SpeedSurvival();
         }
 
+        /// <summary>
+        /// Максимальное значение здоровья сущности
+        /// </summary>
+        protected virtual float GetHelathMax() => 10;
 
         #region Input
 
@@ -104,6 +167,35 @@ namespace MvkServer.Entity
 
         #endregion
 
+        #region Action
+
+        /// <summary>
+        /// Нет действий
+        /// </summary>
+        public void ActionNone() => ActionChanged = EnumActionChanged.None;
+        /// <summary>
+        /// Добавить действие
+        /// </summary>
+        public void ActionAdd(EnumActionChanged input) => ActionChanged |= input;
+        /// <summary>
+        /// Убрать действие
+        /// </summary>
+        public void ActionRemove(EnumActionChanged input)
+        {
+            if (ActionChanged.HasFlag(input)) ActionChanged ^= input;
+        }
+
+        /// <summary>
+        /// Задать действие для позиции
+        /// </summary>
+        protected override void ActionAddPosition() => ActionAdd(EnumActionChanged.Position);
+        /// <summary>
+        /// Задать действие для вращения
+        /// </summary>
+        protected override void ActionAddLook() => ActionAdd(EnumActionChanged.Look);
+
+        #endregion
+
         /// <summary>
         /// Надо ли обрабатывать LivingUpdate, для мобов на сервере, и игроки у себя
         /// </summary>
@@ -117,33 +209,22 @@ namespace MvkServer.Entity
         public override void Update()
         {
             base.Update();
-            
-            //vec3 motionPrev = Motion;
 
             EntityUpdate();
 
-            // Если 
-            if (!IsDead && IsLivingUpdate())
+            if (!IsDead)
             {
-                LivingUpdate();
-
-                // Пометка что было какое-то движение, вращения, бег, сидеть и тп.
-                // Параметр стартового падения между -0.16 и  -0.15
-                if (Motion.x != 0 || Motion.z != 0 || Motion.y > -.15f || Motion.y < -.16f || !OnGround)
+                if (IsLivingUpdate())
                 {
-                    UpdateIsMotion();
-                    //isMotionServer = true;
+                    // Если надо управление физики
+                    LivingUpdate();
                 }
-                
+
+                // Расчёт амплитуды движения 
+                UpLimbSwing();
+                // Просчёт взмаха руки
+                UpdateArmSwingProgress();
             }
-
-            // Расчёт амплитуды движения
-            UpLimbSwing();
-
-            //// Расчёт амплитуды конечностей, при движении
-            //UpLimbSwing();
-            //// Просчёт взмаха руки
-            //UpdateArmSwingProgress();
         }
 
         protected void EntityUpdate()
@@ -220,7 +301,9 @@ namespace MvkServer.Entity
             strafe = (Input.HasFlag(EnumInput.Right) ? 1f : 0) - (Input.HasFlag(EnumInput.Left) ? 1f : 0);
             forward = (Input.HasFlag(EnumInput.Back) ? 1f : 0f) - (Input.HasFlag(EnumInput.Forward) ? 1f : 0f);
 
+
             // Обновить положение сидя
+            bool isSneaking = IsSneaking;
             if (!IsFlying && OnGround && Input.HasFlag(EnumInput.Down) && !IsSneaking)
             {
                 // Только в выживании можно сесть
@@ -242,12 +325,17 @@ namespace MvkServer.Entity
                     Sitting();
                 }
             }
+            if (isSneaking != IsSneaking)
+            {
+                ActionAdd(EnumActionChanged.IsSneaking);
+            }
 
             // Sprinting
             bool isSprinting = Input.HasFlag(EnumInput.Sprinting | EnumInput.Forward) && !IsSneaking;
             if (IsSprinting != isSprinting)
             {
                 IsSprinting = isSprinting;
+                ActionAdd(EnumActionChanged.IsSprinting);
             }
 
             // Jumping
@@ -261,7 +349,7 @@ namespace MvkServer.Entity
         /// должен работать у клиента для EntityPlayerSP и на сервере для мобов
         /// так же может работать у клиента для всех сущностей эффектов вне сервера.
         /// </summary>
-        protected void LivingUpdate()
+        protected virtual void LivingUpdate()
         {
             // счётчик прыжка
             if (jumpTicks > 0) jumpTicks--;
@@ -320,11 +408,6 @@ namespace MvkServer.Entity
         /// Мертвые и спящие существа не могут двигаться
         /// </summary>
         protected bool IsMovementBlocked() => Health <= 0f;
-
-        /// <summary>
-        /// Обновление в каждом тике, если были требования по изминению позицыи, вращения, бег, сидеть и тп.
-        /// </summary>
-        protected virtual void UpdateIsMotion() { }
 
         /// <summary>
         /// Поворот тела от движения и поворота головы 
@@ -394,8 +477,6 @@ namespace MvkServer.Entity
                 motion.z *= study;
             }
 
-            
-
             Motion = motion;
         }
 
@@ -447,188 +528,7 @@ namespace MvkServer.Entity
         /// </summary>
         protected virtual float GetRotationYaw() => RotationYaw;
 
-        protected void UpPositionMotion()
-        {
-            motionDebug = Motion;
-            SetPosition(Position + Motion);
-        }
-
-        /// <summary>
-        /// Проверка перемещения со столкновением
-        /// </summary>
-        protected void MoveEntity(vec3 motion)
-        {
-            // Без проверки столкновения
-            if (NoClip)
-            {
-                Motion = motion;
-                UpPositionMotion();
-            }
-
-            AxisAlignedBB boundingBox = BoundingBox.Clone();
-            AxisAlignedBB aabbEntity = boundingBox.Clone();
-            List<AxisAlignedBB> aabbs;
-
-            float x0 = motion.x;
-            float y0 = motion.y;
-            float z0 = motion.z;
-
-            float x = x0;
-            float y = y0;
-            float z = z0;
-
-            // Защита от падения с края блока если сидишь и являешься игроком
-            if (OnGround && IsSneaking && this is EntityPlayer)
-            {
-                // TODO::2022-02-01 замечена бага, иногда падаешь! По Х на 50000
-                // Шаг проверки смещения
-                float step = 0.05f;
-                for (; x != 0f && World.Collision.GetCollidingBoundingBoxes(boundingBox.Offset(new vec3(x, -1, 0))).Count == 0; x0 = x)
-                {
-                    if (x < step && x >= -step) x = 0f;
-                    else if (x > 0f) x -= step;
-                    else x += step;
-                }
-                for (; z != 0f && World.Collision.GetCollidingBoundingBoxes(boundingBox.Offset(new vec3(0, -1, z))).Count == 0; z0 = z)
-                {
-                    if (z < step && z >= -step) z = 0f;
-                    else if (z > 0f) z -= step;
-                    else z += step;
-                }
-                for (; x != 0f && z0 != 0f && World.Collision.GetCollidingBoundingBoxes(boundingBox.Offset(new vec3(x0, -1, z0))).Count == 0; z0 = z)
-                {
-                    if (x < step && x >= -step) x = 0f;
-                    else if (x > 0f) x -= step;
-                    else x += step;
-                    x0 = x;
-                    if (z < step && z >= -step) z = 0f;
-                    else if (z > 0f) z -= step;
-                    else z += step;
-                }
-            }
-
-            aabbs = World.Collision.GetCollidingBoundingBoxes(boundingBox.AddCoord(new vec3(x, y, z)));
-
-            // Находим смещение по Y
-            foreach (AxisAlignedBB axis in aabbs) y = axis.CalculateYOffset(aabbEntity, y);
-            aabbEntity = aabbEntity.Offset(new vec3(0, y, 0));
-
-            // Не прыгаем (момент взлёта)
-            bool isNotJump = OnGround || motion.y != y && motion.y < 0f;
-
-            // Находим смещение по X
-            foreach (AxisAlignedBB axis in aabbs) x = axis.CalculateXOffset(aabbEntity, x);
-            aabbEntity = aabbEntity.Offset(new vec3(x, 0, 0));
-
-            // Находим смещение по Z
-            foreach (AxisAlignedBB axis in aabbs) z = axis.CalculateZOffset(aabbEntity, z);
-            aabbEntity = aabbEntity.Offset(new vec3(0, 0, z));
-
-            
-            // Запуск проверки авто прыжка
-            if (StepHeight > 0f && isNotJump && (x0 != x || z0 != z))
-            {
-                // Кэш для откада, если авто прыжок не допустим
-                vec3 monCache = new vec3(x, y, z);
-
-                float stepHeight = StepHeight;
-                // Если сидим авто прыжок в двое ниже
-                if (IsSneaking) stepHeight *= 0.5f;
-
-                y = stepHeight;
-                aabbs = World.Collision.GetCollidingBoundingBoxes(boundingBox.AddCoord(new vec3(x0, y, z0)));
-                AxisAlignedBB aabbEntity2 = boundingBox.Clone();
-                AxisAlignedBB aabb = aabbEntity2.AddCoord(new vec3(x0, 0, z0));
-
-                // Находим смещение по Y
-                float y2 = y;
-                foreach (AxisAlignedBB axis in aabbs) y2 = axis.CalculateYOffset(aabb, y2);
-                aabbEntity2 = aabbEntity2.Offset(new vec3(0, y2, 0));
-
-                // Находим смещение по X
-                float x2 = x0;
-                foreach (AxisAlignedBB axis in aabbs) x2 = axis.CalculateXOffset(aabbEntity2, x2);
-                aabbEntity2 = aabbEntity2.Offset(new vec3(x2, 0, 0));
-
-                // Находим смещение по Z
-                float z2 = z0;
-                foreach (AxisAlignedBB axis in aabbs) z2 = axis.CalculateZOffset(aabbEntity2, z2);
-                aabbEntity2 = aabbEntity2.Offset(new vec3(0, 0, z2));
-
-                AxisAlignedBB aabbEntity3 = boundingBox.Clone();
-
-                // Находим смещение по Y
-                float y3 = y;
-                foreach (AxisAlignedBB axis in aabbs) y3 = axis.CalculateYOffset(aabbEntity3, y3);
-                aabbEntity3 = aabbEntity3.Offset(new vec3(0, y3, 0));
-
-                // Находим смещение по X
-                float x3 = x0;
-                foreach (AxisAlignedBB axis in aabbs) x3 = axis.CalculateXOffset(aabbEntity3, x3);
-                aabbEntity3 = aabbEntity3.Offset(new vec3(x3, 0, 0));
-
-                // Находим смещение по Z
-                float z3 = z0;
-                foreach (AxisAlignedBB axis in aabbs) z3 = axis.CalculateZOffset(aabbEntity3, z3);
-                aabbEntity3 = aabbEntity3.Offset(new vec3(0, 0, z3));
-
-                if (x2 * x2 + z2 * z2 > x3 * x3 + z3 * z3)
-                {
-                    x = x2;
-                    z = z2;
-                    aabbEntity = aabbEntity2;
-                } else
-                {
-                    x = x3;
-                    z = z3;
-                    aabbEntity = aabbEntity3;
-                }
-                y = -stepHeight;
-
-                // Находим итоговое смещение по Y
-                foreach (AxisAlignedBB axis in aabbs) y = axis.CalculateYOffset(aabbEntity, y);
-
-                if (monCache.x * monCache.x + monCache.z * monCache.z >= x * x + z * z)
-                {
-                    // Нет авто прыжка, откатываем значение обратно
-                    x = monCache.x;
-                    y = monCache.y;
-                    z = monCache.z;
-                }
-                else
-                {
-                    // Авто прыжок
-                    SetPosition(Position + new vec3(0, y + stepHeight, 0));
-                    y = 0;
-                }
-            }
-
-            IsCollidedHorizontally = x0 != x || z0 != z;
-            IsCollidedVertically = y0 != y;
-            OnGround = IsCollidedVertically && y0 < 0.0f;
-            IsCollided = IsCollidedHorizontally || IsCollidedVertically;
-
-            // Определение дистанции падения, и фиксаия падения
-            if (y < 0f) fallDistance -= y;
-            if (OnGround)
-            {
-                if (IsFlying)
-                {
-                    ModeSurvival();
-                    fallDistance = 0f;
-                }
-                else if (fallDistance > 0f)
-                {
-                    // Упал
-                    fallDistanceResult = fallDistance;
-                    Fall(fallDistance);
-                    fallDistance = 0f;
-                }
-            }
-
-            Motion = new vec3(x0 != x ? 0 : x, y, z0 != z ? 0 : z);
-            UpPositionMotion();
-        }
+        #region Frame
 
         /// <summary>
         /// Скорость движения для кадра
@@ -655,21 +555,39 @@ namespace MvkServer.Entity
         }
 
         /// <summary>
+        /// Высота глаз для кадра
+        /// </summary>
+        public virtual float GetEyeHeightFrame() => GetEyeHeight();
+
+        #endregion
+
+        /// <summary>
+        /// Высота глаз
+        /// </summary>
+        public virtual float GetEyeHeight() => Height * 0.85f;
+
+        /// <summary>
+        /// Получить координаты в каком чанке находится по текущей Position
+        /// </summary>
+        public vec2i GetChunkPos() => new vec2i(Mth.Floor(Position.x) >> 4, Mth.Floor(Position.z) >> 4);
+        /// <summary>
+        /// Получить координату псевдо чанка находится по текущей Position
+        /// </summary>
+        public int GetChunkY() => Mth.Floor(Position.y) >> 4;
+
+        /// <summary>
         /// Расчёт амплитуды конечностей, при движении
         /// </summary>
         protected void UpLimbSwing()
         {
-            if (isLimbSwing)
-            {
-                limbSwingAmountPrev = limbSwingAmount;
-                float xx = Position.x - PositionPrev.x;
-                float zz = Position.z - PositionPrev.z;
-                float xxzz = xx * xx + zz * zz;
-                float xz = Mth.Sqrt(xxzz) * 2.0f;
-                if (xz > 1.0f) xz = 1.0f;
-                limbSwingAmount += (xz - limbSwingAmount) * 0.4f;
-                LimbSwing += limbSwingAmount;
-            }
+            limbSwingAmountPrev = limbSwingAmount;
+            float xx = Position.x - PositionPrev.x;
+            float zz = Position.z - PositionPrev.z;
+            float xxzz = xx * xx + zz * zz;
+            float xz = Mth.Sqrt(xxzz) * 1.4f;
+            if (xz > 1.0f) xz = 1.0f;
+            limbSwingAmount += (xz - limbSwingAmount) * 0.4f;
+            LimbSwing += limbSwingAmount;
         }
 
         /// <summary>
@@ -722,40 +640,206 @@ namespace MvkServer.Entity
         }
 
         /// <summary>
-        /// Падение
-        /// </summary>
-        protected virtual void Fall(float distance) { }
-
-        /// <summary>
-        /// Получить коэффициент времени от прошлого пакета перемещения сервера в диапазоне 0 .. 1
-        /// где 0 это начало, 1 финиш
-        /// </summary>
-       // public float TimeIndex() => interpolation.TimeIndex();
-        /// <summary>
-        /// Коэффициент интерполяции перезапускаем
-        /// </summary>
-       // protected void InterolationReset() => interpolation.Restart();
-
-        /// <summary>
         /// Задать позицию от сервера
         /// </summary>
-        public virtual void SetMotionServer(vec3 pos, float yaw, float pitch, bool sneaking)
+        public void SetMotionServer(vec3 pos, float yaw, float pitch, bool sneaking, bool onGround)
         {
             if (IsSneaking != sneaking)
             {
                 IsSneaking = sneaking;
                 if (IsSneaking) Sitting(); else Standing();
             }
-            PositionPrev = Position;
-            SetPosition(pos);
-
-            //RotationPitchPrev = RotationPitch;
-            //RotationYawPrev = RotationYaw;
-
-            //interpolation.Restart();
-            //InterolationReset();
+            OnGround = onGround;
+            PositionServer = pos;
+            RotationYawServer = yaw;
+            RotationPitchServer = pitch;
         }
 
-        
+        /// <summary>
+        /// Задать место положение игрока, при спавне, телепорте и тп
+        /// </summary>
+        public virtual void SetPosLook(vec3 pos, float yaw, float pitch)
+        {
+            SetPosition(pos);
+            SetRotation(yaw, pitch);
+            RotationYawServer = RotationYawPrev = RotationYaw;
+            RotationPitchServer = RotationPitchPrev = RotationPitch;
+            PositionServer = PositionPrev = LastTickPos = Position;
+        }
+
+        /// <summary>
+        /// Дополнительное обновление сущности в клиентской части в зависимости от сущности
+        /// </summary>
+        protected virtual void UpdateEntityRotation() => SetRotation(RotationYawServer, RotationPitchServer);
+
+        /// <summary>
+        /// Управляет таймером смерти сущности, сферой опыта и созданием частиц
+        /// </summary>
+        protected void DeathUpdate()
+        {
+            DeathTime++;
+
+            if (DeathTime >= 20)
+            {
+                SetDead();
+                //DeathTime = 0;
+                //Health = 20;
+                //    int var1;
+
+                //    if (!this.worldObj.isRemote && (this.recentlyHit > 0 || this.isPlayer()) && this.func_146066_aG() && this.worldObj.getGameRules().getGameRuleBooleanValue("doMobLoot"))
+                //    {
+                //        var1 = this.getExperiencePoints(this.attackingPlayer);
+
+                //        while (var1 > 0)
+                //        {
+                //            int var2 = EntityXPOrb.getXPSplit(var1);
+                //            var1 -= var2;
+                //            this.worldObj.spawnEntityInWorld(new EntityXPOrb(this.worldObj, this.posX, this.posY, this.posZ, var2));
+                //        }
+                //    }
+
+                //    this.setDead();
+
+                //    for (var1 = 0; var1 < 20; ++var1)
+                //    {
+                //        double var8 = this.rand.nextGaussian() * 0.02D;
+                //        double var4 = this.rand.nextGaussian() * 0.02D;
+                //        double var6 = this.rand.nextGaussian() * 0.02D;
+                //        this.worldObj.spawnParticle(EnumParticleTypes.EXPLOSION_NORMAL, this.posX + (double)(this.rand.nextFloat() * this.width * 2.0F) - (double)this.width, this.posY + (double)(this.rand.nextFloat() * this.height), this.posZ + (double)(this.rand.nextFloat() * this.width * 2.0F) - (double)this.width, var8, var4, var6, new int[0]);
+                //    }
+            }
+        }
+
+        /// <summary>
+        /// Возобновить сущность
+        /// </summary>
+        public virtual void Respawn()
+        {
+            Health = GetHelathMax();
+            DeathTime = 0;
+            IsDead = false;
+        }
+
+        /// <summary>
+        /// Задать новое значение здоровья
+        /// </summary>
+        public void SetHealth(float health) => Health = health < 0 ? 0 : health;
+
+        /// <summary>
+        /// Начать анимацию боли
+        /// </summary>
+        public void PerformHurtAnimation() => DamageTime = 5; // количество тактов
+
+        /// <summary>
+        /// Определяем дистанцию падения
+        /// </summary>
+        /// <param name="y">позиция Y</param>
+        protected override void FallDetection(float y)
+        {
+            if (y < 0f) fallDistance -= y;
+            if (OnGround)
+            {
+                if (IsFlying)
+                {
+                    ModeSurvival();
+                    fallDistance = 0f;
+                }
+                else if (fallDistance > 0f)
+                {
+                    // Упал
+                    fallDistanceResult = fallDistance;
+                    Fall(fallDistance);
+                    fallDistance = 0f;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Падение
+        /// </summary>
+        protected virtual void Fall(float distance) { }
+
+        /// <summary>
+        /// Задать плоожение в чанке
+        /// </summary>
+        public void SetPositionChunk(int x, int y, int z)
+        {
+            PositionChunk = new vec2i(x, z);
+            PositionChunkY = y;
+        }
+
+        /// <summary>
+        /// Обновить значения позиции чанка по тикущим значениям
+        /// </summary>
+        public void UpPositionChunk()
+        {
+            PositionChunkY = GetChunkY();
+            PositionChunk = GetChunkPos();
+        }
+
+        /// <summary>
+        /// Добавить тик жизни к сущности
+        /// </summary>
+        public void TicksExistedMore() => TicksExisted++;
+
+        /// <summary>
+        /// Обновление сущности в клиентской части
+        /// </summary>
+        public void UpdateClient()
+        {
+            LastTickPos = PositionPrev = Position;
+            RotationPitchPrev = RotationPitch;
+            RotationYawPrev = RotationYaw;
+            SetPosition(PositionServer);
+            UpdateEntityRotation();
+        }
+
+        /// <summary>
+        /// Положение стоя
+        /// </summary>
+        protected virtual void Standing() => SetSize(.6f, 3.6f);
+
+        /// <summary>
+        /// Положение сидя
+        /// </summary>
+        protected virtual void Sitting() => SetSize(.6f, 2.99f);
+
+        /// <summary>
+        /// Активация режима полёта
+        /// </summary>
+        public void ModeFly()
+        {
+            if (!IsFlying)
+            {
+                IsFlying = true;
+                Standing();
+                SpeedFly();
+            }
+        }
+
+        /// <summary>
+        /// Активация режима выживания
+        /// </summary>
+        public void ModeSurvival()
+        {
+            if (IsFlying)
+            {
+                IsFlying = false;
+                SpeedSurvival();
+            }
+        }
+
+        /// <summary>
+        /// Скорость для режима полёта
+        /// </summary>
+        protected virtual void SpeedFly() => Speed = new EntitySpeed(.2f, .2f, .3f, 2.0f);
+
+        /// <summary>
+        /// Скорость для режима выживания
+        /// </summary>
+        protected virtual void SpeedSurvival() => Speed = new EntitySpeed(.2f);//3837f);
+
+        // Визуализирует частицы сломанных предметов, используя заданный ItemStack
+        // renderBrokenItemStack
     }
 }

@@ -60,7 +60,7 @@ namespace MvkClient.World
         /// <summary>
         /// Объект времени c последнего тпс
         /// </summary>
-        protected InterpolationTime interpolation = new InterpolationTime();
+       // protected InterpolationTime interpolation = new InterpolationTime();
         /// <summary>
         /// фиксатор чистки мира
         /// </summary>
@@ -72,13 +72,13 @@ namespace MvkClient.World
         /// <summary>
         /// Объект заглушка
         /// </summary>
-        private object locker = new object();
+        private readonly object locker = new object();
 
         public WorldClient(Client client) : base()
         {
             ChunkPr = new ChunkProviderClient(this);
             ClientMain = client;
-            interpolation.Start();
+           // interpolation.Start();
             WorldRender = new WorldRenderer(this);
             RenderEntityManager = new RenderManager(this);
             ClientMain.PlayerCreate(this);
@@ -93,14 +93,14 @@ namespace MvkClient.World
         {
             try
             {
-                interpolation.Restart();
+               // interpolation.Restart();
                 uint time = ClientMain.TickCounter;
 
                 base.Tick();
                 // Добавляем спавн новых сущностей
                 while (EntitySpawnQueue.Count > 0) // count < 10 сделать до 10 сущностей в такт
                 {
-                    EntityLiving entity = EntitySpawnQueue.FirstRemove();
+                    EntityLiving entity = (EntityLiving)EntitySpawnQueue.FirstRemove();
 
                     if (!LoadedEntityList.ContainsValue(entity))
                     {
@@ -121,6 +121,7 @@ namespace MvkClient.World
             }
             catch (Exception ex)
             {
+                Logger.Crach(ex);
                 throw;
             }
         }
@@ -151,7 +152,7 @@ namespace MvkClient.World
         /// Получить коэффициент времени от прошлого TPS клиента в диапазоне 0 .. 1
         /// где 0 это начало, 1 финиш
         /// </summary>
-        public float TimeIndex() => interpolation.TimeIndex();
+        public float Interpolation() => ClientMain.Interpolation();
 
         /// <summary>
         /// Получить объект игрока по сети, по имени
@@ -206,17 +207,17 @@ namespace MvkClient.World
         /// </summary>
         public MovingObjectPosition RayCastEntity()
         {
-            float timeIndex = TimeIndex();
+            float timeIndex = Interpolation();
             // TODO::RayCastEntity ЗАМЕНИТЬ!!!
             MovingObjectPosition moving = new MovingObjectPosition();
             if (ClientMain.Player.EntitiesLook.Length > 0)
             {
                 EntityPlayerMP[] entities = ClientMain.Player.EntitiesLook.Clone() as EntityPlayerMP[];
-                vec3 pos = ClientMain.Player.GetPositionFrame2(timeIndex);
+                vec3 pos = ClientMain.Player.GetPositionFrame(timeIndex);
                 float dis = 1000f;
                 foreach (EntityPlayerMP entity in entities)
                 {
-                    float disR = glm.distance(pos, entity.GetPositionFrame2(timeIndex));
+                    float disR = glm.distance(pos, entity.GetPositionFrame(timeIndex));
                     if (dis > disR)
                     {
                         dis = disR;
@@ -272,6 +273,21 @@ namespace MvkClient.World
             return spawn;
         }
 
+        /// <summary>
+        /// Заспавнить частицу
+        /// </summary>
+        public override void SpawnParticle(EnumParticle particle, vec3 pos, vec3 motion, params int[] items) 
+            => ClientMain.EffectRender.SpawnParticle(particle, pos, motion, items);
+
+        protected override void UpdateEntity(EntityLiving entity)
+        {
+            entity.UpdateClient();
+            // Проверка толчка
+            if (entity is EntityPlayerClient entityPlayer) entityPlayer.CheckPush();
+
+            base.UpdateEntity(entity);
+        }
+
         #endregion
 
         #region Debug
@@ -286,7 +302,7 @@ namespace MvkClient.World
         /// </summary>
         public override string ToStringDebug()
         {
-            return string.Format("t {2} {0} E:{4}/{5}\r\n{1}\r\n@!{6}/{7}",
+            return string.Format("t {2} {0} E:{4}/{5}\r\n{1}\r\n@!{6}/{7}\r\nParticles: {8}",
                 ChunkPrClient.ToString(), // 0
                 ClientMain.Player,  // 1
                 ClientMain.TickCounter / 20,  // 2
@@ -294,7 +310,8 @@ namespace MvkClient.World
                 PlayerEntities.Count + 1, // 4
                 entitiesCountShow, // 5
                 EntityList.Count, // 6
-                base.ToStringDebug() // 7
+                base.ToStringDebug(), // 7
+                ClientMain.EffectRender.CountParticles() // 8
             );
         }
     }

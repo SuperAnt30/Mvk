@@ -92,7 +92,6 @@ namespace MvkServer.Management
                 // TODO::Тут проверяем место положение персонажа, и заносим при запуске
                 
                 entityPlayer.SetEntityId(lastPlayerId);
-                entityPlayer.SetRotation(-0.9f, -.8f);
                 SpawnPositionTest(entityPlayer);
                 entityPlayer.SetChunkPosManaged(entityPlayer.GetChunkPos());
                 AddMountedMovingPlayer(entityPlayer);
@@ -107,11 +106,14 @@ namespace MvkServer.Management
                 World.SpawnEntityInWorld(entityPlayer);
                 //entityPlayer.FlagSpawn = false;
 
-                lastPlayerId++;
-                EntityChicken entityChicken = new EntityChicken(World);
-                entityChicken.SetEntityId(lastPlayerId);
-                entityChicken.SetPosition(entityPlayer.Position + new vec3(3, 5, 0));
-                World.SpawnEntityInWorld(entityChicken);
+                for (int i = 0; i < 5; i++)
+                {
+                    lastPlayerId++;
+                    EntityChicken entityChicken = new EntityChicken(World);
+                    entityChicken.SetEntityId(lastPlayerId);
+                    entityChicken.SetPosition(entityPlayer.Position + new vec3(3, World.Rand.Next(0, 10), 0));
+                    World.SpawnEntityInWorld(entityChicken);
+                }
                 //ClientMain.World.SpawnEntityInWorld(entityChicken);
 
                 return true;
@@ -122,7 +124,7 @@ namespace MvkServer.Management
         protected void SpawnPositionTest(EntityPlayerServer entityPlayer)
         {
             Random random = new Random();
-            entityPlayer.SetPosition(new vec3(random.Next(-16, 16), 30, random.Next(-16, 16)));
+            entityPlayer.SetPosLook(new vec3(random.Next(-16, 16), 30, random.Next(-16, 16)), -0.9f, -.8f);
         }
         /// <summary>
         /// Удалить игрока

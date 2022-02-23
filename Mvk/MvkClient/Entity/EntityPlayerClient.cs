@@ -1,8 +1,6 @@
-﻿using MvkClient.Util;
-using MvkClient.World;
+﻿using MvkClient.World;
 using MvkServer.Entity.Player;
 using MvkServer.Glm;
-using MvkServer.Network.Packets;
 using MvkServer.Util;
 
 namespace MvkClient.Entity
@@ -20,18 +18,6 @@ namespace MvkClient.Entity
         /// Клиентский объект мира
         /// </summary>
         public WorldClient ClientWorld { get; protected set; }
-        /// <summary>
-        /// Скрыта ли сущность на экране
-        /// </summary>
-       // public bool IsHidden { get; protected set; } = true;
-        /// <summary>
-        /// Проходит ли луч глаз основного игрок к этой сущности
-        /// </summary>
-      //  public bool IsRayEye { get; protected set; } = false;
-        /// <summary>
-        /// Объект времени c последнего тпс
-        /// </summary>
-       // protected InterpolationTime interpolation = new InterpolationTime();
 
         public EntityPlayerClient(WorldClient world) : base(world)
         {
@@ -48,38 +34,11 @@ namespace MvkClient.Entity
             UUID = uuid;
             Id = id;
         }
-        /// <summary>
-        /// Задать место положение игрока, при спавне, телепорте и тп
-        /// </summary>
-        public void SetPosLook(vec3 pos, float yaw, float pitch)
-        {
-            SetPosition(pos);
-            
-            RotationYawLast = RotationYawPrev = RotationYaw = RotationYawHead = RotationYawHeadPrev = yaw;
-            RotationPitchLast = RotationPitchPrev = RotationPitch = pitch;
-            PositionPrev = LastTickPos = Position;
-        }
-
-        ///// <summary>
-        ///// Получить коэффициент времени от прошлого пакета перемещения сервера в диапазоне 0 .. 1
-        ///// где 0 это начало, 1 финиш
-        ///// </summary>
-        //public float TimeIndex() => interpolation.TimeIndex();
-
-        /// <summary>
-        /// Задать позицию от сервера
-        /// </summary>
-        public override void SetMotionServer(vec3 pos, float yaw, float pitch, bool sneaking)
-        {
-            base.SetMotionServer(pos, yaw, pitch, sneaking);
-            // Проверка толчка
-            CheckPush();
-        }
 
         /// <summary>
         /// Проверка толчка этой сущности основного игрока
         /// </summary>
-        protected void CheckPush()
+        public void CheckPush()
         {
             vec3 posPrev = PositionPrev;
             vec3 pos = Position;

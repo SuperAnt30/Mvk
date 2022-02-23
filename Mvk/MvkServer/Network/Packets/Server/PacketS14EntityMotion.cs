@@ -1,5 +1,4 @@
 ﻿using MvkServer.Entity;
-using MvkServer.Entity.Player;
 using MvkServer.Glm;
 
 namespace MvkServer.Network.Packets.Server
@@ -14,12 +13,14 @@ namespace MvkServer.Network.Packets.Server
         private float yaw;
         private float pitch;
         private bool sneaking;
+        private bool onGround;
 
         public ushort GetId() => id;
         public vec3 GetPos() => pos;
         public float GetYaw() => yaw;
         public float GetPitch() => pitch;
         public bool IsSneaking() => sneaking;
+        public bool OnGround() => onGround;
 
         public PacketS14EntityMotion(EntityLiving entity)
         {
@@ -35,6 +36,7 @@ namespace MvkServer.Network.Packets.Server
             }
             pitch = entity.RotationPitch;
             sneaking = entity.IsSneaking;
+            onGround = entity.OnGround;
         }
 
         public void ReadPacket(StreamBase stream)
@@ -44,6 +46,7 @@ namespace MvkServer.Network.Packets.Server
             yaw = stream.ReadFloat();
             pitch = stream.ReadFloat();
             sneaking = stream.ReadBool();
+            onGround = stream.ReadBool();
         }
 
         public void WritePacket(StreamBase stream)
@@ -55,6 +58,7 @@ namespace MvkServer.Network.Packets.Server
             stream.WriteFloat(yaw);
             stream.WriteFloat(pitch);
             stream.WriteBool(sneaking);
+            stream.WriteBool(onGround);
         }
     }
 }

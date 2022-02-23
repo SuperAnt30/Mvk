@@ -54,7 +54,13 @@ namespace MvkClient.Renderer.Model
             SetRotationAngles(entity, limbSwing, limbSwingAmount, ageInTicks, headYaw, headPitch, scale);
             GLRender.PushMatrix();
 
-            if (entity.IsSneaking) GLWindow.gl.Translate(0, .25f, 0);
+            if (entity.IsSneaking)
+            {
+                GLWindow.gl.Translate(0, .25f, 0);
+            } else
+            {
+                GLWindow.gl.Translate(0, -.04f, 0);
+            }
 
             boxHead.Render(scale);
             boxBill.Render(scale);
@@ -73,8 +79,8 @@ namespace MvkClient.Renderer.Model
         {
             boxHead.RotateAngleY = headYaw;
             boxHead.RotateAngleX = -headPitch;
-            boxLegRight.RotateAngleX = glm.cos(limbSwing * 0.6662f) * 1.4f * limbSwingAmount;
-            boxLegLeft.RotateAngleX = glm.cos(limbSwing * 0.6662f + glm.pi) * 1.4f * limbSwingAmount;
+            boxLegRight.RotateAngleX = glm.cos(limbSwing * 2.6662f) * 1.4f * limbSwingAmount;
+            boxLegLeft.RotateAngleX = glm.cos(limbSwing * 2.6662f + glm.pi) * 1.4f * limbSwingAmount;
 
             if (entity.OnGround)
             {

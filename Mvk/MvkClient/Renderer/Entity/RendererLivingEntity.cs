@@ -3,7 +3,6 @@ using MvkClient.Entity;
 using MvkClient.Renderer.Font;
 using MvkClient.Renderer.Model;
 using MvkServer.Entity;
-using MvkServer.Entity.Player;
 using MvkServer.Glm;
 using MvkServer.Util;
 
@@ -28,9 +27,9 @@ namespace MvkClient.Renderer.Entity
 
         public void DoRender(EntityLiving entity, vec3 offset, float timeIndex)
         {
-            vec3 pos = entity.GetPositionFrame2(timeIndex);
-            float yawBody = entity.GetRotationYawBodyFrame2(timeIndex);
-            float yawHead = entity.GetRotationYawFrame2(timeIndex);
+            vec3 pos = entity.GetPositionFrame(timeIndex);
+            float yawBody = entity.GetRotationYawBodyFrame(timeIndex);
+            float yawHead = entity.GetRotationYawFrame(timeIndex);
             model.SetSwingProgress(entity.GetSwingProgressFrame(timeIndex));
 
             GLRender.PushMatrix();
@@ -55,7 +54,7 @@ namespace MvkClient.Renderer.Entity
                 {
                     RotateCorpse(entity, timeIndex);
                     GLRender.Scale(scale, scale, scale);
-                    GLRender.Translate(0, -1.508f, 0);
+                    GLRender.Translate(0, -1.507f, 0);
                    
                     GLRender.Rotate(glm.degrees(yawBody), 0, 1, 0);
                     yawBody -= yawHead;
@@ -63,7 +62,7 @@ namespace MvkClient.Renderer.Entity
                     float ageInTicks = renderManager.World.ClientMain.TickCounter + timeIndex;
 
                     RenderModel(entity, entity.LimbSwing, entity.GetLimbSwingAmountFrame(timeIndex), ageInTicks,
-                        -yawBody, entity.GetRotationPitchFrame2(timeIndex), .0625f);
+                        -yawBody, entity.GetRotationPitchFrame(timeIndex), .0625f);
                 }
                 GLRender.PopMatrix();
                 RenderLivingLabel(entity);

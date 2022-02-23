@@ -21,14 +21,6 @@ namespace MvkServer.Entity
         /// </summary>
         public new EntityTrackerEntry FirstRemove() => (EntityTrackerEntry)base.FirstRemove();
         /// <summary>
-        /// Добавить список треков
-        /// </summary>
-       // public void AddRange(MapListEntityTrackerEntry list) => base.AddRange(list);
-        /// <summary>
-        /// Удалить список треков
-        /// </summary>
-        public void RemoveRange(MapListEntityTrackerEntry list) => base.RemoveRange(list);
-        /// <summary>
         /// Получить трек по порядковому номеру
         /// </summary>
         public new EntityTrackerEntry GetAt(int index) => (EntityTrackerEntry)base.GetAt(index);

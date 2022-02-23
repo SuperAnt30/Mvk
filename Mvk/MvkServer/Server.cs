@@ -263,8 +263,7 @@ namespace MvkServer
             }
             catch (Exception ex)
             {
-                Log.Error(ex.Message);
-                // ошибки в сервере для краша
+                Logger.Crach(ex);
             }
             finally
             {

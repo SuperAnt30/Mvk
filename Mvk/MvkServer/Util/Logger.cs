@@ -10,14 +10,15 @@ namespace MvkServer.Util
     {
         private string fileName;
         private string log;
-        private string path = "Logs" + Path.DirectorySeparatorChar;
+        private string path;
         private static object locker = new object();
         private bool isEmpty = true;
 
         public Logger() { }
-
-        public Logger(string prefixFileName)
+        public Logger(string prefixFileName) : this(prefixFileName, "Logs") { }
+        public Logger(string prefixFileName, string folder)
         {
+            path = folder + Path.DirectorySeparatorChar;
             isEmpty = false;
             string sd = DateTime.Now.ToString("yyyy-MM-dd");
             int i = 1;
@@ -81,5 +82,26 @@ namespace MvkServer.Util
         /// Закрыть лог
         /// </summary>
         public void Close() => Save(log);
+
+
+        /// <summary>
+        /// Создать файл c ошибкой краша
+        /// </summary>
+        public static void Crach(string logMessage, params object[] args)
+        {
+            Logger logger = new Logger("", "Crach");
+            logger.Error(logMessage, args);
+            logger.Close();
+        }
+
+        /// <summary>
+        /// Создать файл c ошибкой краша
+        /// </summary>
+        public static void Crach(Exception e)
+        {
+            Logger logger = new Logger("", "Crach");
+            logger.Error("{0}: {1}\r\n------\r\n{2}", e.Source, e.Message, e.StackTrace);
+            logger.Close();
+        }
     }
 }

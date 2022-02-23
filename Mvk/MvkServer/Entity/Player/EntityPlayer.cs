@@ -38,6 +38,15 @@ namespace MvkServer.Entity.Player
         /// </summary>
         protected override float GetHelathMax() => 20;
 
+        //public override void Update()
+        //{
+        //    base.Update();
+        //}
+        //protected override void LivingUpdate()
+        //{
+        //    base.LivingUpdate();
+        //}
+
         /// <summary>
         /// Задать обзор чанков у клиента
         /// </summary>

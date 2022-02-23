@@ -1,18 +1,17 @@
 ﻿using MvkServer.Glm;
-using MvkServer.Util;
 using MvkServer.World;
 
 namespace MvkServer.Entity
 {
     /// <summary>
-    /// Объект жизни сущьности c головой, отвечает за движение вращение и прочее
+    /// Объект сущьности c головой
     /// </summary>
     public abstract class EntityLivingHead : EntityLiving
     {
         /// <summary>
         /// Вращение головы
         /// </summary>
-        public float RotationYawHead { get; protected set; }
+        public float RotationYawHead { get; private set; }
         /// <summary>
         /// Вращение головы на предыдущем тике
         /// </summary>
@@ -25,8 +24,9 @@ namespace MvkServer.Entity
         /// </summary>
         public override void Update()
         {
-            //RotationYawHeadPrev = RotationYawHead;
             base.Update();
+            // Для вращении головы
+            HeadTurn();
         }
 
         /// <summary>
@@ -37,14 +37,19 @@ namespace MvkServer.Entity
         /// <summary>
         /// Задать вращение
         /// </summary>
-        public void SetRotationHead(float yawHead, float yawBody, float pitch)
+        public void SetRotationHead(float yawHead, float pitch)
         {
-            //SetRotation(yaw, pitch);
             RotationYawHead = yawHead;
-            RotationYaw = yawBody;
-            RotationPitch = pitch;
-            CheckRotation();
-            isMotionServer = true;
+            SetRotation(RotationYaw, pitch);
+        }
+
+        /// <summary>
+        /// Задать место положение игрока, при спавне, телепорте и тп
+        /// </summary>
+        public override void SetPosLook(vec3 pos, float yaw, float pitch)
+        {
+            base.SetPosLook(pos, yaw, pitch);
+            RotationYawHeadPrev = RotationYawHead = RotationYaw;
         }
 
         #region Frame
@@ -53,9 +58,8 @@ namespace MvkServer.Entity
         /// Получить угол Yaw для кадра
         /// </summary>
         /// <param name="timeIndex">Коэфициент между тактами</param>
-        public override float GetRotationYawFrame2(float timeIndex)
+        public override float GetRotationYawFrame(float timeIndex)
         {
-            //if (timeIndex == 1.0f) RotationYawHeadPrev = RotationYawHead;
             if (timeIndex >= 1.0f || RotationYawHeadPrev == RotationYawHead) return RotationYawHead;
             return RotationYawHeadPrev + (RotationYawHead - RotationYawHeadPrev) * timeIndex;
         }
@@ -64,8 +68,8 @@ namespace MvkServer.Entity
         /// Получить вектор направления камеры от головы
         /// </summary>
         /// <param name="timeIndex">Коэфициент между тактами</param>
-        public override vec3 GetLookFrame2(float timeIndex)
-            => GetRay(GetRotationYawFrame2(timeIndex), GetRotationPitchFrame2(timeIndex));
+        public override vec3 GetLookFrame(float timeIndex)
+            => GetRay(GetRotationYawFrame(timeIndex), GetRotationPitchFrame(timeIndex));
 
         #endregion
 
@@ -136,33 +140,23 @@ namespace MvkServer.Entity
         /// <param name="angleOffset">Смещение угла в радианах</param>
         /// <param name="increment">Увеличение в радианах</param>
         /// <returns>Новое значение</returns>
-        private float UpdateRotation(float angle, float angleOffset, float increment)
-        {
-            float offset = glm.wrapAngleToPi(angleOffset - angle);
+        //private float UpdateRotation(float angle, float angleOffset, float increment)
+        //{
+        //    float offset = glm.wrapAngleToPi(angleOffset - angle);
 
-            if (offset > increment) offset = increment;
-            if (offset < -increment) offset = -increment;
+        //    if (offset > increment) offset = increment;
+        //    if (offset < -increment) offset = -increment;
 
-            return angle + offset;
-        }
-
-        /// <summary>
-        /// Задать позицию от сервера
-        /// </summary>
-        public override void SetMotionServer(vec3 pos, float yaw, float pitch, bool sneaking)
-        {
-            base.SetMotionServer(pos, yaw, pitch, sneaking);
-          //  RotationYawHeadPrev = RotationYawHead;
-            SetRotationHead(yaw, RotationYaw, pitch);
-        }
+        //    return angle + offset;
+        //}
 
         /// <summary>
-        /// Обновить атрибутв в начале тика
+        /// Дополнительное обновление сущности в клиентской части в зависимости от сущности
         /// </summary>
-        public override void UpPrev()
+        protected override void UpdateEntityRotation()
         {
-            base.UpPrev();
             RotationYawHeadPrev = RotationYawHead;
+            SetRotationHead(RotationYawServer, RotationPitchServer);
         }
 
         public override string ToString()

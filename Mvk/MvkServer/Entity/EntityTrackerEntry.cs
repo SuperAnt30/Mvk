@@ -200,10 +200,10 @@ namespace MvkServer.Entity
                 UpdatePlayerEntities(playerEntities);
             }
 
-            if (TrackedEntity.isMotionServer)
+            if (TrackedEntity.ActionChanged != EnumActionChanged.None)
             {
                 SendPacketPlayers(new PacketS14EntityMotion(TrackedEntity));
-                TrackedEntity.isMotionServer = false;
+                TrackedEntity.ActionNone();
             }
 
             if (UpdateCounter % UpdateFrequency == 0)

@@ -7,19 +7,19 @@ namespace MvkServer.Entity
         /// <summary>
         /// Добавить сущность
         /// </summary>
-        public void Add(EntityLiving entity) => Add(entity.Id, entity);
+        public void Add(EntityBase entity) => Add(entity.Id, entity);
         /// <summary>
         /// Удалить сущность
         /// </summary>
-        public void Remove(EntityLiving entity) => Remove(entity.Id, entity);
+        public void Remove(EntityBase entity) => Remove(entity.Id, entity);
         /// <summary>
         /// Проверить наличие сущности
         /// </summary>
-        public bool ContainsValue(EntityLiving entity) => base.ContainsValue(entity);
+        public bool ContainsValue(EntityBase entity) => base.ContainsValue(entity);
         /// <summary>
         /// Получить первое значение по списку и удалить его
         /// </summary>
-        public new EntityLiving FirstRemove() => (EntityLiving)base.FirstRemove();
+        public new EntityBase FirstRemove() => (EntityBase)base.FirstRemove();
         /// <summary>
         /// Добавить список сущностей
         /// </summary>
@@ -29,7 +29,7 @@ namespace MvkServer.Entity
             {
                 for (int i = 0; i < list.Count; i++)
                 {
-                    EntityLiving entity = list.GetAt(i);
+                    EntityBase entity = list.GetAt(i);
                     Add(entity);
                 }
             }
@@ -37,21 +37,30 @@ namespace MvkServer.Entity
         /// <summary>
         /// Удалить список сущностей
         /// </summary>
-        public void RemoveRange(MapListEntity list) => base.RemoveRange(list);
+        public void RemoveRange(MapListEntity list)
+        {
+            if (list.Count > 0)
+            {
+                for (int i = 0; i < list.Count; i++)
+                {
+                    Remove(list.GetAt(i));
+                }
+            }
+        }
         /// <summary>
         /// Получить сущность по порядковому номеру
         /// </summary>
-        public new EntityLiving GetAt(int index) => (EntityLiving)base.GetAt(index);
+        public new EntityBase GetAt(int index) => (EntityBase)base.GetAt(index);
         /// <summary>
         /// Получить сущность по id сущности
         /// </summary>
-        public new EntityLiving Get(ushort id) => (EntityLiving)base.Get(id);
+        public new EntityBase Get(ushort id) => (EntityBase)base.Get(id);
         /// <summary>
         /// Получить список
         /// </summary>
-        public EntityLiving[] GetList()
+        public EntityBase[] GetList()
         {
-            EntityLiving[] ar = new EntityLiving[list.Count];
+            EntityBase[] ar = new EntityBase[list.Count];
             list.CopyTo(ar);
             return ar;
         }

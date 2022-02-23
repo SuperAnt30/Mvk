@@ -50,11 +50,14 @@ namespace MvkClient.Renderer
         /// </summary>
         public void Draw(float timeIndex)
         {
+            // Обновить кадр основного игрока, камера и прочее
+            ClientMain.Player.UpdateFrame(timeIndex);
+
             if (ClientMain.Player.Projection == null) ClientMain.Player.UpProjection();
             if (ClientMain.Player.LookAt == null) ClientMain.Player.UpLookAt(timeIndex);
 
             // Обновить кадр основного игрока, камера и прочее
-            ClientMain.Player.UpdateFrame(timeIndex);
+            //ClientMain.Player.UpdateFrame(timeIndex);
 
             // Воксели VBO
             List<ChunkRender> chunks = DrawVoxel(timeIndex);
@@ -62,7 +65,8 @@ namespace MvkClient.Renderer
             // Сущности DisplayList
             DrawEntities(chunks, timeIndex);
 
-            
+            // Эффекты
+            ClientMain.EffectRender.Render(timeIndex);
 
             // Чистка сетки чанков при необходимости
             World.ChunkPrClient.RemoteMeshChunks();
@@ -147,7 +151,7 @@ namespace MvkClient.Renderer
                 {
                     for (int j = 0; j < entities[i].Count; j++)
                     {
-                        EntityLiving entity = entities[i].GetAt(j);
+                        EntityLiving entity = (EntityLiving)entities[i].GetAt(j);
                         if (entity.Name != ClientMain.Player.Name)
                         {
                             World.RenderEntityManager.RenderEntity(entity, timeIndex);// entity.TimeIndex());

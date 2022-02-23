@@ -39,6 +39,8 @@ namespace MvkClient.Renderer
         private static float speedFrameAll;
         private static long timerSecond;
         private static int fps;
+        private static int tps;
+        private static float speedTickAll;
 
         /// <summary>
         /// Инициализировать, первый запуск OpenGL
@@ -76,9 +78,13 @@ namespace MvkClient.Renderer
             // тут мир
             if (client.World != null)
             {
-                // время от TPS клиента
-                float timeIndex = client.World.TimeIndex();
+                // коэффициент интерполяции
+                float timeIndex = client.World.Interpolation();
+                
+                // Мир
                 client.World.WorldRender.Draw(timeIndex);
+               
+
                 if (client.Screen.IsEmptyScreen())// && client.World.Player.ViewCamera == EnumViewCamera.Eye)
                 {
                     client.World.WorldRender.DrawPricel();
@@ -92,6 +98,16 @@ namespace MvkClient.Renderer
             client.Screen.DrawScreen();
 
             DrawEnd();
+        }
+
+        /// <summary>
+        /// В такте игрового времени
+        /// </summary>
+        /// <param name="time">время затраченное на такт</param>
+        public static void UpdateTick(float time)
+        {
+            speedTickAll += time;
+            tps++;
         }
 
         #region Draw
@@ -120,10 +136,14 @@ namespace MvkClient.Renderer
             // Перерасчёт кадров раз в секунду, и среднее время прорисовки кадра
             if (Client.Time() >= timerSecond + 1000)
             {
-                Debug.SetTpsFps(fps, speedFrameAll / fps);
+                float speedTick = 0;
+                if (tps > 0) speedTick = speedTickAll / tps;
+                Debug.SetTpsFps(fps, speedFrameAll / fps, tps, speedTick);
                 timerSecond += 1000;
                 speedFrameAll = 0;
+                speedTickAll = 0;
                 fps = 0;
+                tps = 0;
             }
             Debug.DrawDebug();
             speedFrameAll += (float)stopwatch.ElapsedTicks / MvkStatic.TimerFrequency;

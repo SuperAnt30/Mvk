@@ -271,7 +271,7 @@ namespace MvkServer.World.Chunk
 
             if (x != Position.x || z != Position.y)
             {
-                World.Log.Log("Неверное местоположение! ({0}, {1}) должно быть ({2}), {3}", x, z, Position, entity.Type);
+                World.Log.Log("ChunkBase: Неверное местоположение! ({0}, {1}) должно быть ({2}), {3}", x, z, Position, entity.Type);
                 entity.SetDead();
                 return;
             }
@@ -312,7 +312,7 @@ namespace MvkServer.World.Chunk
             {
                 for (int i = 0; i < ListEntities[y].Count; i++)
                 {
-                    EntityLiving entity = ListEntities[y].GetAt(i);
+                    EntityLiving entity = (EntityLiving)ListEntities[y].GetAt(i);
                     if (entity != null && entity.AddedToChunk)
                     {
                         list.Add(entity);

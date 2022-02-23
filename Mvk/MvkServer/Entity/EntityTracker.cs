@@ -23,13 +23,9 @@ namespace MvkServer.Entity
         /// <summary>
         /// Максимальное пороговое значение расстояния отслеживания 
         /// </summary>
-        private int maxTrackingDistanceThreshold;
+        private readonly int maxTrackingDistanceThreshold = 512;
 
-        public EntityTracker(WorldServer world)
-        {
-            World = world;
-            maxTrackingDistanceThreshold = 512;
-        }
+        public EntityTracker(WorldServer world) => World = world;
 
         /// <summary>
         /// Добавить сущность
@@ -74,7 +70,7 @@ namespace MvkServer.Entity
             {
                 if (trackedEntities.ContainsId(entity.Id))
                 {
-                    World.Log.Log("Сущность уже отслеживается!");
+                    World.Log.Log("EntityTracker: Сущность уже отслеживается!");
                     return;
                 }
 
@@ -84,7 +80,7 @@ namespace MvkServer.Entity
             }
             catch (Exception ex)
             {
-                World.Log.Error("Обнаружение ошибки отслеживания объекта: " + ex.Message);
+                World.Log.Error("EntityTracker: Обнаружение ошибки отслеживания объекта: " + ex.Message);
             }
         }
 
@@ -95,10 +91,8 @@ namespace MvkServer.Entity
         {
             EntityTrackerEntry trackerEntry;
 
-            if (entity is EntityPlayerServer)
+            if (entity is EntityPlayerServer entityPlayer)
             {
-                EntityPlayerServer entityPlayer = (EntityPlayerServer)entity;
-
                 for (int i = 0; i < trackedEntities.Count; i++)
                 {
                     trackerEntry = trackedEntities.GetAt(i);

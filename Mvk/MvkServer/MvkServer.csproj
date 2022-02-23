@@ -34,8 +34,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Entity\EntityBase.cs" />
+    <Compile Include="Entity\EntityLook.cs" />
     <Compile Include="Entity\EntityTracker.cs" />
     <Compile Include="Entity\EntityTrackerEntry.cs" />
+    <Compile Include="Entity\EnumActionChanged.cs" />
+    <Compile Include="Entity\EnumParticle.cs" />
     <Compile Include="Entity\MapListEntityTrackerEntry.cs" />
     <Compile Include="Entity\MapListEntity.cs" />
     <Compile Include="Entity\EntityLiving.cs" />
@@ -73,7 +76,6 @@
     <Compile Include="Network\Packets\Server\PacketS03TimeUpdate.cs" />
     <Compile Include="Util\ArrayDistance.cs" />
     <Compile Include="Util\AxisAlignedBB.cs" />
-    <Compile Include="Util\InterpolationTime.cs" />
     <Compile Include="Util\MapListKeyId.cs" />
     <Compile Include="Util\MapListId.cs" />
     <Compile Include="Util\MapListVec2i.cs" />
@@ -135,7 +137,6 @@
     <Compile Include="Util\Logger.cs" />
     <Compile Include="Util\IntEvent.cs" />
     <Compile Include="Util\StringEvent.cs" />
-    <Compile Include="Util\Map.cs" />
     <Compile Include="Util\Mth.cs" />
     <Compile Include="World\Block\EnumBlock.cs" />
     <Compile Include="World\Block\EnumSkyBlock.cs" />

@@ -26,18 +26,14 @@ namespace MvkServer.Entity.Player
         /// Основной сервер
         /// </summary>
         public Server ServerMain { get; protected set; }
-
         /// <summary>
         /// Cписок, содержащий все чанки которые нужны клиенту согласно его обзору для загрузки
         /// </summary>
         public MapListVec2i LoadedChunks { get; protected set; } = new MapListVec2i();
-
         /// <summary>
         /// Пинг клиента в мс
         /// </summary>
         public int Ping { get; protected set; } = -1;
-
-        // protected long pingPrev;
 
         private Profiler profiler;
 
@@ -70,7 +66,7 @@ namespace MvkServer.Entity.Player
         {
             IsSneaking = sneaking;
             OnGround = onGround;
-            isMotionServer = true;
+            ActionAdd(EnumActionChanged.IsSneaking);
         }
 
         /// <summary>
@@ -106,14 +102,6 @@ namespace MvkServer.Entity.Player
                 }
                 SendPacket(new PacketS13DestroyEntities(ids.ToArray()));
             }
-
-            //if (isMotionServer)
-            //{
-            ////    // TODO:: скорее всего надо вынести в Update уровень выше, чтоб и мобы так же работали
-            ////    // было изменение, надо отправить данные всем клиентам кроме тикущего
-            //    ServerMain.World.Players.ResponsePacketAll(new PacketS14EntityMotion(this), Id);
-            //    isMotionServer = false;
-            //}
         }
 
         /// <summary>
@@ -159,7 +147,7 @@ namespace MvkServer.Entity.Player
                     profiler.EndSection();
                 }
 
-                if (isMotionServer)
+                if (ActionChanged.HasFlag(EnumActionChanged.Position))
                 {
                     //ServerMain.World.Players.ResponsePacketAll(
                     //    new PacketB20Player().PositionYawPitch(Position, RotationYawHead, RotationYaw, RotationPitch, IsSneaking, OnGround, Id),

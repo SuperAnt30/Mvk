@@ -45,11 +45,14 @@ namespace MvkServer.World
         /// </summary>
         public MapListEntity PlayerEntities { get; protected set; } = new MapListEntity();
 
+        public Random Rand { get; private set; }
+
         protected WorldBase()
         {
             Collision = new CollisionBase(this);
             Log = new Logger();
             profiler = new Profiler(Log);
+            Rand = new Random();
         }
 
         /// <summary>
@@ -70,7 +73,7 @@ namespace MvkServer.World
             LoadedEntityList.AddRange(entityCollection);
             for (int i = 0; i < entityCollection.Count; i++)
             {
-                OnEntityAdded(entityCollection.GetAt(i));
+                OnEntityAdded((EntityLiving)entityCollection.GetAt(i));
             }
         }
 
@@ -86,11 +89,12 @@ namespace MvkServer.World
         {
             profiler.StartSection("EntitiesRemove");
 
+            // TODO:: повтор?!!! #140
             LoadedEntityList.RemoveRange(UnloadedEntityList);
 
             for (int i = 0; i < UnloadedEntityList.Count; i++)
             {
-                EntityLiving entity = UnloadedEntityList.GetAt(i);
+                EntityLiving entity = (EntityLiving)UnloadedEntityList.GetAt(i);
                 if (entity.AddedToChunk && ChunkPr.IsChunk(entity.PositionChunk))
                 {
                     GetChunk(entity.PositionChunk).RemoveEntity(entity);
@@ -106,7 +110,7 @@ namespace MvkServer.World
             MapListEntity entityRemove = new MapListEntity();
             for (int i = 0; i < LoadedEntityList.Count; i++)
             {
-                EntityLiving entity = LoadedEntityList.GetAt(i);
+                EntityLiving entity = (EntityLiving)LoadedEntityList.GetAt(i);
 
                 if (!entity.IsDead)
                 {
@@ -114,9 +118,9 @@ namespace MvkServer.World
                     {
                         UpdateEntity(entity);
                     }
-                    catch (Exception e)
+                    catch (Exception ex)
                     {
-                        //Log.Error("Server.Error.Tick {0}", e.Message);
+                        Logger.Crach(ex);
                         throw;
                     }
                 }
@@ -131,7 +135,7 @@ namespace MvkServer.World
             // Удаляем
             while (entityRemove.Count > 0)
             {
-                EntityLiving entity = entityRemove.FirstRemove();
+                EntityLiving entity = (EntityLiving)entityRemove.FirstRemove();
                 if (entity.AddedToChunk && ChunkPr.IsChunk(entity.PositionChunk))
                 {
                     GetChunk(entity.PositionChunk).RemoveEntity(entity);
@@ -143,7 +147,7 @@ namespace MvkServer.World
             profiler.EndSection();
         }
 
-        private void UpdateEntity(EntityLiving entity)
+        protected virtual void UpdateEntity(EntityLiving entity)
         {
             vec2i posCh = entity.GetChunkPos();
             //byte var5 = 32;
@@ -151,21 +155,13 @@ namespace MvkServer.World
             // Проверка о наличии соседних чанков
             //if (IsAreaLoaded(x - var5, 0, z - var5, x + var5, 0, z + var5, true))
             {
-                entity.UpPrev();
-
-                //entity.lastTickPosX = entity.posX;
-                //entity.lastTickPosY = entity.posY;
-                //entity.lastTickPosZ = entity.posZ;
-                //entity.prevRotationYaw = entity.rotationYaw;
-                //entity.prevRotationPitch = entity.rotationPitch;
-
                 if (entity.AddedToChunk)
                 {
                     entity.TicksExistedMore();
                     entity.Update();
                 }
 
-                posCh = entity.GetChunkPos();
+                //posCh = entity.GetChunkPos();
                 float y = entity.GetChunkY(); 
 
                 if (!entity.AddedToChunk || !posCh.Equals(entity.PositionChunk) || y != entity.PositionChunkY)
@@ -250,9 +246,8 @@ namespace MvkServer.World
             //}
             //else
             {
-                if (entity is EntityPlayer)
+                if (entity is EntityPlayer entityPlayer)
                 {
-                    EntityPlayer entityPlayer = (EntityPlayer)entity;
                     PlayerEntities.Add(entityPlayer);
                     // Флаг сна всех игроков
                     //UpdateAllPlayersSleepingFlag();
@@ -271,6 +266,12 @@ namespace MvkServer.World
                 return true;
             }
         }
+
+        /// <summary>
+        /// Заспавнить частицу
+        /// </summary>
+        public virtual void SpawnParticle(EnumParticle particle, vec3 pos, vec3 motion, params int[] items) { }
+        
 
         #endregion
 

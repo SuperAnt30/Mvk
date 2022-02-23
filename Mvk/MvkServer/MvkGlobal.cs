@@ -20,8 +20,8 @@
         /// <summary>
         /// Визуальная отладка прогрузки чанков
         /// </summary>
-        public const bool IS_DRAW_DEBUG_CHUNK = true;
-        //public const bool IS_DRAW_DEBUG_CHUNK = false;
+        //public const bool IS_DRAW_DEBUG_CHUNK = true;
+        public const bool IS_DRAW_DEBUG_CHUNK = false;
         /// <summary>
         /// Активация имитации задержки локальной сети
         /// </summary>

@@ -1,13 +1,10 @@
 ﻿using MvkServer.Network.Packets;
 using MvkServer.Network.Packets.Client;
 using MvkServer.Network.Packets.Server;
+using MvkServer.Util;
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Sockets;
-using System.Reflection;
 
 namespace MvkServer.Network
 {
@@ -16,32 +13,10 @@ namespace MvkServer.Network
     /// </summary>
     public abstract class ProcessPackets
     {
-        private Dictionary<byte, IPacket> dPacket = new Dictionary<byte, IPacket>();
-        private Dictionary<byte, Type> dType = new Dictionary<byte, Type>();
+        private readonly bool isClient;
 
-        private bool isClient;
+        protected ProcessPackets(bool client) => isClient = client;
 
-        protected ProcessPackets(bool client)
-        {
-            isClient = client;
-            Type typeBlock = typeof(IPacket);
-            Type[] types = Assembly.GetAssembly(typeBlock).GetTypes();
-            IEnumerable<Type> packetList = types.Where(type => typeBlock.IsAssignableFrom(type));
-            foreach (var packet in packetList)
-            {
-                if (!packet.IsInterface)
-                {
-                    
-                    IPacket packetObject = (Activator.CreateInstance(packet) as IPacket);
-                    if (IsKey(packetObject, client ? "S" : "C"))
-                    {
-                        byte id = GetId(packetObject);
-                        dType.Add(id, packetObject.GetType());
-                        //dPacket.TryAdd(id, packetObject);
-                    }
-                }
-            }
-        }
         /// <summary>
         /// Объявление всех объектов пакетов
         /// </summary>
@@ -49,16 +24,6 @@ namespace MvkServer.Network
         /// <param name="isClient">Пакет от клиента</param>
         protected IPacket Init(byte id)
         {
-            //try
-            //{
-            //    return (Activator.CreateInstance(dType[id]) as IPacket);
-            //    //return dPacket[id];
-            //}
-            //catch (Exception ex)
-            //{
-            //    throw;
-            //}
-
             if (!isClient)
             {
                 // Пакеты от клиента
@@ -124,6 +89,7 @@ namespace MvkServer.Network
             }
             catch (Exception ex)
             {
+                Logger.Crach(ex);
                 throw;
             }
         }
@@ -140,6 +106,7 @@ namespace MvkServer.Network
             }
             catch (Exception ex)
             {
+                Logger.Crach(ex);
                 throw;
             }
         }

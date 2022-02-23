@@ -122,8 +122,8 @@ namespace MvkServer.World
             try
             {
                 return string.Format("Ch {0}-{2} Pl {1} @!{4}\r\n{3} ||| E: {5}, Ch: {6}\r\n{7}",
-                    ChunkPr.Count, Players.PlayerCount, Players.chunkCoordPlayers.Count, Players.ToStringDebug()
-                    , base.ToStringDebug(), ChunkPr.GetCountEntityDebug(), countGetChunck, Tracker);
+                    ChunkPr.Count, Players.PlayerCount, Players.chunkCoordPlayers.Count, Players.ToStringDebug() // 0 - 3
+                    , base.ToStringDebug(), ChunkPr.GetCountEntityDebug(), countGetChunck, Tracker); // 4 - 7
             }
             catch(Exception e)
             {

@@ -31,7 +31,7 @@ namespace MvkClient
         public static string DStr = "";
 
         protected static string strTpsFps = "";
-        public static void SetTpsFps(int fps, float speedFrame) => strTpsFps = string.Format("Speed: {0} fps {1:0.00} ms", fps, speedFrame);
+        public static void SetTpsFps(int fps, float speedFrame, int tps, float speedTick) => strTpsFps = string.Format("Speed: {0} fps {1:0.00} ms {2} tps {3:0.00} ms", fps, speedFrame, tps, speedTick);
 
         public static string strServer = "";
         public static string strClient = "";

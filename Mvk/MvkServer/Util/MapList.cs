@@ -74,20 +74,6 @@ namespace MvkServer.Util
         }
 
         /// <summary>
-        /// Удалить список
-        /// </summary>
-        public void RemoveRange(MapList list)
-        {
-            if (list.Count > 0)
-            {
-                for (int i = 0; i < list.Count; i++)
-                {
-                    Remove(list.GetAt(i));
-                }
-            }
-        }
-
-        /// <summary>
         /// Получить первое значение по списку и удалить его
         /// </summary>
         protected object FirstRemove()

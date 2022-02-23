@@ -168,7 +168,7 @@ namespace MvkClient.Network
         {
             EntityLiving entity = new EntityChicken(ClientMain.World);
             entity.SetEntityId(packet.GetId());
-            entity.SetPosition(packet.GetPos());//, packet.GetYaw(), packet.GetPitch());
+            entity.SetPosLook(packet.GetPos(), packet.GetYaw(), packet.GetPitch());
 
             //entity.FlagSpawn = true;
             ClientMain.World.SpawnEntityInWorld(entity);
@@ -212,7 +212,7 @@ namespace MvkClient.Network
             {
                 entity.SetMotionServer(
                     packet.GetPos(), packet.GetYaw(), packet.GetPitch(),
-                    packet.IsSneaking());//, packet.OnGround());
+                    packet.IsSneaking(), packet.OnGround());
             }
         }
 

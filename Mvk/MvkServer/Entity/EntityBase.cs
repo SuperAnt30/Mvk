@@ -2,13 +2,15 @@
 using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World;
+using System;
+using System.Collections.Generic;
 
 namespace MvkServer.Entity
 {
     /// <summary>
     /// Базовый объект сущности
     /// </summary>
-    public class EntityBase
+    public abstract class EntityBase
     {
         /// <summary>
         /// Объект мира
@@ -18,26 +20,19 @@ namespace MvkServer.Entity
         /// Порядковый номер сущности на сервере, с момента запуска сервера
         /// </summary>
         public ushort Id { get; protected set; }
-        /// <summary>
-        /// Имя
-        /// </summary>
-        public string Name { get; protected set; } = "";
+        
         /// <summary>
         /// Позиция объекта
         /// </summary>
         public vec3 Position { get; private set; }
         /// <summary>
-        /// Позиция на последнем тике для рендера
+        /// Позиция на последнем тике для рендера, клиента
         /// </summary>
         public vec3 LastTickPos { get; set; }
         /// <summary>
-        /// Поворот вокруг своей оси
+        /// Координата объекта на предыдущем тике, используемая для расчета позиции во время процедур рендеринга
         /// </summary>
-        public float RotationYaw { get; protected set; }
-        /// <summary>
-        /// Поворот вверх вниз
-        /// </summary>
-        public float RotationPitch { get; protected set; }
+        public vec3 PositionPrev { get; protected set; }
         /// <summary>
         /// Перемещение объекта
         /// </summary>
@@ -46,18 +41,6 @@ namespace MvkServer.Entity
         /// На земле
         /// </summary>
         public bool OnGround { get; protected set; } = true;
-        /// <summary>
-        /// Бежим
-        /// </summary>
-        public bool IsSprinting { get; protected set; } = false;
-        /// <summary>
-        /// Результат сидеть
-        /// </summary>
-        public bool IsSneaking { get; protected set; } = false;
-        /// <summary>
-        /// Прыгаем
-        /// </summary>
-        public bool IsJumping { get; protected set; } = false;
         /// <summary>
         /// Летает ли сущность
         /// </summary>
@@ -83,30 +66,9 @@ namespace MvkServer.Entity
         /// </summary>
         public float StepHeight { get; protected set; }
         /// <summary>
-        /// Объект скорости сущности
-        /// </summary>
-        public EntitySpeed Speed { get; protected set; }
-        /// <summary>
-        /// Тип сущности
-        /// </summary>
-        public EnumEntities Type { get; protected set; } = EnumEntities.None;
-        /// <summary>
         /// Сущность мертва, не активна
         /// </summary>
         public bool IsDead { get; protected set; } = false;
-        /// <summary>
-        /// Оставшееся время эта сущность должна вести себя как «мертвая», то есть иметь в мире труп.
-        /// </summary>
-        public int DeathTime { get; protected set; } = 0;
-        /// <summary>
-        /// Уровень здоровья
-        /// </summary>
-        public float Health { get; protected set; }
-        /// <summary>
-        /// Оставшееся время эта сущность должна вести себя как травмированная, то есть маргает красным
-        /// </summary>
-        public int DamageTime { get; protected set; } = 0;
-
         /// <summary>
         /// Истинно, если после перемещения этот объект столкнулся с чем-то по оси X или Z. 
         /// </summary>
@@ -121,68 +83,20 @@ namespace MvkServer.Entity
         public bool IsCollided { get; protected set; } = false;
 
         /// <summary>
-        /// Был ли эта сущность добавлена в чанк, в котором он находится? 
+        /// Генератор случайных чисел данной сущности
         /// </summary>
-        public bool AddedToChunk { get; set; } = false;
+        protected Random rand;
         /// <summary>
-        /// Позиция в чанке
+        /// Для отладки движения
         /// </summary>
-        public vec2i PositionChunk { get; private set; }
-        /// <summary>
-        /// Позиция псевдо чанка
-        /// </summary>
-        public int PositionChunkY { get; private set; }
-
-        /// <summary>
-        /// Сколько тиков эта сущность пробежала с тех пор, как была жива 
-        /// </summary>
-        public int TicksExisted { get; private set; } = 0;
-        /// <summary>
-        /// Флаг спавна, пометка начального спавна игрока 
-        /// </summary>
-        public bool FlagSpawn { get; set; } = false;
-
-        /// <summary>
-        /// Пометка что было движение и подобное для сервера, чтоб отправлять пакеты
-        /// </summary>
-        public bool isMotionServer = false;
-        // TODO:: можно подумать о флаге для данного параметра, типа pos, Sneaking, yawHead, yawBody, pitch
-
-        #region PervLast
-
-        /// <summary>
-        /// Последнее значение поворота вокруг своей оси
-        /// </summary>
-        public float RotationYawLast { get; protected set; }
-        /// <summary>
-        /// Последнее значение поворота вверх вниз
-        /// </summary>
-        public float RotationPitchLast { get; protected set; }
-        /// <summary>
-        /// Координата объекта на предыдущем тике, используемая для расчета позиции во время процедур рендеринга
-        /// </summary>
-        public vec3 PositionPrev { get; protected set; }
-        /// <summary>
-        /// Значение на предыдущем тике поворота вокруг своей оси
-        /// </summary>
-        public float RotationYawPrev { get; protected set; }
-        /// <summary>
-        /// Значение на предыдущем тике поворота вверх вниз
-        /// </summary>
-        public float RotationPitchPrev { get; protected set; }
-
-        #endregion
-
+        protected vec3 motionDebug = new vec3(0);
         
         public EntityBase(WorldBase world)
         {
             World = world;
-            Health = GetHelathMax();
-            Standing();
-            SpeedSurvival();
+            rand = World.Rand;
+            SetSize(.5f, 1f);
         }
-
-        #region Get Methods
 
         /// <summary>
         /// В каком блоке находится
@@ -192,29 +106,6 @@ namespace MvkServer.Entity
         /// Получить ограничительную рамку на выбранной позиции
         /// </summary>
         public AxisAlignedBB GetBoundingBox(vec3 pos) => new AxisAlignedBB(pos - new vec3(Width, 0, Width), pos + new vec3(Width, Height, Width));
-        /// <summary>
-        /// Высота глаз
-        /// </summary>
-        public virtual float GetEyeHeight() => Height * 0.85f;
-
-        /// <summary>
-        /// Получить координаты в каком чанке находится по текущей Position
-        /// </summary>
-        public vec2i GetChunkPos() => new vec2i(Mth.Floor(Position.x) >> 4, Mth.Floor(Position.z) >> 4);
-        /// <summary>
-        /// Получить координату псевдо чанка находится по текущей Position
-        /// </summary>
-        public int GetChunkY() => Mth.Floor(Position.y) >> 4;
-        
-        /// <summary>
-        /// Вращение головы
-        /// </summary>
-        public virtual float GetRotationYawHead() => 0;
-
-        /// <summary>
-        /// Максимальное значение здоровья сущности
-        /// </summary>
-        protected virtual float GetHelathMax() => 10;
 
         /// <summary>
         /// Получает квадрат расстояния до положения
@@ -226,21 +117,6 @@ namespace MvkServer.Entity
         //    float z = Position.z - pos.z;
         //    return x * x + y * y + z * z;
         //}
-        #endregion
-
-
-
-        #region Set Methods
-
-        /// <summary>
-        /// Задать вращение
-        /// </summary>
-        public void SetRotation(float yaw, float pitch)
-        {
-            RotationYaw = yaw;
-            RotationPitch = pitch;
-            CheckRotation();
-        }
 
         /// <summary>
         /// Задать позицию
@@ -251,11 +127,16 @@ namespace MvkServer.Entity
             {
                 Position = pos;
                 UpBoundingBox();
-                isMotionServer = true;
+                ActionAddPosition();
                 return true;
             }
             return false;
         }
+
+        /// <summary>
+        /// Задать действие для позиции
+        /// </summary>
+        protected virtual void ActionAddPosition() { }
 
         /// <summary>
         /// Заменить размер хитбокс сущности
@@ -273,25 +154,6 @@ namespace MvkServer.Entity
         public void SetDead() => IsDead = true;
 
         /// <summary>
-        /// Задать новое значение здоровья
-        /// </summary>
-        public void SetHealth(float health) => Health = health < 0 ? 0 : health;
-
-        /// <summary>
-        /// Начать анимацию боли
-        /// </summary>
-        public void PerformHurtAnimation() => DamageTime = 5; // количество тактов
-
-        /// <summary>
-        /// Задать плоожение в чанке
-        /// </summary>
-        public void SetPositionChunk(int x, int y, int z)
-        {
-            PositionChunk = new vec2i(x, z);
-            PositionChunkY = y;
-        }
-
-        /// <summary>
         /// Задать индекс
         /// </summary>
         public void SetEntityId(ushort id) => Id = id;
@@ -302,268 +164,200 @@ namespace MvkServer.Entity
         public void Kill() => SetDead();
 
         /// <summary>
-        /// Возобновить сущность
-        /// </summary>
-        public virtual void Respawn()
-        {
-            Health = GetHelathMax();
-            DeathTime = 0;
-            IsDead = false;
-        }
-
-        #endregion
-
-        /// <summary>
-        /// Добавить тик жизни к сущности
-        /// </summary>
-        public void TicksExistedMore() => TicksExisted++;
-
-        /// <summary>
-        /// Проверить градусы
-        /// </summary>
-        protected virtual void CheckRotation()
-        {
-            while (RotationYaw - RotationYawPrev < -glm.pi) RotationYawPrev -= glm.pi360;
-            while (RotationYaw - RotationYawPrev >= glm.pi) RotationYawPrev += glm.pi360;
-            while (RotationPitch - RotationPitchPrev < -glm.pi) RotationPitchPrev -= glm.pi360;
-            while (RotationPitch - RotationPitchPrev >= glm.pi) RotationPitchPrev += glm.pi360;
-        }
-
-        /// <summary>
-        /// Активация режима полёта
-        /// </summary>
-        public void ModeFly()
-        {
-            if (!IsFlying)
-            {
-                IsFlying = true;
-                Standing();
-                SpeedFly();
-            }
-        }
-
-        /// <summary>
-        /// Активация режима выживания
-        /// </summary>
-        public void ModeSurvival()
-        {
-            if (IsFlying)
-            {
-                IsFlying = false;
-                SpeedSurvival();
-            }
-        }
-
-        /// <summary>
-        /// Скорость для режима полёта
-        /// </summary>
-        protected virtual void SpeedFly() => Speed = new EntitySpeed(.2f, .2f, .3f, 2.0f);
-
-        /// <summary>
-        /// Скорость для режима выживания
-        /// </summary>
-        protected virtual void SpeedSurvival() => Speed = new EntitySpeed(.2f);//3837f);
-
-        /// <summary>
-        /// Положение стоя
-        /// </summary>
-        protected virtual void Standing() => SetSize(.6f, 3.6f);
-
-        /// <summary>
-        /// Положение сидя
-        /// </summary>
-        protected virtual void Sitting() => SetSize(.6f, 2.99f);
-
-        /// <summary>
         /// Обновить ограничительную рамку
         /// </summary>
         protected void UpBoundingBox() => BoundingBox = GetBoundingBox(Position);
 
-        /// <summary>
-        /// Получить вектор направления по поворотам
-        /// </summary>
-        protected vec3 GetRay(float yaw, float pitch)
-        {
-            //float var3 = glm.cos(-yaw - glm.pi);
-            //float var4 = glm.sin(-yaw - glm.pi);
-            //float var5 = -glm.cos(-pitch);
-            //float var6 = glm.sin(-pitch);
-            //return new vec3(var4 * var5, var6, var3 * var5);
-
-            float pitchxz = glm.cos(pitch);
-            return new vec3(glm.sin(yaw) * pitchxz, glm.sin(pitch), -glm.cos(yaw) * pitchxz);
-        }
-
-        /// <summary>
-        /// Обновить значения позиции чанка по тикущим значениям
-        /// </summary>
-        public void UpPositionChunk()
-        {
-            PositionChunkY = GetChunkY();
-            PositionChunk = GetChunkPos();
-        }
-
-
-        #region Frame
-
-        /// <summary>
-        /// Получить вектор направления камеры
-        /// </summary>
-        /// <param name="timeIndex">Коэфициент между тактами</param>
-        public virtual vec3 GetLookFrame2(float timeIndex) => GetLookBodyFrame2(timeIndex);
-
-        /// <summary>
-        /// Получить вектор направления камеры тела
-        /// </summary>
-        /// <param name="timeIndex">Коэфициент между тактами</param>
-        public virtual vec3 GetLookBodyFrame2(float timeIndex) 
-            => GetRay(GetRotationYawFrame2(timeIndex), GetRotationPitchFrame2(timeIndex));
-
-        /// <summary>
-        /// Получить угол Yaw для кадра
-        /// </summary>
-        /// <param name="timeIndex">Коэфициент между тактами</param>
-        public virtual float GetRotationYawFrame2(float timeIndex) => GetRotationYawBodyFrame2(timeIndex);
-
-        public virtual vec3 GetPositionFrame2(float timeIndex)
+        public virtual vec3 GetPositionFrame(float timeIndex)
         {
             if (timeIndex >= 1.0f || Position.Equals(LastTickPos)) return Position;
             return LastTickPos + (Position - LastTickPos) * timeIndex;
         }
 
         /// <summary>
-        /// Получить угол YawBody для кадра
+        /// Проверка перемещения со столкновением
         /// </summary>
-        /// <param name="timeIndex">Коэфициент между тактами</param>
-        public float GetRotationYawBodyFrame2(float timeIndex)
+        protected void MoveEntity(vec3 motion)
         {
-            if (timeIndex >= 1.0f || RotationYawPrev == RotationYaw) return RotationYaw;
-            return RotationYawPrev + (RotationYaw - RotationYawPrev) * timeIndex;
+            // Без проверки столкновения
+            if (NoClip)
+            {
+                Motion = motion;
+                UpPositionMotion();
+            }
+
+            AxisAlignedBB boundingBox = BoundingBox.Clone();
+            AxisAlignedBB aabbEntity = boundingBox.Clone();
+            List<AxisAlignedBB> aabbs;
+
+            float x0 = motion.x;
+            float y0 = motion.y;
+            float z0 = motion.z;
+
+            float x = x0;
+            float y = y0;
+            float z = z0;
+
+            bool isSneaking = false;
+            if (this is EntityLiving entityLiving)
+            {
+                isSneaking = entityLiving.IsSneaking;
+            }
+
+            // Защита от падения с края блока если сидишь и являешься игроком
+            if (OnGround && isSneaking && this is EntityPlayer)
+            {
+                // TODO::2022-02-01 замечена бага, иногда падаешь! По Х на 50000
+                // Шаг проверки смещения
+                float step = 0.05f;
+                for (; x != 0f && World.Collision.GetCollidingBoundingBoxes(boundingBox.Offset(new vec3(x, -1, 0))).Count == 0; x0 = x)
+                {
+                    if (x < step && x >= -step) x = 0f;
+                    else if (x > 0f) x -= step;
+                    else x += step;
+                }
+                for (; z != 0f && World.Collision.GetCollidingBoundingBoxes(boundingBox.Offset(new vec3(0, -1, z))).Count == 0; z0 = z)
+                {
+                    if (z < step && z >= -step) z = 0f;
+                    else if (z > 0f) z -= step;
+                    else z += step;
+                }
+                for (; x != 0f && z0 != 0f && World.Collision.GetCollidingBoundingBoxes(boundingBox.Offset(new vec3(x0, -1, z0))).Count == 0; z0 = z)
+                {
+                    if (x < step && x >= -step) x = 0f;
+                    else if (x > 0f) x -= step;
+                    else x += step;
+                    x0 = x;
+                    if (z < step && z >= -step) z = 0f;
+                    else if (z > 0f) z -= step;
+                    else z += step;
+                }
+            }
+
+            aabbs = World.Collision.GetCollidingBoundingBoxes(boundingBox.AddCoord(new vec3(x, y, z)));
+
+            // Находим смещение по Y
+            foreach (AxisAlignedBB axis in aabbs) y = axis.CalculateYOffset(aabbEntity, y);
+            aabbEntity = aabbEntity.Offset(new vec3(0, y, 0));
+
+            // Не прыгаем (момент взлёта)
+            bool isNotJump = OnGround || motion.y != y && motion.y < 0f;
+
+            // Находим смещение по X
+            foreach (AxisAlignedBB axis in aabbs) x = axis.CalculateXOffset(aabbEntity, x);
+            aabbEntity = aabbEntity.Offset(new vec3(x, 0, 0));
+
+            // Находим смещение по Z
+            foreach (AxisAlignedBB axis in aabbs) z = axis.CalculateZOffset(aabbEntity, z);
+            aabbEntity = aabbEntity.Offset(new vec3(0, 0, z));
+
+
+            // Запуск проверки авто прыжка
+            if (StepHeight > 0f && isNotJump && (x0 != x || z0 != z))
+            {
+                // Кэш для откада, если авто прыжок не допустим
+                vec3 monCache = new vec3(x, y, z);
+
+                float stepHeight = StepHeight;
+                // Если сидим авто прыжок в двое ниже
+                if (isSneaking) stepHeight *= 0.5f;
+
+                y = stepHeight;
+                aabbs = World.Collision.GetCollidingBoundingBoxes(boundingBox.AddCoord(new vec3(x0, y, z0)));
+                AxisAlignedBB aabbEntity2 = boundingBox.Clone();
+                AxisAlignedBB aabb = aabbEntity2.AddCoord(new vec3(x0, 0, z0));
+
+                // Находим смещение по Y
+                float y2 = y;
+                foreach (AxisAlignedBB axis in aabbs) y2 = axis.CalculateYOffset(aabb, y2);
+                aabbEntity2 = aabbEntity2.Offset(new vec3(0, y2, 0));
+
+                // Находим смещение по X
+                float x2 = x0;
+                foreach (AxisAlignedBB axis in aabbs) x2 = axis.CalculateXOffset(aabbEntity2, x2);
+                aabbEntity2 = aabbEntity2.Offset(new vec3(x2, 0, 0));
+
+                // Находим смещение по Z
+                float z2 = z0;
+                foreach (AxisAlignedBB axis in aabbs) z2 = axis.CalculateZOffset(aabbEntity2, z2);
+                aabbEntity2 = aabbEntity2.Offset(new vec3(0, 0, z2));
+
+                AxisAlignedBB aabbEntity3 = boundingBox.Clone();
+
+                // Находим смещение по Y
+                float y3 = y;
+                foreach (AxisAlignedBB axis in aabbs) y3 = axis.CalculateYOffset(aabbEntity3, y3);
+                aabbEntity3 = aabbEntity3.Offset(new vec3(0, y3, 0));
+
+                // Находим смещение по X
+                float x3 = x0;
+                foreach (AxisAlignedBB axis in aabbs) x3 = axis.CalculateXOffset(aabbEntity3, x3);
+                aabbEntity3 = aabbEntity3.Offset(new vec3(x3, 0, 0));
+
+                // Находим смещение по Z
+                float z3 = z0;
+                foreach (AxisAlignedBB axis in aabbs) z3 = axis.CalculateZOffset(aabbEntity3, z3);
+                aabbEntity3 = aabbEntity3.Offset(new vec3(0, 0, z3));
+
+                if (x2 * x2 + z2 * z2 > x3 * x3 + z3 * z3)
+                {
+                    x = x2;
+                    z = z2;
+                    aabbEntity = aabbEntity2;
+                }
+                else
+                {
+                    x = x3;
+                    z = z3;
+                    aabbEntity = aabbEntity3;
+                }
+                y = -stepHeight;
+
+                // Находим итоговое смещение по Y
+                foreach (AxisAlignedBB axis in aabbs) y = axis.CalculateYOffset(aabbEntity, y);
+
+                if (monCache.x * monCache.x + monCache.z * monCache.z >= x * x + z * z)
+                {
+                    // Нет авто прыжка, откатываем значение обратно
+                    x = monCache.x;
+                    y = monCache.y;
+                    z = monCache.z;
+                }
+                else
+                {
+                    // Авто прыжок
+                    SetPosition(Position + new vec3(0, y + stepHeight, 0));
+                    y = 0;
+                }
+            }
+
+            IsCollidedHorizontally = x0 != x || z0 != z;
+            IsCollidedVertically = y0 != y;
+            OnGround = IsCollidedVertically && y0 < 0.0f;
+            IsCollided = IsCollidedHorizontally || IsCollidedVertically;
+
+            // Определение дистанции падения, и фиксаия падения
+            FallDetection(y);
+
+            Motion = new vec3(x0 != x ? 0 : x, y, z0 != z ? 0 : z);
+            UpPositionMotion();
         }
 
         /// <summary>
-        /// Получить угол Pitch для кадра
+        /// Определяем дистанцию падения
         /// </summary>
-        /// <param name="timeIndex">Коэфициент между тактами</param>
-        public float GetRotationPitchFrame2(float timeIndex)
+        /// <param name="y">позиция Y</param>
+        protected virtual void FallDetection(float y) { }
+
+        private void UpPositionMotion()
         {
-            if (timeIndex >= 1.0f || RotationPitchPrev == RotationPitch) return RotationPitch;
-            return RotationPitchPrev + (RotationPitch - RotationPitchPrev) * timeIndex;
+            motionDebug = Motion;
+            SetPosition(Position + Motion);
         }
-
-        ///// <summary>
-        ///// Получить угол YawBody для кадра
-        ///// </summary>
-        ///// <param name="timeIndex">Коэфициент между тактами</param>
-        //public float GetRotationYawBodyFrame(float timeIndex)
-        //{
-        //    if (timeIndex == 1.0f) RotationYawPrev = RotationYaw;
-        //    if (RotationYawPrev == RotationYaw) return RotationYaw;
-        //    return RotationYawPrev + (RotationYaw - RotationYawPrev) * timeIndex;
-        //}
-
-        ///// <summary>
-        ///// Получить угол Pitch для кадра
-        ///// </summary>
-        ///// <param name="timeIndex">Коэфициент между тактами</param>
-        //public float GetRotationPitchFrame(float timeIndex)
-        //{
-        //    if (timeIndex == 1.0f) RotationPitchPrev = RotationPitch;
-        //    if (RotationPitchPrev == RotationPitch) return RotationPitch;
-        //    return RotationPitchPrev + (RotationPitch - RotationPitchPrev) * timeIndex;
-        //}
-
-        /// <summary>
-        /// Получить позицию сущности для кадра
-        /// </summary>
-        /// <param name="timeIndex">коэфициент между тактами</param>
-        //public virtual vec3 GetPositionFrame(float timeIndex)
-        //{
-        //    if (timeIndex == 1.0f)  PositionPrev = Position;
-        //    if (Position.Equals(PositionPrev)) return Position;
-        //    return PositionPrev + (Position - PositionPrev) * timeIndex;
-        //}
-
-
-
-        /// <summary>
-        /// Получить позицию глаз сущности для кадра
-        /// </summary>
-        /// <param name="timeIndex">коэфициент между тактами</param>
-        //public vec3 GetPositionEyeFrame(float timeIndex) => GetPositionFrame(timeIndex) + new vec3(0, GetEyeHeightFrame(), 0);
-
-        /// <summary>
-        /// Высота глаз для кадра
-        /// </summary>
-        public virtual float GetEyeHeightFrame() => GetEyeHeight();
-
-        #endregion
 
         /// <summary>
         /// Вызывается для обновления позиции / логики объекта
         /// </summary>
-        public virtual void Update()
-        {
-            //PositionPrev = Position;
-            //RotationYawPrev = RotationYaw;
-            //RotationPitchPrev = RotationPitch;
-        }
-
-        /// <summary>
-        /// Управляет таймером смерти сущности, сферой опыта и созданием частиц
-        /// </summary>
-        protected void DeathUpdate()
-        {
-            DeathTime++;
-
-            if (DeathTime >= 20)
-            {
-                SetDead();
-                //DeathTime = 0;
-                //Health = 20;
-            //    int var1;
-
-                //    if (!this.worldObj.isRemote && (this.recentlyHit > 0 || this.isPlayer()) && this.func_146066_aG() && this.worldObj.getGameRules().getGameRuleBooleanValue("doMobLoot"))
-                //    {
-                //        var1 = this.getExperiencePoints(this.attackingPlayer);
-
-                //        while (var1 > 0)
-                //        {
-                //            int var2 = EntityXPOrb.getXPSplit(var1);
-                //            var1 -= var2;
-                //            this.worldObj.spawnEntityInWorld(new EntityXPOrb(this.worldObj, this.posX, this.posY, this.posZ, var2));
-                //        }
-                //    }
-
-                //    this.setDead();
-
-                //    for (var1 = 0; var1 < 20; ++var1)
-                //    {
-                //        double var8 = this.rand.nextGaussian() * 0.02D;
-                //        double var4 = this.rand.nextGaussian() * 0.02D;
-                //        double var6 = this.rand.nextGaussian() * 0.02D;
-                //        this.worldObj.spawnParticle(EnumParticleTypes.EXPLOSION_NORMAL, this.posX + (double)(this.rand.nextFloat() * this.width * 2.0F) - (double)this.width, this.posY + (double)(this.rand.nextFloat() * this.height), this.posZ + (double)(this.rand.nextFloat() * this.width * 2.0F) - (double)this.width, var8, var4, var6, new int[0]);
-                //    }
-            }
-        }
-
-        /// <summary>
-        /// Обновить атрибутв в начале тика
-        /// </summary>
-        public virtual void UpPrev()
-        {
-            LastTickPos = Position;
-            RotationPitchPrev = RotationPitch;
-            RotationYawPrev = RotationYaw;
-        }
-
-        //public void Respawn()
-        //{
-        //    Health = 20;
-        //    DeathTime = 0;
-        //    IsDead = false;
-        //}
-
-
+        public virtual void Update() { }
     }
 }

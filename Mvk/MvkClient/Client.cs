@@ -24,19 +24,19 @@ namespace MvkClient
         /// <summary>
         /// Объект лога
         /// </summary>
-        public Logger Log { get; protected set; }
+        public Logger Log { get; private set; }
         /// <summary>
         /// Клиентский объект мира
         /// </summary>
-        public WorldClient World { get; protected set; }
+        public WorldClient World { get; private set; }
         /// <summary>
         /// Объект звуков
         /// </summary>
-        public AudioBase Sample { get; protected set; } = new AudioBase();
+        public AudioBase Sample { get; private set; } = new AudioBase();
         /// <summary>
         /// Увеличивается каждый тик 
         /// </summary>
-        public uint TickCounter { get; protected set; } = 0;
+        public uint TickCounter { get; private set; } = 0;
         /// <summary>
         /// Screen Gui
         /// </summary>
@@ -44,40 +44,44 @@ namespace MvkClient
         /// <summary>
         /// Объект клиента
         /// </summary>
-        public EntityPlayerSP Player { get; protected set; }
+        public EntityPlayerSP Player { get; private set; }
         /// <summary>
         /// Пинг к серверу
         /// </summary>
-        public int Ping { get; protected set; } = -1;
+        public int Ping { get; private set; } = -1;
+        /// <summary>
+        /// Режим игры
+        /// </summary>
+        public bool IsGamePlay { get; private set; } = false;
+        /// <summary>
+        /// Объект отвечающий за прорисовку эффектов частиц
+        /// </summary>
+        public EffectRenderer EffectRender { get; private set; }
 
         /// <summary>
         /// Счётчик тиков без синхронизации с сервером, отсчёт от запуска программы
         /// </summary>
-        protected uint tickCounterClient = 0;
+        private uint tickCounterClient = 0;
         /// <summary>
-        /// Тикер Fps
+        /// Тикер кадра и игрового локального такта
         /// </summary>
-        protected Ticker tickerFps;
-        /// <summary>
-        /// Тикер Fps
-        /// </summary>
-        protected Ticker tickerTps;
+        private Ticker ticker;
         /// <summary>
         /// Локальный сервер
         /// </summary>
-        protected LocalServer locServer;
+        private LocalServer locServer;
         /// <summary>
         /// Объект работы с пакетами
         /// </summary>
-        protected ProcessClientPackets packets;
+        private ProcessClientPackets packets;
         /// <summary>
         /// Закрывается ли окно
         /// </summary>
-        protected bool isClosing = false;
+        private bool isClosing = false;
         /// <summary>
         /// Пауза в игре
         /// </summary>
-        protected bool isGamePaused = false;
+        private bool isGamePaused = false;
         /// <summary>
         /// Объект времени с момента запуска проекта
         /// </summary>
@@ -85,11 +89,11 @@ namespace MvkClient
         /// <summary>
         /// Атрибут запуска управления мыши
         /// </summary>
-        protected bool firstMouse;
+        private bool firstMouse;
         /// <summary>
         /// Режим 3д управление мышки
         /// </summary>
-        protected bool isMouseGamePlay = true;
+        private bool isMouseGamePlay = true;
 
         #region EventsWindow
 
@@ -99,8 +103,6 @@ namespace MvkClient
         /// </summary>
         public void Initialize()
         {
-            //Log = new Logger("client");
-            
             Sample.Initialize();
             glm.Initialized();
             MvkStatic.Initialized();
@@ -108,13 +110,11 @@ namespace MvkClient
             Screen.Changed += Screen_Changed;
             packets = new ProcessClientPackets(this);
 
-            tickerFps = new Ticker();
-            tickerFps.Tick += TickerFps_Tick;
-            tickerFps.Closeded += (sender, e) => OnCloseded();
-
-            tickerTps = new Ticker();
-            tickerTps.SetWishTick(20);
-            tickerTps.Tick += TickerTps_Tick;
+            ticker = new Ticker();
+            ticker.SetWishFrame(20);
+            ticker.Tick += Ticker_Tick;
+            ticker.Frame += Ticker_Frmae;
+            ticker.Closeded += (sender, e) => OnCloseded();
 
             locServer = new LocalServer();
             locServer.ObjectKeyTick += Server_ObjectKeyTick;
@@ -127,7 +127,7 @@ namespace MvkClient
         /// </summary>
         public void WindowLoad()
         {
-            tickerFps.Start();
+            ticker.Start();
             
             // Загрузка
             Loading loading = new Loading(this);
@@ -143,15 +143,14 @@ namespace MvkClient
         public bool WindowClosing()
         {
             isClosing = true;
-            //Log.Close();
             if (locServer.IsStartWorld)
             {
                 ExitingWorld("");
                 return true;
             }
-            if (tickerFps.IsRuning)
+            if (ticker.IsRuning)
             {
-                tickerFps.Stoping();
+                ticker.Stoping();
                 return true;
             }
             return false;
@@ -209,7 +208,6 @@ namespace MvkClient
         /// <param name="key">индекс клавиши</param>
         public void KeyDown(int key)
         {
-            //locServer.TrancivePacket(new PacketTFFTest(key.ToString()));
             Debug.DInt = key;
 
             if (World != null && IsGamePlayAction())
@@ -272,7 +270,7 @@ namespace MvkClient
                         vec3 dir = Player.RayLook;//.GetLookFrame();
 
                         MovingObjectPosition moving = World.RayCast(pos, dir, 10f);
-                        MovingObjectPosition movingE = World.RayCastEntity();
+                        MovingObjectPosition movingE = new MovingObjectPosition();// = World.RayCastEntity();
 
                         Player.Action();
                         // луч
@@ -329,11 +327,11 @@ namespace MvkClient
         /// <summary>
         /// Задать желаемый фпс
         /// </summary>
-        public void SetWishFps(int fps) => tickerFps.SetWishTick(fps);
+        public void SetWishFps(int fps) => ticker.SetWishFrame(fps);// tickerFps.SetWishTick(fps);
         /// <summary>
         /// Получить желаемый фпс
         /// </summary>
-        public int GetWishFps() => tickerFps.WishTick;
+        public int GetWishFps() => ticker.WishFrame;// tickerFps.WishTick;
 
         /// <summary>
         /// Получить события из других пакетов
@@ -368,9 +366,16 @@ namespace MvkClient
         /// <param name="ip">адрес</param>
         public void LoadWorldNet(string ip)
         {
-            Screen.ScreenProcess(Language.T("gui.process"));
-            locServer.StartServerNet(ip);
-            BeginWorld();
+            try
+            {
+                Screen.ScreenProcess(Language.T("gui.process"));
+                locServer.StartServerNet(ip);
+                BeginWorld();
+            }
+            catch (Exception ex)
+            {
+                Logger.Crach(ex);
+            }
         }
         /// <summary>
         /// Загрузить мир
@@ -378,17 +383,33 @@ namespace MvkClient
         /// <param name="slot">Номер слота</param>
         public void LoadWorld(int slot)
         {
-            locServer.StartServer(slot);
-            BeginWorld();
-            OpenNet();
+            try
+            {
+                locServer.StartServer(slot);
+                BeginWorld();
+                OpenNet();
+            }
+            catch (Exception ex)
+            {
+                Logger.Crach(ex);
+            }
             //TODO:: надо отсюда начать запускать сервер, который создаст мир, и продублирует на клиенте мир.
             // Продумать tps только на стороне сервера, но должна быть сенхронизация с клиентом
             // Синхронизация времени раз в секунду
         }
 
-        protected void BeginWorld()
+        private void BeginWorld()
         {
-            World = new WorldClient(this);
+            try
+            {
+                World = new WorldClient(this);
+                EffectRender = new EffectRenderer(World);
+            }
+            catch (Exception ex)
+            {
+                Logger.Crach(ex);
+            }
+            //Debug.Crach("Test BeginWorld {0}", World);
             //World.GuiGameOver += World_GuiGameOver;
         }
 
@@ -425,13 +446,14 @@ namespace MvkClient
         /// <param name="error">ошибка</param>
         public void ExitingWorld(string error)
         {
-            tickerTps.Stoping();
             StringDebugTps();
             // ставим экран сохранения
             Screen.ScreenProcess(Language.T("gui.saving"));
             // отправялем на сервер, выход мира, с возможной ошибкой
             locServer.ExitingWorld(error);
+            IsGamePlay = false;
             World.StopWorldDelete();
+            EffectRender = null;
             World = null;
         }
 
@@ -440,7 +462,7 @@ namespace MvkClient
         /// </summary>
         public void GameModeBegin()
         {
-            tickerTps.Start();
+            IsGamePlay = true;
             GameMode();
         }
 
@@ -488,10 +510,6 @@ namespace MvkClient
         /// </summary>
         public void OpenNet() => locServer.OpenNet();
         /// <summary>
-        /// Режим игры
-        /// </summary>
-        public bool IsGamePlay => tickerTps.IsRuning;
-        /// <summary>
         /// Режим игры, режим активного управления 3d
         /// </summary>
         public bool IsGamePlayAction() => IsGamePlay && Screen.IsEmptyScreen();
@@ -503,12 +521,12 @@ namespace MvkClient
         /// <summary>
         /// Дебага, формируется по запросу
         /// </summary>
-        protected void StringDebugTps() => Debug.strClient = (!IsGamePlay || World == null) ? "" : "ping: " + Ping + " ms\r\n" + World.ToStringDebug();
+        private void StringDebugTps() => Debug.strClient = (!IsGamePlay || World == null) ? "" : "ping: " + Ping + " ms\r\n" + World.ToStringDebug();
 
         /// <summary>
-        /// Такт каждого ФПС
+        /// Такт кадра
         /// </summary>
-        private void TickerFps_Tick(object sender, EventArgs e)
+        private void Ticker_Frmae(object sender, EventArgs e)
         {
             try
             {
@@ -521,26 +539,29 @@ namespace MvkClient
             }
             catch (Exception ex)
             {
+                Logger.Crach(ex);
                 throw;
             }
         }
 
         /// <summary>
-        /// Локальный ТПС 20
+        /// Клиентский игровой такт (20)
         /// </summary>
-        private void TickerTps_Tick(object sender, EventArgs e)
+        private void Ticker_Tick(object sender, EventArgs e)
         {
+            if (!IsGamePlay) return;
             try
             {
                 if (!isGamePaused)
                 {
+                    long timeBegin = stopwatch.ElapsedTicks;
                     //Log.Log(TickCounter.ToString());
                     tickCounterClient++;
                     TickCounter++;
 
                     // Обновить игрока
                     Player.Update();
-                    if ((Player.IsDead || Player.Health == 0) && !Screen.IsScreenGameOver())
+                    if ((Player.IsDead /*|| Player.Health == 0*/) && !Screen.IsScreenGameOver())
                     {
                         // GameOver надо указать причину смерти
                         SetScreen(ObjectKey.GameOver, "Boom");
@@ -552,7 +573,7 @@ namespace MvkClient
                     }
                     catch (Exception ex)
                     {
-                        //Log.Error("Server.Error.Tick {0}", ex.Message);
+                        Logger.Crach(ex);
                         throw;
                     }
 
@@ -562,7 +583,7 @@ namespace MvkClient
                     }
                     catch (Exception ex)
                     {
-                        //Log.Error("Server.Error.UpdateEntities {0}", ex.Message);
+                        Logger.Crach(ex);
                         throw;
                     }
 
@@ -583,6 +604,23 @@ namespace MvkClient
                         // Раз в секунду перепинговка
                         TrancivePacket(new PacketC00Ping(Time()));
                     }
+
+                    try
+                    {
+                        // Обновляем эффекты
+                        if (EffectRender != null)
+                        {
+                            EffectRender.UpdateParticles();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Crach(ex);
+                        throw;
+                    }
+
+                    long timeEnd = stopwatch.ElapsedTicks;
+                    GLWindow.UpdateTick((float)(timeEnd - timeBegin) / (float)MvkStatic.TimerFrequency);
                 }
 
                 StringDebugTps();
@@ -594,12 +632,10 @@ namespace MvkClient
             }
             catch (Exception ex)
             {
+                Logger.Crach(ex);
                 throw;
             }
-
         }
-
-
 
         /// <summary>
         /// Изменён GUI скрин
@@ -625,7 +661,7 @@ namespace MvkClient
         /// <summary>
         /// Включить или выключить курсор
         /// </summary>
-        protected void CursorShow(bool bShow)
+        private void CursorShow(bool bShow)
         {
             OnCursorClipBounds(!bShow);
             if ((!bShow && CursorExtensions.IsVisible()) || (bShow && !CursorExtensions.IsVisible()))
@@ -638,6 +674,11 @@ namespace MvkClient
         /// Получить время в милисекундах с момента запуска проекта
         /// </summary>
         public static long Time() => stopwatch.ElapsedMilliseconds;
+
+        /// <summary>
+        /// Получить коэффициент времени от прошлого TPS клиента в диапазоне 0 .. 1
+        /// </summary>
+        public float Interpolation() => ticker.Interpolation;
 
         #region Player
 
@@ -658,25 +699,25 @@ namespace MvkClient
         /// Событие прорисовка кадра
         /// </summary>
         public event EventHandler Draw;
-        protected virtual void OnDraw() => Draw?.Invoke(this, new EventArgs());
+        private void OnDraw() => Draw?.Invoke(this, new EventArgs());
 
         /// <summary>
         /// Событие закрыть
         /// </summary>
         public event EventHandler Closeded;
-        protected virtual void OnCloseded() => Closeded?.Invoke(this, new EventArgs());
+        private void OnCloseded() => Closeded?.Invoke(this, new EventArgs());
 
         /// <summary>
         /// Из потока в основной поток
         /// </summary>
         public event ObjectKeyEventHandler ThreadSend;
-        protected virtual void OnThreadSend(ObjectKeyEventArgs e) => ThreadSend?.Invoke(this, e);
+        private void OnThreadSend(ObjectKeyEventArgs e) => ThreadSend?.Invoke(this, e);
 
         /// <summary>
         /// Событие Курсор только в окне
         /// </summary>
         public event CursorEventHandler CursorClipBounds;
-        protected virtual void OnCursorClipBounds(bool isBounds) => CursorClipBounds?.Invoke(this, new CursorEventArgs(isBounds));
+        private void OnCursorClipBounds(bool isBounds) => CursorClipBounds?.Invoke(this, new CursorEventArgs(isBounds));
 
         #endregion
     }

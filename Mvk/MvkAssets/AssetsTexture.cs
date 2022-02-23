@@ -42,8 +42,10 @@
         /// <summary>
         /// Текстура курицы
         /// </summary>
-        Chicken
-
-
+        Chicken,
+        /// <summary>
+        /// Частицы
+        /// </summary>
+        Particles
     }
 }
