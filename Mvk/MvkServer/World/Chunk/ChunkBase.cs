@@ -50,12 +50,18 @@ namespace MvkServer.World.Chunk
         /// 3 - боковое освещение
         /// 4 - готов может и не надо, хватит 3 
         /// </summary>    
-        public int DoneStatus { get; set; } = 0;
+        //public int DoneStatus { get; set; } = 0;
+        /// <summary>
+        /// Совокупное количество тиков, которые игроки провели в этом чанке 
+        /// </summary>
+        public uint InhabitedTime { get; private set; }
 
         /// <summary>
         /// Последнее обновление чанка в тактах
         /// </summary>
         protected long updateTime;
+
+        
 
         protected ChunkBase() { }
         public ChunkBase(WorldBase worldIn, vec2i pos)
@@ -156,6 +162,8 @@ namespace MvkServer.World.Chunk
             //IsChunkLoaded = true;// LoadinData();
             // Продумать, для клиента запрос для сервера данных чанка, 
             // для сервера чанк пытается загрузиться, если он не создан то создаём
+
+            System.Threading.Thread.Sleep(2);
         }
 
         /// <summary>
@@ -228,6 +236,26 @@ namespace MvkServer.World.Chunk
         }
 
         /// <summary>
+        /// Задать псевдо чанк байтами
+        /// </summary>
+        public void SetBinaryY(byte[] buffer, int sy)
+        {
+            int i = 0;
+            StorageArrays[sy].Clear();
+            for (int y = 0; y < 16; y++)
+            {
+                for (int x = 0; x < 16; x++)
+                {
+                    for (int z = 0; z < 16; z++)
+                    {
+                        StorageArrays[sy].SetData(x, y, z, (ushort)(buffer[i++] | buffer[i++] << 8));
+                        StorageArrays[sy].SetLightsFor(x, y, z, buffer[i++]);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// Обновить время использования чанка
         /// </summary>
         public void UpdateTime() => updateTime = DateTime.Now.Ticks;
@@ -255,6 +283,19 @@ namespace MvkServer.World.Chunk
         {
             if (pos.x >> 4 == 0 && pos.z >> 4 == 0) return StorageArrays[pos.y >> 4].GetEBlock(pos.x, pos.y & 15, pos.z);
             return EnumBlock.Air;
+        }
+
+        /// <summary>
+        /// Задать тип блок по координатам чанка XZ 0..15, Y 0..255
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <param name="enumBlock"></param>
+        public void SetEBlock(vec3i pos, EnumBlock eBlock)
+        {
+            if (pos.x >> 4 == 0 && pos.z >> 4 == 0)
+            {
+                StorageArrays[pos.y >> 4].SetEBlock(pos.x, pos.y & 15, pos.z, eBlock);
+            }
         }
 
         #endregion
@@ -324,6 +365,32 @@ namespace MvkServer.World.Chunk
         }
 
         /// <summary>
+        /// Получить список всех сущностей попадающих в рамку кроме входящей сущности
+        /// </summary>
+        /// <param name="entityIn">входящяя сущность</param>
+        /// <param name="aabb">рамка</param>
+        /// <param name="list">список</param>
+        public void GetEntitiesAABB(EntityBase entityIn, AxisAlignedBB aabb, MapListEntity list)
+        {
+            int minY = Mth.Floor((aabb.Min.y - 2f) / 16f);
+            int maxY = Mth.Floor((aabb.Max.y + 2f) / 16f);
+            minY = Mth.Clamp(minY, 0, ListEntities.Length - 1);
+            maxY = Mth.Clamp(maxY, 0, ListEntities.Length - 1);
+
+            for (int y = minY; y <= maxY; y++)
+            {
+                for (int i = 0; i < ListEntities[y].Count; i++)
+                {
+                    EntityLiving entity = (EntityLiving)ListEntities[y].GetAt(i);
+                    if (entity != null && entity != entityIn && entity.BoundingBox.IntersectsWith(aabb))
+                    {
+                        list.Add(entity);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// Получить количество сущностей в чанке
         /// </summary>
         public int CountEntity()
@@ -345,5 +412,12 @@ namespace MvkServer.World.Chunk
         {
 
         }
+
+        /// <summary>
+        /// Задать совокупное количество тиков, которые игроки провели в этом чанке 
+        /// </summary>
+        public void SetInhabitedTime(uint time) => InhabitedTime = time;
+
+        
     }
 }

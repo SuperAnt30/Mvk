@@ -4,6 +4,8 @@ using MvkServer.Glm;
 using MvkServer.Network.Packets;
 using MvkServer.Network.Packets.Client;
 using MvkServer.Network.Packets.Server;
+using MvkServer.Util;
+using MvkServer.World.Chunk;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
@@ -33,7 +35,7 @@ namespace MvkServer.Network
 
         protected override void ReceivePacketServer(Socket socket, IPacket packet)
         {
-            Task.Factory.StartNew(() =>
+            //Task.Factory.StartNew(() =>
             {
                 switch (GetId(packet))
                 {
@@ -44,12 +46,13 @@ namespace MvkServer.Network
                     case 0x04: Handle04PlayerPosition(socket, (PacketC04PlayerPosition)packet); break;
                     case 0x05: Handle05PlayerLook(socket, (PacketC05PlayerLook)packet); break;
                     case 0x06: Handle06PlayerPosLook(socket, (PacketC06PlayerPosLook)packet); break;
+                    case 0x07: Handle07PlayerDigging(socket, (PacketC07PlayerDigging)packet); break;
                     case 0x0A: Handle0AAnimation(socket, (PacketC0AAnimation)packet); break;
                     case 0x0C: Handle0CPlayerAction(socket, (PacketC0CPlayerAction)packet); break;
                     case 0x15: Handle15ClientSetting(socket, (PacketC15ClientSetting)packet); break;
                     case 0x16: Handle16ClientStatus(socket, (PacketC16ClientStatus)packet); break;
                 }
-            });
+            }//);
         }
 
         /// <summary>
@@ -77,7 +80,7 @@ namespace MvkServer.Network
         /// </summary>
         private void Handle01KeepAlive(Socket socket, PacketC01KeepAlive packet)
         {
-            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
+            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayerSocket(socket);
             if (packet.GetTime() == pingKeySend && entityPlayer != null)
             {
                 entityPlayer.SetPing(lastPingTime);
@@ -89,6 +92,8 @@ namespace MvkServer.Network
         /// </summary>
         private void Handle02LoginStart(Socket socket, PacketC02LoginStart packet)
         {
+
+            //ServerMain.test = new EntityPlayerServer(ServerMain, socket, packet.GetName(), ServerMain.World);
             ServerMain.World.Players.LoginStart(new EntityPlayerServer(ServerMain, socket, packet.GetName(), ServerMain.World));
         }
 
@@ -126,7 +131,7 @@ namespace MvkServer.Network
         /// </summary>
         private void Handle04PlayerPosition(Socket socket, PacketC04PlayerPosition packet)
         {
-            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
+            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayerSocket(socket);
             if (entityPlayer != null)
             {
                 entityPlayer.SetSneakOnGround(packet.IsSneaking(), entityPlayer.OnGround);
@@ -139,7 +144,7 @@ namespace MvkServer.Network
         /// </summary>
         private void Handle05PlayerLook(Socket socket, PacketC05PlayerLook packet)
         {
-            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
+            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayerSocket(socket);
             if (entityPlayer != null)
             {
                 entityPlayer.SetSneakOnGround(packet.IsSneaking(), entityPlayer.OnGround);
@@ -152,7 +157,7 @@ namespace MvkServer.Network
         /// </summary>
         private void Handle06PlayerPosLook(Socket socket, PacketC06PlayerPosLook packet)
         {
-            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
+            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayerSocket(socket);
             if (entityPlayer != null)
             {
                 entityPlayer.SetSneakOnGround(packet.IsSneaking(), entityPlayer.OnGround);
@@ -161,12 +166,38 @@ namespace MvkServer.Network
             }
         }
 
+        private void Handle07PlayerDigging(Socket socket, PacketC07PlayerDigging packet)
+        {
+            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayerSocket(socket);
+            if (entityPlayer != null)
+            {
+                BlockPos blockPos = packet.GetBlockPos();
+                if (packet.GetDigging() == PacketC07PlayerDigging.EnumDigging.Stop)
+                {
+                    // Окончено разрушение, блок сломан
+                    ServerMain.World.SetBlockState(blockPos, World.Block.EnumBlock.Air);
+                    ServerMain.World.SendBlockBreakProgress(entityPlayer.Id, blockPos, -1);
+                }
+                else if (packet.GetDigging() == PacketC07PlayerDigging.EnumDigging.Start)
+                {
+                    // Начато разрушение
+                    entityPlayer.TheItemInWorldManager.DiggingStart(blockPos);
+                    //ServerMain.World.SendBlockBreakProgress(entityPlayer.Id, blockPos, 5);
+                } else
+                {
+                    // Отмена разрушения
+                    entityPlayer.TheItemInWorldManager.DiggingAbout();
+                    //ServerMain.World.SendBlockBreakProgress(entityPlayer.Id, blockPos, -1);
+                }
+            }
+        }
+
         /// <summary>
         /// Пакет анимации игрока
         /// </summary>
         private void Handle0AAnimation(Socket socket, PacketC0AAnimation packet)
         {
-            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
+            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayerSocket(socket);
             if (entityPlayer != null) entityPlayer.SwingItem();
         }
 
@@ -175,7 +206,7 @@ namespace MvkServer.Network
         /// </summary>
         private void Handle0CPlayerAction(Socket socket, PacketC0CPlayerAction packet)
         {
-            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayer(socket);
+            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayerSocket(socket);
             if (entityPlayer != null && packet.GetAction() == PacketC0CPlayerAction.EnumAction.Fall)
             {
                 // Падение с высоты

@@ -263,19 +263,19 @@ namespace MvkClient
                 if (World != null && Player != null && IsGamePlayAction())
                 {
                     World.MouseDown(button);
-                    if (button == MouseButton.Left)
-                    {
-                        vec3 pos = Player.GetPositionFrame();
-                        pos.y += Player.GetEyeHeightFrame();
-                        vec3 dir = Player.RayLook;//.GetLookFrame();
+                    //if (button == MouseButton.Left)
+                    //{
+                    //    //vec3 pos = Player.GetPositionFrame();
+                    //    //pos.y += Player.GetEyeHeightFrame();
+                    //    //vec3 dir = Player.RayLook;//.GetLookFrame();
 
-                        MovingObjectPosition moving = World.RayCast(pos, dir, 10f);
-                        MovingObjectPosition movingE = new MovingObjectPosition();// = World.RayCastEntity();
+                    //    //MovingObjectPosition moving = World.RayCast(pos, dir, 10f);
+                    //    //MovingObjectPosition movingE = new MovingObjectPosition();// = World.RayCastEntity();
 
-                        Player.Action();
-                        // луч
-                        Debug.DStr = moving.ToString() + "\r\n" + movingE.ToString(); // + " --" + string.Format("{0:0.00}",tf);
-                    }
+                    //    Player.RightHandAction();
+                    //    // луч
+                    //   /* Debug.DStr = moving.ToString() + "\r\n" + movingE.ToString(); */// + " --" + string.Format("{0:0.00}",tf);
+                    //}
                 }
             }
         }
@@ -286,6 +286,10 @@ namespace MvkClient
         public void MouseUp(MouseButton button, int x, int y)
         {
             Screen.MouseUp(button, x, y);
+            if (World != null && Player != null && IsGamePlayAction())
+            {
+                World.MouseUp(button);
+            }
         }
 
         /// <summary>
@@ -393,9 +397,6 @@ namespace MvkClient
             {
                 Logger.Crach(ex);
             }
-            //TODO:: надо отсюда начать запускать сервер, который создаст мир, и продублирует на клиенте мир.
-            // Продумать tps только на стороне сервера, но должна быть сенхронизация с клиентом
-            // Синхронизация времени раз в секунду
         }
 
         private void BeginWorld()

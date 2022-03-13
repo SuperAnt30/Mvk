@@ -47,6 +47,16 @@ namespace MvkClient.Renderer.Chunk
         public void ModifiedToRender() => IsModifiedToRender = true;
 
         /// <summary>
+        /// Пометить что надо перерендерить сетку чанка
+        /// </summary>
+        /// <param name="y"></param>
+        public void ModifiedToRender(int y)
+        {
+            IsModifiedToRender = true;
+            MeshDense[y].SetModifiedRender();
+        }
+
+        /// <summary>
         /// Количество полигонов
         /// </summary>
         public int CountPoligon => 0;// MeshAlpha.CountPoligon + MeshDense.CountPoligon;
@@ -75,6 +85,7 @@ namespace MvkClient.Renderer.Chunk
             {
                 if (MeshDense[i].IsModifiedRender)
                 {
+                    
                     int y0 = i * 16;
                     // буфер блоков
                     List<float> bufferCache = new List<float>();
@@ -84,11 +95,15 @@ namespace MvkClient.Renderer.Chunk
                         {
                             for (int x = 0; x < 16; x++)
                             {
+                                 
                                 if (StorageArrays[i].GetEBlock(x, y & 15, z) == EnumBlock.Air) continue;
                                 BlockBase block = GetBlock0(new vec3i(x, y, z));
                                 if (block == null) continue;
 
+
                                 BlockRender blockRender = new BlockRender(this, block);
+
+                                blockRender.DamagedBlocksValue = ((WorldClient)World).GetDamagedBlocksValue(new vec3i(Position.x << 4 | x, y, Position.y << 4 | z));
                                 //float[] buffer = blockRender.RenderMesh();
                                 //bufferCache.AddRange(buffer);
                                 bufferCache.AddRange(blockRender.RenderMesh());

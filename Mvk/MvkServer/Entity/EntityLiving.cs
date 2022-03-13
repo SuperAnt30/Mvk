@@ -152,7 +152,7 @@ namespace MvkServer.Entity
         /// <summary>
         /// Нет нажатий
         /// </summary>
-        public void InputNone() => Input = EnumInput.None;
+        public virtual void InputNone() => Input = EnumInput.None;
         /// <summary>
         /// Добавить нажатие
         /// </summary>
@@ -598,7 +598,7 @@ namespace MvkServer.Entity
         /// <summary>
         /// Размахивает предметом, который держит игрок
         /// </summary>
-        public void SwingItem()
+        public virtual void SwingItem()
         {
             if (!isSwingInProgress || swingProgressInt >= GetArmSwingAnimationEnd() / 2 || swingProgressInt < 0)
             {
@@ -832,12 +832,17 @@ namespace MvkServer.Entity
         /// <summary>
         /// Скорость для режима полёта
         /// </summary>
-        protected virtual void SpeedFly() => Speed = new EntitySpeed(.2f, .2f, .3f, 2.0f);
+        protected virtual void SpeedFly() => Speed = new EntitySpeed(.2f, .2f, .3f, 5.0f);
 
         /// <summary>
         /// Скорость для режима выживания
         /// </summary>
         protected virtual void SpeedSurvival() => Speed = new EntitySpeed(.2f);//3837f);
+
+        /// <summary>
+        /// Возвращает истину, если другие Сущности не должны проходить через эту Сущность
+        /// </summary>
+        public override bool CanBeCollidedWith() => !IsDead;
 
         // Визуализирует частицы сломанных предметов, используя заданный ItemStack
         // renderBrokenItemStack

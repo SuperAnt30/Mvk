@@ -3,6 +3,7 @@ using MvkServer.Glm;
 using MvkServer.Util;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace MvkServer.World.Chunk
 {
@@ -105,36 +106,37 @@ namespace MvkServer.World.Chunk
         /// <summary>
         /// Добавить в список мусор удаляющих чанков для сервера!
         /// </summary>
-        public void DroopedChunkStatusMin(MapListVec2i droppedChunks, Hashtable playersClone)
-        {
-            Hashtable ht = map.Clone() as Hashtable;
-            foreach (ChunkBase chunk in ht.Values)
-            {
-                if (chunk.DoneStatus < 4 && chunk.IsOldTime())
-                {
-                    droppedChunks.Add(chunk.Position);
-                }
-                else
-                {
-                    bool b = false;
-                    foreach (EntityPlayerServer player in playersClone.Values)
-                    {
-                        int radius = player.OverviewChunk + 1;
-                        vec2i min = player.ChunkPosManaged - radius;
-                        vec2i max = player.ChunkPosManaged + radius;
-                        if (chunk.Position.x >= min.x && chunk.Position.x <= max.x && chunk.Position.y >= min.y && chunk.Position.y <= max.y)
-                        {
-                            b = true;
-                            break;
-                        }
-                    }
-                    if (!b)
-                    {
-                        droppedChunks.Add(chunk.Position);
-                    }
-                }
-            }
-        }
+        //public void DroopedChunkStatusMin(MapListVec2i droppedChunks, List<EntityPlayerServer> players)
+        //{
+        //    // TODO::2022-03-01 НЕАКТИВНА!!!
+        //    Hashtable ht = map.Clone() as Hashtable;
+        //    foreach (ChunkBase chunk in ht.Values)
+        //    {
+        //        if (chunk.DoneStatus < 4 && chunk.IsOldTime())
+        //        {
+        //            droppedChunks.Add(chunk.Position);
+        //        }
+        //        else
+        //        {
+        //            bool b = false;
+        //            for (int i = 0; i < players.Count; i++)
+        //            {
+        //                int radius = players[i].OverviewChunk + 1;
+        //                vec2i min = players[i].ChunkPosManaged - radius;
+        //                vec2i max = players[i].ChunkPosManaged + radius;
+        //                if (chunk.Position.x >= min.x && chunk.Position.x <= max.x && chunk.Position.y >= min.y && chunk.Position.y <= max.y)
+        //                {
+        //                    b = true;
+        //                    break;
+        //                }
+        //            }
+        //            if (!b)
+        //            {
+        //                droppedChunks.Add(chunk.Position);
+        //            }
+        //        }
+        //    }
+        //}
 
         /// <summary>
         /// Получить количество

@@ -81,7 +81,6 @@ namespace MvkServer.Entity
         /// Истинно, если после перемещения эта сущность столкнулась с чем-то либо вертикально, либо горизонтально 
         /// </summary>
         public bool IsCollided { get; protected set; } = false;
-
         /// <summary>
         /// Генератор случайных чисел данной сущности
         /// </summary>
@@ -359,5 +358,19 @@ namespace MvkServer.Entity
         /// Вызывается для обновления позиции / логики объекта
         /// </summary>
         public virtual void Update() { }
+
+        /// <summary>
+        /// Возвращает истину, если другие Сущности не должны проходить через эту Сущность
+        /// </summary>
+        public virtual bool CanBeCollidedWith() => false;
+        /// <summary>
+        /// Возвращает true, если этот объект должен толкать и толкать другие объекты при столкновении
+        /// </summary>
+        public virtual bool CanBePushed() => false;
+
+        /// <summary>
+        /// Получить размер границы столкновения 
+        /// </summary>
+        public float GetCollisionBorderSize() => .1f;
     }
 }

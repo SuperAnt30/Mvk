@@ -14,6 +14,7 @@ namespace MvkClient.Renderer.Model
         public vec2 TextureSize { get; protected set; } = new vec2(64f, 64f);
         /// <summary>
         /// Параметр анимация удара руки
+        /// 0 нет удара, при ударе усиление до 1.0  (но по факту я зафиксировал только 0.78)
         /// </summary>
         public float SwingProgress { get; protected set; }
 

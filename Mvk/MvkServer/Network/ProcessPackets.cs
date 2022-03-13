@@ -37,6 +37,7 @@ namespace MvkServer.Network
                     case 0x04: return new PacketC04PlayerPosition();
                     case 0x05: return new PacketC05PlayerLook();
                     case 0x06: return new PacketC06PlayerPosLook();
+                    case 0x07: return new PacketC07PlayerDigging();
                     case 0x0A: return new PacketC0AAnimation();
                     case 0x0C: return new PacketC0CPlayerAction();
                     case 0x15: return new PacketC15ClientSetting();
@@ -63,6 +64,8 @@ namespace MvkServer.Network
                     case 0x13: return new PacketS13DestroyEntities();
                     case 0x14: return new PacketS14EntityMotion();
                     case 0x19: return new PacketS19EntityStatus();
+                    case 0x23: return new PacketS23BlockChange();
+                    case 0x25: return new PacketS25BlockBreakAnim();
 
                     case 0xF0: return new PacketSF0Connection();
                     case 0xF1: return new PacketSF1Disconnect();
@@ -72,7 +75,7 @@ namespace MvkServer.Network
             // Старые
             switch (id)
             {
-                case 0x21: return new PacketS21ChunckData();
+                case 0x21: return new PacketS21ChunkData();
             }
             return null;
         }

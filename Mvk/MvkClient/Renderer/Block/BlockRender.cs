@@ -78,6 +78,8 @@ namespace MvkClient.Renderer.Block
             return buffer.ToArray();
         }
 
+        public int DamagedBlocksValue { get; set; } = -1;
+
         /// <summary>
         /// Получть Сетку стороны блока
         /// </summary>
@@ -90,6 +92,19 @@ namespace MvkClient.Renderer.Block
             {
                 cSide = side;
                 buffer.AddRange(RenderMeshFace());
+                if (DamagedBlocksValue == -1)
+                {
+                    buffer.AddRange(RenderMeshFace());
+                }
+                else
+                {
+                    // TODO::Face 4037
+                    Face face = cFace;
+                    cFace = new Face(side, 4032 + DamagedBlocksValue, true, cFace.GetColor());
+                    buffer.AddRange(RenderMeshFace());
+                    cFace = face;
+                }
+
             }
         }
 
@@ -106,7 +121,7 @@ namespace MvkClient.Renderer.Block
         {
             float u1 = (cFace.GetNumberTexture() % 64) * 0.015625f;// 0.015625f;
             float v2 = cFace.GetNumberTexture() / 64 * 0.015625f;
-            vec4 color = (Block.IsGrass && cFace.GetIsColor()) ? new vec4(0.56f, 0.73f, 0.35f, 1f) : new vec4(1f);
+            vec4 color = cFace.GetIsColor() ? new vec4(cFace.GetColor(), 1f) : new vec4(1f);
             float l = 1f - LightPole();
             color.x -= l; if (color.x < 0) color.x = 0;
             color.y -= l; if (color.y < 0) color.y = 0;

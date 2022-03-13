@@ -12,5 +12,10 @@
         {
             Boxes = new Box[] { new Box(0) };
         }
+
+        /// <summary>
+        /// Значение для разрушения в тактах
+        /// </summary>
+        public override int GetDamageValue() => 25;
     }
 }

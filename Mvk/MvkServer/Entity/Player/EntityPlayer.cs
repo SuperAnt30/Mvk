@@ -16,7 +16,11 @@ namespace MvkServer.Entity.Player
         /// <summary>
         /// Обзор чанков
         /// </summary>
-        public int OverviewChunk { get; protected set; } = MvkGlobal.OVERVIEW_CHUNK_START;
+        public int OverviewChunk { get; protected set; } = 0;// MvkGlobal.OVERVIEW_CHUNK_START;
+        /// <summary>
+        /// Обзор чанков прошлого такта
+        /// </summary>
+        public int OverviewChunkPrev { get; protected set; } = 0;// MvkGlobal.OVERVIEW_CHUNK_START;
         /// <summary>
         /// Массив по длинам используя квадратный корень для всей видимости
         /// </summary>
@@ -50,12 +54,12 @@ namespace MvkServer.Entity.Player
         /// <summary>
         /// Задать обзор чанков у клиента
         /// </summary>
-        public void SetOverviewChunk(int overviewChunk, int plusDistSqrt)
-        {
-            OverviewChunk = overviewChunk;
-            DistSqrt = MvkStatic.GetSqrt(overviewChunk + plusDistSqrt);
-           // UpProjection(); // Fix Это была вроде проблема когда не загружалась сеть
-        }
+        public virtual void SetOverviewChunk(int overviewChunk) => OverviewChunk = overviewChunk;
+
+        /// <summary>
+        /// Равны ли обзоры чанков между тактами
+        /// </summary>
+        public bool SameOverviewChunkPrev() => OverviewChunk == OverviewChunkPrev;
 
         /// <summary>
         /// Обновить перспективу камеры

@@ -36,6 +36,10 @@ namespace MvkServer.World.Block
         /// Может ли блок сталкиваться
         /// </summary>
         public bool IsCollidable { get; protected set; } = true;
+        /// <summary>
+        /// Цвет блока по умолчани, биом потом заменит
+        /// </summary>
+       // public vec3 Color { get; protected set; } = new vec3(1);
 
         /// <summary>
         /// Ограничительная рамка занимает весь блок, для оптимизации, без проверки AABB блока
@@ -78,6 +82,11 @@ namespace MvkServer.World.Block
             }
             return false;
         }
+
+        /// <summary>
+        /// Значение для разрушения в тактах
+        /// </summary>
+        public virtual int GetDamageValue() => 0;
 
         /// <summary>
         /// Строка

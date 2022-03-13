@@ -87,52 +87,47 @@ namespace MvkServer.World
         /// </summary>
         public virtual void UpdateEntities()
         {
-            profiler.StartSection("EntitiesRemove");
+            // колекция для удаления
+            MapListEntity entityRemove = new MapListEntity();
 
-            // TODO:: повтор?!!! #140
+            profiler.StartSection("EntitiesUnloadedList");
+
+            // Выгружаем сущности которые имеются в списке выгрузки
             LoadedEntityList.RemoveRange(UnloadedEntityList);
-
-            for (int i = 0; i < UnloadedEntityList.Count; i++)
-            {
-                EntityLiving entity = (EntityLiving)UnloadedEntityList.GetAt(i);
-                if (entity.AddedToChunk && ChunkPr.IsChunk(entity.PositionChunk))
-                {
-                    GetChunk(entity.PositionChunk).RemoveEntity(entity);
-                }
-                OnEntityRemoved(entity);
-            }
-
+            entityRemove.AddRange(UnloadedEntityList);
             UnloadedEntityList.Clear();
 
             profiler.EndStartSection("EntityTick");
-
-            // колекция для удаления
-            MapListEntity entityRemove = new MapListEntity();
+            
+            // Пробегаем по всем сущностям и обрабатываеи их такт
             for (int i = 0; i < LoadedEntityList.Count; i++)
             {
                 EntityLiving entity = (EntityLiving)LoadedEntityList.GetAt(i);
 
-                if (!entity.IsDead)
+                if (entity != null)
                 {
-                    try
+                    if (!entity.IsDead)
                     {
-                        UpdateEntity(entity);
+                        try
+                        {
+                            UpdateEntity(entity);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Crach(ex);
+                            throw;
+                        }
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        Logger.Crach(ex);
-                        throw;
+                        entityRemove.Add(entity);
                     }
-                }
-                else 
-                {
-                    entityRemove.Add(entity);
                 }
             }
 
             profiler.EndStartSection("EntityRemove");
 
-            // Удаляем
+            // Удаляем 
             while (entityRemove.Count > 0)
             {
                 EntityLiving entity = (EntityLiving)entityRemove.FirstRemove();
@@ -149,7 +144,7 @@ namespace MvkServer.World
 
         protected virtual void UpdateEntity(EntityLiving entity)
         {
-            vec2i posCh = entity.GetChunkPos();
+            
             //byte var5 = 32;
 
             // Проверка о наличии соседних чанков
@@ -160,6 +155,8 @@ namespace MvkServer.World
                     entity.TicksExistedMore();
                     entity.Update();
                 }
+
+                vec2i posCh = entity.GetChunkPos();
 
                 //posCh = entity.GetChunkPos();
                 float y = entity.GetChunkY(); 
@@ -227,7 +224,6 @@ namespace MvkServer.World
 
             if (entity is EntityPlayer) flagSpawn = true;
 
-
             //ChunkBase chunk = null;
             bool isChunk = false;
             //if (this is WorldServer)
@@ -253,8 +249,14 @@ namespace MvkServer.World
                     //UpdateAllPlayersSleepingFlag();
                 }
 
-                //if (!isChunk)
-                ChunkBase chunk = GetChunk(posCh);
+                ChunkBase chunk;
+                //if (!isChunk)\
+                //if (this is WorldServer worldServer)
+                //{
+                //    chunk = worldServer.ChunkPrServ.LoadChunk(posCh);
+                //} else {
+                    chunk = GetChunk(posCh);
+                //}
                 if (chunk != null) chunk.AddEntity(entity);
                 else
                 {
@@ -287,6 +289,10 @@ namespace MvkServer.World
         /// Получить чанк по координатам чанка
         /// </summary>
         public ChunkBase GetChunk(vec2i pos) => ChunkPr.GetChunk(pos);
+        /// <summary>
+        /// Проверить наличие чанка
+        /// </summary>
+        //public bool IsChunk(vec2i pos) => ChunkPr.IsChunk(pos);
 
         /// <summary>
         /// Получить блок
@@ -309,14 +315,35 @@ namespace MvkServer.World
             }
             return Blocks.GetAir(pos);
         }
+        /// <summary>
+        /// Получить тип блока
+        /// </summary>
+        /// <param name="bpos">глобальная позиция блока</param>
+        public EnumBlock GetEBlock(BlockPos bpos) => GetEBlock(bpos.Position);
+        /// <summary>
+        /// Получить тип блока
+        /// </summary>
+        /// <param name="pos">глобальная позиция блока</param>
+        public EnumBlock GetEBlock(vec3i pos)
+        {
+            if (pos.y >= 0 && pos.y <= 255)
+            {
+                ChunkBase chunk = GetChunk(new vec2i(pos.x >> 4, pos.z >> 4));
+                if (chunk != null)
+                {
+                    return chunk.GetEBlock(new vec3i(pos.x & 15, pos.y, pos.z & 15));
+                }
+            }
+            return EnumBlock.Air;
+        }
 
         /// <summary>
-        /// Пересечения лучей с визуализируемой поверхностью
+        /// Пересечения лучей с визуализируемой поверхностью для блока
         /// </summary>
         /// <param name="a">точка от куда идёт лучь</param>
         /// <param name="dir">вектор луча</param>
         /// <param name="maxDist">максимальная дистания</param>
-        public MovingObjectPosition RayCast(vec3 a, vec3 dir, float maxDist)
+        public MovingObjectPosition RayCastBlock(vec3 a, vec3 dir, float maxDist)
         {
             float px = a.x;
             float py = a.y;
@@ -373,14 +400,7 @@ namespace MvkServer.World
                     if (steppedIndex == 1) norm.y = -stepy;
                     if (steppedIndex == 2) norm.z = -stepz;
 
-                    //if (EntityDis != null)
-                    //{
-                    //    if (t < EntityDis.Distance)
-                    //    {
-                            return new MovingObjectPosition(block, iend, norm, end);
-                    //    }
-                    //    return new MovingObjectPosition(EntityDis.Entity);
-                    //}
+                    return new MovingObjectPosition(block, iend, norm, end);
                 }
                 if (txMax < tyMax)
                 {
@@ -419,5 +439,65 @@ namespace MvkServer.World
             }
             return new MovingObjectPosition();
         }
+
+        /// <summary>
+        /// Сменить блок
+        /// </summary>
+        /// <param name="blockPos">позици блока</param>
+        /// <param name="eBlock">тип блока</param>
+        /// <returns>true смена была</returns>
+        public virtual bool SetBlockState(BlockPos blockPos, EnumBlock eBlock)
+        {
+            ChunkBase chunk = ChunkPr.GetChunk(blockPos.GetPositionChunk());
+            if (chunk != null)
+            {
+                chunk.SetEBlock(blockPos.GetPosition0(), eBlock);
+                MarkBlockForUpdate(blockPos);
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Отметить блок для обновления
+        /// </summary>
+        protected virtual void MarkBlockForUpdate(BlockPos blockPos) { }
+
+        /// <summary>
+        /// Получает все объекты в указанном AABB, кроме переданного в него. Аргументы: entityToExclude, aabb 
+        /// </summary>
+        /// <param name="entityToExclude"></param>
+        /// <param name="aabb"></param>
+        /// <returns></returns>
+        public MapListEntity GetEntitiesWithinAABBExcludingEntity(EntityBase entity, AxisAlignedBB aabb)
+        {
+            MapListEntity list = new MapListEntity();
+            int minX = Mth.Floor((aabb.Min.x - 2f) / 16f);
+            int maxX = Mth.Floor((aabb.Max.x + 2f) / 16f);
+            int minZ = Mth.Floor((aabb.Min.z - 2f) / 16f);
+            int maxZ = Mth.Floor((aabb.Max.z + 2f) / 16f);
+
+            for (int x = minX; x <= maxX; x++)
+            {
+                for (int z = minZ; z <= maxZ; z++)
+                {
+                    ChunkBase chunk = GetChunk(new vec2i(x, z));
+                    if (chunk != null)
+                    {
+                        chunk.GetEntitiesAABB(entity, aabb, list);
+                    }
+                }
+            }
+
+            return list;
+        }
+
+        /// <summary>
+        /// Отправить процесс разрущения блока
+        /// </summary>
+        /// <param name="breakerId">id сущности который ломает блок</param>
+        /// <param name="pos">позиция блока</param>
+        /// <param name="progress">сколько тактом блок должен разрушаться</param>
+        public virtual void SendBlockBreakProgress(int breakerId, BlockPos pos, int progress) { }
     }
 }

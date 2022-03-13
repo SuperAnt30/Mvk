@@ -147,9 +147,10 @@ namespace MvkClient.Gui
             if (where == EnumScreenKey.InGameMenu && Setting.OverviewChunk != sliderChunk.Value)
             {
                 // Отправить запрос серверу на смену опций
-                ClientMain.World.ChunkPrClient.ClearAllChunks(true);
+                ClientMain.World.ChunkPrClient.SetOverviewChunk();
+                //ClientMain.World.ChunkPrClient.ClearAllChunks(true);
                 //ClientMain.TrancivePacket(new PacketC13ClientSetting(sliderChunk.Value));
-                ClientMain.Player.SetOverviewChunk(sliderChunk.Value, 0);
+                ClientMain.Player.SetOverviewChunk(sliderChunk.Value);
             }
 
             Setting.OverviewChunk = sliderChunk.Value;

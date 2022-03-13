@@ -61,7 +61,7 @@ namespace MvkServer.World.Block
 
         public Box(int numberTexture) => Faces = new Face[] { new Face(Pole.All, numberTexture) };
 
-        public Box(int numberTexture, bool isColor) => Faces = new Face[] { new Face(Pole.All, numberTexture, isColor) };
+        public Box(int numberTexture, bool isColor, vec3 color) => Faces = new Face[] { new Face(Pole.All, numberTexture, isColor, color) };
 
         public Box(vec3 from, vec3 to, vec2 uvf, vec2 uvt, Pole side, int numberTexture)
         {

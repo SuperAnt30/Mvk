@@ -11,7 +11,7 @@ namespace MvkServer.Util
         private string fileName;
         private string log;
         private string path;
-        private static object locker = new object();
+        //private static object locker = new object();
         private bool isEmpty = true;
 
         public Logger() { }
@@ -54,15 +54,23 @@ namespace MvkServer.Util
             Save(logCache);
         }
 
+        
         protected void Save(string log)
         {
             if (log != "")
             {
-                lock (locker)
+                try
                 {
                     using (StreamWriter w = File.AppendText(path + fileName))
                     {
-                        w.WriteAsync(log);
+                        w.Write(log);
+                    }
+                }
+                catch
+                {
+                    using (StreamWriter w = File.AppendText(path + "ERROR_" + fileName))
+                    {
+                        w.Write(log);
                     }
                 }
             }

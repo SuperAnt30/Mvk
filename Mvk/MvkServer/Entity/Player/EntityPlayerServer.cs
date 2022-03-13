@@ -1,4 +1,5 @@
 ﻿using MvkServer.Glm;
+using MvkServer.Management;
 using MvkServer.Network;
 using MvkServer.Network.Packets;
 using MvkServer.Network.Packets.Server;
@@ -31,9 +32,19 @@ namespace MvkServer.Entity.Player
         /// </summary>
         public MapListVec2i LoadedChunks { get; protected set; } = new MapListVec2i();
         /// <summary>
+        /// Список чанков которые нужно проверить на загрузку или генерацию,
+        /// должен формироваться по дистанции от игрока
+        /// </summary>
+        public MapListVec2i LoadingChunks { get; protected set; } = new MapListVec2i();
+        /// <summary>
         /// Пинг клиента в мс
         /// </summary>
         public int Ping { get; protected set; } = -1;
+
+        /// <summary>
+        /// ItemInWorldManager, принадлежащий этому игроку
+        /// </summary>
+        public ItemInWorldManager TheItemInWorldManager { get; private set; }
 
         private Profiler profiler;
 
@@ -42,16 +53,19 @@ namespace MvkServer.Entity.Player
         /// </summary>
         private MapListId destroyedItemsNetCache = new MapListId();
 
+        //private List<vec2i> LoadingChunks = new List<vec2i>();
+
         // должен быть список чанков которые может видеть игрок
         // должен быть список чанков которые надо догрузить игроку
 
-        public EntityPlayerServer(Server server, Socket socket, string name, WorldBase world) : base(world)
+        public EntityPlayerServer(Server server, Socket socket, string name, WorldServer world) : base(world)
         {
             ServerMain = server;
             SocketClient = socket;
             Name = name;
             UUID = GetHash(name);
             profiler = new Profiler(server.Log);
+            TheItemInWorldManager = new ItemInWorldManager(world, this);
         }
 
         /// <summary>
@@ -88,6 +102,8 @@ namespace MvkServer.Entity.Player
         {
             // Tут base.Update не надо, так-как это обрабатывается на клиенте, 
             // тут отправление перемещение игрокам если оно надо
+            TheItemInWorldManager.UpdateBlockRemoving();
+
 
             // если нет хп обновлям смертельную картинку
             if (Health <= 0f) DeathUpdate();
@@ -102,52 +118,59 @@ namespace MvkServer.Entity.Player
                 }
                 SendPacket(new PacketS13DestroyEntities(ids.ToArray()));
             }
+
+            UpdatePlayer();
         }
 
         /// <summary>
         /// Вызывается только на сервере у игроков для передачи перемещения
         /// </summary>
-        public void UpdatePlayer()
+        private void UpdatePlayer()
         {
             try
             {
                 int i = 0;
                 pingChunk--;
 
+                List<vec2i> loadedNull = new List<vec2i>();
                 // TODO::2022-02-08 протестировать корректность загрузки чанков по пингу, именно по сети!
                 while (LoadedChunks.Count > 0 && i < MvkGlobal.COUNT_PACKET_CHUNK_TPS && pingChunk <= 0)
                 {
                     profiler.StartSection("LoadChunk");
                     // передача пакетов чанков по сети
                     vec2i pos = LoadedChunks.FirstRemove();
-                    ChunkBase chunk = ServerMain.World.ChunkPrServ.LoadChunk(pos);
+                    ChunkBase chunk = World.GetChunk(pos);
+                        //ServerMain.World.ChunkPrServ.LoadChunk(pos);
 
-                    if (chunk != null)
+                    // NULL по сути не должен быть!!!
+                    if (chunk != null && chunk.IsChunkLoaded)
                     {
                         profiler.EndStartSection("PacketS21ChunckData");
-                        PacketS21ChunckData packet = new PacketS21ChunckData(chunk);
+                        PacketS21ChunkData packet = new PacketS21ChunkData(chunk);
                         profiler.EndStartSection("ResponsePacket");
                         SendPacket(packet);
-
-
-                        // TODO:: это надо заменить!!! На трекер
-                        //EntityLiving[] entities = chunk.GetEntities();
-                        //if (entities.Length > 0)
-                        //{
-                        //    for (int e = 0; e < entities.Length; e++)
-                        //    {
-                        //        ServerMain.ResponsePacket(SocketClient, new PacketS0CSpawnPlayer((EntityPlayer)entities[e]));
-                        //    }
-                        //}
 
                         i++;
                         // TODO:: Нужен алгорит загрузки чанков по пингу
                         pingChunk = Ping > 50 ? 10 : 0;
+                    } else
+                    {
+                        loadedNull.Add(pos);
                     }
                     profiler.EndSection();
                 }
 
-                if (ActionChanged.HasFlag(EnumActionChanged.Position))
+                // Если чанки не попали, мы возращаем в массив
+                int count = loadedNull.Count;
+                if (count > 0) {
+                    count--;
+                    for (int j = count; j >= 0; j--)
+                    {
+                        LoadedChunks.Insert(loadedNull[j]);
+                    }
+                }
+
+                if (ActionChanged.HasFlag(EnumActionChanged.Position) || !SameOverviewChunkPrev())
                 {
                     //ServerMain.World.Players.ResponsePacketAll(
                     //    new PacketB20Player().PositionYawPitch(Position, RotationYawHead, RotationYaw, RotationPitch, IsSneaking, OnGround, Id),
@@ -159,11 +182,10 @@ namespace MvkServer.Entity.Player
                     profiler.EndSection();
                     // isMotionServer = false;
                 }
-
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                ServerMain.Log.Error("EntityPlayerServer.Update {0}", e.Message);
+                Logger.Crach(ex);
                 throw;
             }
         }
@@ -184,10 +206,20 @@ namespace MvkServer.Entity.Player
         }
 
         /// <summary>
+        /// Обновить обзор прошлого такта
+        /// </summary>
+        public void UpOverviewChunkPrev()
+        {
+            OverviewChunkPrev = OverviewChunk;
+            DistSqrt = MvkStatic.GetSqrt(OverviewChunk + 1);
+        }
+
+        /// <summary>
         /// Отправить сетевой пакет этому игроку
         /// </summary>
         public void SendPacket(IPacket packet) => ServerMain.ResponsePacket2(SocketClient, packet);
 
+        
 
         public override string ToString()
         {

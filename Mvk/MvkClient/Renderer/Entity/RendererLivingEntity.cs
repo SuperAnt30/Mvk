@@ -25,7 +25,7 @@ namespace MvkClient.Renderer.Entity
             this.model = model;
         }
 
-        public void DoRender(EntityLiving entity, vec3 offset, float timeIndex)
+        public virtual void DoRender(EntityLiving entity, vec3 offset, float timeIndex)
         {
             vec3 pos = entity.GetPositionFrame(timeIndex);
             float yawBody = entity.GetRotationYawBodyFrame(timeIndex);
@@ -53,9 +53,10 @@ namespace MvkClient.Renderer.Entity
                 GLRender.PushMatrix();
                 {
                     RotateCorpse(entity, timeIndex);
-                    GLRender.Scale(scale, scale, scale);
-                    GLRender.Translate(0, -1.507f, 0);
                    
+                    GLRender.Scale(scale);
+                    GLRender.Translate(0, -1.508f, 0);
+
                     GLRender.Rotate(glm.degrees(yawBody), 0, 1, 0);
                     yawBody -= yawHead;
 

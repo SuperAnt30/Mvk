@@ -11,6 +11,15 @@ namespace MvkServer.Util
         /// Добавить вектор
         /// </summary>
         public void Add(vec2i pos) => base.Add(pos);
+
+        public void Insert(vec2i pos)
+        {
+            if (!map.ContainsKey(pos))
+            {
+                map.Add(pos, true);
+                list.Insert(0, pos);
+            }
+        }
         /// <summary>
         /// Удалить вектор
         /// </summary>

@@ -108,6 +108,7 @@
     <Compile Include="Renderer\Entity\RendererLivingEntity.cs" />
     <Compile Include="Renderer\Entity\RenderManager.cs" />
     <Compile Include="Renderer\Entity\RenderChicken.cs" />
+    <Compile Include="Renderer\Entity\RenderHead.cs" />
     <Compile Include="Renderer\Entity\RenderPlayer.cs" />
     <Compile Include="Renderer\Model\ModelBase.cs" />
     <Compile Include="Renderer\Model\ModelBox.cs" />
@@ -141,6 +142,7 @@
     <Compile Include="Gui\ScreenEvent.cs" />
     <Compile Include="Util\CursorEvent.cs" />
     <Compile Include="Util\CursorExtensions.cs" />
+    <Compile Include="Util\DestroyBlockProgress.cs" />
     <Compile Include="Util\Frustum.cs" />
     <Compile Include="Util\FrustumStruct.cs" />
     <Compile Include="Util\ObjectKeyEvent.cs" />

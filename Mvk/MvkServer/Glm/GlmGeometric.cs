@@ -41,6 +41,8 @@ namespace MvkServer.Glm
             return Mth.Sqrt(var2 * var2 + var4 * var4 + var6 * var6);
         }
 
+        
+
         /// <summary>
         /// Получить растояние вектора
         /// </summary>

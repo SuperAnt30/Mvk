@@ -42,7 +42,7 @@ namespace MvkServer.World.Chunk
         /// <summary>
         /// Получить чанк по координатам чанка
         /// </summary>
-        public ChunkBase GetChunk(vec2i pos) => chunkMapping.Get(pos);
+        public virtual ChunkBase GetChunk(vec2i pos) => chunkMapping.Get(pos);
 
         /// <summary>
         /// Количество чанков в кэше
@@ -59,7 +59,7 @@ namespace MvkServer.World.Chunk
             List<vec3i> list = new List<vec3i>();
             foreach (ChunkBase chunk in ht.Values)
             {
-                list.Add(new vec3i(chunk.Position.x, chunk.DoneStatus, chunk.Position.y));
+                list.Add(new vec3i(chunk.Position.x, 4, chunk.Position.y));
             }
             return list;
         }

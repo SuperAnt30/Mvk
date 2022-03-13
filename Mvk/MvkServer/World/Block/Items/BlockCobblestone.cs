@@ -97,19 +97,19 @@ namespace MvkServer.World.Block.Items
             vec3 pos = Position.ToVec3();
             vec3 min, max;
 
-            AxisAlignedBB[] aabbs = new AxisAlignedBB[1];
-            min = new vec3(0);
-            max = new vec3(1, MvkStatic.Xy[8], 1);
-            aabbs[0] = new AxisAlignedBB(pos + min, pos + max);
-
-
-            //AxisAlignedBB[] aabbs = new AxisAlignedBB[2];
-            //min = new vec3(MvkStatic.Xy[1], 0, MvkStatic.Xy[1]);
-            //max = new vec3(MvkStatic.Xy[15], MvkStatic.Xy[8], MvkStatic.Xy[15]);
+            //AxisAlignedBB[] aabbs = new AxisAlignedBB[1];
+            //min = new vec3(0);
+            //max = new vec3(1, MvkStatic.Xy[8], 1);
             //aabbs[0] = new AxisAlignedBB(pos + min, pos + max);
-            //min = new vec3(MvkStatic.Xy[1], MvkStatic.Xy[9], MvkStatic.Xy[1]);
-            //max = new vec3(MvkStatic.Xy[8], MvkStatic.Xy[16], MvkStatic.Xy[15]);
-            //aabbs[1] = new AxisAlignedBB(pos + min, pos + max);
+
+
+            AxisAlignedBB[] aabbs = new AxisAlignedBB[2];
+            min = new vec3(MvkStatic.Xy[1], 0, MvkStatic.Xy[1]);
+            max = new vec3(MvkStatic.Xy[15], MvkStatic.Xy[8], MvkStatic.Xy[15]);
+            aabbs[0] = new AxisAlignedBB(pos + min, pos + max);
+            min = new vec3(MvkStatic.Xy[1], MvkStatic.Xy[8], MvkStatic.Xy[1]);
+            max = new vec3(MvkStatic.Xy[8], MvkStatic.Xy[16], MvkStatic.Xy[15]);
+            aabbs[1] = new AxisAlignedBB(pos + min, pos + max);
 
             //AxisAlignedBB[] aabbs = new AxisAlignedBB[2];
             //min = new vec3(0);

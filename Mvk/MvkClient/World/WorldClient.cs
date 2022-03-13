@@ -10,6 +10,7 @@ using MvkServer.Entity;
 using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World;
+using MvkServer.World.Block;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -74,6 +75,9 @@ namespace MvkClient.World
         /// </summary>
         private readonly object locker = new object();
 
+
+        private Hashtable damagedBlocks = new Hashtable();
+
         public WorldClient(Client client) : base()
         {
             ChunkPr = new ChunkProviderClient(this);
@@ -82,7 +86,7 @@ namespace MvkClient.World
             WorldRender = new WorldRenderer(this);
             RenderEntityManager = new RenderManager(this);
             ClientMain.PlayerCreate(this);
-            ClientMain.Player.SetOverviewChunk(Setting.OverviewChunk, 0);
+            ClientMain.Player.SetOverviewChunk(Setting.OverviewChunk);
             Key = new Keyboard(this);
         }
 
@@ -200,7 +204,44 @@ namespace MvkClient.World
             return entity;
         }
 
-        public void MouseDown(MouseButton button) { }
+        public void MouseDown(MouseButton button)
+        {
+            if (button == MouseButton.Left)
+            {
+                ClientMain.Player.HandAction();
+            }
+        }
+
+        /// <summary>
+        /// Отпущена клавиша мышки
+        /// </summary>
+        public void MouseUp(MouseButton button)
+        {
+            if (button == MouseButton.Left)
+            {
+                ClientMain.Player.UndoHandAction();
+            }
+        }
+
+    /// <summary>
+    /// Сменить блок
+    /// </summary>
+    /// <param name="blockPos">позици блока</param>
+    /// <param name="eBlock">тип блока</param>
+    /// <returns>true смена была</returns>
+    public override bool SetBlockState(BlockPos blockPos, EnumBlock eBlock)
+        {
+            if (base.SetBlockState(blockPos, eBlock))
+            {
+                ChunkRender chunk = ChunkPrClient.GetChunkRender(blockPos.GetPositionChunk());
+                if (chunk != null)
+                {
+                    chunk.ModifiedToRender(blockPos.GetPositionChunkY());
+                    return true;
+                }
+            }
+            return false;
+        }
 
         /// <summary>
         /// Получить попадает ли в луч сущность, выбрать самую близкую
@@ -226,6 +267,55 @@ namespace MvkClient.World
                 }
             }
             return moving;
+        }
+
+        public int GetDamagedBlocksValue(vec3i pos)
+        {
+            if (damagedBlocks.Count > 0)
+            {
+                foreach(DestroyBlockProgress destroy in damagedBlocks.Values)
+                {
+                    if (pos.Equals(destroy.Position.Position))
+                    {
+                        return destroy.PartialBlockProgress;
+                    }
+                }
+            }
+            return -1;
+        }
+
+
+        /// <summary>
+        /// Отправить процесс разрущения блока
+        /// </summary>
+        /// <param name="breakerId">id сущности который ломает блок</param>
+        /// <param name="blockPos">позиция блока</param>
+        /// <param name="progress">сколько тактом блок должен разрушаться</param>
+        public override void SendBlockBreakProgress(int breakerId, BlockPos blockPos, int progress)
+        {
+            if (progress >= 0 && progress < 10)
+            {
+                DestroyBlockProgress destroy;
+                if (damagedBlocks.ContainsKey(breakerId))
+                {
+                    destroy = (DestroyBlockProgress)damagedBlocks[breakerId];
+                } else
+                {
+                    destroy = new DestroyBlockProgress(blockPos);
+                    damagedBlocks.Add(breakerId, destroy);
+                }
+                destroy.SetPartialBlockDamage(progress);
+                destroy.SetCloudUpdateTick(ClientMain.TickCounter);
+                // Частицы
+                vec3 pos = blockPos.ToVec3() + new vec3(.5f);
+                SpawnParticle(EnumParticle.Digging, pos + new vec3((Rand.Next(16) - 8) / 16f, (Rand.Next(12) - 6) / 16f, (Rand.Next(16) - 8) / 16f), new vec3(0));
+            }
+            else
+            {
+                damagedBlocks.Remove(breakerId);
+            }
+            ChunkRender chunk = ChunkPrClient.GetChunkRender(blockPos.GetPositionChunk());
+            chunk.ModifiedToRender(blockPos.GetPositionChunkY());
         }
 
         #region Entity

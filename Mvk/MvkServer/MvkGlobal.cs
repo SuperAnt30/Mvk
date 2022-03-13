@@ -8,7 +8,7 @@
         /// <summary>
         /// При загрузке мира, сколько загружается обзор мира
         /// </summary>
-        public const int OVERVIEW_CHUNK_START = 5;//12;
+        public const int OVERVIEW_CHUNK_START = 5;
 
         /// <summary>
         /// Время чистки чанков на сервере и клиенте, в тактах
@@ -20,8 +20,8 @@
         /// <summary>
         /// Визуальная отладка прогрузки чанков
         /// </summary>
-        //public const bool IS_DRAW_DEBUG_CHUNK = true;
-        public const bool IS_DRAW_DEBUG_CHUNK = false;
+        public const bool IS_DRAW_DEBUG_CHUNK = true;
+        //public const bool IS_DRAW_DEBUG_CHUNK = false;
         /// <summary>
         /// Активация имитации задержки локальной сети
         /// </summary>

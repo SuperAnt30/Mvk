@@ -95,5 +95,11 @@ namespace MvkServer.Util
             return false;
         }
 
+        /// <summary>
+        /// Возвращает значение первого параметра, ограниченное нижним и верхним пределами, 
+        /// заданными вторым и третьим параметрами. 
+        /// </summary>
+        public static int Clamp(int param, int min, int max) => param < min ? min : (param > max ? max : param);
+
     }
 }

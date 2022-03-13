@@ -55,7 +55,9 @@ namespace MvkClient.Network
                         case 0x13: Handle13DestroyEntities((PacketS13DestroyEntities)packet); break;
                         case 0x14: Handle14EntityMotion((PacketS14EntityMotion)packet); break;
                         case 0x19: Handle19EntityStatus((PacketS19EntityStatus)packet); break;
-                        case 0x21: Packet21((PacketS21ChunckData)packet); break;
+                        case 0x21: Packet21((PacketS21ChunkData)packet); break;
+                        case 0x23: Handle23BlockChange((PacketS23BlockChange)packet); break;
+                        case 0x25: Handle25BlockBreakAnim((PacketS25BlockBreakAnim)packet); break;
 
                         case 0xF1: HandleF1Disconnect((PacketSF1Disconnect)packet); break;
 
@@ -158,7 +160,7 @@ namespace MvkClient.Network
             //entityChicken.SetEntityId(101);
             //entityChicken.SetPosition(packet.GetPos() + new vec3(3, 0, 0));
             //ClientMain.World.SpawnEntityInWorld(entityChicken);
-            //entity.FlagSpawn = false;
+           // entity.FlagSpawn = false;
         }
 
         /// <summary>
@@ -232,7 +234,17 @@ namespace MvkClient.Network
             }
         }
 
-        private void Packet21(PacketS21ChunckData packet) 
+        private void Handle23BlockChange(PacketS23BlockChange packet)
+        {
+            ClientMain.World.SetBlockState(packet.GetBlockPos(), packet.GetDigging());
+        }
+
+        private void Handle25BlockBreakAnim(PacketS25BlockBreakAnim packet)
+        {
+            ClientMain.World.SendBlockBreakProgress(packet.GetBreakerId(), packet.GetBlockPos(), packet.GetProgress());
+        }
+
+        private void Packet21(PacketS21ChunkData packet) 
             => ClientMain.World.ChunkPrClient.PacketChunckData(packet);
 
         #region ConnectionDisconnect

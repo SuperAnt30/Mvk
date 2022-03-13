@@ -45,8 +45,11 @@
     <Compile Include="Entity\EntityLivingHead.cs" />
     <Compile Include="Entity\EnumEntities.cs" />
     <Compile Include="Entity\Mob\EntityChicken.cs" />
+    <Compile Include="Management\ItemInWorldManager.cs" />
+    <Compile Include="Management\PlayerInstance.cs" />
     <Compile Include="Network\Packets\Client\PacketC01KeepAlive.cs" />
     <Compile Include="Network\Packets\Client\PacketC02LoginStart.cs" />
+    <Compile Include="Network\Packets\Client\PacketC07PlayerDigging.cs" />
     <Compile Include="Network\Packets\Client\PacketC0AAnimation.cs" />
     <Compile Include="Network\Packets\Client\PacketC04PlayerPosition.cs" />
     <Compile Include="Network\Packets\Client\PacketC15ClientSetting.cs" />
@@ -69,6 +72,8 @@
     <Compile Include="Network\Packets\Server\PacketS02JoinGame.cs" />
     <Compile Include="Network\Packets\Server\PacketS08PlayerPosLook.cs" />
     <Compile Include="Network\Packets\Server\PacketS0CSpawnPlayer.cs" />
+    <Compile Include="Network\Packets\Server\PacketS25BlockBreakAnim.cs" />
+    <Compile Include="Network\Packets\Server\PacketS23BlockChange.cs" />
     <Compile Include="Util\EnumInput.cs" />
     <Compile Include="Entity\EntitySpeed.cs" />
     <Compile Include="MvkGlobal.cs" />

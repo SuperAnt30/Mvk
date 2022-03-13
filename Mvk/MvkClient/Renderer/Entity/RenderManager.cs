@@ -46,7 +46,7 @@ namespace MvkClient.Renderer.Entity
             World = world;
             ClientMain = world.ClientMain;
             entities.Add(EnumEntities.Player, new RenderPlayer(this, new ModelPlayer()));
-            entities.Add(EnumEntities.PlayerHand, new RenderPlayer(this, new ModelPlayerHand()));
+            entities.Add(EnumEntities.PlayerHand, new RenderHead(this, new ModelPlayerHand()));
             entities.Add(EnumEntities.Chicken, new RenderChicken(this, new ModelChicken()));
             
         }
@@ -104,34 +104,36 @@ namespace MvkClient.Renderer.Entity
             float width = entity.Width;
 
             GLRender.PushMatrix();
-            GLRender.Translate(pos0 - offset);
-            GLRender.Texture2DDisable();
-            GLRender.CullDisable();
-            GLRender.LineWidth(2f);
+            {
+                GLRender.Translate(pos0 - offset);
+                GLRender.Texture2DDisable();
+                GLRender.CullDisable();
+                GLRender.LineWidth(2f);
 
-            // Рамка хитбокса
-            GLRender.Color(new vec4(1));
-            GLRender.DrawOutlinedBoundingBox(aabb);
+                // Рамка хитбокса
+                GLRender.Color(new vec4(1));
+                GLRender.DrawOutlinedBoundingBox(aabb);
 
-            // Уровень глаз
-            GLRender.Color(new vec4(1, 0, 0, 1));
-            GLRender.Begin(OpenGL.GL_LINE_STRIP);
-            GLRender.Vertex(aabb.Min.x, eye, aabb.Min.z);
-            GLRender.Vertex(aabb.Max.x, eye, aabb.Min.z);
-            GLRender.Vertex(aabb.Max.x, eye, aabb.Max.z);
-            GLRender.Vertex(aabb.Min.x, eye, aabb.Max.z);
-            GLRender.Vertex(aabb.Min.x, eye, aabb.Min.z);
-            GLRender.End();
+                // Уровень глаз
+                GLRender.Color(new vec4(1, 0, 0, 1));
+                GLRender.Begin(OpenGL.GL_LINE_STRIP);
+                GLRender.Vertex(aabb.Min.x, eye, aabb.Min.z);
+                GLRender.Vertex(aabb.Max.x, eye, aabb.Min.z);
+                GLRender.Vertex(aabb.Max.x, eye, aabb.Max.z);
+                GLRender.Vertex(aabb.Min.x, eye, aabb.Max.z);
+                GLRender.Vertex(aabb.Min.x, eye, aabb.Min.z);
+                GLRender.End();
 
-            // Луч глаз куда смотрит
-            GLRender.Color(new vec4(0, 0, 1, 1));
-            GLRender.Begin(OpenGL.GL_LINES);
-            vec3 pos = new vec3(aabb.Min.x + width, eye, aabb.Min.z + width);
-            GLRender.Vertex(pos);
-            GLRender.Vertex(pos + look * 2f);
-            GLRender.End();
+                // Луч глаз куда смотрит
+                GLRender.Color(new vec4(0, 0, 1, 1));
+                GLRender.Begin(OpenGL.GL_LINES);
+                vec3 pos = new vec3(aabb.Min.x + width, eye, aabb.Min.z + width);
+                GLRender.Vertex(pos);
+                GLRender.Vertex(pos + look * 2f);
+                GLRender.End();
 
-            GLRender.CullEnable();
+                GLRender.CullEnable();
+            }
             GLRender.PopMatrix();
         }
     }

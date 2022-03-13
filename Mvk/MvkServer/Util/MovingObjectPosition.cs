@@ -92,7 +92,7 @@ namespace MvkServer.Util
             string str = "";
             if (type == MovingObjectType.Entity)
             {
-                str = Entity.Name + " " + Entity.Health;
+                str = Entity.Name + " " + Entity.Health + " " + Entity.Position;
             }
             return string.Format("{0} {3} {1} {2}", type, Hit, RayHit, str);
         }

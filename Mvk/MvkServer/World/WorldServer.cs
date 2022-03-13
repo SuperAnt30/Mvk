@@ -1,8 +1,10 @@
 ﻿using MvkServer.Entity;
 using MvkServer.Management;
 using MvkServer.Util;
+using MvkServer.World.Block;
 using MvkServer.World.Chunk;
 using System;
+using System.Collections;
 
 namespace MvkServer.World
 {
@@ -49,7 +51,10 @@ namespace MvkServer.World
         /// </summary>
         public override void Tick()
         {
-            profiler.StartSection("WorldTick");
+            profiler.StartSection("PlayersTick");
+            Players.Update();
+
+            profiler.EndStartSection("WorldTick");
             base.Tick();
 
             profiler.EndStartSection("MobSpawner");
@@ -65,6 +70,11 @@ namespace MvkServer.World
             //this.villageSiege.tick();
             profiler.EndSection();
         }
+
+        /// <summary>
+        /// Отметить блок для обновления 
+        /// </summary>
+        protected override void MarkBlockForUpdate(BlockPos blockPos) => Players.FlagChunkForUpdate(blockPos);
 
         #region Entity
 
@@ -111,6 +121,15 @@ namespace MvkServer.World
 
         #endregion
 
+        /// <summary>
+        /// Отправить процесс разрущения блока
+        /// </summary>
+        /// <param name="breakerId">id сущности который ломает блок</param>
+        /// <param name="pos">позиция блока</param>
+        /// <param name="progress">сколько тактом блок должен разрушаться</param>
+        public override void SendBlockBreakProgress(int breakerId, BlockPos pos, int progress) 
+            => Players.SendBlockBreakProgress(breakerId, pos, progress);
+
 
         public int countGetChunck = 0;
 
@@ -122,7 +141,7 @@ namespace MvkServer.World
             try
             {
                 return string.Format("Ch {0}-{2} Pl {1} @!{4}\r\n{3} ||| E: {5}, Ch: {6}\r\n{7}",
-                    ChunkPr.Count, Players.PlayerCount, Players.chunkCoordPlayers.Count, Players.ToStringDebug() // 0 - 3
+                    ChunkPr.Count, Players.PlayerCount, Players.CountPlayerInstances(), Players.ToStringDebug() // 0 - 3
                     , base.ToStringDebug(), ChunkPr.GetCountEntityDebug(), countGetChunck, Tracker); // 4 - 7
             }
             catch(Exception e)

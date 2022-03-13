@@ -46,6 +46,11 @@ namespace MvkClient.World
             world = worldIn;
         }
 
+        public void SetOverviewChunk()
+        {
+            isResetLoadingChunk = true;
+        }
+
         /// <summary>
         /// Очистить все чанки, ТОЛЬКО для клиента
         /// </summary>
@@ -76,18 +81,30 @@ namespace MvkClient.World
         /// <summary>
         /// Заносим данные с пакета сервера
         /// </summary>
-        public void PacketChunckData(PacketS21ChunckData packet)
+        public void PacketChunckData(PacketS21ChunkData packet)
         {
-            if (packet.IsRemoved())
+            if (packet.Status() == PacketS21ChunkData.EnumChunk.Remove)
             {
                 lock (locker) UnloadChunk((ChunkRender)GetChunk(packet.GetPos()));
             }
             else
             {
-                ChunkRender chunk = new ChunkRender(ClientWorld, packet.GetPos());
-                chunk.SetBinary(packet.GetBuffer(), packet.GetHeight());
-                chunk.ModifiedToRender();
-                lock (locker) addChunks.Add(chunk);
+                if (packet.Status() == PacketS21ChunkData.EnumChunk.All)
+                {
+                    ChunkRender chunk = new ChunkRender(ClientWorld, packet.GetPos());
+                    chunk.SetBinary(packet.GetBuffer(), packet.GetHeight());
+                    chunk.ModifiedToRender();
+                    lock (locker) addChunks.Add(chunk);
+                }
+                else
+                {
+                    ChunkRender chunk = GetChunkRender(packet.GetPos());
+                    if (chunk != null)
+                    {
+                        chunk.SetBinaryY(packet.GetBuffer(), packet.GetY());
+                        chunk.ModifiedToRender(packet.GetY());
+                    }
+                }
             }
         }
         

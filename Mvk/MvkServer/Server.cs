@@ -42,6 +42,7 @@ namespace MvkServer
         /// </summary>
         public WorldServer World { get; protected set; }
 
+        public EntityPlayerServer test;
         /// <summary>
         /// Устанавливается при появлении предупреждения «Не могу угнаться», которое срабатывает снова через 15 секунд. 
         /// </summary>
@@ -83,6 +84,10 @@ namespace MvkServer
         /// Пауза в игре, только для одиночной версии
         /// </summary>
         protected bool isGamePaused = false;
+        /// <summary>
+        /// Обзор чанков при старте, отталкиваемся от основного клиентак
+        /// </summary>
+        private int overviewChunk;
 
         /// <summary>
         /// Инициализация
@@ -190,15 +195,17 @@ namespace MvkServer
         {
             if (World != null)
             {
-                World.Players.ResponsePacketAll(packet);
+                World.Players.SendToAll(packet);
             }
         }
 
         #endregion
 
 
-
-
+        /// <summary>
+        /// Задать обзор чанков от стартового клиента
+        /// </summary>
+        public void SetOverviewChunk(int overviewChunk) => this.overviewChunk = overviewChunk;
 
         /// <summary>
         /// Запрос остановки сервера
@@ -287,7 +294,7 @@ namespace MvkServer
             EntityPlayerServer entityPlayer = World.Players.GetEntityPlayerMain();
             vec2i pos = entityPlayer != null ? entityPlayer.GetChunkPos() : new vec2i(0, 0);
 
-            int radius = MvkGlobal.OVERVIEW_CHUNK_START;
+            int radius = Mth.Min(MvkGlobal.OVERVIEW_CHUNK_START, overviewChunk);
             OnLoadStepCount((radius + radius + 1) * (radius + radius + 1));
 
             // Запуск чанков для старта
@@ -309,7 +316,9 @@ namespace MvkServer
         {
             Log.Log("server.stoping");
 
-            World.Players.PlayerClear();
+            World.Players.PlayersRemoveStopingServer();
+            World.Players.Update();
+            //World.Players.PlayerClear();
 
             // тут будет сохранение мира
             //Thread.Sleep(100);
@@ -332,6 +341,11 @@ namespace MvkServer
             packets.Update();
             // Выполнение такта
 
+            //if (test != null)
+            //{
+            //    World.Players.LoginStart(test);
+            //    test = null;
+            //}
             //Random r = new Random();
             //int rn = r.Next(100);
             //Thread.Sleep(rn);

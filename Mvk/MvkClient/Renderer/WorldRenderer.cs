@@ -62,8 +62,20 @@ namespace MvkClient.Renderer
             // Воксели VBO
             List<ChunkRender> chunks = DrawVoxel(timeIndex);
 
+            // Матрица камеры
+            ClientMain.Player.CameraMatrixProjection();
+
             // Сущности DisplayList
             DrawEntities(chunks, timeIndex);
+
+            // Рендер и прорисовка курсора выбранного блока по AABB
+            DrawCursorVoxel();
+
+            //if (ClientMain.Player.ViewCamera == EnumViewCamera.Eye)
+            {
+                // Прорисовка руки
+                World.RenderEntityManager.RenderEntity(ClientMain.Player, timeIndex);
+            }
 
             // Эффекты
             ClientMain.EffectRender.Render(timeIndex);
@@ -98,6 +110,7 @@ namespace MvkClient.Renderer
                 if (fs.IsChunk())
                 {
                     ChunkRender chunk = fs.GetChunk();
+
                     if (chunk.IsModifiedToRender && fast && countRender > 0)
                     {
                         // в отдельном потоке рендер
@@ -108,10 +121,10 @@ namespace MvkClient.Renderer
                             Task.Factory.StartNew(chunk.Render);
                         }
                     }
-                    else
+                    //else
                     {
-                        shader.SetUniform3(GLWindow.gl, "pos", 
-                            (chunk.Position.x << 4) - World.RenderEntityManager.CameraOffset.x, 
+                        shader.SetUniform3(GLWindow.gl, "pos",
+                            (chunk.Position.x << 4) - World.RenderEntityManager.CameraOffset.x,
                             -World.RenderEntityManager.CameraOffset.y,
                             (chunk.Position.y << 4) - World.RenderEntityManager.CameraOffset.z);
                         chunk.Draw(fast);
@@ -119,8 +132,8 @@ namespace MvkClient.Renderer
                     }
 
                     // Тут бы сущность
-                   // DrawEntities2(chunk.ListEntities, timeIndex);
-                    
+                    // DrawEntities2(chunk.ListEntities, timeIndex);
+
                 }
                 else
                 {
@@ -166,18 +179,24 @@ namespace MvkClient.Renderer
         /// </summary>
         private void DrawEntities(List<ChunkRender> chunks, float timeIndex)
         {
-            // Матрица камеры
-            ClientMain.Player.CameraMatrixProjection();
-
             World.CountEntitiesShowBegin();
-            // Основной игрок, вид сзади или спереди
-            World.RenderEntityManager.RenderEntity(ClientMain.Player, timeIndex);
 
             // Остальные сущности
-            foreach(ChunkRender chunk in chunks)
+            foreach (ChunkRender chunk in chunks)
             {
                 DrawEntities2(chunk.ListEntities, timeIndex);
             }
+
+            // Основной игрок, вид сзади или спереди
+            //if (ClientMain.Player.Type == EnumEntities.PlayerHand)
+            //{
+            //    World.RenderEntityManager.RenderHand(timeIndex);
+            //}
+            //else
+            //if (ClientMain.Player.ViewCamera != EnumViewCamera.Eye)
+            //{
+            //    World.RenderEntityManager.RenderEntity(ClientMain.Player, timeIndex);
+            //}
         }
 
         public void DrawEff(float damageTime, float timeIndex)
@@ -187,7 +206,7 @@ namespace MvkClient.Renderer
 
             int w = GLWindow.WindowWidth;
             int h = GLWindow.WindowHeight;
-            // Прицел
+            // Эффект
             GLWindow.gl.MatrixMode(OpenGL.GL_PROJECTION);
             GLWindow.gl.LoadIdentity();
             GLWindow.gl.Ortho2D(0, w, h, 0);
@@ -220,11 +239,12 @@ namespace MvkClient.Renderer
             if (ClientMain.Player.ViewCamera == EnumViewCamera.Eye)
             {
                 GLRender.PushMatrix();
-                GLWindow.gl.Translate(w / 2 - 8, h / 2 - 8, 0);
+                GLWindow.gl.Translate(w / 2, h / 2, 0);
                 GLRender.ListCall(dListсPricel);
                 GLRender.PopMatrix();
             }
 
+            // ХП
             GLRender.PushMatrix();
             GLRender.Texture2DDisable();
             GLRender.LineWidth(1f);
@@ -249,8 +269,54 @@ namespace MvkClient.Renderer
 
 
             GLRender.PopMatrix();
-
         }
+
+        /// <summary>
+        /// Рендер и прорисовка курсора выбранного блока по AABB
+        /// DisplayList
+        /// </summary>
+        private void DrawCursorVoxel()
+        {
+            if (ClientMain.Player.SelectBlock != null)
+            {
+                vec3 pos = ClientMain.Player.GetPositionFrame();
+                pos.y += ClientMain.Player.GetEyeHeightFrame();
+                // Рамка хитбокса
+                GLRender.PushMatrix();
+                {
+                    vec3 offset = ClientMain.World.RenderEntityManager.CameraOffset;
+                    GLRender.Texture2DDisable();
+                    GLRender.LineWidth(2f);
+
+                    AxisAlignedBB[] axes = ClientMain.Player.SelectBlock.GetCollisionBoxesToList();
+                    float dis = glm.distance(pos, ClientMain.Player.SelectBlock.Position.ToVec3()) * .01f;
+                    dis *= dis;
+                    dis += 0.001f;
+                    GLRender.DepthDisable();
+                    GLRender.PushMatrix();
+                    {
+                        GLRender.Color(new vec4(1, 1, .5f, .2f));
+                        foreach (AxisAlignedBB aabb in axes)
+                        {
+                            GLRender.DrawOutlinedBoundingBox(aabb.Offset(offset * -1f).Expand(new vec3(dis)));
+                        }
+                    }
+                    GLRender.PopMatrix();
+                    GLRender.DepthEnable();
+                    GLRender.PushMatrix();
+                    {
+                        GLRender.Color(new vec4(1, 1, .5f, .7f));
+                        foreach (AxisAlignedBB aabb in axes)
+                        {
+                            GLRender.DrawOutlinedBoundingBox(aabb.Offset(offset * -1f).Expand(new vec3(dis)));
+                        }
+                    }
+                    GLRender.PopMatrix();
+                }
+                GLRender.PopMatrix();
+            }
+        }
+
         /// <summary>
         /// Рендер курсора прицел
         /// </summary>
@@ -268,6 +334,7 @@ namespace MvkClient.Renderer
             GLRender.End();
             GLRender.ListEnd();
         }
+
              
 
         //private LineMesh hitboxPlayer = new LineMesh();

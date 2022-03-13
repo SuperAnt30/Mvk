@@ -1,4 +1,5 @@
 ﻿using MvkAssets;
+using MvkClient.Setitings;
 using MvkClient.Util;
 using MvkServer;
 using MvkServer.Network;
@@ -84,6 +85,7 @@ namespace MvkClient
             // Локальный сервер
             IsStartWorld = true;
             server = new Server();
+            server.SetOverviewChunk(Setting.OverviewChunk);
             IsLoacl = true;
             server.LoadingTick += (sender, e) => OnObjectKeyTick(new ObjectKeyEventArgs(ObjectKey.LoadStep));
             server.LoadStepCount += (sender, e) => OnObjectKeyTick(new ObjectKeyEventArgs(ObjectKey.LoadCountWorld, e.Number));
@@ -145,9 +147,6 @@ namespace MvkClient
             {
                 // Игра по сети
                 socket.Disconnect();
-                // TODO:: Тут разрыв сокета если надо, в лог инфу клиента
-                // Но это без доп потока, по этому надо быстро делать, без задержек
-
                 // отправляем событие остановки
                 ThreadServerStoped(errorNet);
             }

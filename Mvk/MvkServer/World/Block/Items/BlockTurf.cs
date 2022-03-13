@@ -1,4 +1,5 @@
-﻿using MvkServer.Util;
+﻿using MvkServer.Glm;
+using MvkServer.Util;
 
 namespace MvkServer.World.Block.Items
 {
@@ -12,13 +13,15 @@ namespace MvkServer.World.Block.Items
         /// </summary>
         public BlockTurf()
         {
+            vec3 colorGreen = new vec3(.56f, .73f, .35f);
+            vec3 colorBrown = new vec3(.62f, .44f, .37f);
             Boxes = new Box[] {
                 new Box()
                 {
                     Faces = new Face[]
                     {
-                        new Face(Pole.Up, 3, true),
-                        new Face(Pole.Down, 2),
+                        new Face(Pole.Up, 3, true, colorGreen),
+                        new Face(Pole.Down, 2, colorBrown),
                         new Face(Pole.East, 2),
                         new Face(Pole.North, 2),
                         new Face(Pole.South, 2),
@@ -29,16 +32,20 @@ namespace MvkServer.World.Block.Items
                 {
                     Faces = new Face[]
                     {
-                        new Face(Pole.East, 4, true),
-                        new Face(Pole.North, 4, true),
-                        new Face(Pole.South, 4, true),
-                        new Face(Pole.West, 4, true)
+                        new Face(Pole.East, 4, true, colorGreen),
+                        new Face(Pole.North, 4, true, colorGreen),
+                        new Face(Pole.South, 4, true, colorGreen),
+                        new Face(Pole.West, 4, true, colorGreen)
                     }
                 }
             };
-
-            IsGrass = true;
             
+            IsGrass = true;
         }
+
+        /// <summary>
+        /// Значение для разрушения в тактах
+        /// </summary>
+        public override int GetDamageValue() => 10;
     }
 }
