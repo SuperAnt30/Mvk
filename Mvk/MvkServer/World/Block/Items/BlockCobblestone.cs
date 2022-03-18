@@ -83,8 +83,7 @@ namespace MvkServer.World.Block.Items
                 }
             };
 
-            
-
+            Particle = 1;
             IsBoundingBoxAll = false;
             AllDrawing = true;
         }

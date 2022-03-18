@@ -39,13 +39,10 @@ namespace MvkServer.World.Block.Items
                     }
                 }
             };
-            
+            Particle = 3;
+            Color = colorGreen;
             IsGrass = true;
+            Hardness = 10;
         }
-
-        /// <summary>
-        /// Значение для разрушения в тактах
-        /// </summary>
-        public override int GetDamageValue() => 10;
     }
 }

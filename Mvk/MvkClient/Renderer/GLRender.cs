@@ -87,6 +87,8 @@ namespace MvkClient.Renderer
         /// </summary>
         public static void Vertex(float x, float y, float z) => gl.Vertex(x, y, z);
         public static void Vertex(vec3 pos) => gl.Vertex(pos.x, pos.y, pos.z);
+        public static void Vertex(float x, float y) => gl.Vertex(x, y);
+        public static void Vertex(vec2 pos) => gl.Vertex(pos.x, pos.y);
 
         /// <summary>
         /// Запуск листа

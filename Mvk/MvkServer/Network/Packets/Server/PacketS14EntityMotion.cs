@@ -14,6 +14,7 @@ namespace MvkServer.Network.Packets.Server
         private float pitch;
         private bool sneaking;
         private bool onGround;
+        private bool sprinting;
 
         public ushort GetId() => id;
         public vec3 GetPos() => pos;
@@ -21,6 +22,7 @@ namespace MvkServer.Network.Packets.Server
         public float GetPitch() => pitch;
         public bool IsSneaking() => sneaking;
         public bool OnGround() => onGround;
+        public bool IsSprinting() => sprinting;
 
         public PacketS14EntityMotion(EntityLiving entity)
         {
@@ -37,6 +39,7 @@ namespace MvkServer.Network.Packets.Server
             pitch = entity.RotationPitch;
             sneaking = entity.IsSneaking;
             onGround = entity.OnGround;
+            sprinting = entity.IsSprinting;
         }
 
         public void ReadPacket(StreamBase stream)
@@ -47,6 +50,7 @@ namespace MvkServer.Network.Packets.Server
             pitch = stream.ReadFloat();
             sneaking = stream.ReadBool();
             onGround = stream.ReadBool();
+            sprinting = stream.ReadBool();
         }
 
         public void WritePacket(StreamBase stream)
@@ -59,6 +63,7 @@ namespace MvkServer.Network.Packets.Server
             stream.WriteFloat(pitch);
             stream.WriteBool(sneaking);
             stream.WriteBool(onGround);
+            stream.WriteBool(sprinting);
         }
     }
 }

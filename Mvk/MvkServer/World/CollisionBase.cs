@@ -53,10 +53,13 @@ namespace MvkServer.World
                 {
                     for (int z = min.z; z <= max.z; z++)
                     {
-                        BlockBase block = GetBlockBase(x, y, z);
-                        if (block.IsCollidable)
+                        if (y >= 0 && y <= 255)
                         {
-                            list.AddRange(block.GetCollisionBoxesToList());
+                            BlockBase block = GetBlockBase(x, y, z);
+                            if (block.IsCollidable)
+                            {
+                                list.AddRange(block.GetCollisionBoxesToList());
+                            }
                         }
                     }
                 }

@@ -47,6 +47,8 @@ namespace MvkServer.Network
                     case 0x05: Handle05PlayerLook(socket, (PacketC05PlayerLook)packet); break;
                     case 0x06: Handle06PlayerPosLook(socket, (PacketC06PlayerPosLook)packet); break;
                     case 0x07: Handle07PlayerDigging(socket, (PacketC07PlayerDigging)packet); break;
+                    case 0x08: Handle08PlayerBlockPlacement(socket, (PacketC08PlayerBlockPlacement)packet); break;
+                    case 0x09: Handle09HeldItemChange(socket, (PacketC09HeldItemChange)packet); break;
                     case 0x0A: Handle0AAnimation(socket, (PacketC0AAnimation)packet); break;
                     case 0x0C: Handle0CPlayerAction(socket, (PacketC0CPlayerAction)packet); break;
                     case 0x15: Handle15ClientSetting(socket, (PacketC15ClientSetting)packet); break;
@@ -134,7 +136,7 @@ namespace MvkServer.Network
             EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayerSocket(socket);
             if (entityPlayer != null)
             {
-                entityPlayer.SetSneakOnGround(packet.IsSneaking(), entityPlayer.OnGround);
+                entityPlayer.SetSneakingSprinting(packet.IsSneaking(), packet.IsSprinting());
                 entityPlayer.SetPosition(packet.GetPos());
             }
         }
@@ -147,7 +149,7 @@ namespace MvkServer.Network
             EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayerSocket(socket);
             if (entityPlayer != null)
             {
-                entityPlayer.SetSneakOnGround(packet.IsSneaking(), entityPlayer.OnGround);
+                entityPlayer.SetSneakingSprinting(packet.IsSneaking(), entityPlayer.IsSprinting);
                 entityPlayer.SetRotationHead(packet.GetYaw(), packet.GetPitch());
             }
         }
@@ -160,7 +162,7 @@ namespace MvkServer.Network
             EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayerSocket(socket);
             if (entityPlayer != null)
             {
-                entityPlayer.SetSneakOnGround(packet.IsSneaking(), entityPlayer.OnGround);
+                entityPlayer.SetSneakingSprinting(packet.IsSneaking(), packet.IsSprinting());
                 entityPlayer.SetPosition(packet.GetPos());
                 entityPlayer.SetRotationHead(packet.GetYaw(), packet.GetPitch());
             }
@@ -171,25 +173,42 @@ namespace MvkServer.Network
             EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayerSocket(socket);
             if (entityPlayer != null)
             {
-                BlockPos blockPos = packet.GetBlockPos();
                 if (packet.GetDigging() == PacketC07PlayerDigging.EnumDigging.Stop)
                 {
                     // Окончено разрушение, блок сломан
-                    ServerMain.World.SetBlockState(blockPos, World.Block.EnumBlock.Air);
-                    ServerMain.World.SendBlockBreakProgress(entityPlayer.Id, blockPos, -1);
+                    entityPlayer.TheItemInWorldManager.DestroyStop();
                 }
                 else if (packet.GetDigging() == PacketC07PlayerDigging.EnumDigging.Start)
                 {
                     // Начато разрушение
-                    entityPlayer.TheItemInWorldManager.DiggingStart(blockPos);
-                    //ServerMain.World.SendBlockBreakProgress(entityPlayer.Id, blockPos, 5);
+                    entityPlayer.TheItemInWorldManager.DestroyStart(packet.GetBlockPos());
                 } else
                 {
                     // Отмена разрушения
-                    entityPlayer.TheItemInWorldManager.DiggingAbout();
-                    //ServerMain.World.SendBlockBreakProgress(entityPlayer.Id, blockPos, -1);
+                    entityPlayer.TheItemInWorldManager.DestroyAbout();
                 }
             }
+        }
+
+        /// <summary>
+        /// Пакет установки блока
+        /// </summary>
+        private void Handle08PlayerBlockPlacement(Socket socket, PacketC08PlayerBlockPlacement packet)
+        {
+            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayerSocket(socket);
+            if (entityPlayer != null)
+            {
+                entityPlayer.TheItemInWorldManager.Put(packet.GetBlockPos(), packet.GetFacing());
+            }
+        }
+
+        /// <summary>
+        /// Пакет выбранный слот у игрока
+        /// </summary>
+        private void Handle09HeldItemChange(Socket socket, PacketC09HeldItemChange packet)
+        {
+            EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayerSocket(socket);
+            if (entityPlayer != null) entityPlayer.slot = packet.GetSlotId();
         }
 
         /// <summary>
@@ -215,6 +234,7 @@ namespace MvkServer.Network
                     float damage = packet.GetParam() - 5;
                     entityPlayer.SetHealth(entityPlayer.Health - damage);
                     ResponseHealth(entityPlayer);
+                    ServerMain.World.Tracker.SendToAllTrackingEntity(entityPlayer, new PacketS0BAnimation(entityPlayer.Id, PacketS0BAnimation.EnumAnimation.Fall));
                 }
             }
         }

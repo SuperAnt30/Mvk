@@ -1,4 +1,5 @@
 ﻿using MvkServer.Entity.Player;
+using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World;
 using MvkServer.World.Block;
@@ -6,203 +7,163 @@ using MvkServer.World.Block;
 namespace MvkServer.Management
 {
     /// <summary>
-    /// Объект работы над игроком
+    /// Объект работы над игроком разрушения блока, итомы и прочее
     /// </summary>
     public class ItemInWorldManager
     {
         /// <summary>
+        /// Позиция блока который разрушаем
+        /// </summary>
+        public BlockPos BlockPosDestroy { get; private set; } = new BlockPos();
+
+        /// <summary>
+        /// Пауза между ударами, если удар не отключали (Update)
+        /// </summary>
+        private int pause = 0;
+        /// <summary>
         /// Серверный объект мира
         /// </summary>
-        public WorldServer World { get; private set; }
+        private WorldBase world;
         /// <summary>
         /// Объект игрока
         /// </summary>
-        public EntityPlayerServer Player { get; private set; }
+        private EntityPlayer entityPlayer;
         /// <summary>
-        /// Объект логотладки
+        /// Начальный урон блока
         /// </summary>
-        private Profiler profiler;
+        private int initialDamage;
+        /// <summary>
+        /// Счётчик тактов нанесения урона на блок
+        /// </summary>
+        private int curblockDamage;
+        /// <summary>
+        /// Прочность, оставшаяся в блоке 
+        /// </summary>
+        private int durabilityRemainingOnBlock = -1;
+
+        public ItemInWorldManager(WorldBase world, EntityPlayer entityPlayer)
+        {
+            this.world = world;
+            this.entityPlayer = entityPlayer;
+        }
+
+        /// <summary>
+        /// Нет паузы в обновлении между ударами
+        /// </summary>
+        public bool NotPauseUpdate => pause == 0;
 
         /// <summary>
         /// Истинно, если игрок уничтожает блок
         /// </summary>
-        private bool isDestroyingBlock = false;
-        private int initialDamage;
-        private BlockPos blockPosDestroy = new BlockPos();
-        private int curblockDamage;
+        public bool IsDestroyingBlock => !BlockPosDestroy.IsEmpty;
 
         /// <summary>
-        /// Установите значение true, когда получен пакет «завершенное уничтожение блока»,
-        /// но блок еще не был полностью поврежден. Блок не будет уничтожен, пока это ложно.
+        /// Начато разрушение
         /// </summary>
-       // private bool receivedFinishDiggingPacket = false;
-       // private BlockPos field_180241_i = new BlockPos();
-        //private int initialBlockDamage;
-        private int durabilityRemainingOnBlock;
-
-        public ItemInWorldManager(WorldServer worldServer, EntityPlayerServer entityPlayer)
+        public void DestroyStart(BlockPos blockPos)
         {
-            World = worldServer;
-            profiler = new Profiler(worldServer.ServerMain.Log);
-            Player = entityPlayer;
-
-            durabilityRemainingOnBlock = -1;
-        }
-
-        public void DiggingStart(BlockPos blockPos)
-        {
-            BlockBase block = World.GetBlock(blockPos);
+            BlockBase block = world.GetBlock(blockPos);
             if (block != null && !block.IsAir)
             {
-                durabilityRemainingOnBlock = -1;
-                isDestroyingBlock = true;
-                blockPosDestroy = blockPos;
+                BlockPosDestroy = blockPos;
                 curblockDamage = 0;
-                initialDamage = block.GetDamageValue();
-                // (initialDamage - blockHitDelay) * 10 / initialDamage
-                //int var5 = (int)(var6 * 10.0F);
-                World.SendBlockBreakProgress(Player.Id, blockPos, 0);// + var5);
-                //durabilityRemainingOnBlock = var5;
+                initialDamage = block.GetPlayerRelativeBlockHardness(entityPlayer);
+                durabilityRemainingOnBlock = GetProcess();
+                pause = 5;
+                world.SendBlockBreakProgress(entityPlayer.Id, blockPos, durabilityRemainingOnBlock);
             }
         }
 
-        public void DiggingAbout()
+        /// <summary>
+        /// Отмена разрушения
+        /// </summary>
+        public void DestroyAbout()
         {
-            World.SendBlockBreakProgress(Player.Id, blockPosDestroy, -1);
-            isDestroyingBlock = false;
-            blockPosDestroy = new BlockPos();
+            world.SendBlockBreakProgress(entityPlayer.Id, BlockPosDestroy, -1);
+            durabilityRemainingOnBlock = -1;
+            BlockPosDestroy = new BlockPos();
         }
 
         /// <summary>
-        /// Обновление разрушающих блоков
+        /// Окончено разрушение, блок сломан
         /// </summary>
-        public void UpdateBlockRemoving()
+        public void DestroyStop()
         {
-            //server.maneger.ItemInWorldManager.UpdateBlockRemoving
-            curblockDamage++;
-            //float var3;
-            int var4;
+            world.SendBlockBreakProgress(entityPlayer.Id, BlockPosDestroy, -2);
+            durabilityRemainingOnBlock = -1;
+            world.SetBlockState(BlockPosDestroy, EnumBlock.Air);
+            BlockPosDestroy = new BlockPos();
+        }
 
-            //if (receivedFinishDiggingPacket)
-            //{
-            //    int var1 = curblockDamage - initialBlockDamage;
-            //    BlockBase block = World.GetBlock(field_180241_i);
-
-            //    if (block == null || block.IsAir)
-            //    {
-            //        receivedFinishDiggingPacket = false;
-            //    }
-            //    else
-            //    {
-            //        //var3 = block.GetPlayerRelativeBlockHardness(Player, this.thisPlayerMP.worldObj, this.field_180241_i) * (float)(var1 + 1);
-            //        var3 = block.GetDamageValue();
-                    
-            //        var4 = (int)(var3 * 10.0F);
-
-            //        if (var4 != durabilityRemainingOnBlock)
-            //        {
-            //            World.SendBlockBreakProgress(Player.Id, field_180241_i, var4);
-            //            durabilityRemainingOnBlock = var4;
-            //        }
-
-            //        if (var3 >= 1.0F)
-            //        {
-            //            receivedFinishDiggingPacket = false;
-            //            func_180237_b(field_180241_i);
-            //        }
-            //    }
-            //}
-            //else 
-            if (isDestroyingBlock)
+        /// <summary>
+        /// Установить блок
+        /// </summary>
+        public void Put(BlockPos blockPos, vec3 facing)
+        {
+            BlockBase block = world.GetBlock(blockPos);
+            if (block != null)
             {
-                BlockBase block = World.GetBlock(blockPosDestroy);
+                if (block.IsAir)
+                {
+                    // TODO:: надо занести в обновление чтоб проверка и установка была в такте игровом
+                    if (world.GetEntitiesWithinAABBExcludingEntity(null, block.GetCollision()).Count == 0)
+                    {
+                        BlockPosDestroy = new BlockPos();
+                        curblockDamage = 0;
+                        initialDamage = 0;
+                        durabilityRemainingOnBlock = -1;
+                        pause = 5;
+                        world.SetBlockState(blockPos, (EnumBlock)entityPlayer.slot);
+                        return;
+                    }
+                }
+                if (world is WorldServer)
+                {
+                    world.SetBlockState(blockPos, block.EBlock);
+                }
+            }
+        }
 
+        /// <summary>
+        /// Обновление разрушения блока
+        /// </summary>
+        public void UpdateBlock()
+        {
+            if (pause > 0) pause--;
+            if (IsDestroyingBlock)
+            {
+                curblockDamage++;
+
+                BlockBase block = world.GetBlock(BlockPosDestroy);
                 if (block == null || block.IsAir)
                 {
-                    World.SendBlockBreakProgress(Player.Id, blockPosDestroy, -1);
-                    durabilityRemainingOnBlock = -1;
-                    isDestroyingBlock = false;
+                    DestroyAbout();
                 }
                 else
                 {
-                    // int var6 = initialDamage - curblockDamage;
-                    //var3 = block.GetPlayerRelativeBlockHardness(this.thisPlayerMP, this.thisPlayerMP.worldObj, field_180241_i) * (float)(var6 + 1);
-                    //var3 = block.GetDamageValue();
-                    //var4 = (int)(var3 * 10.0F);
-                    var4 = initialDamage == 0 ? 0 : curblockDamage * 10 / initialDamage;
-                    if (var4 != durabilityRemainingOnBlock)
+                    int process = GetProcess();
+                    if (process != durabilityRemainingOnBlock)
                     {
-                        World.SendBlockBreakProgress(Player.Id, blockPosDestroy, var4);
-                        durabilityRemainingOnBlock = var4;
+                        durabilityRemainingOnBlock = process;
+                        world.SendBlockBreakProgress(entityPlayer.Id, BlockPosDestroy, durabilityRemainingOnBlock);
                     }
                 }
             }
         }
 
-        public bool func_180237_b(BlockPos p_180237_1_)
+        /// <summary>
+        /// Проверка на блок тольо что сломался
+        /// </summary>
+        public bool IsDestroy() => IsDestroyingBlock && curblockDamage >= initialDamage;
+
+        /// <summary>
+        /// Получить значение процесса
+        /// </summary>
+        private int GetProcess()
         {
-            //if (this.gameType.isCreative() && this.thisPlayerMP.getHeldItem() != null && this.thisPlayerMP.getHeldItem().getItem() instanceof ItemSword)
-            //{
-                return false;
-            //}
-            //else
-            //{
-            //    IBlockState var2 = this.theWorld.getBlockState(p_180237_1_);
-            //    TileEntity var3 = this.theWorld.getTileEntity(p_180237_1_);
-
-            //    if (this.gameType.isAdventure())
-            //    {
-            //        if (this.gameType == WorldSettings.GameType.SPECTATOR)
-            //        {
-            //            return false;
-            //        }
-
-            //        if (!this.thisPlayerMP.func_175142_cm())
-            //        {
-            //            ItemStack var4 = this.thisPlayerMP.getCurrentEquippedItem();
-
-            //            if (var4 == null)
-            //            {
-            //                return false;
-            //            }
-
-            //            if (!var4.canDestroy(var2.getBlock()))
-            //            {
-            //                return false;
-            //            }
-            //        }
-            //    }
-
-            //    this.theWorld.playAuxSFXAtEntity(this.thisPlayerMP, 2001, p_180237_1_, Block.getStateId(var2));
-            //    boolean var7 = this.func_180235_c(p_180237_1_);
-
-            //    if (this.isCreative())
-            //    {
-            //        this.thisPlayerMP.playerNetServerHandler.sendPacket(new S23PacketBlockChange(this.theWorld, p_180237_1_));
-            //    }
-            //    else
-            //    {
-            //        ItemStack var5 = this.thisPlayerMP.getCurrentEquippedItem();
-            //        boolean var6 = this.thisPlayerMP.canHarvestBlock(var2.getBlock());
-
-            //        if (var5 != null)
-            //        {
-            //            var5.onBlockDestroyed(this.theWorld, var2.getBlock(), p_180237_1_, this.thisPlayerMP);
-
-            //            if (var5.stackSize == 0)
-            //            {
-            //                this.thisPlayerMP.destroyCurrentEquippedItem();
-            //            }
-            //        }
-
-            //        if (var7 && var6)
-            //        {
-            //            var2.getBlock().harvestBlock(this.theWorld, this.thisPlayerMP, p_180237_1_, var2, var3);
-            //        }
-            //    }
-
-            //    return var7;
-            //}
+            int process = initialDamage <= 1 ? -1 : curblockDamage * 10 / initialDamage;
+            if (process > 9) process = -1;
+            return process;
         }
     }
 }

@@ -3,6 +3,7 @@ using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World.Block;
 using MvkServer.World.Chunk;
+using SharpGL;
 using System.Collections.Generic;
 
 namespace MvkClient.Renderer.Block
@@ -109,6 +110,20 @@ namespace MvkClient.Renderer.Block
         }
 
         /// <summary>
+        /// Получить смещение на текстуру блока
+        /// </summary>
+        /// <returns>x = u1, Y = v1, z = u2, w = v2</returns>
+        private vec4 GetUV()
+        {
+            float u1 = (cFace.GetNumberTexture() % 64) * 0.015625f;// 0.015625f;
+            float v2 = cFace.GetNumberTexture() / 64 * 0.015625f;
+            return new vec4(
+                u1 + cBox.UVFrom.x, v2 + cBox.UVTo.y,
+                u1 + cBox.UVTo.x, v2 + cBox.UVFrom.y
+                );
+        }
+
+        /// <summary>
         /// Генерация сетки стороны коробки
         /// </summary>
         /// <param name="pos">позиция блока</param>
@@ -119,8 +134,7 @@ namespace MvkClient.Renderer.Block
         /// <returns></returns>
         protected float[] RenderMeshFace()
         {
-            float u1 = (cFace.GetNumberTexture() % 64) * 0.015625f;// 0.015625f;
-            float v2 = cFace.GetNumberTexture() / 64 * 0.015625f;
+            vec4 uv = GetUV();
             vec4 color = cFace.GetIsColor() ? new vec4(cFace.GetColor(), 1f) : new vec4(1f);
             float l = 1f - LightPole();
             color.x -= l; if (color.x < 0) color.x = 0;
@@ -136,8 +150,8 @@ namespace MvkClient.Renderer.Block
             blockUV.SetVecUV(
                 pos + cBox.From,
                 pos + cBox.To,
-                new vec2(u1 + cBox.UVFrom.x, v2 + cBox.UVTo.y),
-                new vec2(u1 + cBox.UVTo.x, v2 + cBox.UVFrom.y)
+                new vec2(uv.x, uv.y),
+                new vec2(uv.z, uv.w)
             );
 
             blockUV.RotateYaw(cBox.RotateYaw);
@@ -155,12 +169,12 @@ namespace MvkClient.Renderer.Block
             switch (cSide)
             {
                 case Pole.Up: return 1f;
-                case Pole.South: return 0.9f;
-                case Pole.East: return 0.8f;
-                case Pole.West: return 0.8f;
-                case Pole.North: return 0.9f;
+                case Pole.South: return 0.85f;
+                case Pole.East: return 0.7f;
+                case Pole.West: return 0.7f;
+                case Pole.North: return 0.85f;
             }
-            return 0.7f;
+            return 0.6f;
         }
 
 
@@ -186,6 +200,52 @@ namespace MvkClient.Renderer.Block
             if (chunk != null) return chunk.GetEBlock(new vec3i(xv, pos.y, zv));
 
             return EnumBlock.Air;
+        }
+
+        /// <summary>
+        /// Рендер блока в 2d для GUI
+        /// </summary>
+        public void RenderGui()
+        {
+            foreach (Box box in Block.Boxes)
+            {
+                cBox = box;
+                foreach (Face face in box.Faces)
+                {
+                    cFace = face;
+                    if (face.GetSide() == Pole.All || face.GetSide() == Pole.Up)
+                    {
+                        RenderSideDL(12, 6, 0, 0, 0, 12, -12, 6, 1f);
+                    }
+                    if (face.GetSide() == Pole.All || face.GetSide() == Pole.South)
+                    {
+                        RenderSideDL(12, 6, 0, 12, 12, 20, 0, 26, .5f);
+                    }
+                    if (face.GetSide() == Pole.All || face.GetSide() == Pole.East)
+                    {
+                        RenderSideDL(0, 12, -12, 6, 0, 26, -12, 20, .7f);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Рендер сторона DL
+        /// </summary>
+        private void RenderSideDL(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4, float color)
+        {
+            vec4 uv = GetUV();
+            GLRender.PushMatrix();
+            {
+                GLRender.Color(new vec4((cFace.GetIsColor() ? cFace.GetColor() : new vec3(1f)) * color, 0.7f));
+                GLRender.Begin(OpenGL.GL_TRIANGLE_STRIP);
+                GLWindow.gl.TexCoord(uv.x, uv.w); GLRender.Vertex(x1, y1);
+                GLWindow.gl.TexCoord(uv.z, uv.w); GLRender.Vertex(x2, y2);
+                GLWindow.gl.TexCoord(uv.x, uv.y); GLRender.Vertex(x3, y3);
+                GLWindow.gl.TexCoord(uv.z, uv.y); GLRender.Vertex(x4, y4);
+                GLRender.End();
+            }
+            GLRender.PopMatrix();
         }
     }
 }

@@ -2,6 +2,7 @@
 using MvkClient.Renderer;
 using MvkServer.Glm;
 using MvkServer.World;
+using MvkServer.World.Block;
 
 namespace MvkClient.Entity.Particle
 {
@@ -13,17 +14,26 @@ namespace MvkClient.Entity.Particle
         /// <summary>
         /// Координаты текстуры доп смещения микро частички
         /// </summary>
-        protected vec2i textureJitterUV = new vec2i(0);
+        private vec2i textureJitterUV = new vec2i(0);
 
-        public EntityDiggingFX(WorldBase world, vec3 pos, vec3 motion) : base(world, pos, motion)
+        private EnumBlock enumBlock;
+
+        public EntityDiggingFX(WorldBase world, vec3 pos, vec3 motion, EnumBlock eBlock) : base(world, pos, motion)
         {
+            enumBlock = eBlock;
             particleGravity = 1f;
             particleScale /= 2f;
             color = new vec4(.8f, .8f, .8f, 1f);
 
+            BlockBase block = Blocks.GetBlock(eBlock);
+
             // пробуем цвет травы подкрасить
-            color *= new vec4(0.56f, 0.73f, 0.35f, 1f);
-            textureUV = new vec2i(3, 0); // В зависимости от блока надо будет вытянуть положение
+            color *= new vec4(block.Color, 1f);
+
+            int u = block.Particle % 64;
+            int v = block.Particle / 64;
+
+            textureUV = new vec2i(u, v); // В зависимости от блока надо будет вытянуть положение
             Texture = AssetsTexture.Atlas;
             // (0..12) в пикселах, и в смещении (0..0.01171875) (12 / (16 * 64))
             textureJitterUV = new vec2i(rand.Next(13), rand.Next(13));

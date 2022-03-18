@@ -49,7 +49,9 @@
     <Compile Include="Management\PlayerInstance.cs" />
     <Compile Include="Network\Packets\Client\PacketC01KeepAlive.cs" />
     <Compile Include="Network\Packets\Client\PacketC02LoginStart.cs" />
+    <Compile Include="Network\Packets\Client\PacketC08PlayerBlockPlacement.cs" />
     <Compile Include="Network\Packets\Client\PacketC07PlayerDigging.cs" />
+    <Compile Include="Network\Packets\Client\PacketC09HeldItemChange.cs" />
     <Compile Include="Network\Packets\Client\PacketC0AAnimation.cs" />
     <Compile Include="Network\Packets\Client\PacketC04PlayerPosition.cs" />
     <Compile Include="Network\Packets\Client\PacketC15ClientSetting.cs" />

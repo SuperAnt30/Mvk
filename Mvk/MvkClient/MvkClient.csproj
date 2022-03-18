@@ -118,7 +118,10 @@
     <Compile Include="Renderer\Model\ModelRender.cs" />
     <Compile Include="Renderer\Model\TexturedQuad.cs" />
     <Compile Include="Renderer\Model\TextureVertex.cs" />
-    <Compile Include="Renderer\Render.cs" />
+    <Compile Include="Renderer\RenderAim.cs" />
+    <Compile Include="Renderer\RenderBlockGui.cs" />
+    <Compile Include="Renderer\RenderChunkCursor.cs" />
+    <Compile Include="Renderer\RenderDL.cs" />
     <Compile Include="Renderer\Font\FontAdvance.cs" />
     <Compile Include="Renderer\Font\FontRenderer.cs" />
     <Compile Include="Renderer\Font\Symbol.cs" />
@@ -129,6 +132,7 @@
     <Compile Include="Renderer\LineMesh.cs" />
     <Compile Include="Renderer\Mesh.cs" />
     <Compile Include="Renderer\MeshBuffer.cs" />
+    <Compile Include="Renderer\RenderBlockCursor.cs" />
     <Compile Include="Renderer\Shaders\ShaderItems.cs" />
     <Compile Include="Renderer\Shaders\ShaderLine.cs" />
     <Compile Include="Renderer\Shaders\ShaderVE.cs" />

@@ -5,6 +5,7 @@ using MvkClient.Renderer.Entity;
 using MvkClient.World;
 using MvkServer.Entity;
 using MvkServer.Glm;
+using MvkServer.World.Block;
 using System;
 
 namespace MvkClient.Renderer
@@ -47,7 +48,7 @@ namespace MvkClient.Renderer
             switch (particle)
             {
                 case EnumParticle.Test: AddEffect(new EntityTestFX(World, pos, motion)); break;
-                case EnumParticle.Digging: AddEffect(new EntityDiggingFX(World, pos, motion)); break;
+                case EnumParticle.Digging: AddEffect(new EntityDiggingFX(World, pos, motion, (EnumBlock)items[0])); break;
             }
         }
 

@@ -11,11 +11,8 @@
         public BlockStone()
         {
             Boxes = new Box[] { new Box(0) };
+            Particle = 0;
+            Hardness = 25;
         }
-
-        /// <summary>
-        /// Значение для разрушения в тактах
-        /// </summary>
-        public override int GetDamageValue() => 25;
     }
 }

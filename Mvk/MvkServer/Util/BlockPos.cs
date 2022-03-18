@@ -69,6 +69,11 @@ namespace MvkServer.Util
             return x * x + y * y + z * z;
         }
 
+        /// <summary>
+        /// Проверить локально позицию блока, 0..15
+        /// </summary>
+        public bool EqualsPosition0(int x, int y, int z) => (Position.x & 15) == x && Position.y == y && (Position.z & 15) == z;
+
         public override string ToString() => Position.ToString();
     }
 }

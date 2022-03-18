@@ -3,7 +3,7 @@
 namespace MvkClient.Util
 {
     /// <summary>
-    /// Объект 
+    /// Объект процесса разрушения блока
     /// </summary>
     public class DestroyBlockProgress
     {
@@ -16,8 +16,16 @@ namespace MvkClient.Util
         /// Время такта, когда был создан
         /// </summary>
         public uint CreatedAtCloudUpdateTick { get; private set; }
+        /// <summary>
+        /// Id сущности игрока который разрушает блок
+        /// </summary>
+        public int BreakerId { get; private set; }
 
-        public DestroyBlockProgress(BlockPos blockPos) => Position = blockPos;
+        public DestroyBlockProgress(int breakerId, BlockPos blockPos)
+        {
+            BreakerId = breakerId;
+            Position = blockPos;
+        }
 
         /// <summary>
         /// Вставляет значение урона в этот частично разрушенный блок. 

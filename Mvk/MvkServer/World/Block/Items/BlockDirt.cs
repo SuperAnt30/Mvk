@@ -13,11 +13,8 @@ namespace MvkServer.World.Block.Items
         public BlockDirt()
         {
             Boxes = new Box[] { new Box(2, false, new vec3(.62f, .44f, .37f)) };
+            Particle = 2;
+            Hardness = 5;
         }
-
-        /// <summary>
-        /// Значение для разрушения в тактах
-        /// </summary>
-        public override int GetDamageValue() => 5;
     }
 }

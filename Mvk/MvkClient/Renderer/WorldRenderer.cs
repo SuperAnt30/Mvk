@@ -8,6 +8,7 @@ using MvkServer;
 using MvkServer.Entity;
 using MvkServer.Glm;
 using MvkServer.Util;
+using MvkServer.World.Block;
 using SharpGL;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -34,15 +35,35 @@ namespace MvkClient.Renderer
         /// </summary>
         private int addInitFrustumCulling = 0;
         /// <summary>
-        /// Курсор прицела
+        /// DL курсора прицела
         /// </summary>
-        private uint dListсPricel;
-        private bool compiledPricel = false;
+        private RenderAim renderAim;
+        /// <summary>
+        /// DL курсора блока
+        /// </summary>
+        private RenderBlockCursor renderBlockCursor;
+        /// <summary>
+        /// DL курсора чанков
+        /// </summary>
+        private RenderChunkCursor renderChunkCursor;
+
+        /// <summary>
+        /// Массив всех блоков для GUI
+        /// </summary>
+        private RenderBlockGui[] listBlocksGui = new RenderBlockGui[BlocksCount.COUNT + 1];
 
         public WorldRenderer(WorldClient world)
         {
             World = world;
             ClientMain = world.ClientMain;
+            renderAim = new RenderAim();
+            renderBlockCursor = new RenderBlockCursor(ClientMain);
+            renderChunkCursor = new RenderChunkCursor { IsHidden = true };
+
+            for (int i = 0; i <= BlocksCount.COUNT; i++)
+            {
+                listBlocksGui[i] = new RenderBlockGui((EnumBlock)i, 4f);
+            }
         }
 
         /// <summary>
@@ -69,22 +90,30 @@ namespace MvkClient.Renderer
             DrawEntities(chunks, timeIndex);
 
             // Рендер и прорисовка курсора выбранного блока по AABB
-            DrawCursorVoxel();
-
-            //if (ClientMain.Player.ViewCamera == EnumViewCamera.Eye)
-            {
-                // Прорисовка руки
-                World.RenderEntityManager.RenderEntity(ClientMain.Player, timeIndex);
-            }
+            renderBlockCursor.Render(ClientMain.Player.SelectBlock);
+            
+            // Курсор чанка
+            renderChunkCursor.Render(ClientMain.World.RenderEntityManager.CameraOffset);
 
             // Эффекты
             ClientMain.EffectRender.Render(timeIndex);
+
+            
+
+
+            // Прорисовка руки
+            World.RenderEntityManager.RenderEntity(ClientMain.Player, timeIndex);
 
             // Чистка сетки чанков при необходимости
             World.ChunkPrClient.RemoteMeshChunks();
         }
 
-        
+        /// <summary>
+        /// Смена видимости курсора чанка
+        /// </summary>
+        public void ChunkCursorHiddenShow() => renderChunkCursor.IsHidden = !renderChunkCursor.IsHidden;
+
+
         /// <summary>
         /// Прорисовка вокселей VBO
         /// </summary>
@@ -221,28 +250,26 @@ namespace MvkClient.Renderer
              
 
         /// <summary>
-        /// Прорисовать курсор прицела
+        /// Прорисовать 2д
         /// </summary>
-        public void DrawPricel()
+        public void Draw2D()
         {
-            if (!compiledPricel) CompileDisplayListPricel();
-
             int w = GLWindow.WindowWidth;
             int h = GLWindow.WindowHeight;
-            // Прицел
-            GLWindow.gl.MatrixMode(OpenGL.GL_PROJECTION);
-            GLWindow.gl.LoadIdentity();
-            GLWindow.gl.Ortho2D(0, w, h, 0);
-            GLWindow.gl.MatrixMode(OpenGL.GL_MODELVIEW);
-            GLWindow.gl.LoadIdentity();
 
-            if (ClientMain.Player.ViewCamera == EnumViewCamera.Eye)
-            {
-                GLRender.PushMatrix();
-                GLWindow.gl.Translate(w / 2, h / 2, 0);
-                GLRender.ListCall(dListсPricel);
-                GLRender.PopMatrix();
-            }
+            renderAim.MatrixOrtho2d(w, h);
+
+            // Прицел
+            renderAim.IsHidden = ClientMain.Player.ViewCamera != EnumViewCamera.Eye;
+            renderAim.Render(w, h);
+
+
+            
+            listBlocksGui[ClientMain.Player.slot].Render(64, 16);
+            //listBlocksGui[2].Render(w / 4 + 50, 16);
+            //listBlocksGui[3].Render(w / 4 + 100, 16);
+            //listBlocksGui[4].Render(w / 4 + 150, 16);
+
 
             // ХП
             GLRender.PushMatrix();
@@ -275,67 +302,14 @@ namespace MvkClient.Renderer
         /// Рендер и прорисовка курсора выбранного блока по AABB
         /// DisplayList
         /// </summary>
-        private void DrawCursorVoxel()
-        {
-            if (ClientMain.Player.SelectBlock != null)
-            {
-                vec3 pos = ClientMain.Player.GetPositionFrame();
-                pos.y += ClientMain.Player.GetEyeHeightFrame();
-                // Рамка хитбокса
-                GLRender.PushMatrix();
-                {
-                    vec3 offset = ClientMain.World.RenderEntityManager.CameraOffset;
-                    GLRender.Texture2DDisable();
-                    GLRender.LineWidth(2f);
+        //private void DrawCursorVoxel()
+        //{
+        //    if (ClientMain.Player.SelectBlock != null)
+        //    {
+        //        renderBlockCursor.Render(ClientMain.Player.SelectBlock);
+        //    }
+        //}
 
-                    AxisAlignedBB[] axes = ClientMain.Player.SelectBlock.GetCollisionBoxesToList();
-                    float dis = glm.distance(pos, ClientMain.Player.SelectBlock.Position.ToVec3()) * .01f;
-                    dis *= dis;
-                    dis += 0.001f;
-                    GLRender.DepthDisable();
-                    GLRender.PushMatrix();
-                    {
-                        GLRender.Color(new vec4(1, 1, .5f, .2f));
-                        foreach (AxisAlignedBB aabb in axes)
-                        {
-                            GLRender.DrawOutlinedBoundingBox(aabb.Offset(offset * -1f).Expand(new vec3(dis)));
-                        }
-                    }
-                    GLRender.PopMatrix();
-                    GLRender.DepthEnable();
-                    GLRender.PushMatrix();
-                    {
-                        GLRender.Color(new vec4(1, 1, .5f, .7f));
-                        foreach (AxisAlignedBB aabb in axes)
-                        {
-                            GLRender.DrawOutlinedBoundingBox(aabb.Offset(offset * -1f).Expand(new vec3(dis)));
-                        }
-                    }
-                    GLRender.PopMatrix();
-                }
-                GLRender.PopMatrix();
-            }
-        }
-
-        /// <summary>
-        /// Рендер курсора прицел
-        /// </summary>
-        private void CompileDisplayListPricel()
-        {
-            dListсPricel = GLRender.ListBegin();
-            GLRender.Texture2DDisable();
-            GLRender.LineWidth(2f);
-            GLRender.Color(new vec4(1, 1, 1, .8F));
-            GLRender.Begin(OpenGL.GL_LINES);
-            GLRender.Vertex(0, -8f, 0);
-            GLRender.Vertex(0, 8f, 0);
-            GLRender.Vertex(-8f, 0, 0);
-            GLRender.Vertex(8f, 0, 0);
-            GLRender.End();
-            GLRender.ListEnd();
-        }
-
-             
 
         //private LineMesh hitboxPlayer = new LineMesh();
 

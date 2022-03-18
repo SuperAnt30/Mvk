@@ -29,7 +29,13 @@
         /// Дёрн
         /// </summary>
         Turf = 4
+    }
 
-
+    /// <summary>
+    /// Количество блоков
+    /// </summary>
+    public class BlocksCount
+    {
+        public const int COUNT = 4;
     }
 }

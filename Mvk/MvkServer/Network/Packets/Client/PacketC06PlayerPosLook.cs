@@ -11,18 +11,21 @@ namespace MvkServer.Network.Packets.Client
         private float yaw;
         private float pitch;
         private bool sneaking;
+        private bool sprinting;
 
         public vec3 GetPos() => pos;
         public float GetYaw() => yaw;
         public float GetPitch() => pitch;
         public bool IsSneaking() => sneaking;
+        public bool IsSprinting() => sprinting;
 
-        public PacketC06PlayerPosLook(vec3 pos, float yaw, float pitch, bool sneaking)
+        public PacketC06PlayerPosLook(vec3 pos, float yaw, float pitch, bool sneaking, bool sprinting)
         {
             this.pos = pos;
             this.yaw = yaw;
             this.pitch = pitch;
             this.sneaking = sneaking;
+            this.sprinting = sprinting;
         }
 
         public void ReadPacket(StreamBase stream)
@@ -31,6 +34,7 @@ namespace MvkServer.Network.Packets.Client
             yaw = stream.ReadFloat();
             pitch = stream.ReadFloat();
             sneaking = stream.ReadBool();
+            sprinting = stream.ReadBool();
         }
 
         public void WritePacket(StreamBase stream)
@@ -41,6 +45,7 @@ namespace MvkServer.Network.Packets.Client
             stream.WriteFloat(yaw);
             stream.WriteFloat(pitch);
             stream.WriteBool(sneaking);
+            stream.WriteBool(sprinting);
         }
     }
 }

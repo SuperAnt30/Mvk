@@ -57,6 +57,7 @@ namespace MvkClient.Actions
             // одно нажатие
             if (key == 66 && keyF3) World.RenderEntityManager.IsHiddenHitbox = !World.RenderEntityManager.IsHiddenHitbox; // F3+B
             if (key == 67 && keyF3) Debug.IsDrawServerChunk = !Debug.IsDrawServerChunk; // F3+C
+            if (key == 71 && keyF3) World.WorldRender.ChunkCursorHiddenShow(); // F3+G
             else if (key == 114) keyF3 = true; // F3
             else if (key == 27 || key == 18) World.ClientMain.Screen.InGameMenu(); // Esc или Alt
             else if (key == 116) ClientMain.Player.ViewCameraNext(); // F5

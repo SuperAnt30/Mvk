@@ -5,6 +5,7 @@ using MvkServer.Network.Packets;
 using MvkServer.Network.Packets.Server;
 using MvkServer.Util;
 using MvkServer.World;
+using MvkServer.World.Block;
 using MvkServer.World.Chunk;
 using System;
 using System.Collections.Generic;
@@ -74,13 +75,14 @@ namespace MvkServer.Entity.Player
         public void SetPing(long time) => Ping = (Ping * 3 + (int)(ServerMain.Time() - time)) / 4;
 
         /// <summary>
-        /// Задать положение сидя и на земле ли
+        /// Задать положение сидя и бега
         /// </summary>
-        public void SetSneakOnGround(bool sneaking, bool onGround)
+        public void SetSneakingSprinting(bool sneaking, bool sprinting)
         {
             IsSneaking = sneaking;
-            OnGround = onGround;
+            IsSprinting = sprinting;
             ActionAdd(EnumActionChanged.IsSneaking);
+            ActionAdd(EnumActionChanged.IsSprinting);
         }
 
         /// <summary>
@@ -102,7 +104,7 @@ namespace MvkServer.Entity.Player
         {
             // Tут base.Update не надо, так-как это обрабатывается на клиенте, 
             // тут отправление перемещение игрокам если оно надо
-            TheItemInWorldManager.UpdateBlockRemoving();
+            TheItemInWorldManager.UpdateBlock();
 
 
             // если нет хп обновлям смертельную картинку

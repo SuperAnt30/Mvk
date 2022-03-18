@@ -29,7 +29,7 @@ namespace MvkServer.Network.Packets.Server
         public void ReadPacket(StreamBase stream)
         {
             blockPos = new BlockPos(stream.ReadInt(), stream.ReadInt(), stream.ReadInt());
-            eBlock = (EnumBlock)stream.ReadByte();
+            eBlock = (EnumBlock)stream.ReadUShort();
         }
 
         public void WritePacket(StreamBase stream)

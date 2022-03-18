@@ -34,6 +34,7 @@ namespace MvkServer.World.Block
             }
             return block;
         }
+        public static BlockBase GetBlock(EnumBlock eBlock) => GetBlock(eBlock, new BlockPos());
 
         /// <summary>
         /// Получить блок воздуха

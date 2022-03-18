@@ -49,8 +49,11 @@ namespace MvkServer.Network.Packets.Client
             /// <summary>
             /// Блок разрушен
             /// </summary>
-            Stop = 2
-            //Drop = 3
+            Stop = 2,
+            /// <summary>
+            /// Поставить
+            /// </summary>
+            //Put = 3
         }
     }
 }

@@ -138,6 +138,7 @@ namespace MvkClient.Network
                 {
                     case PacketS0BAnimation.EnumAnimation.SwingItem: entity.SwingItem(); break;
                     case PacketS0BAnimation.EnumAnimation.Hurt: entity.PerformHurtAnimation(); break;
+                    case PacketS0BAnimation.EnumAnimation.Fall: entity.ParticleFall(10); break;
                 }
             }
         }
@@ -214,7 +215,7 @@ namespace MvkClient.Network
             {
                 entity.SetMotionServer(
                     packet.GetPos(), packet.GetYaw(), packet.GetPitch(),
-                    packet.IsSneaking(), packet.OnGround());
+                    packet.IsSneaking(), packet.OnGround(), packet.IsSprinting());
             }
         }
 

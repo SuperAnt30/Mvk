@@ -38,6 +38,8 @@ namespace MvkServer.Network
                     case 0x05: return new PacketC05PlayerLook();
                     case 0x06: return new PacketC06PlayerPosLook();
                     case 0x07: return new PacketC07PlayerDigging();
+                    case 0x08: return new PacketC08PlayerBlockPlacement();
+                    case 0x09: return new PacketC09HeldItemChange();
                     case 0x0A: return new PacketC0AAnimation();
                     case 0x0C: return new PacketC0CPlayerAction();
                     case 0x15: return new PacketC15ClientSetting();

@@ -775,7 +775,7 @@ namespace MvkServer.Management
                 for (int i = 0; i < players.Count; i++)
                 {
                     EntityPlayerServer entity = players[i];
-                    strPlayers += entity.Name + " [p" + entity.Ping + "|" + (entity.IsDead ? "Dead" : ("h" + entity.Health)) + "]";
+                    strPlayers += entity.Name + " [p" + entity.Ping + "|" + (entity.IsDead ? "Dead" : ("h" + entity.Health)) + (entity.IsSprinting ? "S" : "-") + "]";
                 }
             }
             return strPlayers;

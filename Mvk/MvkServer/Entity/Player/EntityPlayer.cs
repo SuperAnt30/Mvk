@@ -1,6 +1,7 @@
 ﻿using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World;
+using MvkServer.World.Block;
 
 namespace MvkServer.Entity.Player
 {
@@ -30,6 +31,10 @@ namespace MvkServer.Entity.Player
         /// </summary>
         public vec2i ChunkPosManaged { get; protected set; } = new vec2i();
 
+        /// <summary>
+        /// Слот выбранного
+        /// </summary>
+        public int slot = 0;
 
         protected EntityPlayer(WorldBase world) : base(world)
         {

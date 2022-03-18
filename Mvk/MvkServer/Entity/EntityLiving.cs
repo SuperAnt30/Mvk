@@ -3,6 +3,7 @@ using MvkServer.Glm;
 using MvkServer.Network.Packets.Server;
 using MvkServer.Util;
 using MvkServer.World;
+using MvkServer.World.Block;
 
 namespace MvkServer.Entity
 {
@@ -241,11 +242,17 @@ namespace MvkServer.Entity
             // определяем в лаве ли мы по кализии
             // ... func_180799_ab
 
-            // если мы ниже -64 по Y убиваем игрока
-            if (Position.y > 128 || Position.y < -64) Kill();
+            // Частички при беге блока
+            ParticleBlockSprinting();
+
+            // Было ли падение
+            Fall();
+
+            // если мы ниже -128 по Y убиваем игрока
+            if (Position.y < -128) Kill();
 
             // если нет хп обновлям смертельную картинку
-            if (Health <= 0f) DeathUpdate();
+            if (Health <= 0f && DeathTime != -1) DeathUpdate();
 
             // Счётчик получения урона для анимации
             if (DamageTime > 0) DamageTime--;
@@ -642,7 +649,7 @@ namespace MvkServer.Entity
         /// <summary>
         /// Задать позицию от сервера
         /// </summary>
-        public void SetMotionServer(vec3 pos, float yaw, float pitch, bool sneaking, bool onGround)
+        public void SetMotionServer(vec3 pos, float yaw, float pitch, bool sneaking, bool onGround, bool sprinting)
         {
             if (IsSneaking != sneaking)
             {
@@ -650,6 +657,7 @@ namespace MvkServer.Entity
                 if (IsSneaking) Sitting(); else Standing();
             }
             OnGround = onGround;
+            IsSprinting = sprinting;
             PositionServer = pos;
             RotationYawServer = yaw;
             RotationPitchServer = pitch;
@@ -681,8 +689,17 @@ namespace MvkServer.Entity
 
             if (DeathTime >= 20)
             {
+                for (int i = 0; i < 100; i++)
+                {
+                    World.SpawnParticle(EnumParticle.Test,
+                    Position + new vec3(((float)rand.NextDouble() - .5f) * Width,
+                    .1f,
+                    ((float)rand.NextDouble() - .5f) * Width),
+                    new vec3(0));
+                }
+                DeathTime = -1;
                 SetDead();
-                //DeathTime = 0;
+
                 //Health = 20;
                 //    int var1;
 
@@ -717,6 +734,9 @@ namespace MvkServer.Entity
         {
             Health = GetHelathMax();
             DeathTime = 0;
+            fallDistanceResult = 0f;
+            fallDistance = 0f;
+            Motion = new vec3(0);
             IsDead = false;
         }
 
@@ -748,7 +768,6 @@ namespace MvkServer.Entity
                 {
                     // Упал
                     fallDistanceResult = fallDistance;
-                    Fall(fallDistance);
                     fallDistance = 0f;
                 }
             }
@@ -757,7 +776,7 @@ namespace MvkServer.Entity
         /// <summary>
         /// Падение
         /// </summary>
-        protected virtual void Fall(float distance) { }
+        protected virtual void Fall() { }
 
         /// <summary>
         /// Задать плоожение в чанке
@@ -843,6 +862,94 @@ namespace MvkServer.Entity
         /// Возвращает истину, если другие Сущности не должны проходить через эту Сущность
         /// </summary>
         public override bool CanBeCollidedWith() => !IsDead;
+
+        /// <summary>
+        /// Частички при беге блока
+        /// </summary>
+        private void ParticleBlockSprinting()
+        {
+            if (IsSprinting)// && !IsInWater())
+            {
+                ParticleBlockDown(Position, 1);
+            }
+        }
+        /// <summary>
+        /// Частички при падении
+        /// </summary>
+        public void ParticleFall(float distance)
+        {
+            if (distance > 2)
+            {
+                int count = (int)distance + 2;
+                if (count > 20) count = 20;
+                ParticleBlockDown(Position, count);
+            }
+        }
+
+        /// <summary>
+        /// Частички под ногами, бег или падение
+        /// </summary>
+        protected void ParticleBlockDown(vec3 pos, int count)
+        {
+            BlockPos blockPos = new BlockPos(pos.x, pos.y - 0.20002f, pos.z);
+            BlockBase block = World.GetBlock(blockPos);
+            if (!block.IsAir) // TODO:: нужна проверка что у блока есть частичка
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    World.SpawnParticle(EnumParticle.Digging,
+                    pos + new vec3(((float)rand.NextDouble() - .5f) * Width,
+                    .1f,
+                    ((float)rand.NextDouble() - .5f) * Width), 
+                    new vec3(0),
+                    (int)block.EBlock);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Создает частицу взрыва вокруг местоположения Сущности
+        /// </summary>
+        public void SpawnExplosionParticle()
+        {
+            //if (this.worldObj.isRemote)
+            //{
+            //    for (int var1 = 0; var1 < 20; ++var1)
+            //    {
+            //        double var2 = this.rand.nextGaussian() * 0.02D;
+            //        double var4 = this.rand.nextGaussian() * 0.02D;
+            //        double var6 = this.rand.nextGaussian() * 0.02D;
+            //        double var8 = 10.0D;
+            //        this.worldObj.spawnParticle(EnumParticleTypes.EXPLOSION_NORMAL, this.posX + (double)(this.rand.nextFloat() * this.width * 2.0F) - (double)this.width - var2 * var8, this.posY + (double)(this.rand.nextFloat() * this.height) - var4 * var8, this.posZ + (double)(this.rand.nextFloat() * this.width * 2.0F) - (double)this.width - var6 * var8, var2, var4, var6, new int[0]);
+            //    }
+            //}
+            //else
+            //{
+            //    this.worldObj.setEntityState(this, (byte)20);
+            //}
+        }
+
+        /// <summary>
+        /// Визуализирует частицы сломанных предметов, используя заданный ItemStack
+        /// </summary>
+        /// <param name="p_70669_1_"></param>
+        public void RenderBrokenItemStack(EnumBlock p_70669_1_)
+        {
+        //    this.playSound("random.break", 0.8F, 0.8F + this.worldObj.rand.nextFloat() * 0.4F);
+
+        //    for (int var2 = 0; var2< 5; ++var2)
+        //    {
+        //        Vec3 var3 = new Vec3(((double)this.rand.nextFloat() - 0.5D) * 0.1D, Math.random() * 0.1D + 0.1D, 0.0D);
+        //var3 = var3.rotatePitch(-this.rotationPitch* (float) Math.PI / 180.0F);
+        //var3 = var3.rotateYaw(-this.rotationYaw* (float) Math.PI / 180.0F);
+        //double var4 = (double)(-this.rand.nextFloat()) * 0.6D - 0.3D;
+        //Vec3 var6 = new Vec3(((double)this.rand.nextFloat() - 0.5D) * 0.3D, var4, 0.6D);
+        //var6 = var6.rotatePitch(-this.rotationPitch* (float) Math.PI / 180.0F);
+        //var6 = var6.rotateYaw(-this.rotationYaw* (float) Math.PI / 180.0F);
+        //var6 = var6.addVector(this.posX, this.posY + (double)this.getEyeHeight(), this.posZ);
+        //        this.worldObj.spawnParticle(EnumParticleTypes.ITEM_CRACK, var6.xCoord, var6.yCoord, var6.zCoord, var3.xCoord, var3.yCoord + 0.05D, var3.zCoord, new int[] { Item.getIdFromItem(p_70669_1_.getItem()) });
+        //    }
+        }
 
         // Визуализирует частицы сломанных предметов, используя заданный ItemStack
         // renderBrokenItemStack

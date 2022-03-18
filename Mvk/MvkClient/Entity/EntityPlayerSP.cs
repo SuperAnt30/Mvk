@@ -5,6 +5,7 @@ using MvkClient.World;
 using MvkServer;
 using MvkServer.Entity;
 using MvkServer.Glm;
+using MvkServer.Management;
 using MvkServer.Network.Packets.Client;
 using MvkServer.Util;
 using MvkServer.World.Block;
@@ -72,51 +73,55 @@ namespace MvkClient.Entity
         /// Выбранный блок
         /// </summary>
         public BlockBase SelectBlock { get; protected set; } = null;
-        
 
+        /// <summary>
+        /// Позиция с учётом итерполяции кадра
+        /// </summary>
+        private vec3 positionFrame;
+        /// <summary>
+        /// Поворот Pitch с учётом итерполяции кадра
+        /// </summary>
+        private float pitchFrame;
+        /// <summary>
+        /// Поворот Yaw головы с учётом итерполяции кадра
+        /// </summary>
+        private float yawHeadFrame;
+        /// <summary>
+        /// Поворот Yaq тела с учётом итерполяции кадра
+        /// </summary>
+        private float yawBodyFrame;
+        /// <summary>
+        /// Высота глаз с учётом итерполяции кадра
+        /// </summary>
+        private float eyeFrame;
 
-        protected vec3 positionFrame;
-        protected float pitchFrame;
-        protected float yawHeadFrame;
-        protected float yawBodyFrame;
-        protected float eyeFrame;
-
-        protected uint dListLookAt;
+        /// <summary>
+        /// Лист DisplayList матрицы 
+        /// </summary>
+        private uint dListLookAt;
         /// <summary>
         /// массив векторов расположения камеры в пространстве для DisplayList
         /// </summary>
-        protected vec3[] lookAtDL;
+        private vec3[] lookAtDL;
 
         /// <summary>
-        /// Счётчик паузы в тактах между ударами
+        /// Счётчик паузы анимации левого удара, такты
         /// </summary>
-        private int blockHitDelay = 0;
-        /// <summary>
-        /// Максимальное количество тактов для разрушения блока 
-        /// </summary>
-        private int blockDamageValue = 0;
-        /// <summary>
-        /// Счётчик тактов при нажатии левого клика мыши
-        /// </summary>
-        private int leftClickCounter = 0;
+        private int leftClickPauseCounter = 0;
         /// <summary>
         /// Активна ли рука в действии
         /// </summary>
         private bool handAction = false;
         /// <summary>
-        /// Старт активной руки в действии
+        /// Объект работы над игроком разрушения блока, итомы и прочее
         /// </summary>
-        private bool handActionStart = false;
-        /// <summary>
-        /// Позиция блока которого разрушаем
-        /// </summary>
-        private BlockPos blockPosDestroy = new BlockPos();
+        private ItemInWorldManager itemInWorldManager;
 
         public EntityPlayerSP(WorldClient world) : base(world)
         {
             Fov = new SmoothFrame(1.43f);
             Eye = new SmoothFrame(GetEyeHeight());
-           // IsHidden = false;
+            itemInWorldManager = new ItemInWorldManager(world, this);
         }
 
         #region DisplayList
@@ -175,6 +180,9 @@ namespace MvkClient.Entity
 
             base.Update();
 
+            // Обновление курсоро, не зависимо от действия игрока, так как рядом может быть изминение
+            UpCursor();
+
             if (RotationEquals())
             {
                 IsFrustumCulling = true;
@@ -182,19 +190,19 @@ namespace MvkClient.Entity
             if (ActionChanged != EnumActionChanged.None)
             {
                 IsFrustumCulling = true;
-                UpCursor();
                 UpdateActionPacket();
             }
 
-            if (leftClickCounter > 0) leftClickCounter--;
-            if (blockHitDelay > 0) blockHitDelay--;
+            // счётчик паузы для анимации удара
+            leftClickPauseCounter++;
 
             if (handAction)
             {
-                if (HandActionUpdate() && leftClickCounter <= 0)
+                HandActionUpdate();
+                if (leftClickPauseCounter > 5)
                 {
                     SwingItem();
-                    leftClickCounter = 5;
+                    leftClickPauseCounter = 0;
                 }
             }
 
@@ -217,15 +225,16 @@ namespace MvkClient.Entity
         /// </summary>
         private void UpdateActionPacket()
         {
-            bool isSneaking = false;
+            bool isSS = false;
             if (ActionChanged.HasFlag(EnumActionChanged.IsSneaking))
             {
                 Eye.Set(GetEyeHeight(), 4);
-                isSneaking = true;
+                isSS = true;
             }
             if (ActionChanged.HasFlag(EnumActionChanged.IsSprinting))
             {
                 Fov.Set(IsSprinting ? 1.22f : 1.43f, 4);
+                isSS = true;
             }
 
             bool isPos = ActionChanged.HasFlag(EnumActionChanged.Position);
@@ -233,15 +242,17 @@ namespace MvkClient.Entity
 
             if (isPos && isLook)
             {
-                ClientWorld.ClientMain.TrancivePacket(new PacketC06PlayerPosLook(Position, RotationYawHead, RotationPitch, IsSneaking));
+                ClientWorld.ClientMain.TrancivePacket(new PacketC06PlayerPosLook(
+                    Position, RotationYawHead, RotationPitch, IsSneaking, IsSprinting
+                ));
             }
             else if (isLook)
             {
                 ClientWorld.ClientMain.TrancivePacket(new PacketC05PlayerLook(RotationYawHead, RotationPitch, IsSneaking));
             }
-            else if (isPos || isSneaking)
+            else if (isPos || isSS)
             {
-                ClientWorld.ClientMain.TrancivePacket(new PacketC04PlayerPosition(Position, IsSneaking));
+                ClientWorld.ClientMain.TrancivePacket(new PacketC04PlayerPosition(Position, IsSneaking, IsSprinting));
             }
             ActionNone();
         }
@@ -505,98 +516,41 @@ namespace MvkClient.Entity
             return pointedEntity != null ? new MovingObjectPosition(pointedEntity) : movingObjectBlock;
         }
 
-        private void ReturnDestroy(PacketC07PlayerDigging.EnumDigging enumDigging)
-        {
-            ClientWorld.ClientMain.TrancivePacket(new PacketC07PlayerDigging(blockPosDestroy, enumDigging));
-            ClientWorld.SendBlockBreakProgress(Id, blockPosDestroy, -1);
-            blockPosDestroy = new BlockPos();
-        }
         /// <summary>
         /// Действие правой рукой
         /// </summary>
-        private bool HandActionUpdate()
+        private void HandActionUpdate()
         {
             MovingObjectPosition moving = RayCast(10f);
-            if (!blockPosDestroy.IsEmpty && ((moving.IsBlock() && !blockPosDestroy.Position.Equals(moving.Block.Position.Position)) || !moving.IsBlock()))
-            {
-                ReturnDestroy(PacketC07PlayerDigging.EnumDigging.About);
-                blockHitDelay = 0;
-            }
-            if (blockHitDelay <= 0)
-            {
-                blockHitDelay = 0;
-                handAction = true;
-                if (moving.IsBlock())
-                {
-                    if (!blockPosDestroy.IsEmpty)
-                    {
-                        // Частицы
-                        vec3 pos = blockPosDestroy.ToVec3() + new vec3(.5f);
-                        for (int i = 0; i < 20; i++)
-                        {
-                            ClientWorld.SpawnParticle(EnumParticle.Digging, pos + new vec3((rand.Next(16) - 8) / 16f, (rand.Next(12) - 6) / 16f, (rand.Next(16) - 8) / 16f), new vec3(0));
-                        }
-                        ReturnDestroy(PacketC07PlayerDigging.EnumDigging.Stop);
-                        UpCursor();
-                    }
-                    else
-                    {
-                        ClientWorld.ClientMain.TrancivePacket(new PacketC07PlayerDigging(moving.Block.Position, PacketC07PlayerDigging.EnumDigging.Start));
-                        blockPosDestroy = moving.Block.Position;
-                        blockDamageValue = moving.Block.GetDamageValue(); // как долго бить по блоку, надо определить от блока
-                        blockHitDelay = blockDamageValue;
-                        // удар по блоку
-                        //EnumParticle particle = rand.Next(2) == 1 ? EnumParticle.Test : EnumParticle.Digging;
-                        //particle = EnumParticle.Digging;
-                        //int count = 20;// rand.Next(2, 6);
-                        //vec3 pos = moving.Block.Position.ToVec3() + new vec3(.5f);
-                        //for (int i = 0; i < count; i++)
-                        //{
-                        //    ClientWorld.SpawnParticle(particle, pos + new vec3((rand.Next(16) - 8) / 16f, (rand.Next(12) - 6) / 16f, (rand.Next(16) - 8) / 16f), new vec3(0));
-                        //    //ClientWorld.SpawnParticle(particle, moving.RayHit, new vec3(0));
-                        //}
-                        //ChunkRender chunk = ClientWorld.ChunkPrClient.GetChunkRender(moving.Block.Position.GetPositionChunk());
-                        // ChunkBase chunk = ClientWorld.GetChunk(moving.Block.Position.GetPositionChunk());
-                        // TODO::2022-03-01 мгновенная визуализация удаления блока
-                        //chunk.SetEBlock(new vec3i(moving.Block.Position.X & 15, moving.Block.Position.Y, moving.Block.Position.Z & 15), MvkServer.World.Block.EnumBlock.Air);
-                        //chunk.ModifiedToRender(moving.Block.Position.GetPositionChunkY());
-                        
-                    }
-                }
-                else if (moving.IsEntity())
-                {
-                    if (!moving.Entity.IsDead)
-                    {
-                        handAction = false;
-                        vec3 pos = moving.Entity.Position + new vec3(.5f);
-                        for (int i = 0; i < 5; i++)
-                        {
-                            ClientWorld.SpawnParticle(EnumParticle.Test, pos + new vec3((rand.Next(16) - 8) / 16f, (rand.Next(12) - 6) / 16f, (rand.Next(16) - 8) / 16f), new vec3(0));
-                        }
-                        ClientWorld.ClientMain.TrancivePacket(new PacketC03UseEntity(moving.Entity.Id, moving.Entity.Position - Position));
-                    }
-                }
+            // обновляем счётчик удара
+            itemInWorldManager.UpdateBlock();
 
-                if (blockHitDelay > 0 && moving.IsBlock())
-                {
-                    // статус разрушения
-                    ClientWorld.SendBlockBreakProgress(Id, blockPosDestroy, (blockDamageValue - blockHitDelay) * 10 / blockDamageValue);
-                }
-
-
-                if (handActionStart)
-                {
-                    handActionStart = false;
-                    return true;
-                }
-                return false;
-            }
-            if (blockHitDelay > 0 && moving.IsBlock())
+            if (itemInWorldManager.IsDestroyingBlock && ((moving.IsBlock() && !itemInWorldManager.BlockPosDestroy.Position.Equals(moving.Block.Position.Position)) || !moving.IsBlock()))
             {
-                // статус разрушения
-                ClientWorld.SendBlockBreakProgress(Id, blockPosDestroy, (blockDamageValue - blockHitDelay) * 10 / blockDamageValue);
+                // Отмена разбитие блока, сменился блок
+                ClientMain.TrancivePacket(new PacketC07PlayerDigging(itemInWorldManager.BlockPosDestroy, PacketC07PlayerDigging.EnumDigging.About));
+                itemInWorldManager.DestroyAbout();
             }
-            return !blockPosDestroy.IsEmpty && moving.IsBlock() && blockHitDelay > 0;
+            else if (itemInWorldManager.IsDestroyingBlock)
+            {
+                // Этап разбития блока
+                if (itemInWorldManager.IsDestroy())
+                {
+                    // Стоп, окончено разбитие
+                    ClientMain.TrancivePacket(new PacketC07PlayerDigging(itemInWorldManager.BlockPosDestroy, PacketC07PlayerDigging.EnumDigging.Stop));
+                    itemInWorldManager.DestroyStop();
+                    //UpCursor();
+                }
+            }
+            else if(itemInWorldManager.NotPauseUpdate)
+            {
+                DestroyingBlockStart(moving);
+            }
+            else
+            {
+                // Пометка, чтоб анимации на удар не было
+                leftClickPauseCounter = 0;
+            }
         }
 
         /// <summary>
@@ -604,21 +558,78 @@ namespace MvkClient.Entity
         /// </summary>
         public void HandAction()
         {
-            handAction = true;
-            handActionStart = true;
+            MovingObjectPosition moving = RayCast(10f);
+            if (moving.IsEntity())
+            {
+                // Курсор попал на сущность
+                if (!moving.Entity.IsDead)
+                {
+                    // АТАКА по сущности
+                    vec3 pos = moving.Entity.Position + new vec3(.5f);
+                    for (int i = 0; i < 5; i++)
+                    {
+                        ClientWorld.SpawnParticle(EnumParticle.Test, pos + new vec3((rand.Next(16) - 8) / 16f, (rand.Next(12) - 6) / 16f, (rand.Next(16) - 8) / 16f), new vec3(0));
+                    }
+                    ClientWorld.ClientMain.TrancivePacket(new PacketC03UseEntity(moving.Entity.Id, moving.Entity.Position - Position));
+                }
+                handAction = false;
+            }
+            else
+            {
+                DestroyingBlockStart(moving);
+                handAction = true;
+            }
         }
+
+        /// <summary>
+        /// Действие правй рукой, ставим блок
+        /// </summary>
+        public void HandActionTwo()
+        {
+            MovingObjectPosition moving = RayCast(10f);
+            if (moving.IsBlock() && slot != 0)
+            {
+                BlockPos blockPos = new BlockPos(moving.Put);
+                vec3 facing = moving.RayHit - new vec3(moving.Put);
+
+                ClientMain.TrancivePacket(new PacketC08PlayerBlockPlacement(blockPos, facing));
+                itemInWorldManager.Put(blockPos, facing);
+                //UpCursor();
+            }
+        }
+
+        /// <summary>
+        /// Начало разрушения блока
+        /// </summary>
+        private void DestroyingBlockStart(MovingObjectPosition moving)
+        {
+            if (!itemInWorldManager.IsDestroyingBlock && moving.IsBlock())
+            {
+                // Начало разбитие блока
+                ClientWorld.ClientMain.TrancivePacket(new PacketC07PlayerDigging(moving.Block.Position, PacketC07PlayerDigging.EnumDigging.Start));
+                itemInWorldManager.DestroyStart(moving.Block.Position);
+                // Пометка, чтоб анимация сразу срабатывала на удар руки
+                leftClickPauseCounter = 100;
+            }
+            else
+            {
+                // Пометка, чтоб анимация сразу срабатывала на удар руки
+                leftClickPauseCounter = 0;
+            }
+        }
+
+
         /// <summary>
         /// Отмена действия правой рукой
         /// </summary>
         public void UndoHandAction()
         {
-            handAction = false;
-            handActionStart = false;
-            if (!blockPosDestroy.IsEmpty)
+            if (itemInWorldManager.IsDestroyingBlock)
             {
-                ReturnDestroy(PacketC07PlayerDigging.EnumDigging.About);
-                blockHitDelay = 0;
+                ClientMain.TrancivePacket(new PacketC07PlayerDigging(itemInWorldManager.BlockPosDestroy, PacketC07PlayerDigging.EnumDigging.About));
+                itemInWorldManager.DestroyAbout();
             }
+            handAction = false;
         }
 
         /// <summary>
@@ -639,9 +650,14 @@ namespace MvkClient.Entity
         /// <summary>
         /// Падение
         /// </summary>
-        protected override void Fall(float distance)
+        protected override void Fall()
         {
-            ClientWorld.ClientMain.TrancivePacket(new PacketC0CPlayerAction(PacketC0CPlayerAction.EnumAction.Fall, distance));
+            if (fallDistanceResult > 0)
+            {
+                ClientWorld.ClientMain.TrancivePacket(new PacketC0CPlayerAction(PacketC0CPlayerAction.EnumAction.Fall, fallDistanceResult));
+                ParticleFall(fallDistanceResult);
+                fallDistanceResult = 0;
+            }
         }
 
         /// <summary>

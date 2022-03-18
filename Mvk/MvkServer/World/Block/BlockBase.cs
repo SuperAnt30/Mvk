@@ -1,4 +1,5 @@
-﻿using MvkServer.Glm;
+﻿using MvkServer.Entity.Player;
+using MvkServer.Glm;
 using MvkServer.Util;
 
 namespace MvkServer.World.Block
@@ -38,13 +39,23 @@ namespace MvkServer.World.Block
         public bool IsCollidable { get; protected set; } = true;
         /// <summary>
         /// Цвет блока по умолчани, биом потом заменит
+        /// Для частички
         /// </summary>
-       // public vec3 Color { get; protected set; } = new vec3(1);
+        public vec3 Color { get; protected set; } = new vec3(1);
+        /// <summary>
+        /// Индекс картинки частички
+        /// </summary>
+        public int Particle { get; protected set; } = 0;
 
         /// <summary>
         /// Ограничительная рамка занимает весь блок, для оптимизации, без проверки AABB блока
         /// </summary>
         public bool IsBoundingBoxAll { get; protected set; } = true;
+
+        /// <summary>
+        /// Сколько ударов требуется, чтобы сломать блок в тактах (20 тактов = 1 секунда)
+        /// </summary>
+        public int Hardness { get; protected set; } = 0;
 
         /// <summary>
         /// Задать позицию блока
@@ -62,6 +73,25 @@ namespace MvkServer.World.Block
         {
             vec3 min = Position.ToVec3();
             return new AxisAlignedBB[] { new AxisAlignedBB(min, min + 1f) };
+        }
+
+        /// <summary>
+        /// Получить одну большую рамку блока, если их несколько они объеденяться
+        /// </summary>
+        public AxisAlignedBB GetCollision()
+        {
+            AxisAlignedBB[] axes = GetCollisionBoxesToList();
+            if (axes.Length > 0)
+            {
+                AxisAlignedBB aabb = axes[0];
+                for (int i = 1; i < axes.Length; i++)
+                {
+                    aabb = aabb.AddCoord(axes[i].Min).AddCoord(axes[i].Max);
+                }
+                return aabb;
+            }
+            vec3 min = Position.ToVec3();
+            return new AxisAlignedBB(min, min + 1f);
         }
 
         /// <summary>
@@ -86,8 +116,29 @@ namespace MvkServer.World.Block
         /// <summary>
         /// Значение для разрушения в тактах
         /// </summary>
-        public virtual int GetDamageValue() => 0;
+        //public virtual int GetDamageValue() => 0;
 
+       // public float GetBlockHardness()
+
+        /// <summary>
+        /// Получите твердость этого блока относительно способности данного игрока
+        /// Тактов чтоб сломать
+        /// </summary>
+        public int GetPlayerRelativeBlockHardness(EntityPlayer playerIn)
+        {
+            //return 0; // креатив
+            return Hardness; // выживание
+            //return hardness < 0.0F ? 0.0F : (!playerIn.canHarvestBlock(this) ? playerIn.func_180471_a(this) / hardness / 100.0F : playerIn.func_180471_a(this) / hardness / 30.0F);
+        }
+
+        /// <summary>
+        /// Проверка равенства блока по координатам и типу
+        /// </summary>
+        public bool Equals(BlockBase block)
+        {
+            return block.Position.X == Position.X && block.Position.Y == Position.Y && block.Position.Z == Position.Z
+                && block.EBlock == EBlock;
+        }
         /// <summary>
         /// Строка
         /// </summary>

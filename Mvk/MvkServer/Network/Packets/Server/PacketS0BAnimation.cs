@@ -38,7 +38,11 @@
             /// <summary>
             /// Анимация боли
             /// </summary>
-            Hurt = 2
+            Hurt = 2,
+            /// <summary>
+            /// Анимация падения
+            /// </summary>
+            Fall = 3
         }
     }
 }
