@@ -14,32 +14,34 @@ namespace MvkClient.Renderer.Entity
         /// <summary>
         /// Основной клиент
         /// </summary>
-        public Client ClientMain { get; protected set; }
+        public Client ClientMain { get; private set; }
         /// <summary>
         /// Клиентский объект мира
         /// </summary>
-        public WorldClient World { get; protected set; }
-
+        public WorldClient World { get; private set; }
         /// <summary>
         /// Скрыть ли хитбокс сущности
         /// </summary>
         public bool IsHiddenHitbox { get; set; } = true;
+        /// <summary>
+        /// Позиция основного игрока, камеры
+        /// </summary>
+        public vec3 CameraPosition { get; private set; }
+        public float CameraRotationYaw { get; private set; }
+        public float CameraRotationPitch { get; private set; }
+        /// <summary>
+        /// Смещение камеры для всего мира и всех элементов
+        /// </summary>
+        public vec3 CameraOffset { get; private set; }
+
+        public RenderItem Item { get; private set; }
 
         /// <summary>
         /// Перечень рендер объектов сущьностей
         /// </summary>
         private Hashtable entities = new Hashtable();
 
-        /// <summary>
-        /// Позиция основного игрока, камеры
-        /// </summary>
-        public vec3 CameraPosition { get; protected set; }
-        public float CameraRotationYaw { get; protected set; }
-        public float CameraRotationPitch { get; protected set; }
-        /// <summary>
-        /// Смещение камеры для всего мира и всех элементов
-        /// </summary>
-        public vec3 CameraOffset { get; protected set; }
+        
 
         public RenderManager(WorldClient world)
         {
@@ -48,7 +50,8 @@ namespace MvkClient.Renderer.Entity
             entities.Add(EnumEntities.Player, new RenderPlayer(this, new ModelPlayer()));
             entities.Add(EnumEntities.PlayerHand, new RenderHead(this, new ModelPlayerHand()));
             entities.Add(EnumEntities.Chicken, new RenderChicken(this, new ModelChicken()));
-            
+            entities.Add(EnumEntities.Item, new RenderEntityItem(this, Item));
+
         }
 
         /// <summary>
@@ -62,11 +65,11 @@ namespace MvkClient.Renderer.Entity
             CameraOffset = new vec3(pos.x, 0, pos.z);
         }
 
-        protected RendererLivingEntity GetEntityRenderObject(EntityLiving entity)
+        protected RenderEntityBase GetEntityRenderObject(EntityBase entity)
         {
             if (entities.ContainsKey(entity.Type))
             {
-                return entities[entity.Type] as RendererLivingEntity;
+                return entities[entity.Type] as RenderEntityBase;
             }
             return null;
         }
@@ -74,12 +77,12 @@ namespace MvkClient.Renderer.Entity
         /// <summary>
         /// Сгенерировать сущность на экране
         /// </summary>
-        public void RenderEntity(EntityLiving entity, float timeIndex)
+        public void RenderEntity(EntityBase entity, float timeIndex)
         {
             if (!entity.IsDead)
             {
                 World.CountEntitiesShowAdd();
-                RendererLivingEntity render = GetEntityRenderObject(entity);
+                RenderEntityBase render = GetEntityRenderObject(entity);
                  
                 if (render != null)
                 {
@@ -95,13 +98,21 @@ namespace MvkClient.Renderer.Entity
         /// <summary>
         /// Отрисовать рамку хитбокса сущности, для отладки
         /// </summary>
-        protected void RenderEntityBoundingBox(EntityLiving entity, vec3 offset, float timeIndex)
+        protected void RenderEntityBoundingBox(EntityBase entity, vec3 offset, float timeIndex)
         {
             vec3 pos0 = entity.GetPositionFrame(timeIndex);
-            vec3 look = entity.GetLookFrame(timeIndex);
+            vec3 look = new vec3(0);
             AxisAlignedBB aabb = entity.GetBoundingBox(new vec3(0));
-            float eye = entity.GetEyeHeight() + aabb.Min.y;
+            float eye = aabb.Min.y;
             float width = entity.Width;
+
+            bool isLook = false;
+            if (entity is EntityLiving)
+            {
+                look += ((EntityLiving)entity).GetLookFrame(timeIndex);
+                eye += ((EntityLiving)entity).GetEyeHeight();
+                isLook = true;
+            }
 
             GLRender.PushMatrix();
             {
@@ -114,23 +125,26 @@ namespace MvkClient.Renderer.Entity
                 GLRender.Color(new vec4(1));
                 GLRender.DrawOutlinedBoundingBox(aabb);
 
-                // Уровень глаз
-                GLRender.Color(new vec4(1, 0, 0, 1));
-                GLRender.Begin(OpenGL.GL_LINE_STRIP);
-                GLRender.Vertex(aabb.Min.x, eye, aabb.Min.z);
-                GLRender.Vertex(aabb.Max.x, eye, aabb.Min.z);
-                GLRender.Vertex(aabb.Max.x, eye, aabb.Max.z);
-                GLRender.Vertex(aabb.Min.x, eye, aabb.Max.z);
-                GLRender.Vertex(aabb.Min.x, eye, aabb.Min.z);
-                GLRender.End();
+                if (isLook)
+                {
+                    // Уровень глаз
+                    GLRender.Color(new vec4(1, 0, 0, 1));
+                    GLRender.Begin(OpenGL.GL_LINE_STRIP);
+                    GLRender.Vertex(aabb.Min.x, eye, aabb.Min.z);
+                    GLRender.Vertex(aabb.Max.x, eye, aabb.Min.z);
+                    GLRender.Vertex(aabb.Max.x, eye, aabb.Max.z);
+                    GLRender.Vertex(aabb.Min.x, eye, aabb.Max.z);
+                    GLRender.Vertex(aabb.Min.x, eye, aabb.Min.z);
+                    GLRender.End();
 
-                // Луч глаз куда смотрит
-                GLRender.Color(new vec4(0, 0, 1, 1));
-                GLRender.Begin(OpenGL.GL_LINES);
-                vec3 pos = new vec3(aabb.Min.x + width, eye, aabb.Min.z + width);
-                GLRender.Vertex(pos);
-                GLRender.Vertex(pos + look * 2f);
-                GLRender.End();
+                    // Луч глаз куда смотрит
+                    GLRender.Color(new vec4(0, 0, 1, 1));
+                    GLRender.Begin(OpenGL.GL_LINES);
+                    vec3 pos = new vec3(aabb.Min.x + width, eye, aabb.Min.z + width);
+                    GLRender.Vertex(pos);
+                    GLRender.Vertex(pos + look * 2f);
+                    GLRender.End();
+                }
 
                 GLRender.CullEnable();
             }

@@ -91,6 +91,12 @@ namespace MvkClient.Renderer
         public static void Vertex(vec2 pos) => gl.Vertex(pos.x, pos.y);
 
         /// <summary>
+        /// Добавить смещение текстуры
+        /// </summary>
+        public static void TexCoord(float u, float v) => gl.TexCoord(u, v);
+        public static void TexCoord(vec2 uv) => gl.TexCoord(uv.x, uv.y);
+
+        /// <summary>
         /// Запуск листа
         /// </summary>
         public static uint ListBegin()

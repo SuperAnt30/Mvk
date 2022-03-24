@@ -53,11 +53,11 @@ namespace MvkClient.Renderer.Model
                 float sp = inv * inv;
                 float s1 = glm.sin(sp);
                 float s2 = glm.sin(SwingProgress);
-                boxArmRight.RotateAngleX -= s1 * .8f + s2 * .5f;
-                boxArmRight.RotateAngleY = glm.sin(Mth.Sqrt(sp) * glm.pi) * .4f;
-                boxArmRight.RotateAngleZ = s2 * -.4f;
-                boxArmRight.RotationPointX = -6 * sp;
-                boxArmRight.RotationPointY = -6 * sp;
+                boxArmRight.RotateAngleX -= s1 * .8f;// + s2 * .5f;
+                //boxArmRight.RotateAngleY = glm.sin(Mth.Sqrt(sp) * glm.pi) * .4f;
+                //boxArmRight.RotateAngleZ = s2 * -.4f;
+                boxArmRight.RotationPointX = -4 * sp; // -6
+                boxArmRight.RotationPointY = -4 * sp; // -6
             }
             else
             {

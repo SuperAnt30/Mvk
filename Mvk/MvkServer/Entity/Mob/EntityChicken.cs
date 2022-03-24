@@ -49,7 +49,7 @@ namespace MvkServer.Entity.Mob
             if (!OnGround)
             {
                 // При падении лапки двигаются в разы медленее
-                limbSwingAmount *= 0.25f;
+                LimbSwingAmount *= 0.25f;
             }
 
             if (World is WorldServer)

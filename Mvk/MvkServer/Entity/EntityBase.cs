@@ -20,11 +20,23 @@ namespace MvkServer.Entity
         /// Порядковый номер сущности на сервере, с момента запуска сервера
         /// </summary>
         public ushort Id { get; protected set; }
-        
+
+        /// <summary>
+        /// Тип сущности
+        /// </summary>
+        public EnumEntities Type { get; protected set; } = EnumEntities.None;
         /// <summary>
         /// Позиция объекта
         /// </summary>
         public vec3 Position { get; private set; }
+        /// <summary>
+        /// Позиция в чанке
+        /// </summary>
+        public vec2i PositionChunk { get; private set; }
+        /// <summary>
+        /// Позиция псевдо чанка
+        /// </summary>
+        public int PositionChunkY { get; private set; }
         /// <summary>
         /// Позиция на последнем тике для рендера, клиента
         /// </summary>
@@ -33,6 +45,10 @@ namespace MvkServer.Entity
         /// Координата объекта на предыдущем тике, используемая для расчета позиции во время процедур рендеринга
         /// </summary>
         public vec3 PositionPrev { get; protected set; }
+        /// <summary>
+        /// Позиция данных с сервера
+        /// </summary>
+        public vec3 PositionServer { get; protected set; }
         /// <summary>
         /// Перемещение объекта
         /// </summary>
@@ -82,6 +98,12 @@ namespace MvkServer.Entity
         /// </summary>
         public bool IsCollided { get; protected set; } = false;
         /// <summary>
+        /// Был ли эта сущность добавлена в чанк, в котором он находится? 
+        /// </summary>
+        public bool AddedToChunk { get; set; } = false;
+
+
+        /// <summary>
         /// Генератор случайных чисел данной сущности
         /// </summary>
         protected Random rand;
@@ -89,6 +111,11 @@ namespace MvkServer.Entity
         /// Для отладки движения
         /// </summary>
         protected vec3 motionDebug = new vec3(0);
+
+        /// <summary>
+        /// Происходит ли сейчас движение
+        /// </summary>
+       //private bool isMotionMoving = false;
         
         public EntityBase(WorldBase world)
         {
@@ -98,9 +125,28 @@ namespace MvkServer.Entity
         }
 
         /// <summary>
+        /// Получить название для рендеринга
+        /// </summary>
+        public virtual string GetName() => "";
+
+        /// <summary>
+        /// Возвращает true, если эта вещь названа
+        /// </summary>
+        public virtual bool HasCustomName() => false;
+
+        /// <summary>
         /// В каком блоке находится
         /// </summary>
         public vec3i GetBlockPos() => new vec3i(Position);
+        /// <summary>
+        /// Получить координаты в каком чанке находится по текущей Position
+        /// </summary>
+        public vec2i GetChunkPos() => new vec2i(Mth.Floor(Position.x) >> 4, Mth.Floor(Position.z) >> 4);
+        /// <summary>
+        /// Получить координату псевдо чанка находится по текущей Position
+        /// </summary>
+        public int GetChunkY() => Mth.Floor(Position.y) >> 4;
+
         /// <summary>
         /// Получить ограничительную рамку на выбранной позиции
         /// </summary>
@@ -130,6 +176,24 @@ namespace MvkServer.Entity
                 return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// Задать плоожение в чанке
+        /// </summary>
+        public void SetPositionChunk(int x, int y, int z)
+        {
+            PositionChunk = new vec2i(x, z);
+            PositionChunkY = y;
+        }
+
+        /// <summary>
+        /// Обновить значения позиции чанка по тикущим значениям
+        /// </summary>
+        public void UpPositionChunk()
+        {
+            PositionChunkY = GetChunkY();
+            PositionChunk = GetChunkPos();
         }
 
         /// <summary>
@@ -173,6 +237,8 @@ namespace MvkServer.Entity
             return LastTickPos + (Position - LastTickPos) * timeIndex;
         }
 
+        
+
         /// <summary>
         /// Проверка перемещения со столкновением
         /// </summary>
@@ -206,22 +272,23 @@ namespace MvkServer.Entity
             // Защита от падения с края блока если сидишь и являешься игроком
             if (OnGround && isSneaking && this is EntityPlayer)
             {
-                // TODO::2022-02-01 замечена бага, иногда падаешь! По Х на 50000
+                // Уменьшаем размер рамки для погрешности флоат, Fix 2022-02-01 замечена бага, иногда падаешь! По Х на 50000
+                AxisAlignedBB boundingBoxS = boundingBox.Expand(new vec3(-.01f, 0, -.01f));
                 // Шаг проверки смещения
                 float step = 0.05f;
-                for (; x != 0f && World.Collision.GetCollidingBoundingBoxes(boundingBox.Offset(new vec3(x, -1, 0))).Count == 0; x0 = x)
+                for (; x != 0f && World.Collision.GetCollidingBoundingBoxes(boundingBoxS.Offset(new vec3(x, -1, 0))).Count == 0; x0 = x)
                 {
                     if (x < step && x >= -step) x = 0f;
                     else if (x > 0f) x -= step;
                     else x += step;
                 }
-                for (; z != 0f && World.Collision.GetCollidingBoundingBoxes(boundingBox.Offset(new vec3(0, -1, z))).Count == 0; z0 = z)
+                for (; z != 0f && World.Collision.GetCollidingBoundingBoxes(boundingBoxS.Offset(new vec3(0, -1, z))).Count == 0; z0 = z)
                 {
                     if (z < step && z >= -step) z = 0f;
                     else if (z > 0f) z -= step;
                     else z += step;
                 }
-                for (; x != 0f && z0 != 0f && World.Collision.GetCollidingBoundingBoxes(boundingBox.Offset(new vec3(x0, -1, z0))).Count == 0; z0 = z)
+                for (; x != 0f && z0 != 0f && World.Collision.GetCollidingBoundingBoxes(boundingBoxS.Offset(new vec3(x0, -1, z0))).Count == 0; z0 = z)
                 {
                     if (x < step && x >= -step) x = 0f;
                     else if (x > 0f) x -= step;
@@ -233,7 +300,7 @@ namespace MvkServer.Entity
                 }
             }
 
-            aabbs = World.Collision.GetCollidingBoundingBoxes(boundingBox.AddCoord(new vec3(x, y, z)));
+            aabbs = World.Collision.GetCollidingBoundingBoxes(boundingBox.AddCoordBias(new vec3(x, y, z)));
 
             // Находим смещение по Y
             foreach (AxisAlignedBB axis in aabbs) y = axis.CalculateYOffset(aabbEntity, y);
@@ -262,9 +329,9 @@ namespace MvkServer.Entity
                 if (isSneaking) stepHeight *= 0.5f;
 
                 y = stepHeight;
-                aabbs = World.Collision.GetCollidingBoundingBoxes(boundingBox.AddCoord(new vec3(x0, y, z0)));
+                aabbs = World.Collision.GetCollidingBoundingBoxes(boundingBox.AddCoordBias(new vec3(x0, y, z0)));
                 AxisAlignedBB aabbEntity2 = boundingBox.Clone();
-                AxisAlignedBB aabb = aabbEntity2.AddCoord(new vec3(x0, 0, z0));
+                AxisAlignedBB aabb = aabbEntity2.AddCoordBias(new vec3(x0, 0, z0));
 
                 // Находим смещение по Y
                 float y2 = y;
@@ -360,6 +427,23 @@ namespace MvkServer.Entity
         public virtual void Update() { }
 
         /// <summary>
+        /// Обновление сущности в клиентской части
+        /// </summary>
+        public virtual void UpdateClient()
+        {
+            LastTickPos = PositionPrev = Position;
+            SetPosition(PositionServer);
+        }
+        /// <summary>
+        /// Задать позицию от сервера
+        /// </summary>
+        public void SetMotionServer(vec3 pos, bool onGround)
+        {
+            PositionServer = pos;
+            OnGround = onGround;
+        }
+
+        /// <summary>
         /// Возвращает истину, если другие Сущности не должны проходить через эту Сущность
         /// </summary>
         public virtual bool CanBeCollidedWith() => false;
@@ -372,5 +456,87 @@ namespace MvkServer.Entity
         /// Получить размер границы столкновения 
         /// </summary>
         public float GetCollisionBorderSize() => .1f;
+
+        /// <summary>
+        /// Вытолкнуть из блоков
+        /// </summary>
+        /// <returns>true - в блоках, выталкиваем, false - не в блоках, выталкивать не надо</returns>
+        protected bool PushOutOfBlocks(vec3 pos)
+        {
+            //BlockPos blockPos = new BlockPos(pos);
+            //double var8 = pos.x - (double)blockPos.getX();
+            //double var10 = pos.y - (double)blockPos.getY();
+            //double var12 = pos.z - (double)blockPos.getZ();
+            //List var14 = World. this.worldObj.func_147461_a(this.getEntityBoundingBox());
+
+            //if (var14.isEmpty() && !this.worldObj.func_175665_u(blockPos))
+            //{
+                return false;
+            //}
+            //else
+            //{
+            //    byte var15 = 3;
+            //    double var16 = 9999.0D;
+
+            //    if (!this.worldObj.func_175665_u(blockPos.offsetWest()) && var8 < var16)
+            //    {
+            //        var16 = var8;
+            //        var15 = 0;
+            //    }
+
+            //    if (!this.worldObj.func_175665_u(blockPos.offsetEast()) && 1.0D - var8 < var16)
+            //    {
+            //        var16 = 1.0D - var8;
+            //        var15 = 1;
+            //    }
+
+            //    if (!this.worldObj.func_175665_u(blockPos.offsetUp()) && 1.0D - var10 < var16)
+            //    {
+            //        var16 = 1.0D - var10;
+            //        var15 = 3;
+            //    }
+
+            //    if (!this.worldObj.func_175665_u(blockPos.offsetNorth()) && var12 < var16)
+            //    {
+            //        var16 = var12;
+            //        var15 = 4;
+            //    }
+
+            //    if (!this.worldObj.func_175665_u(blockPos.offsetSouth()) && 1.0D - var12 < var16)
+            //    {
+            //        var16 = 1.0D - var12;
+            //        var15 = 5;
+            //    }
+
+            //    float var18 = this.rand.nextFloat() * 0.2F + 0.1F;
+
+            //    if (var15 == 0)
+            //    {
+            //        this.motionX = (double)(-var18);
+            //    }
+
+            //    if (var15 == 1)
+            //    {
+            //        this.motionX = (double)var18;
+            //    }
+
+            //    if (var15 == 3)
+            //    {
+            //        this.motionY = (double)var18;
+            //    }
+
+            //    if (var15 == 4)
+            //    {
+            //        this.motionZ = (double)(-var18);
+            //    }
+
+            //    if (var15 == 5)
+            //    {
+            //        this.motionZ = (double)var18;
+            //    }
+
+            //    return true;
+            //}
+        }
     }
 }

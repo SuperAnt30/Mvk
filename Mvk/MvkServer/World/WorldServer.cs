@@ -1,10 +1,9 @@
 ﻿using MvkServer.Entity;
+using MvkServer.Gen;
 using MvkServer.Management;
 using MvkServer.Util;
-using MvkServer.World.Block;
 using MvkServer.World.Chunk;
 using System;
-using System.Collections;
 
 namespace MvkServer.World
 {
@@ -35,15 +34,27 @@ namespace MvkServer.World
         /// Посредник серверного чанка
         /// </summary>
         public ChunkProviderServer ChunkPrServ => ChunkPr as ChunkProviderServer;
+        /// <summary>
+        /// Зерно генерации случайных чисел
+        /// </summary>
+        public int Seed { get; private set; } = 2;
+        /// <summary>
+        /// Объект шумов
+        /// </summary>
+        public NoiseStorge Noise { get; private set; }
 
-        public WorldServer(Server server) : base()
+        public WorldServer(Server server, int seed) : base()
         {
+            IsRemote = false;
             ServerMain = server;
             ChunkPr = new ChunkProviderServer(this);
             Players = new PlayerManager(this);
             Tracker = new EntityTracker(this);
             Log = ServerMain.Log;
             profiler = new Profiler(Log);
+            Seed = seed;
+            Rand = new Random(seed);
+            Noise = new NoiseStorge(this);
         }
 
         /// <summary>
@@ -107,16 +118,21 @@ namespace MvkServer.World
             profiler.EndSection();
         }
 
-        protected override void OnEntityAdded(EntityLiving entity)
+        protected override void OnEntityAdded(EntityBase entity)
         {
             base.OnEntityAdded(entity);
             Tracker.EntityAdd(entity);
         }
 
-        protected override void OnEntityRemoved(EntityLiving entity)
+        /// <summary>
+        /// Вызывается для всех World, когда сущность выгружается или уничтожается. 
+        /// В клиентских мирах освобождает любые загруженные текстуры.
+        /// В серверных мирах удаляет сущность из трекера сущностей.
+        /// </summary>
+        protected override void OnEntityRemoved(EntityBase entity)
         {
             base.OnEntityRemoved(entity);
-            Tracker.EntityRemove(entity);
+            Tracker.UntrackEntity(entity);
         }
 
         #endregion
@@ -130,9 +146,6 @@ namespace MvkServer.World
         public override void SendBlockBreakProgress(int breakerId, BlockPos pos, int progress) 
             => Players.SendBlockBreakProgress(breakerId, pos, progress);
 
-
-        public int countGetChunck = 0;
-
         /// <summary>
         /// Строка для дебага
         /// </summary>
@@ -140,9 +153,9 @@ namespace MvkServer.World
         {
             try
             {
-                return string.Format("Ch {0}-{2} Pl {1} @!{4}\r\n{3} ||| E: {5}, Ch: {6}\r\n{7}",
+                return string.Format("Ch {0}-{2} EPl {1} E: {4}\r\n{3}",// {5}",
                     ChunkPr.Count, Players.PlayerCount, Players.CountPlayerInstances(), Players.ToStringDebug() // 0 - 3
-                    , base.ToStringDebug(), ChunkPr.GetCountEntityDebug(), countGetChunck, Tracker); // 4 - 7
+                    , base.ToStringDebug());//, Tracker); // 4 
             }
             catch(Exception e)
             {

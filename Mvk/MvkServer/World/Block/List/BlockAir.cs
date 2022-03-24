@@ -1,4 +1,4 @@
-﻿namespace MvkServer.World.Block.Items
+﻿namespace MvkServer.World.Block.List
 {
     /// <summary>
     /// Блок воздуха, пустота
@@ -9,7 +9,11 @@
         /// Блок воздуха, пустотаб может сталкиваться
         /// </summary>
         /// <param name="collidable">Выбрать может ли блок сталкиваться</param>
-        public BlockAir(bool collidable) => IsCollidable = collidable;
+        public BlockAir(bool collidable)
+        {
+            IsCollidable = collidable;
+            IsParticle = false;
+        }
         /// <summary>
         /// Блок воздуха, пустота, не сталкивается
         /// </summary>

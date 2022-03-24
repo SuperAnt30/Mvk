@@ -45,7 +45,12 @@ namespace MvkServer.World
         /// </summary>
         public MapListEntity PlayerEntities { get; protected set; } = new MapListEntity();
 
-        public Random Rand { get; private set; }
+        public Random Rand { get; protected set; }
+
+        /// <summary>
+        /// Это значение true для клиентских миров и false для серверных миров.
+        /// </summary>
+        public bool IsRemote { get; protected set; } = true;
 
         protected WorldBase()
         {
@@ -102,7 +107,7 @@ namespace MvkServer.World
             // Пробегаем по всем сущностям и обрабатываеи их такт
             for (int i = 0; i < LoadedEntityList.Count; i++)
             {
-                EntityLiving entity = (EntityLiving)LoadedEntityList.GetAt(i);
+                EntityBase entity = LoadedEntityList.GetAt(i);
 
                 if (entity != null)
                 {
@@ -130,7 +135,7 @@ namespace MvkServer.World
             // Удаляем 
             while (entityRemove.Count > 0)
             {
-                EntityLiving entity = (EntityLiving)entityRemove.FirstRemove();
+                EntityBase entity = entityRemove.FirstRemove();
                 if (entity.AddedToChunk && ChunkPr.IsChunk(entity.PositionChunk))
                 {
                     GetChunk(entity.PositionChunk).RemoveEntity(entity);
@@ -142,7 +147,7 @@ namespace MvkServer.World
             profiler.EndSection();
         }
 
-        protected virtual void UpdateEntity(EntityLiving entity)
+        protected virtual void UpdateEntity(EntityBase entity)
         {
             
             //byte var5 = 32;
@@ -152,7 +157,6 @@ namespace MvkServer.World
             {
                 if (entity.AddedToChunk)
                 {
-                    entity.TicksExistedMore();
                     entity.Update();
                 }
 
@@ -183,7 +187,7 @@ namespace MvkServer.World
             }
         }
 
-        protected virtual void OnEntityAdded(EntityLiving entity)
+        protected virtual void OnEntityAdded(EntityBase entity)
         {
             //for (int i = 0; i < this.worldAccesses.size(); ++i)
             //{
@@ -191,7 +195,12 @@ namespace MvkServer.World
             //}
         }
 
-        protected virtual void OnEntityRemoved(EntityLiving entity)
+        /// <summary>
+        /// Вызывается для всех World, когда сущность выгружается или уничтожается. 
+        /// В клиентских мирах освобождает любые загруженные текстуры.
+        /// В серверных мирах удаляет сущность из трекера сущностей.
+        /// </summary>
+        protected virtual void OnEntityRemoved(EntityBase entity)
         {
             //for (int i = 0; i < this.worldAccesses.size(); ++i)
             //{
@@ -202,7 +211,7 @@ namespace MvkServer.World
         /// <summary>
         /// Запланировать удаление сущности в следующем тике
         /// </summary>
-        public virtual void RemoveEntity(EntityLiving entity)
+        public virtual void RemoveEntity(EntityBase entity)
         {
             entity.SetDead();
             if (entity is EntityPlayer)
@@ -217,24 +226,24 @@ namespace MvkServer.World
         /// <summary>
         /// Вызывается, когда объект появляется в мире. Это включает в себя игроков
         /// </summary>
-        public virtual bool SpawnEntityInWorld(EntityLiving entity)
+        public virtual bool SpawnEntityInWorld(EntityBase entity)
         {
             vec2i posCh = entity.GetChunkPos();
-            bool flagSpawn = entity.FlagSpawn;
+           // bool flagSpawn = entity.FlagSpawn;
 
-            if (entity is EntityPlayer) flagSpawn = true;
+           // if (entity is EntityPlayer) flagSpawn = true;
 
             //ChunkBase chunk = null;
-            bool isChunk = false;
+           // bool isChunk = false;
             //if (this is WorldServer)
             //{
             //    chunk = ((WorldServer)this).ChunkPrServ.LoadChunk(posCh);
             //    isChunk = chunk != null;
             //}
             //else
-            {
-                isChunk = ChunkPr.IsChunk(posCh);
-            }
+            //{
+               // isChunk = ChunkPr.IsChunk(posCh);
+           // }
             
             //if (!flagSpawn && !isChunk)
             //{
@@ -448,12 +457,15 @@ namespace MvkServer.World
         /// <returns>true смена была</returns>
         public virtual bool SetBlockState(BlockPos blockPos, EnumBlock eBlock)
         {
-            ChunkBase chunk = ChunkPr.GetChunk(blockPos.GetPositionChunk());
-            if (chunk != null)
+            if (blockPos.Y >= 0 && blockPos.Y < 256)
             {
-                chunk.SetEBlock(blockPos.GetPosition0(), eBlock);
-                MarkBlockForUpdate(blockPos);
-                return true;
+                ChunkBase chunk = ChunkPr.GetChunk(blockPos.GetPositionChunk());
+                if (chunk != null)
+                {
+                    chunk.SetEBlock(blockPos.GetPosition0(), eBlock);
+                    MarkBlockForUpdate(blockPos);
+                    return true;
+                }
             }
             return false;
         }

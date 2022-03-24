@@ -109,13 +109,22 @@ namespace MvkClient.Entity
         /// </summary>
         private int leftClickPauseCounter = 0;
         /// <summary>
-        /// Активна ли рука в действии
+        /// Холостой удар
         /// </summary>
-        private bool handAction = false;
+        private bool blankShot = false;
+        /// <summary>
+        /// Активна ли рука в действии
+        /// 0 - не активна, 1 - активна левая, 2 - активна правая
+        /// </summary>
+        private ActionHand handAction = ActionHand.None;
         /// <summary>
         /// Объект работы над игроком разрушения блока, итомы и прочее
         /// </summary>
         private ItemInWorldManager itemInWorldManager;
+        /// <summary>
+        /// Сущность по которой ударил игрок, если null то нет атаки
+        /// </summary>
+        private EntityBase entityAtack;
 
         public EntityPlayerSP(WorldClient world) : base(world)
         {
@@ -123,6 +132,11 @@ namespace MvkClient.Entity
             Eye = new SmoothFrame(GetEyeHeight());
             itemInWorldManager = new ItemInWorldManager(world, this);
         }
+
+        /// <summary>
+        /// Возвращает true, если эта вещь названа
+        /// </summary>
+        public override bool HasCustomName() => false;
 
         #region DisplayList
 
@@ -196,19 +210,60 @@ namespace MvkClient.Entity
             // счётчик паузы для анимации удара
             leftClickPauseCounter++;
 
-            if (handAction)
+            // обновляем счётчик удара
+            ItemInWorldManager.StatusAnimation statusUpdate = itemInWorldManager.UpdateBlock();
+            if (statusUpdate == ItemInWorldManager.StatusAnimation.Animation)
             {
-                HandActionUpdate();
-                if (leftClickPauseCounter > 5)
+                leftClickPauseCounter = 100;
+            }
+            else if (statusUpdate == ItemInWorldManager.StatusAnimation.NotAnimation)
+            {
+                leftClickPauseCounter = 0;
+            }
+
+            if (!AtackUpdate())
+            {
+                // Если нет атаки то проверяем установку или разрушение блока
+                if (handAction != ActionHand.None)
                 {
-                    SwingItem();
-                    leftClickPauseCounter = 0;
+                    HandActionUpdate();
+                    if (leftClickPauseCounter > 5 || blankShot)
+                    {
+                        SwingItem();
+                        blankShot = false;
+                        leftClickPauseCounter = 0;
+                    }
                 }
             }
 
             // Скрыть прорисовку себя если вид с глаз
             Type = Health > 0 && ViewCamera == EnumViewCamera.Eye ? EnumEntities.PlayerHand : EnumEntities.Player;
-           // Type = EnumEntities.PlayerHand;
+            //Type = EnumEntities.PlayerHand;
+        }
+
+        /// <summary>
+        /// Удар рукой по сущности в такте игры
+        /// </summary>
+        private bool AtackUpdate()
+        {
+            if (entityAtack != null)
+            {
+                if (!entityAtack.IsDead)
+                {
+                    SwingItem();
+
+                    vec3 pos = entityAtack.Position + new vec3(.5f);
+                    for (int i = 0; i < 5; i++)
+                    {
+                        ClientWorld.SpawnParticle(EnumParticle.Test, pos + new vec3((rand.Next(16) - 8) / 16f, (rand.Next(12) - 6) / 16f, (rand.Next(16) - 8) / 16f), new vec3(0));
+                    }
+                    ClientWorld.ClientMain.TrancivePacket(new PacketC03UseEntity(entityAtack.Id, entityAtack.Position - Position));
+                    entityAtack = null;
+                    return true;
+                }
+                entityAtack = null;
+            }
+            return false;
         }
 
         /// <summary>
@@ -489,14 +544,14 @@ namespace MvkClient.Entity
             vec3 offset = ClientWorld.RenderEntityManager.CameraOffset;
             MovingObjectPosition movingObjectBlock = World.RayCastBlock(pos, dir, maxDis);
 
-            MapListEntity listEntity = World.GetEntitiesWithinAABBExcludingEntity(this, BoundingBox.AddCoord(dir * maxDis));
+            MapListEntity listEntity = World.GetEntitiesWithinAABBExcludingEntity(this, BoundingBox.AddCoordBias(dir * maxDis));
             float entityDis = movingObjectBlock.IsBlock() ? glm.distance(pos, movingObjectBlock.RayHit) : maxDis;
-            EntityLiving pointedEntity = null;
+            EntityBase pointedEntity = null;
             float step = .5f;
 
             while(listEntity.Count > 0)
             {
-                EntityLiving entity = (EntityLiving)listEntity.FirstRemove();
+                EntityBase entity = listEntity.FirstRemove();
 
                 if (entity.CanBeCollidedWith())
                 {
@@ -522,34 +577,35 @@ namespace MvkClient.Entity
         private void HandActionUpdate()
         {
             MovingObjectPosition moving = RayCast(10f);
-            // обновляем счётчик удара
-            itemInWorldManager.UpdateBlock();
 
-            if (itemInWorldManager.IsDestroyingBlock && ((moving.IsBlock() && !itemInWorldManager.BlockPosDestroy.Position.Equals(moving.Block.Position.Position)) || !moving.IsBlock()))
+            if (handAction == ActionHand.Left)
             {
-                // Отмена разбитие блока, сменился блок
-                ClientMain.TrancivePacket(new PacketC07PlayerDigging(itemInWorldManager.BlockPosDestroy, PacketC07PlayerDigging.EnumDigging.About));
-                itemInWorldManager.DestroyAbout();
-            }
-            else if (itemInWorldManager.IsDestroyingBlock)
-            {
-                // Этап разбития блока
-                if (itemInWorldManager.IsDestroy())
+                // Разрушаем блок
+                if (itemInWorldManager.IsDestroyingBlock && ((moving.IsBlock() && !itemInWorldManager.BlockPosDestroy.Position.Equals(moving.Block.Position.Position)) || !moving.IsBlock()))
                 {
-                    // Стоп, окончено разбитие
-                    ClientMain.TrancivePacket(new PacketC07PlayerDigging(itemInWorldManager.BlockPosDestroy, PacketC07PlayerDigging.EnumDigging.Stop));
-                    itemInWorldManager.DestroyStop();
-                    //UpCursor();
+                    // Отмена разбитие блока, сменился блок
+                    ClientMain.TrancivePacket(new PacketC07PlayerDigging(itemInWorldManager.BlockPosDestroy, PacketC07PlayerDigging.EnumDigging.About));
+                    itemInWorldManager.DestroyAbout();
+                }
+                else if (itemInWorldManager.IsDestroyingBlock)
+                {
+                    // Этап разбития блока
+                    if (itemInWorldManager.IsDestroy())
+                    {
+                        // Стоп, окончено разбитие
+                        ClientMain.TrancivePacket(new PacketC07PlayerDigging(itemInWorldManager.BlockPosDestroy, PacketC07PlayerDigging.EnumDigging.Stop));
+                        itemInWorldManager.DestroyStop();
+                    }
+                }
+                else if (itemInWorldManager.NotPauseUpdate)
+                {
+                    DestroyingBlockStart(moving, false);
                 }
             }
-            else if(itemInWorldManager.NotPauseUpdate)
+            else if (handAction == ActionHand.Right && itemInWorldManager.NotPauseUpdate)
             {
-                DestroyingBlockStart(moving);
-            }
-            else
-            {
-                // Пометка, чтоб анимации на удар не было
-                leftClickPauseCounter = 0;
+                // устанавливаем блок
+                PutBlockStart(moving, false);
             }
         }
 
@@ -562,22 +618,13 @@ namespace MvkClient.Entity
             if (moving.IsEntity())
             {
                 // Курсор попал на сущность
-                if (!moving.Entity.IsDead)
-                {
-                    // АТАКА по сущности
-                    vec3 pos = moving.Entity.Position + new vec3(.5f);
-                    for (int i = 0; i < 5; i++)
-                    {
-                        ClientWorld.SpawnParticle(EnumParticle.Test, pos + new vec3((rand.Next(16) - 8) / 16f, (rand.Next(12) - 6) / 16f, (rand.Next(16) - 8) / 16f), new vec3(0));
-                    }
-                    ClientWorld.ClientMain.TrancivePacket(new PacketC03UseEntity(moving.Entity.Id, moving.Entity.Position - Position));
-                }
-                handAction = false;
+                entityAtack = moving.Entity;
+                handAction = ActionHand.None;
             }
             else
             {
-                DestroyingBlockStart(moving);
-                handAction = true;
+                DestroyingBlockStart(moving, true);
+                handAction = ActionHand.Left;
             }
         }
 
@@ -587,34 +634,50 @@ namespace MvkClient.Entity
         public void HandActionTwo()
         {
             MovingObjectPosition moving = RayCast(10f);
+            PutBlockStart(moving, true);
+        }
+
+        private void PutBlockStart(MovingObjectPosition moving, bool start)
+        {
             if (moving.IsBlock() && slot != 0)
             {
                 BlockPos blockPos = new BlockPos(moving.Put);
                 vec3 facing = moving.RayHit - new vec3(moving.Put);
-
-                ClientMain.TrancivePacket(new PacketC08PlayerBlockPlacement(blockPos, facing));
-                itemInWorldManager.Put(blockPos, facing);
-                //UpCursor();
+                // устанавливаем блок
+                BlockBase blockNew = Blocks.GetBlock((EnumBlock)slot, blockPos);
+                bool putAbout = true;
+                if (blockNew != null && !blockNew.IsAir)
+                {
+                    AxisAlignedBB axisBlock = blockNew.GetCollision();
+                    // Проверка коллизии игрока и блока
+                    if (!BoundingBox.IntersectsWith(axisBlock) && World.GetEntitiesWithinAABBExcludingEntity(this, axisBlock).Count == 0)
+                    {
+                        ClientMain.TrancivePacket(new PacketC08PlayerBlockPlacement(blockPos, facing));
+                        itemInWorldManager.Put(blockPos, facing, blockNew.EBlock);
+                        itemInWorldManager.PutPause(start);
+                        putAbout = false;
+                    }
+                }
+                if (putAbout) itemInWorldManager.PutAbout();
+                handAction = ActionHand.Right;
             }
         }
+
 
         /// <summary>
         /// Начало разрушения блока
         /// </summary>
-        private void DestroyingBlockStart(MovingObjectPosition moving)
+        private void DestroyingBlockStart(MovingObjectPosition moving, bool start)
         {
             if (!itemInWorldManager.IsDestroyingBlock && moving.IsBlock())
             {
                 // Начало разбитие блока
                 ClientWorld.ClientMain.TrancivePacket(new PacketC07PlayerDigging(moving.Block.Position, PacketC07PlayerDigging.EnumDigging.Start));
                 itemInWorldManager.DestroyStart(moving.Block.Position);
-                // Пометка, чтоб анимация сразу срабатывала на удар руки
-                leftClickPauseCounter = 100;
             }
-            else
+            else if (start)
             {
-                // Пометка, чтоб анимация сразу срабатывала на удар руки
-                leftClickPauseCounter = 0;
+                blankShot = true;
             }
         }
 
@@ -629,7 +692,7 @@ namespace MvkClient.Entity
                 ClientMain.TrancivePacket(new PacketC07PlayerDigging(itemInWorldManager.BlockPosDestroy, PacketC07PlayerDigging.EnumDigging.About));
                 itemInWorldManager.DestroyAbout();
             }
-            handAction = false;
+            handAction = ActionHand.None;
         }
 
         /// <summary>
@@ -704,5 +767,25 @@ namespace MvkClient.Entity
         public override vec3 GetLookFrame(float timeIndex) => GetRay(yawHeadFrame, pitchFrame);
 
         #endregion
+
+
+        /// <summary>
+        /// Действие рук
+        /// </summary>
+        private enum ActionHand
+        {
+            /// <summary>
+            /// Нет действий
+            /// </summary>
+            None,
+            /// <summary>
+            /// Левой рукой
+            /// </summary>
+            Left,
+            /// <summary>
+            /// Правой рукой
+            /// </summary>
+            Right
+        }
     }
 }

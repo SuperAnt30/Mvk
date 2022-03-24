@@ -1,6 +1,4 @@
 ﻿using MvkAssets;
-using MvkClient.Entity;
-using MvkClient.Renderer.Font;
 using MvkClient.Renderer.Model;
 using MvkServer.Entity;
 using MvkServer.Glm;
@@ -11,49 +9,44 @@ namespace MvkClient.Renderer.Entity
     /// <summary>
     /// Абстракный класс рендера сущностей
     /// </summary>
-    public abstract class RendererLivingEntity
+    public abstract class RendererLivingEntity : RenderEntityBase
     {
-        protected RenderManager renderManager;
         protected ModelBase model;
 
         protected AssetsTexture texture = AssetsTexture.Steve;
         protected float scale = 1f;
 
-        public RendererLivingEntity(RenderManager renderManager, ModelBase model)
-        {
-            this.renderManager = renderManager;
-            this.model = model;
-        }
+        protected RendererLivingEntity(RenderManager renderManager, ModelBase model) : base(renderManager) 
+            => this.model = model;
 
-        public virtual void DoRender(EntityLiving entity, vec3 offset, float timeIndex)
+        public override void DoRender(EntityBase entity, vec3 offset, float timeIndex)
         {
-            vec3 pos = entity.GetPositionFrame(timeIndex);
-            float yawBody = entity.GetRotationYawBodyFrame(timeIndex);
-            float yawHead = entity.GetRotationYawFrame(timeIndex);
-            model.SetSwingProgress(entity.GetSwingProgressFrame(timeIndex));
-
-            GLRender.PushMatrix();
+            if (entity is EntityLiving entityLiving)
             {
-                
-                GLRender.CullDisable();
+                vec3 pos = entity.GetPositionFrame(timeIndex);
+                float yawBody = entityLiving.GetRotationYawBodyFrame(timeIndex);
+                float yawHead = entityLiving.GetRotationYawFrame(timeIndex);
+                model.SetSwingProgress(entityLiving.GetSwingProgressFrame(timeIndex));
+                vec3 offsetPos = pos - offset;
 
-                vec3 color = new vec3(1);
-                if (entity.DamageTime > 0)
-                {
-                    float dt = Mth.Sqrt((entity.DamageTime + timeIndex - 1f) / 5f * 1.6f);
-                    if (dt > 1f) dt = 1f;
-                    dt *= .4f;
-                    color = new vec3(1f, 1f - dt, 1f - dt);
-                }
-
-                GLRender.Color(color);// entity.DamageTime > 0 ? new vec3(1f, .8f, .8f) : new vec3(1f));
-                BindTexture();
-
-                GLRender.Translate(pos.x - offset.x, pos.y - offset.y, pos.z - offset.z);
                 GLRender.PushMatrix();
                 {
-                    RotateCorpse(entity, timeIndex);
-                   
+                    GLRender.CullDisable();
+                    vec3 color = new vec3(1);
+                    if (entityLiving.DamageTime > 0)
+                    {
+                        float dt = Mth.Sqrt((entityLiving.DamageTime + timeIndex - 1f) / 5f * 1.6f);
+                        if (dt > 1f) dt = 1f;
+                        dt *= .4f;
+                        color = new vec3(1f, 1f - dt, 1f - dt);
+                    }
+
+                    GLRender.Color(color);
+                    BindTexture();
+
+                    GLRender.Translate(offsetPos.x, offsetPos.y, offsetPos.z);
+                    RotateCorpse(entityLiving, timeIndex);
+
                     GLRender.Scale(scale);
                     GLRender.Translate(0, -1.508f, 0);
 
@@ -61,14 +54,14 @@ namespace MvkClient.Renderer.Entity
                     yawBody -= yawHead;
 
                     float ageInTicks = renderManager.World.ClientMain.TickCounter + timeIndex;
+                    float limbSwing = entityLiving.LimbSwing - entityLiving.LimbSwingAmount * (1f - timeIndex);
 
-                    RenderModel(entity, entity.LimbSwing, entity.GetLimbSwingAmountFrame(timeIndex), ageInTicks,
-                        -yawBody, entity.GetRotationPitchFrame(timeIndex), .0625f);
+                    RenderModel(entityLiving, limbSwing, entityLiving.GetLimbSwingAmountFrame(timeIndex), ageInTicks,
+                        -yawBody, entityLiving.GetRotationPitchFrame(timeIndex), .0625f);
                 }
                 GLRender.PopMatrix();
-                RenderLivingLabel(entity);
+                base.DoRender(entity, offsetPos, timeIndex);
             }
-            GLRender.PopMatrix();
         }
 
         /// <summary>
@@ -85,45 +78,6 @@ namespace MvkClient.Renderer.Entity
             TextureStruct ts = GLWindow.Texture.GetData(texture);
             GLWindow.Texture.BindTexture(ts.GetKey());
         }
-
-        /// <summary>
-        /// Название сущности над головой, если имеется
-        /// </summary>
-        protected void RenderLivingLabel(EntityLiving entity)
-        {
-            if (entity.Name == "" || entity == renderManager.ClientMain.Player) return;
-
-            string text = entity.Name;
-
-            EntityPlayerSP player = renderManager.ClientMain.Player;
-            float dis = glm.distance(renderManager.CameraPosition, entity.Position);
-
-            if (dis <= 64) // дистанция между сущностями
-            {
-                float size = 3.2f;
-                float scale = 0.0167f * size;
-                FontSize font = FontSize.Font8;
-                int ws = FontRenderer.WidthString(entity.Name, font) / 2;
-                
-                GLRender.PushMatrix();
-                {
-                    GLRender.DepthDisable();
-                    GLRender.Translate(0, entity.Height + .5f, 0);
-                    GLRender.Rotate(glm.degrees(-renderManager.CameraRotationYaw), 0, 1, 0);
-                    GLRender.Rotate(glm.degrees(renderManager.CameraRotationPitch), 1, 0, 0);
-                    GLRender.Scale(renderManager.ClientMain.Player.ViewCamera == EnumViewCamera.Front ? -scale : scale, -scale, scale);
-                    GLRender.Texture2DDisable();
-                    GLRender.Rectangle(-ws - 1, -1, ws + 1, 8, new vec4(0, 0, 0, .25f));
-                    GLRender.Texture2DEnable();
-                    GLWindow.Texture.BindTexture(Assets.ConvertFontToTexture(font));
-                    FontRenderer.RenderString(-ws, 0, new vec4(1), entity.Name, font);
-
-                    GLRender.DepthEnable();
-                }
-                GLRender.PopMatrix();
-            }
-        }
-
 
         /// <summary>
         /// Разворот вертикальный, сущности

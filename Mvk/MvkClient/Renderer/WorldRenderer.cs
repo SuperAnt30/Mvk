@@ -52,6 +52,8 @@ namespace MvkClient.Renderer
         /// </summary>
         private RenderBlockGui[] listBlocksGui = new RenderBlockGui[BlocksCount.COUNT + 1];
 
+
+
         public WorldRenderer(WorldClient world)
         {
             World = world;
@@ -62,7 +64,7 @@ namespace MvkClient.Renderer
 
             for (int i = 0; i <= BlocksCount.COUNT; i++)
             {
-                listBlocksGui[i] = new RenderBlockGui((EnumBlock)i, 4f);
+                listBlocksGui[i] = new RenderBlockGui((EnumBlock)i, 64f);
             }
         }
 
@@ -193,8 +195,8 @@ namespace MvkClient.Renderer
                 {
                     for (int j = 0; j < entities[i].Count; j++)
                     {
-                        EntityLiving entity = (EntityLiving)entities[i].GetAt(j);
-                        if (entity.Name != ClientMain.Player.Name)
+                        EntityBase entity = entities[i].GetAt(j);
+                        if (entity.Id != ClientMain.Player.Id)
                         {
                             World.RenderEntityManager.RenderEntity(entity, timeIndex);// entity.TimeIndex());
                         }
@@ -247,8 +249,8 @@ namespace MvkClient.Renderer
             GLRender.Rectangle(0, 0, w, h, new vec4(0.7f, 0.4f, 0.3f, 0.7f * dt));
             GLRender.PopMatrix();
         }
-             
 
+        //RenderBlockGui blockGui = new RenderBlockGui(EnumBlock.Cobblestone, 64f);
         /// <summary>
         /// Прорисовать 2д
         /// </summary>
@@ -263,13 +265,12 @@ namespace MvkClient.Renderer
             renderAim.IsHidden = ClientMain.Player.ViewCamera != EnumViewCamera.Eye;
             renderAim.Render(w, h);
 
-
-            
-            listBlocksGui[ClientMain.Player.slot].Render(64, 16);
+            listBlocksGui[ClientMain.Player.slot].Render(64, 64);
             //listBlocksGui[2].Render(w / 4 + 50, 16);
             //listBlocksGui[3].Render(w / 4 + 100, 16);
             //listBlocksGui[4].Render(w / 4 + 150, 16);
 
+            //blockGui.Render2(100, 100);
 
             // ХП
             GLRender.PushMatrix();

@@ -53,13 +53,23 @@ namespace MvkServer
         protected long[] tickTimeArray = new long[4];
 
         /// <summary>
-        /// Принято пакетов
+        /// Принято пакетов за секунду
         /// </summary>
-        protected int tickRx = 0;
+        private int rx = 0;
         /// <summary>
-        /// Передано пакетов
+        /// Передано пакетов за секунду
         /// </summary>
-        protected int tickTx = 0;
+        private int tx = 0;
+        /// <summary>
+        /// Принято пакетов за предыдущую секунду
+        /// </summary>
+        private int rxPrev = 0;
+        /// <summary>
+        /// Передано пакетов за предыдущую секунду
+        /// </summary>
+        private int txPrev = 0;
+
+
         /// <summary>
         /// статус запуска сервера
         /// </summary>
@@ -97,7 +107,7 @@ namespace MvkServer
         {
             Log = new Logger("");
             Log.Log("server.runing slot={0}", slot);
-            World = new WorldServer(this);
+            World = new WorldServer(this, slot);
             packets = new ProcessServerPackets(this);
             frequencyMs = Stopwatch.Frequency / 1000;
             stopwatchTps.Start();
@@ -146,7 +156,7 @@ namespace MvkServer
         /// </summary>
         public void LocalReceivePacket(Socket socket, byte[] buffer)
         {
-            tickRx++;
+            rx++;
             packets.ReceiveBuffer(socket, buffer);
         }
 
@@ -173,7 +183,7 @@ namespace MvkServer
                     writeStream.WriteByte(ProcessPackets.GetId(packet));
                     packet.WritePacket(stream);
                     byte[] buffer = writeStream.ToArray();
-                    tickTx++;
+                    tx++;
                     ServerPacket spacket = new ServerPacket(socket, buffer);
                     if (socket != null)
                     {
@@ -370,6 +380,10 @@ namespace MvkServer
                 //var4.getGameRules().getGameRuleBooleanValue("doDaylightCycle")),
 
                 //var4.provider.getDimensionId());
+                rxPrev = rx;
+                txPrev = tx;
+                rx = 0;
+                tx = 0;
             }
             
             try
@@ -417,8 +431,8 @@ namespace MvkServer
                     OnLogDebugCh(chunks);
                 }
 
-                tickRx = 0;
-                tickTx = 0;
+                //tickRx = 0;
+                //tickTx = 0;
             }
 
             // фиксируем время выполнения такта
@@ -449,8 +463,8 @@ namespace MvkServer
             float averageTime = Mth.Average(tickTimeArray) / frequencyMs;
             // TPS за последние 4 тактов (1/5 сек), должен быть 20
             float tps = averageTime > 50f ? 50f / averageTime * 20f : 20f;
-            return string.Format("tps {0:0.00} tick {1:0.00} ms Rx {2} Tx {3} {4}{6}\r\n{5}", 
-                tps, averageTime, tickRx, tickTx, strNet, World.ToStringDebug(), isGamePaused ? "PAUSE" : "");
+            return string.Format("{0:0.00} tps {1:0.00} ms Rx {2} Tx {3} {4}{6}\r\n{5}", 
+                tps, averageTime, rxPrev, txPrev, strNet, World.ToStringDebug(), isGamePaused ? "PAUSE" : "");
         }
 
         #region Event

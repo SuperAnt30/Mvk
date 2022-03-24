@@ -46,7 +46,7 @@
         /// </summary>
         public bool BindBuffer()
         {
-            if (Buffer != null && Buffer.Length > 0)
+            if (Buffer != null)
             {
                 BindBuffer(Buffer);
                 Buffer = null;

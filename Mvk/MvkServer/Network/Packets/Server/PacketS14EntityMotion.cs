@@ -24,7 +24,7 @@ namespace MvkServer.Network.Packets.Server
         public bool OnGround() => onGround;
         public bool IsSprinting() => sprinting;
 
-        public PacketS14EntityMotion(EntityLiving entity)
+        public PacketS14EntityMotion(EntityBase entity)
         {
             id = entity.Id;
             pos = entity.Position;
@@ -32,14 +32,27 @@ namespace MvkServer.Network.Packets.Server
             {
                 yaw = ((EntityLivingHead)entity).RotationYawHead;
             }
+            else if (entity is EntityLook)
+            {
+                yaw = ((EntityLook)entity).RotationYaw;
+            }
             else
             {
-                yaw = entity.RotationYaw;
+                yaw = 0;
             }
-            pitch = entity.RotationPitch;
-            sneaking = entity.IsSneaking;
+            if (entity is EntityLiving)
+            {
+                EntityLiving entityLiving = (EntityLiving)entity;
+                pitch = entityLiving.RotationPitch;
+                sneaking = entityLiving.IsSneaking;
+                sprinting = entityLiving.IsSprinting;
+            } else
+            {
+                pitch = 0;
+                sneaking = false;
+                sprinting = false;
+            }
             onGround = entity.OnGround;
-            sprinting = entity.IsSprinting;
         }
 
         public void ReadPacket(StreamBase stream)

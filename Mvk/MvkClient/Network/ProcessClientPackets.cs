@@ -1,8 +1,10 @@
 ﻿using MvkClient.Entity;
 using MvkClient.Setitings;
 using MvkServer.Entity;
+using MvkServer.Entity.Item;
 using MvkServer.Entity.Mob;
 using MvkServer.Glm;
+using MvkServer.Item;
 using MvkServer.Network;
 using MvkServer.Network.Packets;
 using MvkServer.Network.Packets.Client;
@@ -131,7 +133,7 @@ namespace MvkClient.Network
         /// </summary>
         private void Handle0BAnimation(PacketS0BAnimation packet)
         {
-            EntityLiving entity = ClientMain.World.GetEntityByID(packet.GetId());
+            EntityLiving entity = ClientMain.World.GetEntityLivingByID(packet.GetId());
             if (entity != null)
             {
                 switch (packet.GetAnimation())
@@ -155,13 +157,14 @@ namespace MvkClient.Network
             entity.SetPosLook(packet.GetPos(), packet.GetYaw(), packet.GetPitch());
 
             //entity.FlagSpawn = true;
-            ClientMain.World.SpawnEntityInWorld(entity);
+            //ClientMain.World.SpawnEntityInWorld(entity);
+            ClientMain.World.AddEntityToWorld(entity.Id, entity);
 
             //EntityChicken entityChicken = new EntityChicken(ClientMain.World);
             //entityChicken.SetEntityId(101);
             //entityChicken.SetPosition(packet.GetPos() + new vec3(3, 0, 0));
             //ClientMain.World.SpawnEntityInWorld(entityChicken);
-           // entity.FlagSpawn = false;
+            // entity.FlagSpawn = false;
         }
 
         /// <summary>
@@ -169,12 +172,25 @@ namespace MvkClient.Network
         /// </summary>
         private void Handle0FSpawnMob(PacketS0FSpawnMob packet)
         {
-            EntityLiving entity = new EntityChicken(ClientMain.World);
-            entity.SetEntityId(packet.GetId());
-            entity.SetPosLook(packet.GetPos(), packet.GetYaw(), packet.GetPitch());
-
+            if (packet.GetEnum() == EnumEntities.Chicken)
+            {
+                EntityLiving entity = new EntityChicken(ClientMain.World);
+                entity.SetEntityId(packet.GetId());
+                entity.SetPosLook(packet.GetPos(), packet.GetYaw(), packet.GetPitch());
+                ClientMain.World.AddEntityToWorld(entity.Id, entity);
+            }
+            else if (packet.GetEnum() == EnumEntities.Item)
+            {
+                ItemStack stack = new ItemStack(ClientMain.World.GetBlock(new vec3i(packet.GetPos())));
+                EntityItem entity = new EntityItem(ClientMain.World);
+                entity.SetEntityId(packet.GetId());
+                entity.SetPosSpawn(packet.GetPos());
+                ClientMain.World.AddEntityToWorld(entity.Id, entity);
+            }
             //entity.FlagSpawn = true;
-            ClientMain.World.SpawnEntityInWorld(entity);
+            
+        
+            //ClientMain.World.SpawnEntityInWorld(entity);
 
             //EntityChicken entityChicken = new EntityChicken(ClientMain.World);
             //entityChicken.SetEntityId(101);
@@ -186,7 +202,7 @@ namespace MvkClient.Network
         
         private void Handle12EntityVelocity(PacketS12EntityVelocity packet)
         {
-            EntityLiving entity = ClientMain.World.GetEntityByID(packet.GetId());
+            EntityLiving entity = ClientMain.World.GetEntityLivingByID(packet.GetId());
             if (entity != null)
             {
                 entity.MotionPush = packet.GetMotion();
@@ -210,12 +226,19 @@ namespace MvkClient.Network
         /// </summary>
         private void Handle14EntityMotion(PacketS14EntityMotion packet)
         {
-            EntityLiving entity = ClientMain.World.GetEntityByID(packet.GetId());
+            EntityBase entity = ClientMain.World.GetEntityByID(packet.GetId());
             if (entity != null)
             {
-                entity.SetMotionServer(
-                    packet.GetPos(), packet.GetYaw(), packet.GetPitch(),
-                    packet.IsSneaking(), packet.OnGround(), packet.IsSprinting());
+                if (entity is EntityLiving entityLiving)
+                {
+                    entityLiving.SetMotionServer(
+                        packet.GetPos(), packet.GetYaw(), packet.GetPitch(),
+                        packet.IsSneaking(), packet.OnGround(), packet.IsSprinting());
+                }
+                else if (entity is EntityItem entityItem)
+                {
+                    entityItem.SetMotionServer(packet.GetPos(), packet.OnGround());
+                }
             }
         }
 
@@ -225,7 +248,7 @@ namespace MvkClient.Network
         /// </summary>
         private void Handle19EntityStatus(PacketS19EntityStatus packet)
         {
-            EntityLiving entity = ClientMain.World.GetEntityByID(packet.GetId());
+            EntityLiving entity = ClientMain.World.GetEntityLivingByID(packet.GetId());
             if (entity != null)
             {
                 switch (packet.GetStatus())

@@ -17,6 +17,10 @@
         /// <summary>
         /// Курица
         /// </summary>
-        Chicken = 3
+        Chicken = 3,
+        /// <summary>
+        /// Вещь
+        /// </summary>
+        Item = 4
     }
 }

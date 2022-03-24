@@ -21,6 +21,11 @@ namespace MvkClient.Renderer.Block
         /// Объект блока
         /// </summary>
         public BlockBase Block { get; protected set; }
+        /// <summary>
+        /// Пометка, разрушается ли блок и его стадия
+        /// -1 не разрушается, 0-9 разрушается
+        /// </summary>
+        public int DamagedBlocksValue { get; set; } = -1;
 
         /// <summary>
         /// позиция блока в чанке
@@ -53,7 +58,7 @@ namespace MvkClient.Renderer.Block
         /// </summary>
         /// <param name="pos">позиция блока</param>
         /// <returns>сетка</returns>
-        public float[] RenderMesh()
+        public float[] RenderMesh(bool check)
         {
             List<float> buffer = new List<float>();
 
@@ -67,47 +72,44 @@ namespace MvkClient.Renderer.Block
                     {
                         for (int i = 0; i < 6; i++)
                         {
-                            RenderMeshSide(buffer, (Pole)i);
+                            cSide = (Pole)i;
+                            if (check) RenderMeshSideCheck(buffer);
+                            else buffer.AddRange(RenderMeshFace());
                         }
                     }
                     else
                     {
-                        RenderMeshSide(buffer, face.GetSide());
+                        cSide = face.GetSide();
+                        if (check) RenderMeshSideCheck(buffer);
+                        else buffer.AddRange(RenderMeshFace());
                     }
                 }
             }
             return buffer.ToArray();
         }
 
-        public int DamagedBlocksValue { get; set; } = -1;
-
         /// <summary>
-        /// Получть Сетку стороны блока
+        /// Получть Сетку стороны блока с проверкой соседнего блока и разрушения его
         /// </summary>
-        protected void RenderMeshSide(List<float> buffer, Pole side)
+        protected void RenderMeshSideCheck(List<float> buffer)
         {
-            EnumBlock enumBlock = GetEBlock(posChunk + EnumFacing.DirectionVec(side));
+            EnumBlock enumBlock = GetEBlock(posChunk + EnumFacing.DirectionVec(cSide));
             //_br = BlockedLight(posChunk + EnumFacing.DirectionVec(side));
             //   if (Blk.AllDrawing || _br.IsDraw)
             if (enumBlock == EnumBlock.Air || Block.AllDrawing || enumBlock == EnumBlock.Cobblestone)
             {
-                cSide = side;
                 buffer.AddRange(RenderMeshFace());
-                if (DamagedBlocksValue == -1)
+                if (DamagedBlocksValue != -1)
                 {
-                    buffer.AddRange(RenderMeshFace());
-                }
-                else
-                {
-                    // TODO::Face 4037
                     Face face = cFace;
-                    cFace = new Face(side, 4032 + DamagedBlocksValue, true, cFace.GetColor());
+                    cFace = new Face(cSide, 4032 + DamagedBlocksValue, true, cFace.GetColor());
                     buffer.AddRange(RenderMeshFace());
                     cFace = face;
                 }
 
             }
         }
+
 
         /// <summary>
         /// Получить смещение на текстуру блока
@@ -203,46 +205,21 @@ namespace MvkClient.Renderer.Block
         }
 
         /// <summary>
-        /// Рендер блока в 2d для GUI
+        /// Рендер блока VBO, конвертация из  VBO в DisplayList
         /// </summary>
-        public void RenderGui()
+        public void RenderVBOtoDL()
         {
-            foreach (Box box in Block.Boxes)
-            {
-                cBox = box;
-                foreach (Face face in box.Faces)
-                {
-                    cFace = face;
-                    if (face.GetSide() == Pole.All || face.GetSide() == Pole.Up)
-                    {
-                        RenderSideDL(12, 6, 0, 0, 0, 12, -12, 6, 1f);
-                    }
-                    if (face.GetSide() == Pole.All || face.GetSide() == Pole.South)
-                    {
-                        RenderSideDL(12, 6, 0, 12, 12, 20, 0, 26, .5f);
-                    }
-                    if (face.GetSide() == Pole.All || face.GetSide() == Pole.East)
-                    {
-                        RenderSideDL(0, 12, -12, 6, 0, 26, -12, 20, .7f);
-                    }
-                }
-            }
-        }
+            float[] buffer = RenderMesh(false);
 
-        /// <summary>
-        /// Рендер сторона DL
-        /// </summary>
-        private void RenderSideDL(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4, float color)
-        {
-            vec4 uv = GetUV();
             GLRender.PushMatrix();
             {
-                GLRender.Color(new vec4((cFace.GetIsColor() ? cFace.GetColor() : new vec3(1f)) * color, 0.7f));
-                GLRender.Begin(OpenGL.GL_TRIANGLE_STRIP);
-                GLWindow.gl.TexCoord(uv.x, uv.w); GLRender.Vertex(x1, y1);
-                GLWindow.gl.TexCoord(uv.z, uv.w); GLRender.Vertex(x2, y2);
-                GLWindow.gl.TexCoord(uv.x, uv.y); GLRender.Vertex(x3, y3);
-                GLWindow.gl.TexCoord(uv.z, uv.y); GLRender.Vertex(x4, y4);
+                GLRender.Begin(OpenGL.GL_TRIANGLES);
+                for (int i = 0; i < buffer.Length; i +=10)
+                {
+                    GLRender.Color(buffer[i + 5], buffer[i + 6], buffer[i + 7]);
+                    GLRender.TexCoord(buffer[i + 3], buffer[i + 4]);
+                    GLRender.Vertex(buffer[i] - .5f, buffer[i + 1] - .5f, buffer[i + 2] - .5f);
+                }
                 GLRender.End();
             }
             GLRender.PopMatrix();

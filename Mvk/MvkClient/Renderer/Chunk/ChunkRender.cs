@@ -62,8 +62,11 @@ namespace MvkClient.Renderer.Chunk
         /// <param name="y"></param>
         public void ModifiedToRender(int y)
         {
-            IsModifiedToRender = true;
-            MeshDense[y].SetModifiedRender();
+            if (y >= 0 && y < COUNT_HEIGHT)
+            {
+                IsModifiedToRender = true;
+                MeshDense[y].SetModifiedRender();
+            }
         }
 
         /// <summary>
@@ -114,7 +117,7 @@ namespace MvkClient.Renderer.Chunk
                                 {
                                     DamagedBlocksValue = GetDestroyBlocksValue(x, y, z)
                                 };
-                                bufferCache.AddRange(blockRender.RenderMesh());
+                                bufferCache.AddRange(blockRender.RenderMesh(true));
                                 //if (block.IsAlphe)
                                 //{
                                 //    if (buffer.Length > 0)

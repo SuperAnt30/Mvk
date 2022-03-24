@@ -13,14 +13,6 @@ namespace MvkServer.Entity
     public abstract class EntityLiving : EntityLook
     {
         /// <summary>
-        /// Имя
-        /// </summary>
-        public string Name { get; protected set; } = "";
-        /// <summary>
-        /// Тип сущности
-        /// </summary>
-        public EnumEntities Type { get; protected set; } = EnumEntities.None;
-        /// <summary>
         /// Объект ввода кликов клавиатуры
         /// </summary>
         public EnumInput Input { get; protected set; } = EnumInput.None;
@@ -28,6 +20,10 @@ namespace MvkServer.Entity
         /// Счётчик движения. Влияет на то, где в данный момент находятся ноги и руки при качании. 
         /// </summary>
         public float LimbSwing { get; protected set; } = 0;
+        /// <summary>
+        /// Скорость движения. Влияет на то, где в данный момент находятся ноги и руки при качании. 
+        /// </summary>
+        public float LimbSwingAmount { get; protected set; } = 0;
         /// <summary>
         /// Движение из-за смещения
         /// </summary>
@@ -57,14 +53,6 @@ namespace MvkServer.Entity
         /// </summary>
         public int DamageTime { get; protected set; } = 0;
         /// <summary>
-        /// Был ли эта сущность добавлена в чанк, в котором он находится? 
-        /// </summary>
-        public bool AddedToChunk { get; set; } = false;
-        /// <summary>
-        /// Позиция данных с сервера
-        /// </summary>
-        public vec3 PositionServer { get; protected set; }
-        /// <summary>
         /// Значение поворота вокруг своей оси с сервера
         /// </summary>
         public float RotationYawServer { get; protected set; }
@@ -72,14 +60,6 @@ namespace MvkServer.Entity
         /// Значение поворота вверх вниз с сервера
         /// </summary>
         public float RotationPitchServer { get; protected set; }
-        /// <summary>
-        /// Позиция в чанке
-        /// </summary>
-        public vec2i PositionChunk { get; private set; }
-        /// <summary>
-        /// Позиция псевдо чанка
-        /// </summary>
-        public int PositionChunkY { get; private set; }
         /// <summary>
         /// Сколько тиков эта сущность пробежала с тех пор, как была жива 
         /// </summary>
@@ -99,9 +79,9 @@ namespace MvkServer.Entity
         public EntitySpeed Speed { get; protected set; }
 
         /// <summary>
-        /// Скорость движения. Влияет на то, где в данный момент находятся ноги и руки при качании. 
+        /// Имя
         /// </summary>
-        protected float limbSwingAmount = 0;
+        protected string name = "";
         /// <summary>
         /// Скорость движения на предыдущем тике. Влияет на то, где в данный момент находятся ноги и руки при качании. 
         /// </summary>
@@ -142,6 +122,16 @@ namespace MvkServer.Entity
             Standing();
             SpeedSurvival();
         }
+
+        /// <summary>
+        /// Получить название для рендеринга
+        /// </summary>
+        public override string GetName() => name == "" ? "entity." + Type.ToString() : name;
+
+        /// <summary>
+        /// Возвращает true, если эта вещь названа
+        /// </summary>
+        public override bool HasCustomName() => name != "";
 
         /// <summary>
         /// Максимальное значение здоровья сущности
@@ -209,6 +199,8 @@ namespace MvkServer.Entity
 
         public override void Update()
         {
+            TicksExistedMore();
+
             base.Update();
 
             EntityUpdate();
@@ -543,8 +535,8 @@ namespace MvkServer.Entity
         /// <param name="timeIndex">коэфициент между тактами</param>
         public float GetLimbSwingAmountFrame(float timeIndex)
         {
-            if (timeIndex >= 1.0f || limbSwingAmount.Equals(limbSwingAmountPrev)) return limbSwingAmount;
-            return limbSwingAmountPrev + (limbSwingAmount - limbSwingAmountPrev) * timeIndex;
+            if (timeIndex >= 1.0f || LimbSwingAmount.Equals(limbSwingAmountPrev)) return LimbSwingAmount;
+            return limbSwingAmountPrev + (LimbSwingAmount - limbSwingAmountPrev) * timeIndex;
         }
 
         /// <summary>
@@ -574,27 +566,18 @@ namespace MvkServer.Entity
         public virtual float GetEyeHeight() => Height * 0.85f;
 
         /// <summary>
-        /// Получить координаты в каком чанке находится по текущей Position
-        /// </summary>
-        public vec2i GetChunkPos() => new vec2i(Mth.Floor(Position.x) >> 4, Mth.Floor(Position.z) >> 4);
-        /// <summary>
-        /// Получить координату псевдо чанка находится по текущей Position
-        /// </summary>
-        public int GetChunkY() => Mth.Floor(Position.y) >> 4;
-
-        /// <summary>
         /// Расчёт амплитуды конечностей, при движении
         /// </summary>
         protected void UpLimbSwing()
         {
-            limbSwingAmountPrev = limbSwingAmount;
+            limbSwingAmountPrev = LimbSwingAmount;
             float xx = Position.x - PositionPrev.x;
             float zz = Position.z - PositionPrev.z;
             float xxzz = xx * xx + zz * zz;
             float xz = Mth.Sqrt(xxzz) * 1.4f;
             if (xz > 1.0f) xz = 1.0f;
-            limbSwingAmount += (xz - limbSwingAmount) * 0.4f;
-            LimbSwing += limbSwingAmount;
+            LimbSwingAmount += (xz - LimbSwingAmount) * 0.4f;
+            LimbSwing += LimbSwingAmount;
         }
 
         /// <summary>
@@ -656,11 +639,10 @@ namespace MvkServer.Entity
                 IsSneaking = sneaking;
                 if (IsSneaking) Sitting(); else Standing();
             }
-            OnGround = onGround;
             IsSprinting = sprinting;
-            PositionServer = pos;
             RotationYawServer = yaw;
             RotationPitchServer = pitch;
+            SetMotionServer(pos, onGround);
         }
 
         /// <summary>
@@ -779,37 +761,18 @@ namespace MvkServer.Entity
         protected virtual void Fall() { }
 
         /// <summary>
-        /// Задать плоожение в чанке
-        /// </summary>
-        public void SetPositionChunk(int x, int y, int z)
-        {
-            PositionChunk = new vec2i(x, z);
-            PositionChunkY = y;
-        }
-
-        /// <summary>
-        /// Обновить значения позиции чанка по тикущим значениям
-        /// </summary>
-        public void UpPositionChunk()
-        {
-            PositionChunkY = GetChunkY();
-            PositionChunk = GetChunkPos();
-        }
-
-        /// <summary>
         /// Добавить тик жизни к сущности
         /// </summary>
-        public void TicksExistedMore() => TicksExisted++;
+        protected void TicksExistedMore() => TicksExisted++;
 
         /// <summary>
         /// Обновление сущности в клиентской части
         /// </summary>
-        public void UpdateClient()
+        public override void UpdateClient()
         {
-            LastTickPos = PositionPrev = Position;
+            base.UpdateClient();
             RotationPitchPrev = RotationPitch;
             RotationYawPrev = RotationYaw;
-            SetPosition(PositionServer);
             UpdateEntityRotation();
         }
 
@@ -893,7 +856,7 @@ namespace MvkServer.Entity
         {
             BlockPos blockPos = new BlockPos(pos.x, pos.y - 0.20002f, pos.z);
             BlockBase block = World.GetBlock(blockPos);
-            if (!block.IsAir) // TODO:: нужна проверка что у блока есть частичка
+            if (block.IsParticle)
             {
                 for (int i = 0; i < count; i++)
                 {

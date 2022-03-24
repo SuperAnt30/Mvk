@@ -7,6 +7,7 @@ using MvkClient.Setitings;
 using MvkClient.Util;
 using MvkServer;
 using MvkServer.Entity;
+using MvkServer.Entity.Item;
 using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World;
@@ -101,7 +102,7 @@ namespace MvkClient.World
                 // Добавляем спавн новых сущностей
                 while (EntitySpawnQueue.Count > 0) // count < 10 сделать до 10 сущностей в такт
                 {
-                    EntityLiving entity = (EntityLiving)EntitySpawnQueue.FirstRemove();
+                    EntityBase entity = EntitySpawnQueue.FirstRemove();
 
                     if (!LoadedEntityList.ContainsValue(entity))
                     {
@@ -163,18 +164,31 @@ namespace MvkClient.World
         /// <summary>
         /// Возвращает сущностьь с заданным идентификатором или null, если он не существует в этом мире.
         /// </summary>
-        public EntityLiving GetEntityByID(ushort id)
+        public EntityBase GetEntityByID(ushort id)
         {
             if (id == ClientMain.Player.Id) return ClientMain.Player;
-            return LoadedEntityList.Get(id) as EntityLiving;
+            return LoadedEntityList.Get(id);
+        }
+
+        /// <summary>
+        /// Возвращает сущностьь с заданным идентификатором или null, если он не существует в этом мире.
+        /// </summary>
+        public EntityLiving GetEntityLivingByID(ushort id)
+        {
+            EntityBase entity = GetEntityByID(id);
+            if (entity != null && entity is EntityLiving)
+            {
+                return (EntityLiving)entity;
+            }
+            return null;
         }
 
         /// <summary>
         /// Добавить сопоставление идентификатора сущности с entityHashSet
         /// </summary>
-        public void AddEntityToWorld(ushort id, EntityLiving entity)
+        public void AddEntityToWorld(ushort id, EntityBase entity)
         {
-            EntityLiving entityId = GetEntityByID(id);
+            EntityBase entityId = GetEntityByID(id);
 
             if (entityId != null) RemoveEntity(entityId);
 
@@ -189,9 +203,9 @@ namespace MvkClient.World
             LoadedEntityList.Add(entity);
         }
 
-        public EntityLiving RemoveEntityFromWorld(ushort id)
+        public EntityBase RemoveEntityFromWorld(ushort id)
         {
-            EntityLiving entity = GetEntityByID(id);
+            EntityBase entity = GetEntityByID(id);
             if (entity != null)
             {
                 EntityList.Remove(entity);
@@ -218,10 +232,7 @@ namespace MvkClient.World
         /// </summary>
         public void MouseUp(MouseButton button)
         {
-            if (button == MouseButton.Left)
-            {
-                ClientMain.Player.UndoHandAction();
-            }
+            ClientMain.Player.UndoHandAction();
         }
 
         /// <summary>
@@ -309,6 +320,7 @@ namespace MvkClient.World
                     {
                         // Блок сломан
                         ParticleDiggingBlock(blockPos, 50);
+                        //SpawnEntityInWorld(new EntityItem(this, blockPos.ToVec3(), new MvkServer.Item.ItemStack()
                     }
                     chunk.DestroyBlockRemove(breakerId);
                 }
@@ -323,25 +335,34 @@ namespace MvkClient.World
         /// <param name="count">количество частичек</param>
         public void ParticleDiggingBlock(BlockPos blockPos, int count)
         {
-            vec3 pos = blockPos.ToVec3() + new vec3(.5f);
-            for (int i = 0; i < count; i++)
+            BlockBase block = GetBlock(blockPos);
+            if (block != null && block.IsParticle)
             {
-                SpawnParticle(EnumParticle.Digging,
-                    pos + new vec3((Rand.Next(16) - 8) / 16f, (Rand.Next(12) - 6) / 16f, (Rand.Next(16) - 8) / 16f),
-                    new vec3(0),
-                    (int)GetEBlock(blockPos));
+                vec3 pos = blockPos.ToVec3() + new vec3(.5f);
+                for (int i = 0; i < count; i++)
+                {
+                    SpawnParticle(EnumParticle.Digging,
+                        pos + new vec3((Rand.Next(16) - 8) / 16f, (Rand.Next(12) - 6) / 16f, (Rand.Next(16) - 8) / 16f),
+                        new vec3(0),
+                        (int)GetEBlock(blockPos));
+                }
             }
         }
 
         #region Entity
 
-        protected override void OnEntityAdded(EntityLiving entity)
+        protected override void OnEntityAdded(EntityBase entity)
         {
             base.OnEntityAdded(entity);
             EntitySpawnQueue.Remove(entity);
         }
 
-        protected override void OnEntityRemoved(EntityLiving entity)
+        /// <summary>
+        /// Вызывается для всех World, когда сущность выгружается или уничтожается. 
+        /// В клиентских мирах освобождает любые загруженные текстуры.
+        /// В серверных мирах удаляет сущность из трекера сущностей.
+        /// </summary>
+        protected override void OnEntityRemoved(EntityBase entity)
         {
             base.OnEntityRemoved(entity);
 
@@ -350,7 +371,10 @@ namespace MvkClient.World
                 if (!entity.IsDead)
                 {
                     EntitySpawnQueue.Add(entity);
+                  //  LoadedEntityList.Remove(entity);
                 }
+                // TODO:: проверить трекер, если обзор меньше trackingRang, то при приближении сущность не появляется!!!
+                // Вроде тут, 21-03-2022, надо у клиента очищать сущность, 
                 else
                 {
                     EntityList.Remove(entity);
@@ -361,7 +385,7 @@ namespace MvkClient.World
         /// <summary>
         /// Запланировать удаление сущности в следующем тике
         /// </summary>
-        public override void RemoveEntity(EntityLiving entity)
+        public override void RemoveEntity(EntityBase entity)
         {
             base.RemoveEntity(entity);
             EntityList.Remove(entity);
@@ -370,7 +394,7 @@ namespace MvkClient.World
         /// <summary>
         /// Вызывается, когда объект появляется в мире. Это включает в себя игроков
         /// </summary>
-        public override bool SpawnEntityInWorld(EntityLiving entity)
+        public override bool SpawnEntityInWorld(EntityBase entity)
         {
             bool spawn = base.SpawnEntityInWorld(entity);
             EntityList.Add(entity);
@@ -384,7 +408,7 @@ namespace MvkClient.World
         public override void SpawnParticle(EnumParticle particle, vec3 pos, vec3 motion, params int[] items) 
             => ClientMain.EffectRender.SpawnParticle(particle, pos, motion, items);
 
-        protected override void UpdateEntity(EntityLiving entity)
+        protected override void UpdateEntity(EntityBase entity)
         {
             entity.UpdateClient();
             // Проверка толчка

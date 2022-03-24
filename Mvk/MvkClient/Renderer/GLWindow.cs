@@ -85,7 +85,7 @@ namespace MvkClient.Renderer
                 client.World.WorldRender.Draw(timeIndex);
                
 
-                if (client.Screen.IsEmptyScreen())// && client.World.Player.ViewCamera == EnumViewCamera.Eye)
+              //  if (client.Screen.IsEmptyScreen())// && client.World.Player.ViewCamera == EnumViewCamera.Eye)
                 {
                     client.World.WorldRender.Draw2D();
                     if (client.Player.DamageTime > 0 

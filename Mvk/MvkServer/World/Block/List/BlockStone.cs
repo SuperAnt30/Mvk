@@ -1,4 +1,4 @@
-﻿namespace MvkServer.World.Block.Items
+﻿namespace MvkServer.World.Block.List
 {
     /// <summary>
     /// Блок камня

@@ -9,33 +9,42 @@ namespace MvkServer.Network.Packets.Server
     public struct PacketS0FSpawnMob : IPacket
     {
         private ushort id;
-        //private string name;
+        private EnumEntities type;
         private vec3 pos;
         private float yaw;
         private float yawHead;
         private float pitch;
 
         public ushort GetId() => id;
-        //public string GetName() => name;
+        public EnumEntities GetEnum() => type;
         public vec3 GetPos() => pos;
         public float GetYaw() => yaw;
         public float GetYawHead() => yawHead;
         public float GetPitch() => pitch;
 
-        public PacketS0FSpawnMob(EntityLivingHead entity)
+        public PacketS0FSpawnMob(EntityBase entity)
         {
             id = entity.Id;
-            //name = entity.Name;
+            type = entity.Type;
             pos = entity.Position;
-            yawHead = entity.RotationYawHead;
-            yaw = entity.RotationYaw;
-            pitch = entity.RotationPitch;
+            if (entity is EntityLivingHead entityLH)
+            {
+                yawHead = entityLH.RotationYawHead;
+                yaw = entityLH.RotationYaw;
+                pitch = entityLH.RotationPitch;
+            }
+            else
+            {
+                yawHead = 0;
+                yaw = 0;
+                pitch = 0;
+            }
         }
 
         public void ReadPacket(StreamBase stream)
         {
             id = stream.ReadUShort();
-            //name = stream.ReadString();
+            type = (EnumEntities)stream.ReadUShort();
             pos = new vec3(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat());
             yawHead = stream.ReadFloat();
             yaw = stream.ReadFloat();
@@ -45,7 +54,7 @@ namespace MvkServer.Network.Packets.Server
         public void WritePacket(StreamBase stream)
         {
             stream.WriteUShort(id);
-            //stream.WriteString(name);
+            stream.WriteUShort((ushort)type);
             stream.WriteFloat(pos.x);
             stream.WriteFloat(pos.y);
             stream.WriteFloat(pos.z);

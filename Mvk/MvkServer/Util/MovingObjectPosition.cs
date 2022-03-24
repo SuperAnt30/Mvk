@@ -12,7 +12,7 @@ namespace MvkServer.Util
         /// <summary>
         /// Объект сущьности
         /// </summary>
-        public EntityLiving Entity { get; protected set; }
+        public EntityBase Entity { get; protected set; }
         /// <summary>
         /// Объект блока
         /// </summary>
@@ -67,7 +67,7 @@ namespace MvkServer.Util
         /// </summary>
         /// <param name="entity">сущьность</param>
         /// <param name="hit">Координата по которому ударили</param>
-        public MovingObjectPosition(EntityLiving entity)
+        public MovingObjectPosition(EntityBase entity)
         {
             Entity = entity;
             type = MovingObjectType.Entity;
@@ -92,7 +92,8 @@ namespace MvkServer.Util
             string str = "";
             if (type == MovingObjectType.Entity)
             {
-                str = Entity.Name + " " + Entity.Health + " " + Entity.Position;
+                float h = Entity is EntityLiving ? ((EntityLiving)Entity).Health : 0; 
+                str = Entity.GetName() + " " + h + " " + Entity.Position;
             }
             return string.Format("{0} {3} {1} {2}", type, Hit, RayHit, str);
         }

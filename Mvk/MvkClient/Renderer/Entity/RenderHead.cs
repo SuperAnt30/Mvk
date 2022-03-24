@@ -17,40 +17,43 @@ namespace MvkClient.Renderer.Entity
             texture = AssetsTexture.Steve;
         }
 
-        public override void DoRender(EntityLiving entity, vec3 offset, float timeIndex)
+        public override void DoRender(EntityBase entity, vec3 offset, float timeIndex)
         {
-            vec3 pos = entity.GetPositionFrame(timeIndex);
-            float eye = entity.GetEyeHeightFrame();
-            float yawHead = entity.GetRotationYawFrame(timeIndex);
-
-            model.SetSwingProgress(entity.GetSwingProgressFrame(timeIndex));
-
-            GLRender.PushMatrix();
+            if (entity is EntityLiving entityLiving)
             {
-                GLRender.CullEnable();
-                GLRender.DepthDisable();
-                vec4 color = new vec4(1);
-                GLRender.Color(color);
-                BindTexture();
+                vec3 pos = entity.GetPositionFrame(timeIndex);
+                float eye = entityLiving.GetEyeHeightFrame();
+                float yawHead = entityLiving.GetRotationYawFrame(timeIndex);
 
-                GLRender.Translate(pos.x - offset.x, pos.y - offset.y, pos.z - offset.z);
+                model.SetSwingProgress(entityLiving.GetSwingProgressFrame(timeIndex));
+
                 GLRender.PushMatrix();
                 {
-                    RotateCorpse(entity, timeIndex);
-                    GLRender.Translate(0, -eye, 0);
-                    GLRender.Rotate(glm.degrees(renderManager.CameraRotationYaw), 0, 1, 0);
-                    GLRender.Rotate(glm.degrees(-renderManager.CameraRotationPitch), 1, 0, 0);
+                    GLRender.CullEnable();
+                    GLRender.DepthDisable();
+                    vec4 color = new vec4(1);
+                    GLRender.Color(color);
+                    BindTexture();
 
-                    float ageInTicks = renderManager.World.ClientMain.TickCounter + timeIndex;
+                    GLRender.Translate(pos.x - offset.x, pos.y - offset.y, pos.z - offset.z);
+                    GLRender.PushMatrix();
+                    {
+                        RotateCorpse(entityLiving, timeIndex);
+                        GLRender.Translate(0, -eye, 0);
+                        GLRender.Rotate(glm.degrees(renderManager.CameraRotationYaw), 0, 1, 0);
+                        GLRender.Rotate(glm.degrees(-renderManager.CameraRotationPitch), 1, 0, 0);
 
-                    RenderModel(entity, entity.LimbSwing, entity.GetLimbSwingAmountFrame(timeIndex), ageInTicks,
-                        yawHead, entity.GetRotationPitchFrame(timeIndex), .0625f);
-                    
+                        float ageInTicks = renderManager.World.ClientMain.TickCounter + timeIndex;
+
+                        RenderModel(entityLiving, entityLiving.LimbSwing, entityLiving.GetLimbSwingAmountFrame(timeIndex), ageInTicks,
+                            yawHead, entityLiving.GetRotationPitchFrame(timeIndex), .0625f);
+
+                    }
+                    GLRender.PopMatrix();
+                    GLRender.DepthEnable();
                 }
                 GLRender.PopMatrix();
-                GLRender.DepthEnable();
             }
-            GLRender.PopMatrix();
         }
 
         //protected override void Render(EntityLiving entity, float limbSwing, float limbSwingAmount, float ageInTicks, float headYaw, float headPitch, float scale)

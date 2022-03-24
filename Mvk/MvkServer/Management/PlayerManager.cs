@@ -1,11 +1,15 @@
-﻿using MvkServer.Entity.Mob;
+﻿using MvkServer.Entity;
+using MvkServer.Entity.Item;
+using MvkServer.Entity.Mob;
 using MvkServer.Entity.Player;
 using MvkServer.Glm;
+using MvkServer.Item;
 using MvkServer.Network;
 using MvkServer.Network.Packets.Client;
 using MvkServer.Network.Packets.Server;
 using MvkServer.Util;
 using MvkServer.World;
+using MvkServer.World.Chunk;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -110,7 +114,7 @@ namespace MvkServer.Management
         private void PlayerAdd(EntityPlayerServer entityPlayer)
         {
             // Лог запуска игрока
-            World.ServerMain.Log.Log("server.player.entry {0} [{1}]", entityPlayer.Name, entityPlayer.UUID);
+            World.ServerMain.Log.Log("server.player.entry {0} [{1}]", entityPlayer.GetName(), entityPlayer.UUID);
 
             lastPlayerId++;
 
@@ -128,25 +132,67 @@ namespace MvkServer.Management
             // Добавляем игрок в конкретный чанк
             GetPlayerInstance(entityPlayer.PositionChunk, true).AddPlayer(entityPlayer, true);
 
-            //entityPlayer.FlagSpawn = true;
+            entityPlayer.FlagSpawn = true;
             World.SpawnEntityInWorld(entityPlayer);
-            //entityPlayer.FlagSpawn = false;
+           // entityPlayer.FlagSpawn = false;
 
             // отладка 5 кур
-            for (int i = 0; i < 5; i++)
+            //for (int i = 0; i < 5; i++)
+            //{
+            //    lastPlayerId++;
+            //    EntityChicken entityChicken = new EntityChicken(World);
+            //    entityChicken.SetEntityId(lastPlayerId);
+            //    entityChicken.SetPosition(entityPlayer.Position + new vec3(3, World.Rand.Next(40, 64), 0));
+            //    World.SpawnEntityInWorld(entityChicken);
+            //}
+        }
+
+        public void SpawnItem(EntityItem item)
+        {
+            lastPlayerId++;
+            //EntityChicken entityChicken = new EntityChicken(World);
+            //entityChicken.SetEntityId(lastPlayerId);
+            //entityChicken.SetPosition(item.Position);
+            //World.SpawnEntityInWorld(entityChicken);
+
+            item.SetEntityId(lastPlayerId);
+            World.SpawnEntityInWorld(item);
+        }
+
+        /// <summary>
+        /// Проверка вертикально позиции для спавна
+        /// </summary>
+        private void SpawnPositionCheck(EntityLiving entity)
+        {
+            ChunkBase chunk = World.GetChunk(entity.GetChunkPos());
+            if (chunk != null)
             {
-                lastPlayerId++;
-                EntityChicken entityChicken = new EntityChicken(World);
-                entityChicken.SetEntityId(lastPlayerId);
-                entityChicken.SetPosition(entityPlayer.Position + new vec3(3, World.Rand.Next(0, 10), 0));
-                World.SpawnEntityInWorld(entityChicken);
+                int x = (int)entity.Position.x & 15;
+                int z = (int)entity.Position.z & 15;
+                int y0 = (int)entity.Position.y;
+                bool b = true;
+                for (int y = 255; y > 0; y--)
+                {
+                    if (chunk.GetEBlock(x, y, z) != MvkServer.World.Block.EnumBlock.Air)
+                    {
+                        y0 = y + 1;
+                        b = false;
+                        break;
+                    }
+                }
+                if (b) y0++;
+                entity.SetPosition(new vec3(entity.Position.x, y0, entity.Position.z));
             }
         }
+      
 
         private void SpawnPositionTest(EntityPlayerServer entityPlayer)
         {
             Random random = new Random();
-            entityPlayer.SetPosLook(new vec3(random.Next(-16, 16) + 0040, 30, random.Next(-16, 16)), -0.9f, -.8f);
+            entityPlayer.SetPosLook(new vec3(random.Next(-16, 16) - 0040, 0, random.Next(-16, 16)), -0.9f, -.8f);
+            SpawnPositionCheck(entityPlayer);
+            // entityPlayer.SetPosLook(new vec3(random.Next(-16, 16) - 50040, 30, random.Next(-16, 16)), -0.9f, -.8f);
+
         }
 
         /// <summary>
@@ -182,7 +228,7 @@ namespace MvkServer.Management
 
             if (entityPlayer != null)
             {
-                World.ServerMain.Log.Log("server.player.entry.repeat {0} [{1}]", entityPlayer.Name, entityPlayer.UUID);
+                World.ServerMain.Log.Log("server.player.entry.repeat {0} [{1}]", entityPlayer.GetName(), entityPlayer.UUID);
                 World.Tracker.RemovePlayerFromTrackers(entityPlayer);
                 RemoveMountedMovingPlayer(entityPlayer);
                 World.RemoveEntity(entityPlayer);
@@ -287,7 +333,7 @@ namespace MvkServer.Management
 
             } else
             {
-                World.ServerMain.Log.Log("server.player.entry.duplicate {0} [{1}]", entityPlayer.Name, entityPlayer.UUID);
+                World.ServerMain.Log.Log("server.player.entry.duplicate {0} [{1}]", entityPlayer.GetName(), entityPlayer.UUID);
                 // Игрок с таким именем в игре!
                 entityPlayer.SendPacket(new PacketSF0Connection("world.player.duplicate"));
             }
@@ -314,6 +360,7 @@ namespace MvkServer.Management
             EntityPlayerServer player = GetEntityPlayerMain();
             if (player != null)
             {
+                SpawnPositionCheck(player);
                 ResponsePacketJoinGame(player);
             }
         }
@@ -775,7 +822,7 @@ namespace MvkServer.Management
                 for (int i = 0; i < players.Count; i++)
                 {
                     EntityPlayerServer entity = players[i];
-                    strPlayers += entity.Name + " [p" + entity.Ping + "|" + (entity.IsDead ? "Dead" : ("h" + entity.Health)) + (entity.IsSprinting ? "S" : "-") + "]";
+                    strPlayers += entity.GetName() + " [p" + entity.Ping + "|" + (entity.IsDead ? "Dead" : ("h" + entity.Health)) + (entity.IsSprinting ? "S" : "-") + "]";
                 }
             }
             return strPlayers;

@@ -31,12 +31,12 @@ namespace MvkServer.Entity
         /// Добавить сущность
         /// </summary>
         /// <param name="entity">сущность</param>
-        public void EntityAdd(EntityLiving entity)
+        public void EntityAdd(EntityBase entity)
         {
             if (entity is EntityPlayerServer)
             {
-                AddEntityToTracker(entity, 64, 2, false);
-
+                AddEntityToTracker(entity, 256, 2, false);
+                
                 for (int i = 0; i < trackedEntities.Count; i++)
                 {
                     EntityTrackerEntry trackerEntry = trackedEntities.GetAt(i);
@@ -49,6 +49,9 @@ namespace MvkServer.Entity
             else
             {
                 AddEntityToTracker(entity, 64, 10, false);
+
+
+                //AddEntityToTracker(entity, 64, 20, true); // item
             }
         }
 
@@ -59,7 +62,7 @@ namespace MvkServer.Entity
         /// <param name="trackingRange">Пороговое значение расстояния отслеживания</param>
         /// <param name="updateFrequency">Частота проверки синхронизации</param>
         /// <param name="sendVelocityUpdates">Отправлять обновления скорости</param>
-        private void AddEntityToTracker(EntityLiving entity, int trackingRange, int updateFrequency, bool sendVelocityUpdates)
+        private void AddEntityToTracker(EntityBase entity, int trackingRange, int updateFrequency, bool sendVelocityUpdates)
         {
             if (trackingRange > maxTrackingDistanceThreshold)
             {
@@ -87,7 +90,7 @@ namespace MvkServer.Entity
         /// <summary>
         /// Убрать трек с этой сущностью
         /// </summary>
-        public void EntityRemove(EntityLiving entity)
+        public void UntrackEntity(EntityBase entity)
         {
             EntityTrackerEntry trackerEntry;
 

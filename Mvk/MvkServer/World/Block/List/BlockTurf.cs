@@ -1,7 +1,7 @@
 ﻿using MvkServer.Glm;
 using MvkServer.Util;
 
-namespace MvkServer.World.Block.Items
+namespace MvkServer.World.Block.List
 {
     /// <summary>
     /// Блок дёрна

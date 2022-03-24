@@ -63,7 +63,7 @@ namespace MvkServer.Entity.Player
         {
             ServerMain = server;
             SocketClient = socket;
-            Name = name;
+            base.name = name;
             UUID = GetHash(name);
             profiler = new Profiler(server.Log);
             TheItemInWorldManager = new ItemInWorldManager(world, this);
@@ -195,7 +195,7 @@ namespace MvkServer.Entity.Player
         /// <summary>
         /// Сущность которую надо удалить у клиента
         /// </summary>
-        public void SendRemoveEntity(EntityLiving entity)
+        public void SendRemoveEntity(EntityBase entity)
         {
             if (entity is EntityPlayer)
             {
@@ -225,7 +225,7 @@ namespace MvkServer.Entity.Player
 
         public override string ToString()
         {
-            return "#" + Id + " " + Name + "\r\n" + base.ToString();
+            return "#" + Id + " " + name + "\r\n" + base.ToString();
         }
     }
 }

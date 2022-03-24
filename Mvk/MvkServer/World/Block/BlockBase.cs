@@ -46,6 +46,10 @@ namespace MvkServer.World.Block
         /// Индекс картинки частички
         /// </summary>
         public int Particle { get; protected set; } = 0;
+        /// <summary>
+        /// Имеется ли у блока частичка
+        /// </summary>
+        public bool IsParticle { get; protected set; } = true;
 
         /// <summary>
         /// Ограничительная рамка занимает весь блок, для оптимизации, без проверки AABB блока
@@ -128,6 +132,7 @@ namespace MvkServer.World.Block
         {
             //return 0; // креатив
             return Hardness; // выживание
+            //return Hardness / 3; // выживание
             //return hardness < 0.0F ? 0.0F : (!playerIn.canHarvestBlock(this) ? playerIn.func_180471_a(this) / hardness / 100.0F : playerIn.func_180471_a(this) / hardness / 30.0F);
         }
 

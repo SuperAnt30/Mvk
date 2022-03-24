@@ -83,7 +83,7 @@ namespace MvkServer.World.Chunk
         public int GetCountEntityDebug()
         {
             Hashtable ht = chunkMapping.CloneMap();
-            List<EntityLiving> list = new List<EntityLiving>();
+            List<EntityBase> list = new List<EntityBase>();
 
             foreach (ChunkBase chunk in ht.Values)
             {

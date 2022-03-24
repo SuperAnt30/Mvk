@@ -1,16 +1,10 @@
-﻿using MvkServer.Glm;
-
-namespace MvkClient.Renderer.Model
+﻿namespace MvkClient.Renderer.Model
 {
     /// <summary>
     /// Рендер модели
     /// </summary>
     public class ModelRender : RenderDL
     {
-        public float RotateAngleX { get; set; } = 0;
-        public float RotateAngleY { get; set; } = 0;
-        public float RotateAngleZ { get; set; } = 0;
-
         /// <summary>
         /// Зеркальный
         /// </summary>
@@ -45,24 +39,6 @@ namespace MvkClient.Renderer.Model
         {
             this.scale = scale;
             Render();
-        }
-
-        protected override void ToListCall()
-        {
-            if (RotateAngleX == 0f && RotateAngleY == 0f && RotateAngleZ == 0f)
-            {
-                base.ToListCall();
-            }
-            else
-            {
-                GLWindow.gl.PushMatrix();
-                GLWindow.gl.Translate(RotationPointX * scale, RotationPointY * scale, RotationPointZ * scale);
-                if (RotateAngleZ != 0f) GLWindow.gl.Rotate(glm.degrees(RotateAngleZ), 0, 0, 1);
-                if (RotateAngleY != 0f) GLWindow.gl.Rotate(glm.degrees(RotateAngleY), 0, 1, 0);
-                if (RotateAngleX != 0f) GLWindow.gl.Rotate(glm.degrees(RotateAngleX), 1, 0, 0);
-                GLRender.ListCall(dList);
-                GLWindow.gl.PopMatrix();
-            }
         }
 
         protected override void DoRender() => box.Render(scale);

@@ -42,6 +42,7 @@ namespace MvkServer.Util
         public BlockPos OffsetUp(int i) => new BlockPos(Position + (EnumFacing.DirectionVec(Pole.Up) * i));
 
         public vec3 ToVec3() => new vec3(Position.x, Position.y, Position.z);
+        public vec3 ToVec3Center() => new vec3(Position.x + .5f, Position.y + .5f, Position.z + .5f);
 
         /// <summary>
         /// Получить позицию блока в чанке, 0..15

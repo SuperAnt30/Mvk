@@ -5,6 +5,7 @@ using MvkServer.Network.Packets;
 using MvkServer.Network.Packets.Client;
 using MvkServer.Network.Packets.Server;
 using MvkServer.Util;
+using MvkServer.World.Block;
 using MvkServer.World.Chunk;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -198,7 +199,7 @@ namespace MvkServer.Network
             EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayerSocket(socket);
             if (entityPlayer != null)
             {
-                entityPlayer.TheItemInWorldManager.Put(packet.GetBlockPos(), packet.GetFacing());
+                entityPlayer.TheItemInWorldManager.Put(packet.GetBlockPos(), packet.GetFacing(), (EnumBlock)entityPlayer.slot);
             }
         }
 

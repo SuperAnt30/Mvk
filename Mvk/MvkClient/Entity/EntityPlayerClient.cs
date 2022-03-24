@@ -30,7 +30,7 @@ namespace MvkClient.Entity
         /// </summary>
         public void SetDataPlayer(ushort id, string uuid, string name)
         {
-            Name = name;
+            base.name = name;
             UUID = uuid;
             Id = id;
         }
@@ -53,7 +53,7 @@ namespace MvkClient.Entity
 
         public override string ToString()
         {
-            return Name + "\r\n" + base.ToString();
+            return name + "\r\n" + base.ToString();
         }
     }
 }

@@ -270,18 +270,26 @@ namespace MvkServer.World.Chunk
         /// <summary>
         /// Получить блок по координатам чанка XZ 0..15, Y 0..255
         /// </summary>
-        public BlockBase GetBlock0(vec3i pos)
+        public BlockBase GetBlock0(vec3i pos) => GetBlock0(pos.x, pos.y, pos.z);
+        /// <summary>
+        /// Получить блок по координатам чанка XZ 0..15, Y 0..255
+        /// </summary>
+        public BlockBase GetBlock0(int x, int y, int z)
         {
-            EnumBlock eblock = GetEBlock(pos);
-            return Blocks.GetBlock(eblock, new BlockPos(Position.x << 4 | pos.x, pos.y, Position.y << 4 | pos.z));
+            EnumBlock eblock = GetEBlock(x, y, z);
+            return Blocks.GetBlock(eblock, new BlockPos(Position.x << 4 | x, y, Position.y << 4 | z));
         }
 
         /// <summary>
         /// Получить тип блок по координатам чанка XZ 0..15, Y 0..255
         /// </summary>
-        public EnumBlock GetEBlock(vec3i pos)
+        public EnumBlock GetEBlock(vec3i pos) => GetEBlock(pos.x, pos.y, pos.z);
+        /// <summary>
+        /// Получить тип блок по координатам чанка XZ 0..15, Y 0..255
+        /// </summary>
+        public EnumBlock GetEBlock(int x, int y, int z)
         {
-            if (pos.x >> 4 == 0 && pos.z >> 4 == 0) return StorageArrays[pos.y >> 4].GetEBlock(pos.x, pos.y & 15, pos.z);
+            if (x >> 4 == 0 && z >> 4 == 0) return StorageArrays[y >> 4].GetEBlock(x, y & 15, z);
             return EnumBlock.Air;
         }
 
@@ -305,7 +313,7 @@ namespace MvkServer.World.Chunk
         /// <summary>
         /// Добавить сущность в чанк
         /// </summary>
-        public void AddEntity(EntityLiving entity)
+        public void AddEntity(EntityBase entity)
         {
             int x = Mth.Floor(entity.Position.x) >> 4;
             int z = Mth.Floor(entity.Position.z) >> 4;
@@ -330,7 +338,7 @@ namespace MvkServer.World.Chunk
         /// </summary>
         /// <param name="entity">сущность</param>
         /// <param name="y">уровень псевдочанка</param>
-        public void RemoveEntityAtIndex(EntityLiving entity, int y)
+        public void RemoveEntityAtIndex(EntityBase entity, int y)
         {
             if (y < 0) y = 0;
             if (y >= COUNT_HEIGHT) y = COUNT_HEIGHT - 1;
@@ -341,19 +349,19 @@ namespace MvkServer.World.Chunk
         ///  Удаляет сущность, используя его координату y в качестве индекса
         /// </summary>
         /// <param name="entity">сущность</param>
-        public void RemoveEntity(EntityLiving entity) => RemoveEntityAtIndex(entity, entity.PositionChunkY);
+        public void RemoveEntity(EntityBase entity) => RemoveEntityAtIndex(entity, entity.PositionChunkY);
 
         /// <summary>
         /// Получить список id всех сущностей в чанке
         /// </summary>
-        public EntityLiving[] GetEntities()
+        public EntityBase[] GetEntities()
         {
-            List<EntityLiving> list = new List<EntityLiving>();
+            List<EntityBase> list = new List<EntityBase>();
             for (int y = 0; y < COUNT_HEIGHT; y++)
             {
                 for (int i = 0; i < ListEntities[y].Count; i++)
                 {
-                    EntityLiving entity = (EntityLiving)ListEntities[y].GetAt(i);
+                    EntityBase entity = ListEntities[y].GetAt(i);
                     if (entity != null && entity.AddedToChunk)
                     {
                         list.Add(entity);
@@ -381,8 +389,8 @@ namespace MvkServer.World.Chunk
             {
                 for (int i = 0; i < ListEntities[y].Count; i++)
                 {
-                    EntityLiving entity = (EntityLiving)ListEntities[y].GetAt(i);
-                    if (entity != null && entity != entityIn && entity.BoundingBox.IntersectsWith(aabb))
+                    EntityBase entity = ListEntities[y].GetAt(i);
+                    if (entity != null && entity.Id != entityIn.Id && entity.BoundingBox.IntersectsWith(aabb))
                     {
                         list.Add(entity);
                     }

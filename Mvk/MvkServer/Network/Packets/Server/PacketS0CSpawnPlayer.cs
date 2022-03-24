@@ -26,7 +26,7 @@ namespace MvkServer.Network.Packets.Server
         {
             uuid = entity.UUID;
             id = entity.Id;
-            name = entity.Name;
+            name = entity.GetName();
             pos = entity.Position;
             yaw = entity.RotationYawHead;
             pitch = entity.RotationPitch;

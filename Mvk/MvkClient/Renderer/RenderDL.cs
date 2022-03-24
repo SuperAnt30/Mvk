@@ -1,4 +1,5 @@
-﻿using SharpGL;
+﻿using MvkServer.Glm;
+using SharpGL;
 
 namespace MvkClient.Renderer
 {
@@ -15,6 +16,10 @@ namespace MvkClient.Renderer
         public float RotationPointX { get; set; } = 0;
         public float RotationPointY { get; set; } = 0;
         public float RotationPointZ { get; set; } = 0;
+
+        public float RotateAngleX { get; set; } = 0;
+        public float RotateAngleY { get; set; } = 0;
+        public float RotateAngleZ { get; set; } = 0;
 
         protected float scale = 1.0f;
         protected uint dList;
@@ -34,15 +39,27 @@ namespace MvkClient.Renderer
 
         protected virtual void ToListCall()
         {
-            if (RotationPointX == 0f && RotationPointY == 0f && RotationPointZ == 0f)
+            bool rotation = RotationPointX == 0f && RotationPointY == 0f && RotationPointZ == 0f;
+
+            if (RotateAngleX == 0f && RotateAngleY == 0f && RotateAngleZ == 0f)
             {
+                if (!rotation)
+                {
+                    GLRender.PushMatrix();
+                    GLRender.Translate(RotationPointX * scale, RotationPointY * scale, RotationPointZ * scale);
+                }
                 GLRender.ListCall(dList);
+                if (!rotation) GLRender.PopMatrix();
             }
             else
             {
-                GLWindow.gl.Translate(RotationPointX * scale, RotationPointY * scale, RotationPointZ * scale);
+                GLRender.PushMatrix();
+                if (!rotation) GLRender.Translate(RotationPointX * scale, RotationPointY * scale, RotationPointZ * scale);
+                if (RotateAngleZ != 0f) GLRender.Rotate(glm.degrees(RotateAngleZ), 0, 0, 1);
+                if (RotateAngleY != 0f) GLRender.Rotate(glm.degrees(RotateAngleY), 0, 1, 0);
+                if (RotateAngleX != 0f) GLRender.Rotate(glm.degrees(RotateAngleX), 1, 0, 0);
                 GLRender.ListCall(dList);
-                GLWindow.gl.Translate(-RotationPointX * scale, -RotationPointY * scale, -RotationPointZ * scale);
+                GLRender.PopMatrix();
             }
         }
 
@@ -80,9 +97,11 @@ namespace MvkClient.Renderer
         {
             GLWindow.gl.MatrixMode(OpenGL.GL_PROJECTION);
             GLWindow.gl.LoadIdentity();
-            GLWindow.gl.Ortho2D(0, width, height, 0);
+            //GLWindow.gl.Ortho2D(0, width, height, 0);
+            GLWindow.gl.Ortho(0, width, height, 0, -100, 100);
             GLWindow.gl.MatrixMode(OpenGL.GL_MODELVIEW);
             GLWindow.gl.LoadIdentity();
+            GLRender.CullEnable();
         }
 
     }

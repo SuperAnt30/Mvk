@@ -32,9 +32,9 @@ namespace MvkServer.Util
         public AxisAlignedBB Offset(vec3 bias) => new AxisAlignedBB(Min + bias, Max + bias);
 
         /// <summary>
-        /// Добавить координату в область
+        /// Добавить координату в область как смещение от 0
         /// </summary>
-        public AxisAlignedBB AddCoord(vec3 pos)
+        public AxisAlignedBB AddCoordBias(vec3 pos)
         {
             vec3 min = new vec3(Min);
             vec3 max = new vec3(Max);
@@ -47,6 +47,26 @@ namespace MvkServer.Util
 
             if (pos.z < 0f) min.z += pos.z;
             else if (pos.z > 0f) max.z += pos.z;
+
+            return new AxisAlignedBB(min, max);
+        }
+
+        /// <summary>
+        /// Добавить координату в область
+        /// </summary>
+        public AxisAlignedBB AddCoord(vec3 pos)
+        {
+            vec3 min = new vec3(Min);
+            vec3 max = new vec3(Max);
+
+            if (pos.x < min.x) min.x = pos.x;
+            else if (pos.x > max.x) max.x = pos.x;
+
+            if (pos.y < min.y) min.y = pos.y;
+            else if (pos.y > max.y) max.y = pos.y;
+
+            if (pos.z < min.z) min.z = pos.z;
+            else if (pos.z > max.z) max.z = pos.z;
 
             return new AxisAlignedBB(min, max);
         }

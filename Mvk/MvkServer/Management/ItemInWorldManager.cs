@@ -1,4 +1,5 @@
-﻿using MvkServer.Entity.Player;
+﻿using MvkServer.Entity.Item;
+using MvkServer.Entity.Player;
 using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World;
@@ -15,7 +16,14 @@ namespace MvkServer.Management
         /// Позиция блока который разрушаем
         /// </summary>
         public BlockPos BlockPosDestroy { get; private set; } = new BlockPos();
-
+        /// <summary>
+        /// Направление установки блока
+        /// </summary>
+        private vec3 facing;
+        /// <summary>
+        /// Тип блока для установки
+        /// </summary>
+        private EnumBlock enumBlock = EnumBlock.None;
         /// <summary>
         /// Пауза между ударами, если удар не отключали (Update)
         /// </summary>
@@ -37,9 +45,14 @@ namespace MvkServer.Management
         /// </summary>
         private int curblockDamage;
         /// <summary>
-        /// Прочность, оставшаяся в блоке 
+        /// Прочность, оставшаяся в блоке.
+        /// -1 отмена, -2 сломан блок, -3 ставим блок
         /// </summary>
         private int durabilityRemainingOnBlock = -1;
+        /// <summary>
+        /// Статус действия
+        /// </summary>
+        private Status status = Status.None;
 
         public ItemInWorldManager(WorldBase world, EntityPlayer entityPlayer)
         {
@@ -53,7 +66,7 @@ namespace MvkServer.Management
         public bool NotPauseUpdate => pause == 0;
 
         /// <summary>
-        /// Истинно, если игрок уничтожает блок
+        /// Истинно, если игрок уничтожает блок или ставит
         /// </summary>
         public bool IsDestroyingBlock => !BlockPosDestroy.IsEmpty;
 
@@ -69,79 +82,144 @@ namespace MvkServer.Management
                 curblockDamage = 0;
                 initialDamage = block.GetPlayerRelativeBlockHardness(entityPlayer);
                 durabilityRemainingOnBlock = GetProcess();
+                if (durabilityRemainingOnBlock < 0)
+                {
+                    // При старте нельзя помечать как стоп (-2) это должно быть в игровом такте
+                    durabilityRemainingOnBlock = 0;
+                }
                 pause = 5;
-                world.SendBlockBreakProgress(entityPlayer.Id, blockPos, durabilityRemainingOnBlock);
-            }
+            } 
         }
 
         /// <summary>
         /// Отмена разрушения
         /// </summary>
-        public void DestroyAbout()
-        {
-            world.SendBlockBreakProgress(entityPlayer.Id, BlockPosDestroy, -1);
-            durabilityRemainingOnBlock = -1;
-            BlockPosDestroy = new BlockPos();
-        }
+        public void DestroyAbout() => status = Status.About;
 
         /// <summary>
         /// Окончено разрушение, блок сломан
         /// </summary>
-        public void DestroyStop()
-        {
-            world.SendBlockBreakProgress(entityPlayer.Id, BlockPosDestroy, -2);
-            durabilityRemainingOnBlock = -1;
-            world.SetBlockState(BlockPosDestroy, EnumBlock.Air);
-            BlockPosDestroy = new BlockPos();
-        }
+        public void DestroyStop() => status = Status.Stop;
 
         /// <summary>
         /// Установить блок
         /// </summary>
-        public void Put(BlockPos blockPos, vec3 facing)
+        public void Put(BlockPos blockPos, vec3 facing, EnumBlock enumBlock)
         {
             BlockBase block = world.GetBlock(blockPos);
-            if (block != null)
+            if (block != null && block.IsAir)
             {
-                if (block.IsAir)
-                {
-                    // TODO:: надо занести в обновление чтоб проверка и установка была в такте игровом
-                    if (world.GetEntitiesWithinAABBExcludingEntity(null, block.GetCollision()).Count == 0)
-                    {
-                        BlockPosDestroy = new BlockPos();
-                        curblockDamage = 0;
-                        initialDamage = 0;
-                        durabilityRemainingOnBlock = -1;
-                        pause = 5;
-                        world.SetBlockState(blockPos, (EnumBlock)entityPlayer.slot);
-                        return;
-                    }
-                }
-                if (world is WorldServer)
-                {
-                    world.SetBlockState(blockPos, block.EBlock);
-                }
+                BlockPosDestroy = blockPos;
+                this.facing = facing;
+                this.enumBlock = enumBlock;
+                status = Status.Put;
             }
+        }
+
+        /// <summary>
+        /// Пауза между установками блоков, в тактах.
+        /// true - между первым блоком и вторы,
+        /// false - последующие, 4 успевает поставить 2 блока, когда прыгает
+        /// </summary>
+        public void PutPause(bool start) => pause = start ? 8 : 4;
+
+        /// <summary>
+        /// Установить блок не получилось, но мы фиксируем зажатие клавиши
+        /// </summary>
+        public void PutAbout()
+        {
+            BlockPosDestroy = new BlockPos();
+            pause = 0;
         }
 
         /// <summary>
         /// Обновление разрушения блока
         /// </summary>
-        public void UpdateBlock()
+        public StatusAnimation UpdateBlock()
         {
-            if (pause > 0) pause--;
+            StatusAnimation statusUpdate = StatusAnimation.NotAnimation;
+
+            if (status != Status.None)
+            {
+                durabilityRemainingOnBlock = (int)status;
+                status = Status.None;
+            }
+
             if (IsDestroyingBlock)
             {
                 curblockDamage++;
 
-                BlockBase block = world.GetBlock(BlockPosDestroy);
-                if (block == null || block.IsAir)
+                if (durabilityRemainingOnBlock >= 0)
                 {
-                    DestroyAbout();
+                    BlockBase block = world.GetBlock(BlockPosDestroy);
+                    if (block == null || block.IsAir)
+                    {
+                        durabilityRemainingOnBlock = (int)Status.About;
+                    }
+                }
+
+                if (durabilityRemainingOnBlock < 0)
+                {
+                    if (durabilityRemainingOnBlock == (int)Status.About)
+                    {
+                        // Отмена действия блока, убираем трещину
+                        world.SendBlockBreakProgress(entityPlayer.Id, BlockPosDestroy, durabilityRemainingOnBlock);
+                    }
+                    else if (durabilityRemainingOnBlock == (int)Status.Stop)
+                    {
+                        // Уничтожение блока
+                        if (!world.IsRemote)
+                        {
+                            ((WorldServer)world).Players.SpawnItem(new EntityItem(world, BlockPosDestroy.ToVec3Center(),
+                                new Item.ItemStack(world.GetBlock(BlockPosDestroy))));
+                        }
+                        world.SetBlockState(BlockPosDestroy, EnumBlock.Air);
+                    }
+                    else if (durabilityRemainingOnBlock == (int)Status.Put)
+                    {
+                        // Ставим блок
+                        BlockBase blockOld = world.GetBlock(BlockPosDestroy);
+                        BlockBase blockNew = Blocks.GetBlock(enumBlock, BlockPosDestroy);
+                        if (blockOld != null && !blockNew.IsAir)
+                        {
+                            if (world is WorldServer)
+                            {
+                                // Для серверной части нужна проверка коллизии кроме тикущей сущности
+                                AxisAlignedBB axisBlock = blockNew.GetCollision();
+                                if (blockOld.IsAir && world.GetEntitiesWithinAABBExcludingEntity(entityPlayer, axisBlock).Count == 0)
+                                {
+                                    // Устанавливаем блок
+                                    world.SetBlockState(BlockPosDestroy, enumBlock);
+                                }
+                                else
+                                {
+                                    // Проверка отката, если блок не корректно установился, сервер вернёт прошлое значение
+                                    world.SetBlockState(BlockPosDestroy, blockOld.EBlock);
+                                }
+                            }
+                            else
+                            {
+                                // Для клиентской
+                                statusUpdate = StatusAnimation.Animation;
+                                world.SetBlockState(BlockPosDestroy, enumBlock);
+                            }
+                        }
+                    }
+                    BlockPosDestroy = new BlockPos();
                 }
                 else
                 {
                     int process = GetProcess();
+                    if (curblockDamage == 1)
+                    {
+                        // Первый удар на разрушении блока, статус начала анимации
+                        statusUpdate = StatusAnimation.Animation;
+                    }
+                    else
+                    {
+                        statusUpdate = StatusAnimation.None;
+                    }
+
                     if (process != durabilityRemainingOnBlock)
                     {
                         durabilityRemainingOnBlock = process;
@@ -149,6 +227,12 @@ namespace MvkServer.Management
                     }
                 }
             }
+            else
+            {
+                if (pause > 0) pause--;
+            }
+
+            return statusUpdate;
         }
 
         /// <summary>
@@ -161,9 +245,36 @@ namespace MvkServer.Management
         /// </summary>
         private int GetProcess()
         {
-            int process = initialDamage <= 1 ? -1 : curblockDamage * 10 / initialDamage;
-            if (process > 9) process = -1;
+            int process = initialDamage <= 1 ? (int)Status.Stop : curblockDamage * 10 / initialDamage;
+            if (process > 9) process = (int)Status.Stop;
             return process;
+        }
+
+        /// <summary>
+        /// Статус анимации руки после обнавления игрового такта
+        /// </summary>
+        public enum StatusAnimation
+        {
+            /// <summary>
+            /// Нет значения
+            /// </summary>
+            None,
+            /// <summary>
+            /// Есть анимация
+            /// </summary>
+            Animation,
+            /// <summary>
+            /// Нет анимации
+            /// </summary>
+            NotAnimation
+        }
+
+        private enum Status
+        {
+            None = 0,
+            About = -1,
+            Stop = -2,
+            Put = -3
         }
     }
 }

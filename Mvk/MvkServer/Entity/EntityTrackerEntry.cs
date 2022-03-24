@@ -1,4 +1,5 @@
-﻿using MvkServer.Entity.Player;
+﻿using MvkServer.Entity.Item;
+using MvkServer.Entity.Player;
 using MvkServer.Glm;
 using MvkServer.Network;
 using MvkServer.Network.Packets.Server;
@@ -15,7 +16,7 @@ namespace MvkServer.Entity
         /// <summary>
         /// Объект сущности которую прослеживаем
         /// </summary>
-        public EntityLiving TrackedEntity { get; private set; }
+        public EntityBase TrackedEntity { get; private set; }
         /// <summary>
         /// Пороговое значение расстояния отслеживания
         /// </summary>
@@ -38,10 +39,10 @@ namespace MvkServer.Entity
         /// </summary>
         public int UpdateCounter { get; private set; }
 
-        public vec3i EncodedPos { get; private set; }
-        public int EncodedRotationYaw { get; private set; }
-        public int EncodedRotationPitch { get; private set; }
-        public int LastHeadMotion { get; private set; }
+        //public vec3i EncodedPos { get; private set; }
+        //public int EncodedRotationYaw { get; private set; }
+        //public int EncodedRotationPitch { get; private set; }
+        //public int LastHeadMotion { get; private set; }
         public vec3 LastTrackedEntityMotion { get; private set; }
         public vec3 LastTrackedEntityPos { get; private set; }
 
@@ -53,24 +54,24 @@ namespace MvkServer.Entity
         /// <summary>
         /// Отправлять обновления скорости 
         /// </summary>
-        private bool sendVelocityUpdates;
+      //  private bool sendVelocityUpdates;
         /// <summary>
         /// На земле
         /// </summary>
-        private bool onGround;
+       // private bool onGround;
         private bool firstUpdateDone;
 
-        public EntityTrackerEntry(EntityLiving entity, int trackingRange, int updateFrequency, bool sendVelocityUpdates)
+        public EntityTrackerEntry(EntityBase entity, int trackingRange, int updateFrequency, bool sendVelocityUpdates)
         {
             TrackedEntity = entity;
             TrackingDistanceThreshold = trackingRange;
             UpdateFrequency = updateFrequency;
-            this.sendVelocityUpdates = sendVelocityUpdates;
-            EncodedPos = new vec3i(entity.Position * 32f);
-            EncodedRotationYaw = Mth.Floor(entity.RotationYaw * 256f / glm.pi360);
-            EncodedRotationPitch = Mth.Floor(entity.RotationPitch * 256f / glm.pi360);
-            LastHeadMotion = Mth.Floor(entity.GetRotationYawHead() * 256f / glm.pi360);
-            onGround = entity.OnGround;
+           // this.sendVelocityUpdates = sendVelocityUpdates;
+            //EncodedPos = new vec3i(entity.Position * 32f);
+            //EncodedRotationYaw = Mth.Floor(entity.RotationYaw * 256f / glm.pi360);
+            //EncodedRotationPitch = Mth.Floor(entity.RotationPitch * 256f / glm.pi360);
+            //LastHeadMotion = Mth.Floor(entity.GetRotationYawHead() * 256f / glm.pi360);
+           // onGround = entity.OnGround;
         }
 
         public override bool Equals(object obj)
@@ -94,7 +95,7 @@ namespace MvkServer.Entity
         /// </summary>
         public void UpdatePlayerEntity(EntityPlayerServer entityPlayer)
         {
-            if (entityPlayer != TrackedEntity)
+            if (entityPlayer != TrackedEntity)// && !entityPlayer.IsDead)
             {
                 if (!entityPlayer.IsDead && CheckPosition(entityPlayer))
                 {
@@ -105,7 +106,7 @@ namespace MvkServer.Entity
                         TrackingPlayers.Add(entityPlayer);
                         IPacket packet = PacketSpawn();
                         entityPlayer.SendPacket(packet);
-
+                        //TrackedEntity.FlagSpawn = false;
 
                         // Передаём доп пакеты, для сущности параметров
 
@@ -127,6 +128,8 @@ namespace MvkServer.Entity
                 }
                 else if (TrackingPlayers.ContainsValue(entityPlayer))
                 {
+                    // TODO:: 2022-03-24 тут где-то ненужное удаление сущностей ,когда игрок умер и респавнится. сущности исчезают, по чём зря удаляются.
+                    // Если надо сделать просто респавн всех сущностей!
                     TrackingPlayers.Remove(entityPlayer);
                     entityPlayer.SendRemoveEntity(TrackedEntity);
                 }
@@ -200,14 +203,27 @@ namespace MvkServer.Entity
                 UpdatePlayerEntities(playerEntities);
             }
 
-            if (TrackedEntity.ActionChanged != EnumActionChanged.None)
+            if (TrackedEntity is EntityLiving)
             {
-                SendPacketPlayers(new PacketS14EntityMotion(TrackedEntity));
-                TrackedEntity.ActionNone();
+                if (((EntityLiving)TrackedEntity).ActionChanged != EnumActionChanged.None)
+                {
+                    SendPacketPlayers(new PacketS14EntityMotion(TrackedEntity));
+                    ((EntityLiving)TrackedEntity).ActionNone();
+                }
+            } else if (TrackedEntity is EntityItem)
+            {
+                if (((EntityItem)TrackedEntity).IsMoving)
+                {
+                    SendPacketPlayers(new PacketS14EntityMotion(TrackedEntity));
+                }
             }
 
             if (UpdateCounter % UpdateFrequency == 0)
             {
+                //if ("передвижение самостоятельное, не на ком-то или чём-то")
+                {
+                 //   EncodedPos = new vec3i(TrackedEntity.Position * 32f);
+                }
         //        int var23;
         //        int var24;
 
@@ -335,7 +351,10 @@ namespace MvkServer.Entity
         /// </summary>
         private bool CheckPosition(EntityPlayerServer entityPlayer)
         {
-            return glm.distance(TrackedEntity.Position, entityPlayer.Position) < TrackingDistanceThreshold;
+            // 22-03-2022 вроде это проблема была, не было выгрузки перса...
+            float c = entityPlayer.OverviewChunk * 16f;
+            if (c > TrackingDistanceThreshold) c = TrackingDistanceThreshold;
+            return glm.distance(TrackedEntity.Position, entityPlayer.Position) < c;
             //float x = entityPlayer.Position.x - EncodedPos.x / 32f;
             //float z = entityPlayer.Position.z - EncodedPos.z / 32f;
             //return x >= -TrackingDistanceThreshold && x <= TrackingDistanceThreshold 
@@ -359,10 +378,14 @@ namespace MvkServer.Entity
             {
                 return new PacketS0CSpawnPlayer((EntityPlayer)TrackedEntity);
             }
+            //else if (TrackedEntity is EntityItem)
+            //{
+            //    return new PacketS0CSpawnItem((EntityItem)TrackedEntity);
+            //}
             //if (TrackedEntity is EntityPlayerServer)
             else
             {
-                return new PacketS0FSpawnMob((EntityLivingHead)TrackedEntity);
+                return new PacketS0FSpawnMob(TrackedEntity);
             }
         }
 
@@ -373,7 +396,7 @@ namespace MvkServer.Entity
             {
                 list += TrackingPlayers.GetAt(i).Id + ", ";
             }
-            return string.Format("#{0} {1} c:{2} ({3})", TrackedEntity.Id, TrackedEntity.Name, TrackingPlayers.Count, list);
+            return string.Format("#{0} {1} c:{2} ({3})", TrackedEntity.Id, TrackedEntity.GetName(), TrackingPlayers.Count, list);
         }
     }
 }
