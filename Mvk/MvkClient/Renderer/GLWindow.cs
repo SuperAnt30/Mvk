@@ -2,6 +2,7 @@
 using MvkClient.Renderer.Shaders;
 using MvkServer.Util;
 using SharpGL;
+using System;
 using System.Diagnostics;
 
 namespace MvkClient.Renderer
@@ -74,30 +75,38 @@ namespace MvkClient.Renderer
         /// <param name="screen">объект GUI</param>
         public static void Draw(Client client)
         {
-            DrawBegin();
-            // тут мир
-            if (client.World != null)
+            try
             {
-                // коэффициент интерполяции
-                float timeIndex = client.World.Interpolation();
-                
-                // Мир
-                client.World.WorldRender.Draw(timeIndex);
-               
-
-              //  if (client.Screen.IsEmptyScreen())// && client.World.Player.ViewCamera == EnumViewCamera.Eye)
+                DrawBegin();
+                // тут мир
+                if (client.World != null)
                 {
-                    client.World.WorldRender.Draw2D();
-                    if (client.Player.DamageTime > 0 
-                        && client.Player.ViewCamera == EnumViewCamera.Eye) client.World.WorldRender.DrawEff(client.Player.DamageTime, timeIndex);
+                    // коэффициент интерполяции
+                    float timeIndex = client.World.Interpolation();
+
+                    // Мир
+                    client.World.WorldRender.Draw(timeIndex);
+
+
+                    //  if (client.Screen.IsEmptyScreen())// && client.World.Player.ViewCamera == EnumViewCamera.Eye)
+                    {
+                        client.World.WorldRender.Draw2D();
+                        if (client.Player.DamageTime > 0
+                            && client.Player.ViewCamera == EnumViewCamera.Eye) client.World.WorldRender.DrawEff(client.Player.DamageTime, timeIndex);
+                    }
+
+
                 }
+                // тут gui
+                client.Screen.DrawScreen();
 
-                
+                DrawEnd();
             }
-            // тут gui
-            client.Screen.DrawScreen();
-
-            DrawEnd();
+            catch (Exception ex)
+            {
+                Logger.Crach(ex);
+                throw;
+            }
         }
 
         /// <summary>

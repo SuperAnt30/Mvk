@@ -196,7 +196,9 @@ namespace MvkClient.Renderer
                     for (int j = 0; j < entities[i].Count; j++)
                     {
                         EntityBase entity = entities[i].GetAt(j);
-                        if (entity.Id != ClientMain.Player.Id)
+                        int playerId = ClientMain.Player.Id;
+                        int entityId = entity.Id;
+                        if (entityId != playerId)
                         {
                             World.RenderEntityManager.RenderEntity(entity, timeIndex);// entity.TimeIndex());
                         }

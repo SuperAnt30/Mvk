@@ -3,12 +3,15 @@
 namespace MvkServer.Item.List
 {
     /// <summary>
-    /// Вещь блок
+    /// Предмет блок
     /// </summary>
     public class ItemBlock : ItemBase
     {
         public BlockBase Block { get; private set; }
 
-        public ItemBlock(BlockBase block) => Block = block;
+        public ItemBlock(BlockBase block)
+        {
+            Block = block;
+        }
     }
 }

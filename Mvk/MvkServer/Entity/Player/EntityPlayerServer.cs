@@ -54,6 +54,8 @@ namespace MvkServer.Entity.Player
         /// </summary>
         private MapListId destroyedItemsNetCache = new MapListId();
 
+        protected int pingChunk = 0;
+
         //private List<vec2i> LoadingChunks = new List<vec2i>();
 
         // должен быть список чанков которые может видеть игрок
@@ -95,7 +97,15 @@ namespace MvkServer.Entity.Player
             return BitConverter.ToString(hash).Replace("-", string.Empty).ToLower();
         }
 
-        protected int pingChunk = 0;
+
+        /// <summary>
+        /// Надо сделать респавн в ближайшем тике
+        /// </summary>
+        public override void Respawn()
+        {
+            base.Respawn();
+            destroyedItemsNetCache.Clear();
+        }
 
         /// <summary>
         /// Вызывается для обновления позиции / логики объекта

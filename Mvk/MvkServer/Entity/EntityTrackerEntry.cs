@@ -95,7 +95,7 @@ namespace MvkServer.Entity
         /// </summary>
         public void UpdatePlayerEntity(EntityPlayerServer entityPlayer)
         {
-            if (entityPlayer != TrackedEntity)// && !entityPlayer.IsDead)
+            if (entityPlayer != TrackedEntity && !entityPlayer.IsDead)
             {
                 if (!entityPlayer.IsDead && CheckPosition(entityPlayer))
                 {
@@ -378,10 +378,10 @@ namespace MvkServer.Entity
             {
                 return new PacketS0CSpawnPlayer((EntityPlayer)TrackedEntity);
             }
-            //else if (TrackedEntity is EntityItem)
-            //{
-            //    return new PacketS0CSpawnItem((EntityItem)TrackedEntity);
-            //}
+            else if (TrackedEntity is EntityItem)
+            {
+                return new PacketS0ESpawnItem((EntityItem)TrackedEntity);
+            }
             //if (TrackedEntity is EntityPlayerServer)
             else
             {

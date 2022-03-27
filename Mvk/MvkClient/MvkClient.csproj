@@ -106,6 +106,7 @@
     <Compile Include="Renderer\Chunk\ChunkRender.cs" />
     <Compile Include="Renderer\EffectRenderer.cs" />
     <Compile Include="Renderer\Entity\RenderEntityBase.cs" />
+    <Compile Include="Renderer\Entity\RenderEntityBlock.cs" />
     <Compile Include="Renderer\Entity\RenderEntityItem.cs" />
     <Compile Include="Renderer\Entity\RendererLivingEntity.cs" />
     <Compile Include="Renderer\Entity\RenderItem.cs" />

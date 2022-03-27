@@ -132,6 +132,11 @@ namespace MvkServer.World
         protected override void OnEntityRemoved(EntityBase entity)
         {
             base.OnEntityRemoved(entity);
+
+            // TODO::25-03-2022 продолжаю исправлять багу по трекеру, это если закомитить не удаляет.
+            // Пока проблема так,  на сервере всё норм. Но на клиенте удаляются сущности, и если появляешься возле них, они не подгружаются.
+            // Так как они выгружены ранее.
+            // Надо либо не выгружать если в этой облости, либо загружать заного, сущности спавнить их.
             Tracker.UntrackEntity(entity);
         }
 
@@ -153,9 +158,10 @@ namespace MvkServer.World
         {
             try
             {
-                return string.Format("Ch {0}-{2} EPl {1} E: {4}\r\n{3}",// {5}",
+                string tracker = "";// Tracker.ToString(); 
+                return string.Format("Ch {0}-{2} EPl {1} E: {4}\r\n{3} {5}",
                     ChunkPr.Count, Players.PlayerCount, Players.CountPlayerInstances(), Players.ToStringDebug() // 0 - 3
-                    , base.ToStringDebug());//, Tracker); // 4 
+                    , base.ToStringDebug(), tracker); // 4  - 5
             }
             catch(Exception e)
             {

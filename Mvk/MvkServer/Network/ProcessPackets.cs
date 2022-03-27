@@ -61,6 +61,7 @@ namespace MvkServer.Network
                     case 0x08: return new PacketS08PlayerPosLook();
                     case 0x0B: return new PacketS0BAnimation();
                     case 0x0C: return new PacketS0CSpawnPlayer();
+                    case 0x0E: return new PacketS0ESpawnItem();
                     case 0x0F: return new PacketS0FSpawnMob();
                     case 0x12: return new PacketS12EntityVelocity();
                     case 0x13: return new PacketS13DestroyEntities();

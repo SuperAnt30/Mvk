@@ -134,17 +134,17 @@ namespace MvkServer.Management
 
             entityPlayer.FlagSpawn = true;
             World.SpawnEntityInWorld(entityPlayer);
-           // entityPlayer.FlagSpawn = false;
+            // entityPlayer.FlagSpawn = false;
 
             // отладка 5 кур
-            //for (int i = 0; i < 5; i++)
-            //{
-            //    lastPlayerId++;
-            //    EntityChicken entityChicken = new EntityChicken(World);
-            //    entityChicken.SetEntityId(lastPlayerId);
-            //    entityChicken.SetPosition(entityPlayer.Position + new vec3(3, World.Rand.Next(40, 64), 0));
-            //    World.SpawnEntityInWorld(entityChicken);
-            //}
+            for (int i = 0; i < 1; i++)
+            {
+                lastPlayerId++;
+                EntityChicken entityChicken = new EntityChicken(World);
+                entityChicken.SetEntityId(lastPlayerId);
+                entityChicken.SetPosition(entityPlayer.Position + new vec3(3, World.Rand.Next(40, 64), 0));
+                World.SpawnEntityInWorld(entityChicken);
+            }
         }
 
         public void SpawnItem(EntityItem item)
@@ -186,7 +186,7 @@ namespace MvkServer.Management
         }
       
 
-        private void SpawnPositionTest(EntityPlayerServer entityPlayer)
+        public void SpawnPositionTest(EntityPlayerServer entityPlayer)
         {
             Random random = new Random();
             entityPlayer.SetPosLook(new vec3(random.Next(-16, 16) - 0040, 0, random.Next(-16, 16)), -0.9f, -.8f);

@@ -61,6 +61,7 @@ namespace MvkClient.Actions
             else if (key == 114) keyF3 = true; // F3
             else if (key == 27 || key == 18) World.ClientMain.Screen.InGameMenu(); // Esc или Alt
             else if (key == 116) ClientMain.Player.ViewCameraNext(); // F5
+            else if (key == 75) ClientMain.Player.Kill(); // K
             //else if (key == 117) // F6
             else ClientMain.Player.InputAdd(KeyActionToInput(key));
         }

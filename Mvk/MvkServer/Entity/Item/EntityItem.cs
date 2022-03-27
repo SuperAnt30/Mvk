@@ -7,10 +7,13 @@ using MvkServer.World.Block;
 
 namespace MvkServer.Entity.Item
 {
+    /// <summary>
+    /// Сущность предмета
+    /// </summary>
     public class EntityItem : EntityBase
     {
         /// <summary>
-        /// Объект стака вещей
+        /// Объект стака предметов
         /// </summary>
         public ItemStack Stack { get; private set; }
         /// <summary>
@@ -37,18 +40,18 @@ namespace MvkServer.Entity.Item
         /// <summary>
         /// Владелец, кто выкинул
         /// </summary>
-        private string owner;
+        //private string owner;
 
         /// <summary>
         /// Вращение
         /// </summary>
-        private float rotationYaw;
+        //private float rotationYaw;
 
         
 
         public EntityItem(WorldBase world) : base(world)
         {
-            SetSize(.125f, .25f);
+            SetSize(.25f, .5f);
             Type = EnumEntities.Item;
             Stack = new ItemStack(Blocks.GetBlock(EnumBlock.Dirt));
         }
@@ -57,7 +60,7 @@ namespace MvkServer.Entity.Item
         {
             SetPosition(pos);
             HoverStart = (float)World.Rand.NextDouble() * glm.pi * 2f;
-            rotationYaw = (float)World.Rand.NextDouble() * glm.pi360;
+            //rotationYaw = (float)World.Rand.NextDouble() * glm.pi360;
             Motion = new vec3((float)World.Rand.NextDouble() * .2f - .1f, .2f, (float)World.Rand.NextDouble() * .2f - .1f);
         }
 
@@ -206,5 +209,10 @@ namespace MvkServer.Entity.Item
         }
 
         #endregion
+
+        public override string ToString()
+        {
+            return string.Format("{0}-{1} XYZ {2}", Id, Type, Position);
+        }
     }
 }

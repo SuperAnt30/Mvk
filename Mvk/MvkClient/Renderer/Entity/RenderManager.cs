@@ -47,6 +47,7 @@ namespace MvkClient.Renderer.Entity
         {
             World = world;
             ClientMain = world.ClientMain;
+            Item = new RenderItem();
             entities.Add(EnumEntities.Player, new RenderPlayer(this, new ModelPlayer()));
             entities.Add(EnumEntities.PlayerHand, new RenderHead(this, new ModelPlayerHand()));
             entities.Add(EnumEntities.Chicken, new RenderChicken(this, new ModelChicken()));

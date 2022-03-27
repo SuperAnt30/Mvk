@@ -72,6 +72,7 @@
     <Compile Include="Network\Packets\Client\PacketC16ClientStatus.cs" />
     <Compile Include="Network\Packets\Server\PacketS07Respawn.cs" />
     <Compile Include="Network\Packets\Server\PacketS0BAnimation.cs" />
+    <Compile Include="Network\Packets\Server\PacketS0ESpawnItem.cs" />
     <Compile Include="Network\Packets\Server\PacketS0FSpawnMob.cs" />
     <Compile Include="Network\Packets\Server\PacketS12EntityVelocity.cs" />
     <Compile Include="Network\Packets\Server\PacketS13DestroyEntities.cs" />

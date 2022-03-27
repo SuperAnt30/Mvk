@@ -553,12 +553,20 @@ namespace MvkClient
                     // GUI что-то есть
                     OnThreadSend(new ObjectKeyEventArgs(ObjectKey.RenderDebug));
                 }
-                OnDraw();
             }
             catch (Exception ex)
             {
                 Logger.Crach(ex);
                 throw;
+            }
+            try
+            {
+                OnDraw();
+            }
+            catch (Exception ex)
+            {
+                Logger.Crach(ex);
+                //throw;
             }
         }
 

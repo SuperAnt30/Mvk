@@ -104,6 +104,7 @@ namespace MvkServer.World
 
             profiler.EndStartSection("EntityTick");
             
+            
             // Пробегаем по всем сущностям и обрабатываеи их такт
             for (int i = 0; i < LoadedEntityList.Count; i++)
             {
@@ -135,6 +136,11 @@ namespace MvkServer.World
             // Удаляем 
             while (entityRemove.Count > 0)
             {
+
+                if (IsRemote)
+                {
+                    bool b = true;
+                }
                 EntityBase entity = entityRemove.FirstRemove();
                 if (entity.AddedToChunk && ChunkPr.IsChunk(entity.PositionChunk))
                 {
@@ -226,7 +232,7 @@ namespace MvkServer.World
         /// <summary>
         /// Вызывается, когда объект появляется в мире. Это включает в себя игроков
         /// </summary>
-        public virtual bool SpawnEntityInWorld(EntityBase entity)
+        public virtual void SpawnEntityInWorld(EntityBase entity)
         {
             vec2i posCh = entity.GetChunkPos();
            // bool flagSpawn = entity.FlagSpawn;
@@ -274,7 +280,6 @@ namespace MvkServer.World
                 }
                 LoadedEntityList.Add(entity);
                 OnEntityAdded(entity);
-                return true;
             }
         }
 

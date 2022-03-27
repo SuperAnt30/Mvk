@@ -13,8 +13,15 @@ namespace MvkServer.Util
         /// </summary>
         protected object GetAt(int index)
         {
-            if (index >= 0 && index < Count) return list[index];
-            return null;
+            try
+            {
+                if (index >= 0 && index < Count) return list[index];
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         /// <summary>

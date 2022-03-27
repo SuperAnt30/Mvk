@@ -216,6 +216,9 @@ namespace MvkServer.Entity
 
         public override string ToString()
         {
+            // Иногда вроде выдаёт ошибку на OnDraw()
+            // в MvkClient.Client.OnDraw() в E:\WorkCs\Mvk\Mvk\MvkClient\Client.cs:строка 720
+
             string list = "";
             for (int i = 0; i < trackedEntities.Count; i++)
             {

@@ -1,7 +1,7 @@
 ﻿namespace MvkServer.Item
 {
     /// <summary>
-    ///  Базовый объект вещи
+    ///  Базовый объект предметов
     /// </summary>
     public abstract class ItemBase
     {
@@ -9,7 +9,6 @@
         /// Максимальное количество однотипный вещей в одной ячейке
         /// </summary>
         public int MaxStackSize { get; protected set; } = 64;
-
 
         public virtual void Update()
         {

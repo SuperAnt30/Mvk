@@ -4,12 +4,12 @@ using MvkServer.World.Block;
 namespace MvkServer.Item
 {
     /// <summary>
-    /// Объект одной ячейки вещей
+    /// Объект одной ячейки предметов
     /// </summary>
     public class ItemStack
     {
         /// <summary>
-        /// Объект вещи
+        /// Объект предмета
         /// </summary>
         public ItemBase Item { get; private set; }
         /// <summary>

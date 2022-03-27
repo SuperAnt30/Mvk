@@ -5,10 +5,12 @@ using MvkServer.Entity.Item;
 using MvkServer.Entity.Mob;
 using MvkServer.Glm;
 using MvkServer.Item;
+using MvkServer.Item.List;
 using MvkServer.Network;
 using MvkServer.Network.Packets;
 using MvkServer.Network.Packets.Client;
 using MvkServer.Network.Packets.Server;
+using MvkServer.World.Block;
 using System.Threading.Tasks;
 
 namespace MvkClient.Network
@@ -52,6 +54,7 @@ namespace MvkClient.Network
                         case 0x08: Handle08PlayerPosLook((PacketS08PlayerPosLook)packet); break;
                         case 0x0B: Handle0BAnimation((PacketS0BAnimation)packet); break;
                         case 0x0C: Handle0CSpawnPlayer((PacketS0CSpawnPlayer)packet); break;
+                        case 0x0E: Handle0ESpawnItem((PacketS0ESpawnItem)packet); break;
                         case 0x0F: Handle0FSpawnMob((PacketS0FSpawnMob)packet); break;
                         case 0x12: Handle12EntityVelocity((PacketS12EntityVelocity)packet); break;
                         case 0x13: Handle13DestroyEntities((PacketS13DestroyEntities)packet); break;
@@ -168,6 +171,32 @@ namespace MvkClient.Network
         }
 
         /// <summary>
+        /// Пакет спавна вещи
+        /// </summary>
+        private void Handle0ESpawnItem(PacketS0ESpawnItem packet)
+        {
+            ItemBase item = null;
+            if (packet.IsBlock())
+            {
+                item = new ItemBlock(Blocks.GetBlock((EnumBlock)packet.GetItemId()));
+            }
+
+            if (item != null)
+            {
+                ItemStack stack = new ItemStack(item, packet.GetAmount(), 5);
+                EntityItem entity = new EntityItem(ClientMain.World, packet.GetPos(), stack);
+                entity.SetEntityId(packet.GetEntityId());
+                entity.SetPosSpawn(packet.GetPos());
+                ClientMain.World.AddEntityToWorld(entity.Id, entity);
+            }
+            //ItemStack stack = new ItemStack(ClientMain.World.GetBlock(new vec3i(packet.GetPos())));
+            //EntityItem entity = new EntityItem(ClientMain.World, );
+            //entity.SetEntityId(packet.GetEntityId());
+            //entity.SetPosSpawn(packet.GetPos());
+            //ClientMain.World.AddEntityToWorld(entity.Id, entity);
+        }
+
+        /// <summary>
         /// Пакет спавна мобов
         /// </summary>
         private void Handle0FSpawnMob(PacketS0FSpawnMob packet)
@@ -179,14 +208,14 @@ namespace MvkClient.Network
                 entity.SetPosLook(packet.GetPos(), packet.GetYaw(), packet.GetPitch());
                 ClientMain.World.AddEntityToWorld(entity.Id, entity);
             }
-            else if (packet.GetEnum() == EnumEntities.Item)
-            {
-                ItemStack stack = new ItemStack(ClientMain.World.GetBlock(new vec3i(packet.GetPos())));
-                EntityItem entity = new EntityItem(ClientMain.World);
-                entity.SetEntityId(packet.GetId());
-                entity.SetPosSpawn(packet.GetPos());
-                ClientMain.World.AddEntityToWorld(entity.Id, entity);
-            }
+            //else if (packet.GetEnum() == EnumEntities.Item)
+            //{
+            //    ItemStack stack = new ItemStack(ClientMain.World.GetBlock(new vec3i(packet.GetPos())));
+            //    EntityItem entity = new EntityItem(ClientMain.World);
+            //    entity.SetEntityId(packet.GetId());
+            //    entity.SetPosSpawn(packet.GetPos());
+            //    ClientMain.World.AddEntityToWorld(entity.Id, entity);
+            //}
             //entity.FlagSpawn = true;
             
         

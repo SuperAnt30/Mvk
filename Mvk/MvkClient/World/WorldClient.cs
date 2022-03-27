@@ -4,18 +4,14 @@ using MvkClient.Renderer;
 using MvkClient.Renderer.Chunk;
 using MvkClient.Renderer.Entity;
 using MvkClient.Setitings;
-using MvkClient.Util;
-using MvkServer;
 using MvkServer.Entity;
-using MvkServer.Entity.Item;
 using MvkServer.Glm;
+using MvkServer.Network.Packets.Client;
 using MvkServer.Util;
 using MvkServer.World;
 using MvkServer.World.Block;
+using MvkServer.World.Chunk;
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace MvkClient.World
 {
@@ -190,17 +186,22 @@ namespace MvkClient.World
         {
             EntityBase entityId = GetEntityByID(id);
 
-            if (entityId != null) RemoveEntity(entityId);
-
-            EntityList.Add(entity);
-            entity.SetEntityId(id);
-
-            if (!SpawnEntityInWorld(entity))
+            if (entityId == null)
             {
-                EntitySpawnQueue.Add(entity);
+                SpawnEntityInWorld(entity);
             }
 
-            LoadedEntityList.Add(entity);
+            //if (entityId != null) RemoveEntity(entityId);
+
+            ////EntityList.Add(entity);
+            ////entity.SetEntityId(id);
+
+            //SpawnEntityInWorld(entity);
+            //if (!SpawnEntityInWorld(entity))
+            //{
+            //    EntitySpawnQueue.Add(entity);
+            //}
+            //LoadedEntityList.Add(entity);
         }
 
         public EntityBase RemoveEntityFromWorld(ushort id)
@@ -371,7 +372,7 @@ namespace MvkClient.World
                 if (!entity.IsDead)
                 {
                     EntitySpawnQueue.Add(entity);
-                  //  LoadedEntityList.Remove(entity);
+                    LoadedEntityList.Remove(entity);
                 }
                 // TODO:: проверить трекер, если обзор меньше trackingRang, то при приближении сущность не появляется!!!
                 // Вроде тут, 21-03-2022, надо у клиента очищать сущность, 
@@ -392,14 +393,50 @@ namespace MvkClient.World
         }
 
         /// <summary>
+        /// Удалить всех сущностей
+        /// </summary>
+        private void RemoveAllEntities()
+        {
+            LoadedEntityList.RemoveRange(UnloadedEntityList);
+            while (UnloadedEntityList.Count > 0)
+            {
+                EntityBase entity = UnloadedEntityList.FirstRemove();
+                if (entity.AddedToChunk)
+                {
+                    ChunkBase chunk = ChunkPrClient.GetChunk(entity.PositionChunk);
+                    if (chunk != null) chunk.RemoveEntity(entity);
+                }
+                OnEntityRemoved(entity);
+            }
+            while(LoadedEntityList.Count > 0)
+            {
+                EntityBase entity = LoadedEntityList.FirstRemove();
+                if (entity.IsDead && entity.AddedToChunk)
+                {
+                    ChunkBase chunk = ChunkPrClient.GetChunk(entity.PositionChunk);
+                    if (chunk != null) chunk.RemoveEntity(entity);
+                }
+                OnEntityRemoved(entity);
+            }
+        }
+
+        /// <summary>
+        /// Респавн игрока
+        /// </summary>
+        public void Respawn()
+        {
+            RemoveAllEntities();
+            ClientMain.TrancivePacket(new PacketC16ClientStatus(PacketC16ClientStatus.EnumState.Respawn));
+        }
+
+        /// <summary>
         /// Вызывается, когда объект появляется в мире. Это включает в себя игроков
         /// </summary>
-        public override bool SpawnEntityInWorld(EntityBase entity)
+        public override void SpawnEntityInWorld(EntityBase entity)
         {
-            bool spawn = base.SpawnEntityInWorld(entity);
+            base.SpawnEntityInWorld(entity);
             EntityList.Add(entity);
-            if (!spawn) EntitySpawnQueue.Add(entity);
-            return spawn;
+            //EntitySpawnQueue.Add(entity);
         }
 
         /// <summary>
