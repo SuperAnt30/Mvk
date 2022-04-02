@@ -56,11 +56,13 @@ namespace MvkServer.Network
 
                     case 0x02: return new PacketS02JoinGame();
                     case 0x03: return new PacketS03TimeUpdate();
+                    case 0x04: return new PacketS04EntityEquipment();
                     case 0x06: return new PacketS06UpdateHealth();
                     case 0x07: return new PacketS07Respawn();
                     case 0x08: return new PacketS08PlayerPosLook();
                     case 0x0B: return new PacketS0BAnimation();
                     case 0x0C: return new PacketS0CSpawnPlayer();
+                    case 0x0D: return new PacketS0DCollectItem();
                     case 0x0E: return new PacketS0ESpawnItem();
                     case 0x0F: return new PacketS0FSpawnMob();
                     case 0x12: return new PacketS12EntityVelocity();
@@ -69,7 +71,9 @@ namespace MvkServer.Network
                     case 0x19: return new PacketS19EntityStatus();
                     case 0x23: return new PacketS23BlockChange();
                     case 0x25: return new PacketS25BlockBreakAnim();
-
+                    case 0x2F: return new PacketS2FSetSlot();
+                    case 0x30: return new PacketS30WindowItems();
+                        
                     case 0xF0: return new PacketSF0Connection();
                     case 0xF1: return new PacketSF1Disconnect();
                 }

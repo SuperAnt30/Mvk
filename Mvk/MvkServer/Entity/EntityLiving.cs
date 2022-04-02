@@ -1,5 +1,8 @@
-﻿using MvkServer.Entity.Mob;
+﻿using MvkServer.Entity.Item;
+using MvkServer.Entity.Mob;
+using MvkServer.Entity.Player;
 using MvkServer.Glm;
+using MvkServer.Item;
 using MvkServer.Network.Packets.Server;
 using MvkServer.Util;
 using MvkServer.World;
@@ -115,6 +118,10 @@ namespace MvkServer.Entity
         /// Результат падения, отладка!!!
         /// </summary>
         protected float fallDistanceResult = 0;
+        /// <summary>
+        /// Оборудование, которое этот моб ранее носил, использовалось для синхронизации
+        /// </summary>
+        protected ItemStack[] previousEquipment = new ItemStack[0];
 
         public EntityLiving(WorldBase world) : base(world)
         {
@@ -193,8 +200,31 @@ namespace MvkServer.Entity
         protected virtual bool IsLivingUpdate()
         {
             bool server = World is WorldServer;
+            // TODO:: доработать проверку физики IsLivingUpdate
             bool player = this is EntityChicken;
             return server && player;
+        }
+
+        /// <summary>
+        /// Обновления предметов которые могут видеть игроки, что в руке, броня
+        /// </summary>
+        protected void UpdateItems()
+        {
+            if (!World.IsRemote)
+            {
+                // Проверка изменения ячеке и если они изменены, то отправляем видящим клиентам
+                for (int slot = 0; slot < previousEquipment.Length; ++slot)
+                {
+                    ItemStack itemStackPrev = previousEquipment[slot];
+                    ItemStack itemStackNew = GetEquipmentInSlot(slot);
+
+                    if (!ItemStack.AreItemStacksEqual(itemStackNew, itemStackPrev))
+                    {
+                        ((WorldServer)World).Tracker.SendToAllTrackingEntity(this, new PacketS04EntityEquipment(Id, slot, itemStackNew));
+                        previousEquipment[slot] = itemStackNew?.Copy();
+                    }
+                }
+            }
         }
 
         public override void Update()
@@ -207,6 +237,9 @@ namespace MvkServer.Entity
 
             if (!IsDead)
             {
+                // Обновления предметов которые могут видеть игроки, что в руке, броня
+                UpdateItems();
+
                 if (IsLivingUpdate())
                 {
                     // Если надо управление физики
@@ -412,6 +445,11 @@ namespace MvkServer.Entity
         /// Поворот тела от движения и поворота головы 
         /// </summary>
         protected virtual void HeadTurn() { }
+
+        /// <summary>
+        /// Возвращает элемент, который держит в руке
+        /// </summary>
+        public virtual ItemStack GetHeldItem() => null;
 
         /// <summary>
         /// Конвертация от направления движения в XYZ координаты с кооректировками скоростей
@@ -825,6 +863,35 @@ namespace MvkServer.Entity
         /// Возвращает истину, если другие Сущности не должны проходить через эту Сущность
         /// </summary>
         public override bool CanBeCollidedWith() => !IsDead;
+
+        /// <summary>
+        /// Получить стак что в правой руке 0 или броня 1-4
+        /// </summary>
+        public virtual ItemStack GetEquipmentInSlot(int slot) => null;
+        /// <summary>
+        /// Получить слот брони 0-3
+        /// </summary>
+        public virtual ItemStack GetCurrentArmor(int slot) => null;
+        /// <summary>
+        /// Задать стак в слот, что в правой руке 0, или 1-4 слот брони
+        /// </summary>
+        public virtual void SetCurrentItemOrArmor(int slot, ItemStack itemStack) { }
+
+        /// <summary>
+        /// Вызывается всякий раз, когда предмет подбирается
+        /// </summary>
+        public void ItemPickup(EntityBase entity, int amount)
+        {
+            if (!entity.IsDead && !World.IsRemote)
+            {
+                EntityTracker tracker = ((WorldServer)World).Tracker;
+                if (entity is EntityItem)
+                {
+                    tracker.SendToAllTrackingEntityCurrent(this, new PacketS0DCollectItem(Id, entity.Id));
+                }
+            }
+        }
+
 
         /// <summary>
         /// Частички при беге блока

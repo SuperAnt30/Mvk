@@ -67,16 +67,13 @@ namespace MvkClient.Renderer
         {
             if (!IsHidden)
             {
-                if (!compiled)
-                {
-                    CompileDisplayList();
-                }
+                if (!compiled) CompileDisplayList();
                 return true;
             }
             return false;
         }
 
-        private void CompileDisplayList()
+        protected void CompileDisplayList()
         {
             dList = GLRender.ListBegin();
             DoRender();

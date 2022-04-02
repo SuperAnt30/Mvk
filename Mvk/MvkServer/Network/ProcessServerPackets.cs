@@ -1,6 +1,9 @@
 ﻿using MvkServer.Entity;
 using MvkServer.Entity.Player;
 using MvkServer.Glm;
+using MvkServer.Inventory;
+using MvkServer.Item;
+using MvkServer.Item.List;
 using MvkServer.Network.Packets;
 using MvkServer.Network.Packets.Client;
 using MvkServer.Network.Packets.Server;
@@ -139,6 +142,7 @@ namespace MvkServer.Network
             {
                 entityPlayer.SetSneakingSprinting(packet.IsSneaking(), packet.IsSprinting());
                 entityPlayer.SetPosition(packet.GetPos());
+                entityPlayer.MarkPlayerActive();
             }
         }
 
@@ -152,6 +156,7 @@ namespace MvkServer.Network
             {
                 entityPlayer.SetSneakingSprinting(packet.IsSneaking(), entityPlayer.IsSprinting);
                 entityPlayer.SetRotationHead(packet.GetYaw(), packet.GetPitch());
+                entityPlayer.MarkPlayerActive();
             }
         }
 
@@ -166,6 +171,7 @@ namespace MvkServer.Network
                 entityPlayer.SetSneakingSprinting(packet.IsSneaking(), packet.IsSprinting());
                 entityPlayer.SetPosition(packet.GetPos());
                 entityPlayer.SetRotationHead(packet.GetYaw(), packet.GetPitch());
+                entityPlayer.MarkPlayerActive();
             }
         }
 
@@ -188,6 +194,7 @@ namespace MvkServer.Network
                     // Отмена разрушения
                     entityPlayer.TheItemInWorldManager.DestroyAbout();
                 }
+                entityPlayer.MarkPlayerActive();
             }
         }
 
@@ -197,9 +204,11 @@ namespace MvkServer.Network
         private void Handle08PlayerBlockPlacement(Socket socket, PacketC08PlayerBlockPlacement packet)
         {
             EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayerSocket(socket);
+            
             if (entityPlayer != null)
             {
-                entityPlayer.TheItemInWorldManager.Put(packet.GetBlockPos(), packet.GetFacing(), (EnumBlock)entityPlayer.slot);
+                entityPlayer.TheItemInWorldManager.Put(packet.GetBlockPos(), packet.GetFacing(), entityPlayer.Inventory.CurrentItem);
+                entityPlayer.MarkPlayerActive();
             }
         }
 
@@ -209,7 +218,20 @@ namespace MvkServer.Network
         private void Handle09HeldItemChange(Socket socket, PacketC09HeldItemChange packet)
         {
             EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayerSocket(socket);
-            if (entityPlayer != null) entityPlayer.slot = packet.GetSlotId();
+            
+            if (entityPlayer != null)
+            {
+                int slot = packet.GetSlotId();
+                if (slot >= 0 && slot < InventoryPlayer.COUNT)
+                {
+                    entityPlayer.Inventory.SetCurrentItem(packet.GetSlotId());
+                    entityPlayer.MarkPlayerActive();
+                }
+                else
+                {
+                    ServerMain.Log.Log(entityPlayer.GetName() + " пытался установить недопустимый переносимый предмет");
+                }
+            }
         }
 
         /// <summary>
@@ -218,7 +240,11 @@ namespace MvkServer.Network
         private void Handle0AAnimation(Socket socket, PacketC0AAnimation packet)
         {
             EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayerSocket(socket);
-            if (entityPlayer != null) entityPlayer.SwingItem();
+            if (entityPlayer != null)
+            {
+                entityPlayer.SwingItem();
+                entityPlayer.MarkPlayerActive();
+            }
         }
 
         /// <summary>
@@ -237,6 +263,7 @@ namespace MvkServer.Network
                     ResponseHealth(entityPlayer);
                     ServerMain.World.Tracker.SendToAllTrackingEntity(entityPlayer, new PacketS0BAnimation(entityPlayer.Id, PacketS0BAnimation.EnumAnimation.Fall));
                 }
+                entityPlayer.MarkPlayerActive();
             }
         }
 

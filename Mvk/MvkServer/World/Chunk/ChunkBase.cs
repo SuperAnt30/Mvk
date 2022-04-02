@@ -1,4 +1,5 @@
 ﻿using MvkServer.Entity;
+using MvkServer.Entity.Item;
 using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World.Block;
@@ -375,10 +376,10 @@ namespace MvkServer.World.Chunk
         /// <summary>
         /// Получить список всех сущностей попадающих в рамку кроме входящей сущности
         /// </summary>
-        /// <param name="entityIn">входящяя сущность</param>
+        /// <param name="entityId">входящяя сущность</param>
         /// <param name="aabb">рамка</param>
         /// <param name="list">список</param>
-        public void GetEntitiesAABB(EntityBase entityIn, AxisAlignedBB aabb, MapListEntity list)
+        public void GetEntitiesAABB(int entityId, AxisAlignedBB aabb, MapListEntity list, EnumEntityClassAABB type)
         {
             int minY = Mth.Floor((aabb.Min.y - 2f) / 16f);
             int maxY = Mth.Floor((aabb.Max.y + 2f) / 16f);
@@ -390,13 +391,35 @@ namespace MvkServer.World.Chunk
                 for (int i = 0; i < ListEntities[y].Count; i++)
                 {
                     EntityBase entity = ListEntities[y].GetAt(i);
-                    if (entity != null && entity.Id != entityIn.Id && entity.BoundingBox.IntersectsWith(aabb))
+                    if (entity != null && entity.Id != entityId
+                        && (type == EnumEntityClassAABB.All
+                            || (type == EnumEntityClassAABB.EntityItem && entity is EntityItem)
+                            || (type == EnumEntityClassAABB.EntityLiving && entity is EntityLiving)
+                            )
+                        && entity.BoundingBox.IntersectsWith(aabb))
                     {
                         list.Add(entity);
                     }
                 }
             }
         }
+
+        public enum EnumEntityClassAABB
+        {
+            /// <summary>
+            /// Все
+            /// </summary>
+            All,
+            /// <summary>
+            /// Наследники сущности EntityItem
+            /// </summary>
+            EntityItem,
+            /// <summary>
+            /// Наследники мобов и игроков
+            /// </summary>
+            EntityLiving
+        }
+
 
         /// <summary>
         /// Получить количество сущностей в чанке

@@ -1,4 +1,5 @@
-﻿using MvkClient.Entity;
+﻿using MvkAssets;
+using MvkClient.Entity;
 using MvkClient.Setitings;
 using MvkServer.Entity;
 using MvkServer.Entity.Item;
@@ -49,11 +50,13 @@ namespace MvkClient.Network
                         case 0x01: Handle01KeepAlive((PacketS01KeepAlive)packet); break;
                         case 0x02: Handle02JoinGame((PacketS02JoinGame)packet); break;
                         case 0x03: Handle03TimeUpdate((PacketS03TimeUpdate)packet); break;
+                        case 0x04: Handle04EntityEquipment((PacketS04EntityEquipment)packet); break;
                         case 0x06: Handle06UpdateHealth((PacketS06UpdateHealth)packet); break;
                         case 0x07: Handle07Respawn((PacketS07Respawn)packet); break;
                         case 0x08: Handle08PlayerPosLook((PacketS08PlayerPosLook)packet); break;
                         case 0x0B: Handle0BAnimation((PacketS0BAnimation)packet); break;
                         case 0x0C: Handle0CSpawnPlayer((PacketS0CSpawnPlayer)packet); break;
+                        case 0x0D: Handle0DCollectItem((PacketS0DCollectItem)packet); break;
                         case 0x0E: Handle0ESpawnItem((PacketS0ESpawnItem)packet); break;
                         case 0x0F: Handle0FSpawnMob((PacketS0FSpawnMob)packet); break;
                         case 0x12: Handle12EntityVelocity((PacketS12EntityVelocity)packet); break;
@@ -63,6 +66,8 @@ namespace MvkClient.Network
                         case 0x21: Packet21((PacketS21ChunkData)packet); break;
                         case 0x23: Handle23BlockChange((PacketS23BlockChange)packet); break;
                         case 0x25: Handle25BlockBreakAnim((PacketS25BlockBreakAnim)packet); break;
+                        case 0x2F: Handle2FSetSlot((PacketS2FSetSlot)packet); break;
+                        case 0x30: Handle30WindowItems((PacketS30WindowItems)packet); break;
 
                         case 0xF1: HandleF1Disconnect((PacketSF1Disconnect)packet); break;
 
@@ -103,6 +108,18 @@ namespace MvkClient.Network
         private void Handle03TimeUpdate(PacketS03TimeUpdate packet)
         {
             ClientMain.SetTickCounter(packet.GetTime());
+        }
+
+        /// <summary>
+        /// Пакет оборудования сущности
+        /// </summary>
+        private void Handle04EntityEquipment(PacketS04EntityEquipment packet)
+        {
+            EntityLiving entity = ClientMain.World.GetEntityLivingByID(packet.GetId());
+            if (entity != null)
+            {
+                entity.SetCurrentItemOrArmor(packet.GetSlot(), packet.GetItemStack());
+            }
         }
 
         /// <summary>
@@ -158,6 +175,7 @@ namespace MvkClient.Network
             EntityPlayerMP entity = new EntityPlayerMP(ClientMain.World);
             entity.SetDataPlayer(packet.GetId(), packet.GetUuid(), packet.GetName());
             entity.SetPosLook(packet.GetPos(), packet.GetYaw(), packet.GetPitch());
+            entity.Inventory.SetCurrentItemAndArmor(packet.GetStacks());
 
             //entity.FlagSpawn = true;
             //ClientMain.World.SpawnEntityInWorld(entity);
@@ -168,6 +186,23 @@ namespace MvkClient.Network
             //entityChicken.SetPosition(packet.GetPos() + new vec3(3, 0, 0));
             //ClientMain.World.SpawnEntityInWorld(entityChicken);
             // entity.FlagSpawn = false;
+        }
+
+        /// <summary>
+        /// Пакет передачи сущности предмета к сущности игрока
+        /// </summary>
+        private void Handle0DCollectItem(PacketS0DCollectItem packet)
+        {
+            EntityBase entityItem = ClientMain.World.GetEntityByID(packet.GetItemId());
+            if (entityItem != null)
+            {
+                EntityLiving entity = ClientMain.World.GetEntityLivingByID(packet.GetEntityId());
+                if (entity == null) entity = ClientMain.Player;
+
+                ClientMain.Sample.PlaySound(AssetsSample.Click, .2f);
+                // TODO:: надо как-то вынести в игровой поток, а то ошибка вылетает
+                ClientMain.World.RemoveEntityFromWorld(packet.GetItemId());
+            }
         }
 
         /// <summary>
@@ -295,6 +330,19 @@ namespace MvkClient.Network
         private void Handle25BlockBreakAnim(PacketS25BlockBreakAnim packet)
         {
             ClientMain.World.SendBlockBreakProgress(packet.GetBreakerId(), packet.GetBlockPos(), packet.GetProgress());
+        }
+
+        /// <summary>
+        /// Редактирование слота игрока
+        /// </summary>
+        private void Handle2FSetSlot(PacketS2FSetSlot packet)
+        {
+            ClientMain.Player.Inventory.SetInventorySlotContents(packet.GetSlot(), packet.GetItemStack());
+        }
+
+        private void Handle30WindowItems(PacketS30WindowItems packet)
+        {
+            ClientMain.Player.Inventory.SetMainAndArmor(packet.GetStacks());
         }
 
         private void Packet21(PacketS21ChunkData packet) 

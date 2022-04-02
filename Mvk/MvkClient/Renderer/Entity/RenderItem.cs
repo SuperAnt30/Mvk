@@ -28,12 +28,12 @@ namespace MvkClient.Renderer.Entity
             }
         }
 
-        public void Render(ItemStack stack)
+        public void Render(ItemStack stack) => Render(stack.Item);
+        public void Render(ItemBase item)
         {
-            if (stack.Item is ItemBlock itemBlock)
+            if (item is ItemBlock itemBlock)
             {
                 RenderEntityBlock renderBlock = GetRenderBlock(itemBlock.Block.EBlock);
-                //GLRender.Scale(.5f);
                 renderBlock.Render();
             }
         }

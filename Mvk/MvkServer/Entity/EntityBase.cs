@@ -2,6 +2,7 @@
 using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World;
+using MvkServer.World.Block;
 using System;
 using System.Collections.Generic;
 
@@ -122,6 +123,10 @@ namespace MvkServer.Entity
             World = world;
             rand = World.Rand;
             SetSize(.5f, 1f);
+            if (world is WorldServer worldServer)
+            {
+                worldServer.Players.NewEntity(this);
+            }
         }
 
         /// <summary>
@@ -463,80 +468,54 @@ namespace MvkServer.Entity
         /// <returns>true - в блоках, выталкиваем, false - не в блоках, выталкивать не надо</returns>
         protected bool PushOutOfBlocks(vec3 pos)
         {
-            //BlockPos blockPos = new BlockPos(pos);
-            //double var8 = pos.x - (double)blockPos.getX();
-            //double var10 = pos.y - (double)blockPos.getY();
-            //double var12 = pos.z - (double)blockPos.getZ();
-            //List var14 = World. this.worldObj.func_147461_a(this.getEntityBoundingBox());
+            BlockPos blockPos = new BlockPos(pos);
+            vec3 vecPos = pos - blockPos.ToVec3();
+            BlockBase[] blocks = World.GetBlocksAABB(BoundingBox);
 
-            //if (var14.isEmpty() && !this.worldObj.func_175665_u(blockPos))
-            //{
+            if (blocks.Length == 0 && !World.GetAverageEdgeLengthBlock(blockPos))
+            {
                 return false;
-            //}
-            //else
-            //{
-            //    byte var15 = 3;
-            //    double var16 = 9999.0D;
+            }
 
-            //    if (!this.worldObj.func_175665_u(blockPos.offsetWest()) && var8 < var16)
-            //    {
-            //        var16 = var8;
-            //        var15 = 0;
-            //    }
+            byte index = 3;
+            float value = 9999.0f;
 
-            //    if (!this.worldObj.func_175665_u(blockPos.offsetEast()) && 1.0D - var8 < var16)
-            //    {
-            //        var16 = 1.0D - var8;
-            //        var15 = 1;
-            //    }
+            if (!World.GetAverageEdgeLengthBlock(blockPos.OffsetWest()) && vecPos.x < value)
+            {
+                value = vecPos.x;
+                index = 0;
+            }
+            if (!World.GetAverageEdgeLengthBlock(blockPos.OffsetEast()) && 1 - vecPos.x < value)
+            {
+                value = 1 - vecPos.x;
+                index = 1;
+            }
+            if (!World.GetAverageEdgeLengthBlock(blockPos.OffsetUp()) && 1 - vecPos.y < value)
+            {
+                value = 1 - vecPos.y;
+                index = 3;
+            }
+            if (!World.GetAverageEdgeLengthBlock(blockPos.OffsetNorth()) && vecPos.z < value)
+            {
+                value = vecPos.z;
+                index = 4;
+            }
+            if (!World.GetAverageEdgeLengthBlock(blockPos.OffsetSouth()) && 1 - vecPos.z < value)
+            {
+                value = 1 - vecPos.z;
+                index = 5;
+            }
 
-            //    if (!this.worldObj.func_175665_u(blockPos.offsetUp()) && 1.0D - var10 < var16)
-            //    {
-            //        var16 = 1.0D - var10;
-            //        var15 = 3;
-            //    }
+            value = (float)rand.NextDouble() * .1f + .1f;
 
-            //    if (!this.worldObj.func_175665_u(blockPos.offsetNorth()) && var12 < var16)
-            //    {
-            //        var16 = var12;
-            //        var15 = 4;
-            //    }
-
-            //    if (!this.worldObj.func_175665_u(blockPos.offsetSouth()) && 1.0D - var12 < var16)
-            //    {
-            //        var16 = 1.0D - var12;
-            //        var15 = 5;
-            //    }
-
-            //    float var18 = this.rand.nextFloat() * 0.2F + 0.1F;
-
-            //    if (var15 == 0)
-            //    {
-            //        this.motionX = (double)(-var18);
-            //    }
-
-            //    if (var15 == 1)
-            //    {
-            //        this.motionX = (double)var18;
-            //    }
-
-            //    if (var15 == 3)
-            //    {
-            //        this.motionY = (double)var18;
-            //    }
-
-            //    if (var15 == 4)
-            //    {
-            //        this.motionZ = (double)(-var18);
-            //    }
-
-            //    if (var15 == 5)
-            //    {
-            //        this.motionZ = (double)var18;
-            //    }
-
-            //    return true;
-            //}
+            vec3 motion = Motion;
+            if (index == 0) motion.x = -value;
+            if (index == 1) motion.x = value;
+            if (index == 3) motion.y = value;
+            if (index == 4) motion.z = -value;
+            if (index == 5) motion.z = value;
+            Motion = motion;
+            return true;
         }
     }
 }

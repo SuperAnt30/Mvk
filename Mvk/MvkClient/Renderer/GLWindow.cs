@@ -128,7 +128,9 @@ namespace MvkClient.Renderer
         {
             fps++;
             stopwatch.Restart();
+            Debug.CountPoligon = 0;
             Debug.CountMesh = 0;
+            //Debug.CountMeshAll = 0;
             //gl.Perspective(70.0f, (float)windowWidth / (float)windowHeight, 0.1f, 512);
 
             // Включает Буфер глубины 

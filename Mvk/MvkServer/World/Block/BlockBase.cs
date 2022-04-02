@@ -1,5 +1,7 @@
-﻿using MvkServer.Entity.Player;
+﻿using MvkServer.Entity.Item;
+using MvkServer.Entity.Player;
 using MvkServer.Glm;
+using MvkServer.Item;
 using MvkServer.Util;
 
 namespace MvkServer.World.Block
@@ -84,6 +86,7 @@ namespace MvkServer.World.Block
         /// </summary>
         public AxisAlignedBB GetCollision()
         {
+            if (!IsCollidable) return null;
             AxisAlignedBB[] axes = GetCollisionBoxesToList();
             if (axes.Length > 0)
             {
@@ -135,6 +138,29 @@ namespace MvkServer.World.Block
             //return Hardness / 3; // выживание
             //return hardness < 0.0F ? 0.0F : (!playerIn.canHarvestBlock(this) ? playerIn.func_180471_a(this) / hardness / 100.0F : playerIn.func_180471_a(this) / hardness / 30.0F);
         }
+
+
+        /// <summary>
+        /// Создает данный ItemStack как EntityItem в мире в заданной позиции 
+        /// </summary>
+        /// <param name="worldIn"></param>
+        /// <param name="pos"></param>
+        /// <param name="itemStack"></param>
+        public static void SpawnAsEntity(WorldBase worldIn, BlockPos blockPos, ItemStack itemStack)
+        {
+            if (!worldIn.IsRemote) // TODO:: добавить проверку выпадает ли дроп, пример креатив
+            {
+                vec3 pos = new vec3(
+                    blockPos.X + (float)worldIn.Rand.NextDouble() * .5f + .25f,
+                    blockPos.Y + (float)worldIn.Rand.NextDouble() * .5f + .25f,
+                    blockPos.Z + (float)worldIn.Rand.NextDouble() * .5f + .25f
+                );
+                EntityItem entityItem = new EntityItem(worldIn, pos, itemStack);
+                entityItem.SetDefaultPickupDelay();
+                worldIn.SpawnEntityInWorld(entityItem);
+            }
+        }
+
 
         /// <summary>
         /// Проверка равенства блока по координатам и типу

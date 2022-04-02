@@ -14,6 +14,7 @@ namespace MvkClient.Renderer.Entity
             texture = AssetsTexture.Chicken;
             // соотношение высоты 1.0, к цельной модели 2.0, 1.0/2.0 = 0.5
             scale = 1.0f;
+            shadowSize = .25f;
         }
     }
 }

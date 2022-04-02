@@ -1,8 +1,12 @@
 ﻿using MvkAssets;
+using MvkClient.Renderer.Entity.Layers;
 using MvkClient.Renderer.Model;
 using MvkServer.Entity;
 using MvkServer.Glm;
+using MvkServer.Item.List;
 using MvkServer.Util;
+using MvkServer.World.Block;
+using System.Collections.Generic;
 
 namespace MvkClient.Renderer.Entity
 {
@@ -15,6 +19,8 @@ namespace MvkClient.Renderer.Entity
 
         protected AssetsTexture texture = AssetsTexture.Steve;
         protected float scale = 1f;
+        protected List<ILayerRenderer> layers = new List<ILayerRenderer>();
+
 
         protected RendererLivingEntity(RenderManager renderManager, ModelBase model) : base(renderManager) 
             => this.model = model;
@@ -24,10 +30,15 @@ namespace MvkClient.Renderer.Entity
             if (entity is EntityLiving entityLiving)
             {
                 vec3 pos = entity.GetPositionFrame(timeIndex);
+                vec3 offsetPos = pos - offset;
                 float yawBody = entityLiving.GetRotationYawBodyFrame(timeIndex);
                 float yawHead = entityLiving.GetRotationYawFrame(timeIndex);
+                float headPitch = entityLiving.GetRotationPitchFrame(timeIndex);
+                float limbSwing = entityLiving.LimbSwing - entityLiving.LimbSwingAmount * (1f - timeIndex);
+                float limbSwingAmount = entityLiving.GetLimbSwingAmountFrame(timeIndex);
+                float ageInTicks = renderManager.World.ClientMain.TickCounter + timeIndex;
+
                 model.SetSwingProgress(entityLiving.GetSwingProgressFrame(timeIndex));
-                vec3 offsetPos = pos - offset;
 
                 GLRender.PushMatrix();
                 {
@@ -53,14 +64,13 @@ namespace MvkClient.Renderer.Entity
                     GLRender.Rotate(glm.degrees(yawBody), 0, 1, 0);
                     yawBody -= yawHead;
 
-                    float ageInTicks = renderManager.World.ClientMain.TickCounter + timeIndex;
-                    float limbSwing = entityLiving.LimbSwing - entityLiving.LimbSwingAmount * (1f - timeIndex);
-
-                    RenderModel(entityLiving, limbSwing, entityLiving.GetLimbSwingAmountFrame(timeIndex), ageInTicks,
-                        -yawBody, entityLiving.GetRotationPitchFrame(timeIndex), .0625f);
+                    RenderModel(entityLiving, limbSwing, limbSwingAmount, ageInTicks, -yawBody, headPitch, .0625f);
+                    
+                    // доп слой
+                    LayerRenders(entityLiving, limbSwing, limbSwingAmount, timeIndex, ageInTicks, -yawBody, headPitch, .0625f);
                 }
                 GLRender.PopMatrix();
-                base.DoRender(entity, offsetPos, timeIndex);
+                base.DoRender(entity, offset, timeIndex);
             }
         }
 
@@ -98,5 +108,25 @@ namespace MvkClient.Renderer.Entity
             }
         }
 
+        /// <summary>
+        /// Добавить слой
+        /// </summary>
+        public void AddLayer(ILayerRenderer layer) => layers.Add(layer);
+
+        /// <summary>
+        /// Удалить слой
+        /// </summary>
+        public void RemoveLayer(ILayerRenderer layer) => layers.Remove(layer);
+
+        /// <summary>
+        /// Рендер доп слоёв если такие есть
+        /// </summary>
+        protected void LayerRenders(EntityLiving entity, float limbSwing, float limbSwingAmount, float timeIndex, float ageInTicks, float headYaw, float headPitch, float scale)
+        {
+            foreach (ILayerRenderer layer in layers)
+            {
+                layer.DoRenderLayer(entity, limbSwing, limbSwingAmount, timeIndex, ageInTicks, headYaw, headPitch, scale);
+            }
+        }
     }
 }

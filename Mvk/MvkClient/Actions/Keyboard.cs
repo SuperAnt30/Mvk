@@ -47,9 +47,9 @@ namespace MvkClient.Actions
                 stopwatch.Restart();
                 if (ms < 300 && key == keyPrev)
                 {
-                    // дабл клик пробела
-                    if (ClientMain.Player.IsFlying) ClientMain.Player.ModeSurvival();
-                    else if (!ClientMain.Player.IsSneaking) ClientMain.Player.ModeFly();
+                    //TODO:: дабл клик пробела
+                    //if (ClientMain.Player.IsFlying) ClientMain.Player.ModeSurvival();
+                    //else if (!ClientMain.Player.IsSneaking) ClientMain.Player.ModeFly();
                 }
             }
             keyPrev = key;

@@ -49,6 +49,8 @@
     <Compile Include="Gen\NoiseGeneratorPerlin.cs" />
     <Compile Include="Gen\NoiseGeneratorSimplex.cs" />
     <Compile Include="Gen\NoiseStorge.cs" />
+    <Compile Include="Inventory\IInventory.cs" />
+    <Compile Include="Inventory\InventoryPlayer.cs" />
     <Compile Include="Item\ItemBase.cs" />
     <Compile Include="Item\ItemStack.cs" />
     <Compile Include="Item\List\ItemBlock.cs" />
@@ -70,7 +72,11 @@
     <Compile Include="Network\Packets\Server\PacketS00Pong.cs" />
     <Compile Include="Network\Packets\Client\PacketC00Ping.cs" />
     <Compile Include="Network\Packets\Client\PacketC16ClientStatus.cs" />
+    <Compile Include="Network\Packets\Server\PacketS2FSetSlot.cs" />
+    <Compile Include="Network\Packets\Server\PacketS04EntityEquipment.cs" />
     <Compile Include="Network\Packets\Server\PacketS07Respawn.cs" />
+    <Compile Include="Network\Packets\Server\PacketS30WindowItems.cs" />
+    <Compile Include="Network\Packets\Server\PacketS0DCollectItem.cs" />
     <Compile Include="Network\Packets\Server\PacketS0BAnimation.cs" />
     <Compile Include="Network\Packets\Server\PacketS0ESpawnItem.cs" />
     <Compile Include="Network\Packets\Server\PacketS0FSpawnMob.cs" />

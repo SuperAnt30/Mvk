@@ -105,6 +105,8 @@
     <Compile Include="Renderer\Chunk\ChunkMesh.cs" />
     <Compile Include="Renderer\Chunk\ChunkRender.cs" />
     <Compile Include="Renderer\EffectRenderer.cs" />
+    <Compile Include="Renderer\Entity\Layers\ILayerRenderer.cs" />
+    <Compile Include="Renderer\Entity\Layers\LayerHeldItem.cs" />
     <Compile Include="Renderer\Entity\RenderEntityBase.cs" />
     <Compile Include="Renderer\Entity\RenderEntityBlock.cs" />
     <Compile Include="Renderer\Entity\RenderEntityItem.cs" />

@@ -39,7 +39,7 @@
         /// <summary>
         /// Cколько чанков рендерим в один кадр
         /// </summary>
-        public const int COUNT_RENDER_CHUNK_FRAME = 5;
+        public const int COUNT_RENDER_CHUNK_FRAME = 50; // было 5 целых чанков, теперь псевдо чанки;
 
         /// <summary>
         /// Эффект покачивания при движении
@@ -49,6 +49,6 @@
         /// <summary>
         /// На каком растоянии от глаз, камера при виде сзади или спереди
         /// </summary>
-        public const float CAMERA_DIST = 12f;
+        public const float CAMERA_DIST = 8f;// 12f;
     }
 }

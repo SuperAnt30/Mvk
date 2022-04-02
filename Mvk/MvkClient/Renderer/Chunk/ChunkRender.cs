@@ -21,7 +21,7 @@ namespace MvkClient.Renderer.Chunk
         /// <summary>
         /// Сетка чанка сплошных блоков
         /// </summary>
-        public ChunkMesh[] MeshDense { get; private set; } = new ChunkMesh[16];
+        public ChunkMesh[] MeshDense { get; private set; } = new ChunkMesh[COUNT_HEIGHT];
         /// <summary>
         /// Сетка чанка альфа блоков
         /// </summary>
@@ -69,6 +69,8 @@ namespace MvkClient.Renderer.Chunk
             }
         }
 
+        public bool IsModifiedRender(int y) => MeshDense[y].IsModifiedRender;
+
         /// <summary>
         /// Количество полигонов
         /// </summary>
@@ -86,81 +88,117 @@ namespace MvkClient.Renderer.Chunk
             }
         }
 
+        public void RenderY(int chY)
+        {
+            if (MeshDense[chY].IsModifiedRender)
+            {
+                // буфер блоков
+                List<float> bufferCache = new List<float>();
+                for (int y = 0; y < 16; y++)
+                {
+                    for (int z = 0; z < 16; z++)
+                    {
+                        for (int x = 0; x < 16; x++)
+                        {
+                            if (StorageArrays[chY].GetEBlock(x, y, z) == EnumBlock.Air) continue;
+                            int yBlock = chY << 4 | y;
+                            BlockBase block = GetBlock0(new vec3i(x, yBlock, z));
+                            if (block == null) continue;
+
+                            BlockRender blockRender = new BlockRender(this, block)
+                            {
+                                DamagedBlocksValue = GetDestroyBlocksValue(x, yBlock, z)
+                            };
+                            bufferCache.AddRange(blockRender.RenderMesh(true));
+                        }
+                    }
+                }
+                MeshDense[chY].SetBuffer(bufferCache.ToArray());
+                bufferCache.Clear();
+            }
+        }
+
         /// <summary>
         /// Рендер чанка
         /// </summary>
-        public void Render()
-        {
-            IsModifiedToRender = false;
-            //TODO:: Надо вытягивать наивысший блок, чтоб не тратить ресурс на рендер воздуха
-            int yMax = 15; 
-            for (int i = 0; i <= yMax; i++)
-            {
-                if (MeshDense[i].IsModifiedRender)
-                {
-                    
-                    int y0 = i * 16;
-                    // буфер блоков
-                    List<float> bufferCache = new List<float>();
-                    for (int y = y0; y < y0 + 16; y++)
-                    {
-                        for (int z = 0; z < 16; z++)
-                        {
-                            for (int x = 0; x < 16; x++)
-                            {
+        //public void Render()
+        //{
+        //    bool isRender = false;
+        //    //IsModifiedToRender = false;
+        //    //TODO:: Надо вытягивать наивысший блок, чтоб не тратить ресурс на рендер воздуха
+        //    int yMax = 15; 
+        //    for (int i = 0; i <= yMax; i++)
+        //    {
+        //        if (MeshDense[i].IsModifiedRender)
+        //        //if (!show[i] && MeshDense[i].IsModifiedRender)
+        //        //{
+        //        //    isRender = true;
+        //        //}
+        //        //else if (show[i] && MeshDense[i].IsModifiedRender)
+        //        {
+
+        //            int y0 = 0;// i * 16;
+        //            // буфер блоков
+        //            List<float> bufferCache = new List<float>();
+        //            for (int y = y0; y < y0 + 16; y++)
+        //            {
+        //                for (int z = 0; z < 16; z++)
+        //                {
+        //                    for (int x = 0; x < 16; x++)
+        //                    {
                                  
-                                if (StorageArrays[i].GetEBlock(x, y & 15, z) == EnumBlock.Air) continue;
-                                BlockBase block = GetBlock0(new vec3i(x, y, z));
-                                if (block == null) continue;
+        //                        if (StorageArrays[i].GetEBlock(x, y, z) == EnumBlock.Air) continue;
+        //                        int yBlock = i << 4 | y;
+        //                        BlockBase block = GetBlock0(new vec3i(x, yBlock, z));
+        //                        if (block == null) continue;
 
-                                BlockRender blockRender = new BlockRender(this, block)
-                                {
-                                    DamagedBlocksValue = GetDestroyBlocksValue(x, y, z)
-                                };
-                                bufferCache.AddRange(blockRender.RenderMesh(true));
-                                //if (block.IsAlphe)
-                                //{
-                                //    if (buffer.Length > 0)
-                                //    {
-                                //        Chunk.StorageArrays[i].Buffer.Alphas.Add(new VoxelData()
-                                //        {
-                                //            Block = block,
-                                //            Buffer = buffer,
-                                //            Distance = camera.DistanceTo(
-                                //                new vec3(Chunk.X << 4 | x, y, Chunk.Z << 4 | z)
-                                //                )
-                                //        });
-                                //    }
-                                //}
-                                //else
-                                //{
-                                //    bufferCache.AddRange(buffer);
-                                //}
-                            }
-                        }
-                    }
-                    MeshDense[i].SetBuffer(bufferCache.ToArray());
-                    bufferCache.Clear();
-                }
-            }
-        }
+        //                        BlockRender blockRender = new BlockRender(this, block)
+        //                        {
+        //                            DamagedBlocksValue = GetDestroyBlocksValue(x, yBlock, z)
+        //                        };
+        //                        bufferCache.AddRange(blockRender.RenderMesh(true));
+        //                        //if (block.IsAlphe)
+        //                        //{
+        //                        //    if (buffer.Length > 0)
+        //                        //    {
+        //                        //        Chunk.StorageArrays[i].Buffer.Alphas.Add(new VoxelData()
+        //                        //        {
+        //                        //            Block = block,
+        //                        //            Buffer = buffer,
+        //                        //            Distance = camera.DistanceTo(
+        //                        //                new vec3(Chunk.X << 4 | x, y, Chunk.Z << 4 | z)
+        //                        //                )
+        //                        //        });
+        //                        //    }
+        //                        //}
+        //                        //else
+        //                        //{
+        //                        //    bufferCache.AddRange(buffer);
+        //                        //}
+        //                    }
+        //                }
+        //            }
+        //            MeshDense[i].SetBuffer(bufferCache.ToArray());
+        //            bufferCache.Clear();
+        //        }
+        //    }
 
-        public bool Draw(bool isBufferToRender)
-        {
-            bool b = false;
-            for (int i = 15; i >= 0; i--)
-            {
-                if (isBufferToRender && BindBuffer(i)) b = true;
-                // прорисовка
-                MeshDense[i].Draw();
-            }
-            return b;
-        }
+        //    IsModifiedToRender = isRender;
+        //}
+
+
+
+        public void Draw(int y) => MeshDense[y].Draw();
+
+        /// <summary>
+        /// Пустой ли буффер
+        /// </summary>
+        public bool IsBufferEmpty(int y) => MeshDense[y].IsEmpty();
 
         /// <summary>
         /// Занести буфер в рендер если это требуется
         /// </summary>
-        private bool BindBuffer(int y) => MeshDense[y].BindBuffer();
+        public bool BindBuffer(int y) => MeshDense[y].BindBuffer();
 
         /// <summary>
         /// Занести разрушение блока

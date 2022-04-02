@@ -1,6 +1,6 @@
 ﻿using MvkAssets;
+using MvkClient.Renderer.Entity.Layers;
 using MvkClient.Renderer.Model;
-using MvkServer.Entity;
 
 namespace MvkClient.Renderer.Entity
 {
@@ -10,11 +10,13 @@ namespace MvkClient.Renderer.Entity
     public class RenderPlayer : RendererLivingEntity
     {
 
-        public RenderPlayer(RenderManager renderManager, ModelBase model) : base(renderManager, model)
+        public RenderPlayer(RenderManager renderManager, ModelPlayer model) : base(renderManager, model)
         {
             texture = AssetsTexture.Steve;
             // соотношение высоты 3.6, к цельной модели 2.0, 3.6/2.0 = 1.8
             scale = 1.8f;
+            shadowSize = .5f;
+            AddLayer(new LayerHeldItem(model.BoxArmRight, renderManager.Item, false));
         }
 
 

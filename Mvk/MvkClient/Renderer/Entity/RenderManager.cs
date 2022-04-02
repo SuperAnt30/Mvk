@@ -63,7 +63,7 @@ namespace MvkClient.Renderer.Entity
             CameraPosition = pos;
             CameraRotationYaw = yaw;
             CameraRotationPitch = pitch;
-            CameraOffset = new vec3(pos.x, 0, pos.z);
+            CameraOffset = new vec3(pos.x, pos.y, pos.z);
         }
 
         protected RenderEntityBase GetEntityRenderObject(EntityBase entity)

@@ -145,7 +145,7 @@ namespace MvkClient.Renderer.Block
             vec3 col = new vec3(color.x, color.y, color.z);
             //col = new vec3(1f);
             vec3i posi = Block.Position.Position;
-            vec3 pos = new vec3(posi.x & 15, posi.y, posi.z & 15);
+            vec3 pos = new vec3(posi.x & 15, posi.y & 15, posi.z & 15);
             //vec3 pos = Block.Position.ToVec3();
             BlockFaceUV blockUV = new BlockFaceUV(col, pos);
 

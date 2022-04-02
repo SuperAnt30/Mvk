@@ -1,8 +1,8 @@
 ﻿using MvkAssets;
+using MvkClient.Renderer.Entity.Layers;
 using MvkClient.Renderer.Model;
 using MvkServer.Entity;
 using MvkServer.Glm;
-using MvkServer.Util;
 
 namespace MvkClient.Renderer.Entity
 {
@@ -12,9 +12,10 @@ namespace MvkClient.Renderer.Entity
     public class RenderHead : RendererLivingEntity
     {
 
-        public RenderHead(RenderManager renderManager, ModelBase model) : base(renderManager, model)
+        public RenderHead(RenderManager renderManager, ModelPlayerHand model) : base(renderManager, model)
         {
             texture = AssetsTexture.Steve;
+            AddLayer(new LayerHeldItem(model.BoxArmRight, renderManager.Item, true));
         }
 
         public override void DoRender(EntityBase entity, vec3 offset, float timeIndex)
@@ -24,6 +25,10 @@ namespace MvkClient.Renderer.Entity
                 vec3 pos = entity.GetPositionFrame(timeIndex);
                 float eye = entityLiving.GetEyeHeightFrame();
                 float yawHead = entityLiving.GetRotationYawFrame(timeIndex);
+                float headPitch = entityLiving.GetRotationPitchFrame(timeIndex);
+                float limbSwing = entityLiving.LimbSwing - entityLiving.LimbSwingAmount * (1f - timeIndex);
+                float limbSwingAmount = entityLiving.GetLimbSwingAmountFrame(timeIndex);
+                float ageInTicks = renderManager.World.ClientMain.TickCounter + timeIndex;
 
                 model.SetSwingProgress(entityLiving.GetSwingProgressFrame(timeIndex));
 
@@ -43,11 +48,17 @@ namespace MvkClient.Renderer.Entity
                         GLRender.Rotate(glm.degrees(renderManager.CameraRotationYaw), 0, 1, 0);
                         GLRender.Rotate(glm.degrees(-renderManager.CameraRotationPitch), 1, 0, 0);
 
-                        float ageInTicks = renderManager.World.ClientMain.TickCounter + timeIndex;
-
-                        RenderModel(entityLiving, entityLiving.LimbSwing, entityLiving.GetLimbSwingAmountFrame(timeIndex), ageInTicks,
-                            yawHead, entityLiving.GetRotationPitchFrame(timeIndex), .0625f);
-
+                        GLWindow.gl.PushMatrix();
+                        {                        
+                            // Смещение руки примерно чтоб при ударе не виден разрыв, и в пасиве не сильно мешала
+                            GLWindow.gl.Translate(-0.5f, 1.01f, -0.5f);
+                            // Руку поворачиваем чтоб видеи ребро
+                            GLRender.Rotate(65, 0, 0, 1);
+                            RenderModel(entityLiving, limbSwing, limbSwingAmount, ageInTicks, yawHead, headPitch, .0625f);
+                            // доп слой
+                            LayerRenders(entityLiving, limbSwing, limbSwingAmount, timeIndex, ageInTicks, yawHead, headPitch, .0625f);
+                        }
+                        GLWindow.gl.PopMatrix();
                     }
                     GLRender.PopMatrix();
                     GLRender.DepthEnable();

@@ -1,5 +1,7 @@
 ﻿using MvkServer.Entity.Player;
 using MvkServer.Glm;
+using MvkServer.Inventory;
+using MvkServer.Item;
 
 namespace MvkServer.Network.Packets.Server
 {
@@ -14,6 +16,7 @@ namespace MvkServer.Network.Packets.Server
         private vec3 pos;
         private float yaw;
         private float pitch;
+        private ItemStack[] stacks;
 
         public ushort GetId() => id;
         public string GetUuid() => uuid;
@@ -21,6 +24,7 @@ namespace MvkServer.Network.Packets.Server
         public vec3 GetPos() => pos;
         public float GetYaw() => yaw;
         public float GetPitch() => pitch;
+        public ItemStack[] GetStacks() => stacks;
 
         public PacketS0CSpawnPlayer(EntityPlayer entity)
         {
@@ -30,6 +34,7 @@ namespace MvkServer.Network.Packets.Server
             pos = entity.Position;
             yaw = entity.RotationYawHead;
             pitch = entity.RotationPitch;
+            stacks = entity.Inventory.GetCurrentItemAndArmor();
         }
 
         public void ReadPacket(StreamBase stream)
@@ -40,6 +45,13 @@ namespace MvkServer.Network.Packets.Server
             pos = new vec3(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat());
             yaw = stream.ReadFloat();
             pitch = stream.ReadFloat();
+
+            int count = stream.ReadByte();
+            stacks = new ItemStack[count];
+            for (int i = 0; i < count; i++)
+            {
+                stacks[i] = ItemStack.ReadStream(stream);
+            }
         }
 
         public void WritePacket(StreamBase stream)
@@ -52,6 +64,13 @@ namespace MvkServer.Network.Packets.Server
             stream.WriteFloat(pos.z);
             stream.WriteFloat(yaw);
             stream.WriteFloat(pitch);
+
+            int count = stacks.Length;
+            stream.WriteByte((byte)count);
+            for (int i = 0; i < count; i++)
+            {
+                ItemStack.WriteStream(stacks[i], stream);
+            }
         }
     }
 }

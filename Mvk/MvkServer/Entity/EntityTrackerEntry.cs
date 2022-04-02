@@ -1,6 +1,8 @@
 ﻿using MvkServer.Entity.Item;
 using MvkServer.Entity.Player;
 using MvkServer.Glm;
+using MvkServer.Inventory;
+using MvkServer.Item;
 using MvkServer.Network;
 using MvkServer.Network.Packets.Server;
 using MvkServer.Util;
@@ -109,8 +111,25 @@ namespace MvkServer.Entity
                         //TrackedEntity.FlagSpawn = false;
 
                         // Передаём доп пакеты, для сущности параметров
-
                         LastTrackedEntityMotion = TrackedEntity.Motion;
+                        
+                        // Это иногда не срабатывало, так как пакет прилетал в разных потоках,  
+                        // и когда прилетали эти данные, то спавн игрока ещё не успел обработать
+                        // было null на определении игрока
+                        //if (TrackedEntity is EntityLiving entityLiving)
+                        //{
+                        //    int count = InventoryPlayer.COUNT_ARMOR + 1;
+                        //    for (int slot = 0; slot < count; slot++)
+                        //    {
+                        //        ItemStack itemStack = entityLiving.GetEquipmentInSlot(slot);
+                        //        if (itemStack != null)
+                        //        {
+                        //            entityPlayer.SendPacket(new PacketS04EntityEquipment(TrackedEntity.Id, slot, itemStack));
+                        //        }
+                        //    }
+                        //}
+
+
 
                         //        if (this.trackedEntity instanceof EntityLivingBase)
                         //    {

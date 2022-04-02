@@ -37,6 +37,22 @@ namespace MvkServer.Util
         /// </summary>
         public BlockPos OffsetUp() => new BlockPos(Position + EnumFacing.DirectionVec(Pole.Up));
         /// <summary>
+        /// Позиция блока восток
+        /// </summary>
+        public BlockPos OffsetEast() => new BlockPos(Position + EnumFacing.DirectionVec(Pole.East));
+        /// <summary>
+        /// Позиция блока запад
+        /// </summary>
+        public BlockPos OffsetWest() => new BlockPos(Position + EnumFacing.DirectionVec(Pole.West));
+        /// <summary>
+        /// Позиция блока юг
+        /// </summary>
+        public BlockPos OffsetSouth() => new BlockPos(Position + EnumFacing.DirectionVec(Pole.South));
+        /// <summary>
+        /// Позиция блока север
+        /// </summary>
+        public BlockPos OffsetNorth() => new BlockPos(Position + EnumFacing.DirectionVec(Pole.North));
+        /// <summary>
         /// Позиция блока сверху
         /// </summary>
         public BlockPos OffsetUp(int i) => new BlockPos(Position + (EnumFacing.DirectionVec(Pole.Up) * i));
@@ -74,6 +90,30 @@ namespace MvkServer.Util
         /// Проверить локально позицию блока, 0..15
         /// </summary>
         public bool EqualsPosition0(int x, int y, int z) => (Position.x & 15) == x && Position.y == y && (Position.z & 15) == z;
+
+        /// <summary>
+        /// Получить массив всех позиция попадающих в облость
+        /// </summary>
+        public static BlockPos[] GetAllInBox(vec3i from, vec3i to)
+        {
+            vec3i f = new vec3i(Mth.Min(from.x, to.x), Mth.Min(from.y, to.y), Mth.Min(from.z, to.z));
+            vec3i t = new vec3i(Mth.Max(from.x, to.x), Mth.Max(from.y, to.y), Mth.Max(from.z, to.z));
+
+            BlockPos[] list = new BlockPos[(t.x - f.x + 1) * (t.y - f.y + 1) * (t.z - f.z + 1)];
+
+            int i = 0;
+            for (int x = f.x; x <= t.x; x++)
+            {
+                for (int y = f.y; y <= t.y; y++)
+                {
+                    for (int z = f.z; z <= t.z; z++)
+                    {
+                        list[i++] = new BlockPos(x, y, z);
+                    }
+                }
+            }
+            return list;
+        }
 
         public override string ToString() => Position.ToString();
     }

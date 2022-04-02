@@ -4,11 +4,15 @@ using MvkClient.Util;
 using MvkClient.World;
 using MvkServer;
 using MvkServer.Entity;
+using MvkServer.Entity.Item;
 using MvkServer.Glm;
+using MvkServer.Item;
+using MvkServer.Item.List;
 using MvkServer.Management;
 using MvkServer.Network.Packets.Client;
 using MvkServer.Util;
 using MvkServer.World.Block;
+using MvkServer.World.Chunk;
 using SharpGL;
 using System;
 using System.Collections.Generic;
@@ -125,6 +129,10 @@ namespace MvkClient.Entity
         /// Сущность по которой ударил игрок, если null то нет атаки
         /// </summary>
         private EntityBase entityAtack;
+        /// <summary>
+        /// Выбранная ячейка
+        /// </summary>
+        private int currentPlayerItem = 0;
 
         public EntityPlayerSP(WorldClient world) : base(world)
         {
@@ -235,6 +243,9 @@ namespace MvkClient.Entity
                     }
                 }
             }
+
+            // синхронизация выброного слота
+            SyncCurrentPlayItem();
 
             // Скрыть прорисовку себя если вид с глаз
             Type = Health > 0 && ViewCamera == EnumViewCamera.Eye ? EnumEntities.PlayerHand : EnumEntities.Player;
@@ -361,7 +372,7 @@ namespace MvkClient.Entity
         /// </summary>
         public bool UpLookAt(float timeIndex)
         {
-            vec3 pos = new vec3(0, GetEyeHeightFrame() + GetPositionFrame(timeIndex).y, 0);
+            vec3 pos = new vec3(0, GetEyeHeightFrame(), 0);
             vec3 front = GetLookFrame(timeIndex).normalize();
             vec3 up = new vec3(0, 1, 0);
 
@@ -457,9 +468,9 @@ namespace MvkClient.Entity
 
             FrustumCulling.Init(LookAt, Projection);
 
-            int countAll = 0;
             int countFC = 0;
             vec2i chunkPos = new vec2i(Mth.Floor(positionFrame.x) >> 4, Mth.Floor(positionFrame.z) >> 4);
+            
             List<FrustumStruct> listC = new List<FrustumStruct>();
 
             if (DistSqrt != null)
@@ -471,18 +482,34 @@ namespace MvkClient.Entity
                     int xb = xc << 4;
                     int zb = zc << 4;
 
-                    if (FrustumCulling.IsBoxInFrustum(xb - 15, 0, zb - 15, xb + 15, 255, zb + 15))
+                    int x1 = xb - 15;
+                    int z1 = zb - 15;
+                    int x2 = xb + 15;
+                    int z2 = zb + 15;
+                    if (FrustumCulling.IsBoxInFrustum(x1, -255, z1, x2, 255, z2))
                     {
-                        countFC++;
                         vec2i coord = new vec2i(xc + chunkPos.x, zc + chunkPos.y);
                         ChunkRender chunk = ClientWorld.ChunkPrClient.GetChunkRender(coord);
-                        if (chunk == null) listC.Add(new FrustumStruct(coord));
-                        else listC.Add(new FrustumStruct(chunk));
-                        //listC.Add(ClientWorld.ChunkPrClient.GetChunkRender(new vec2i(xc + chunkPos.x, zc + chunkPos.y)));
+                        FrustumStruct frustum;
+                        if (chunk == null)
+                        {
+                            frustum = new FrustumStruct(coord);
+                        }
+                        else
+                        {
+                            frustum = new FrustumStruct(chunk);
+                        }
+
+                        int count = frustum.FrustumShow(FrustumCulling, x1, z1, x2, z2, positionFrame.y);
+                        if (count > 0)
+                        {
+                            listC.Add(frustum);
+                            countFC+=count;
+                        }
                     }
-                    countAll++;
                 }
             }
+            Debug.CountMeshAll = countFC;
             ChunkFC = listC.ToArray();
             IsFrustumCulling = false;
         }
@@ -498,7 +525,11 @@ namespace MvkClient.Entity
                 if (!fs.IsChunk())
                 {
                     ChunkRender chunk = ClientWorld.ChunkPrClient.GetChunkRender(fs.GetCoord());
-                    if (chunk != null) ChunkFC[i] = new FrustumStruct(chunk);
+                    if (chunk != null)
+                    {
+                        //frustum.FrustumShow(FrustumCulling, x1, z1, x2, z2, positionFrame.y)
+                        ChunkFC[i] = new FrustumStruct(chunk, ChunkFC[i].GetShowList());
+                    }
                 }
             }
         }
@@ -544,7 +575,7 @@ namespace MvkClient.Entity
             vec3 offset = ClientWorld.RenderEntityManager.CameraOffset;
             MovingObjectPosition movingObjectBlock = World.RayCastBlock(pos, dir, maxDis);
 
-            MapListEntity listEntity = World.GetEntitiesWithinAABBExcludingEntity(this, BoundingBox.AddCoordBias(dir * maxDis));
+            MapListEntity listEntity = World.GetEntitiesWithinAABB(ChunkBase.EnumEntityClassAABB.EntityLiving, BoundingBox.AddCoordBias(dir * maxDis), Id);
             float entityDis = movingObjectBlock.IsBlock() ? glm.distance(pos, movingObjectBlock.RayHit) : maxDis;
             EntityBase pointedEntity = null;
             float step = .5f;
@@ -639,29 +670,61 @@ namespace MvkClient.Entity
 
         private void PutBlockStart(MovingObjectPosition moving, bool start)
         {
-            if (moving.IsBlock() && slot != 0)
+            ItemStack itemStack = Inventory.GetCurrentItem();
+            if (itemStack != null)
             {
-                BlockPos blockPos = new BlockPos(moving.Put);
-                vec3 facing = moving.RayHit - new vec3(moving.Put);
-                // устанавливаем блок
-                BlockBase blockNew = Blocks.GetBlock((EnumBlock)slot, blockPos);
-                bool putAbout = true;
-                if (blockNew != null && !blockNew.IsAir)
+                if (itemStack.Item is ItemBlock itemBlock && moving.IsBlock())
                 {
-                    AxisAlignedBB axisBlock = blockNew.GetCollision();
-                    // Проверка коллизии игрока и блока
-                    if (!BoundingBox.IntersectsWith(axisBlock) && World.GetEntitiesWithinAABBExcludingEntity(this, axisBlock).Count == 0)
+                    // В стаке блок, и по лучу можем устанавливать блок
+                    BlockPos blockPos = new BlockPos(moving.Put);
+                    vec3 facing = moving.RayHit - new vec3(moving.Put);
+                    if (itemBlock.ItemUse(itemStack, this, World, blockPos, new EnumFacing(), facing))
                     {
                         ClientMain.TrancivePacket(new PacketC08PlayerBlockPlacement(blockPos, facing));
-                        itemInWorldManager.Put(blockPos, facing, blockNew.EBlock);
+                        itemInWorldManager.Put(blockPos, facing, Inventory.CurrentItem);
                         itemInWorldManager.PutPause(start);
-                        putAbout = false;
                     }
+                    else
+                    {
+                        itemInWorldManager.PutAbout();
+                    }
+                    handAction = ActionHand.Right;
                 }
-                if (putAbout) itemInWorldManager.PutAbout();
-                handAction = ActionHand.Right;
+                // Тут будут другие действия на предмет, к примеру покушать
             }
         }
+
+        //private void PutBlockStart2(MovingObjectPosition moving, bool start)
+        //{
+        //    // TODO:: Рассмотреть реализацию через ItemBlock.onItemUse
+        //    if (moving.IsBlock())
+        //    {
+        //        ItemStack itemStack = Inventory.GetCurrentItem();
+        //        if (itemStack != null && itemStack.Item is ItemBlock itemBlock)
+        //        {
+        //            BlockPos blockPos = new BlockPos(moving.Put);
+        //            vec3 facing = moving.RayHit - new vec3(moving.Put);
+        //            // устанавливаем блок
+        //            BlockBase blockNew = Blocks.GetBlock(itemBlock.Block.EBlock, blockPos);
+        //            bool putAbout = true;
+        //            if (blockNew != null && !blockNew.IsAir)
+        //            {
+        //                AxisAlignedBB axisBlock = blockNew.GetCollision();
+        //                // Проверка коллизии игрока и блока
+        //                if (!BoundingBox.IntersectsWith(axisBlock) && World.GetEntitiesWithinAABBExcludingEntity(this, axisBlock).Count == 0)
+        //                {
+        //                    ClientMain.TrancivePacket(new PacketC08PlayerBlockPlacement(blockPos, facing));
+        //                    itemInWorldManager.Put(blockPos, facing, blockNew.EBlock);
+        //                    itemInWorldManager.PutPause(start);
+        //                    putAbout = false;
+        //                    Inventory.DecrStackSize(Inventory.CurrentItem, 1);
+        //                }
+        //            }
+        //            if (putAbout) itemInWorldManager.PutAbout();
+        //            handAction = ActionHand.Right;
+        //        }
+        //    }
+        //}
 
 
         /// <summary>
@@ -740,6 +803,20 @@ namespace MvkClient.Entity
         {
             OverviewChunkPrev = OverviewChunk = overviewChunk;
             DistSqrt = MvkStatic.GetSqrt(OverviewChunk);
+        }
+
+
+        /// <summary>
+        /// Проверить изменение слота если изменён, отправить на сервер
+        /// </summary>
+        private void SyncCurrentPlayItem()
+        {
+            int currentItem = Inventory.CurrentItem;
+            if (currentItem != currentPlayerItem)
+            {
+                currentPlayerItem = currentItem;
+                ClientMain.TrancivePacket(new PacketC09HeldItemChange(currentPlayerItem));
+            }
         }
 
         #region Frame

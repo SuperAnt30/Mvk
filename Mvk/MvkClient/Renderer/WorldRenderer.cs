@@ -7,6 +7,8 @@ using MvkClient.World;
 using MvkServer;
 using MvkServer.Entity;
 using MvkServer.Glm;
+using MvkServer.Item;
+using MvkServer.Item.List;
 using MvkServer.Util;
 using MvkServer.World.Block;
 using SharpGL;
@@ -142,25 +144,38 @@ namespace MvkClient.Renderer
                 {
                     ChunkRender chunk = fs.GetChunk();
 
-                    if (chunk.IsModifiedToRender && fast && countRender > 0)
+                    for (int y = 0; y < ChunkRender.COUNT_HEIGHT; y++)
                     {
-                        // в отдельном потоке рендер
-                        vec2i pos = new vec2i(chunk.Position);
-                        if (World.IsChunksSquareLoaded(pos))
+                        if (fs.IsShow(y))
                         {
-                            countRender--;
-                            Task.Factory.StartNew(chunk.Render);
+                            if (chunk.IsModifiedRender(y) && fast && countRender > 0)
+                            {
+                                // в отдельном потоке рендер
+                                vec2i pos = new vec2i(chunk.Position);
+                                if (World.IsChunksSquareLoaded(pos))
+                                {
+                                    countRender--;
+                                    int chY = y;
+                                    Task.Factory.StartNew(() => { chunk.RenderY(chY); });
+                                }
+                            }
+
+                            if (fast)
+                            {
+                                chunk.BindBuffer(y);
+                            }
+
+                            if (!chunk.IsBufferEmpty(y))
+                            {
+                                shader.SetUniform3(GLWindow.gl, "pos",
+                                    (chunk.Position.x << 4) - World.RenderEntityManager.CameraOffset.x,
+                                    (y << 4) - World.RenderEntityManager.CameraOffset.y,
+                                    (chunk.Position.y << 4) - World.RenderEntityManager.CameraOffset.z);
+                                chunk.Draw(y);
+                            }
                         }
                     }
-                    //else
-                    {
-                        shader.SetUniform3(GLWindow.gl, "pos",
-                            (chunk.Position.x << 4) - World.RenderEntityManager.CameraOffset.x,
-                            -World.RenderEntityManager.CameraOffset.y,
-                            (chunk.Position.y << 4) - World.RenderEntityManager.CameraOffset.z);
-                        chunk.Draw(fast);
-                        chunks.Add(chunk);
-                    }
+                    chunks.Add(chunk);
 
                     // Тут бы сущность
                     // DrawEntities2(chunk.ListEntities, timeIndex);
@@ -267,7 +282,12 @@ namespace MvkClient.Renderer
             renderAim.IsHidden = ClientMain.Player.ViewCamera != EnumViewCamera.Eye;
             renderAim.Render(w, h);
 
-            listBlocksGui[ClientMain.Player.slot].Render(64, 64);
+            ItemStack itemStack = ClientMain.Player.Inventory.GetCurrentItem();
+            if (itemStack != null && itemStack.Item is ItemBlock itemBlock)
+            {
+                listBlocksGui[(int)itemBlock.Block.EBlock].Render(64, 64);
+            }
+                
             //listBlocksGui[2].Render(w / 4 + 50, 16);
             //listBlocksGui[3].Render(w / 4 + 100, 16);
             //listBlocksGui[4].Render(w / 4 + 150, 16);

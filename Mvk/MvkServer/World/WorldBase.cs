@@ -6,6 +6,7 @@ using MvkServer.World.Block;
 using MvkServer.World.Chunk;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace MvkServer.World
 {
@@ -481,12 +482,9 @@ namespace MvkServer.World
         protected virtual void MarkBlockForUpdate(BlockPos blockPos) { }
 
         /// <summary>
-        /// Получает все объекты в указанном AABB, кроме переданного в него. Аргументы: entityToExclude, aabb 
+        /// Возвращает все объекты указанного типа класса, которые пересекаются с AABB кроме переданного в него
         /// </summary>
-        /// <param name="entityToExclude"></param>
-        /// <param name="aabb"></param>
-        /// <returns></returns>
-        public MapListEntity GetEntitiesWithinAABBExcludingEntity(EntityBase entity, AxisAlignedBB aabb)
+        public MapListEntity GetEntitiesWithinAABB(ChunkBase.EnumEntityClassAABB type, AxisAlignedBB aabb, int entityId)
         {
             MapListEntity list = new MapListEntity();
             int minX = Mth.Floor((aabb.Min.x - 2f) / 16f);
@@ -501,12 +499,59 @@ namespace MvkServer.World
                     ChunkBase chunk = GetChunk(new vec2i(x, z));
                     if (chunk != null)
                     {
-                        chunk.GetEntitiesAABB(entity, aabb, list);
+                        chunk.GetEntitiesAABB(entityId, aabb, list, type);
                     }
                 }
             }
 
             return list;
+        }
+
+        /// <summary>
+        /// Получить список блоков которые входят в рамку и пересекаются по коллизии
+        /// </summary>
+        public BlockBase[] GetBlocksAABB(AxisAlignedBB aabb)
+        {
+            List<BlockBase> blocks = new List<BlockBase>();
+
+            int minX = Mth.Floor(aabb.Min.x);
+            int maxX = Mth.Floor(aabb.Max.x + 1f);
+            int minY = Mth.Floor(aabb.Min.y);
+            int maxY = Mth.Floor(aabb.Max.y + 1f);
+            int minZ = Mth.Floor(aabb.Min.z);
+            int maxZ = Mth.Floor(aabb.Max.z + 1f);
+
+            for (int x = minX; x < maxX; x++)
+            {
+                for (int z = minZ; z < maxZ; z++)
+                {
+                    if (ChunkPr.IsChunk(new vec2i(x >> 4, z >> 4)))
+                    {
+                        for (int y = minY - 1; y < maxY; y++)
+                        {
+                            BlockBase block = GetBlock(new BlockPos(x, y, z));
+                            AxisAlignedBB mask = block.GetCollision();
+                            if (mask != null && mask.IntersectsWith(aabb))
+                            {
+                                blocks.Add(block);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return blocks.ToArray();
+        }
+
+        /// <summary>
+        /// Возвращает среднюю длину краев ограничивающей рамки блока больше или равна 1
+        /// </summary>
+        public bool GetAverageEdgeLengthBlock(BlockPos blockPos)
+        {
+            BlockBase block = GetBlock(blockPos);
+            if (block == null) return false;
+            AxisAlignedBB axis = block.GetCollision();
+            return axis != null && axis.GetAverageEdgeLength() >= 1f;
         }
 
         /// <summary>

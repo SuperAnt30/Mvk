@@ -74,9 +74,9 @@ namespace MvkClient.Renderer.Entity
                     }
                 }
                 GLRender.PopMatrix();
-
+                base.DoRender(entity, offset, timeIndex);
             }
-            base.DoRender(entity, offset, timeIndex);
+            
             
         }
 

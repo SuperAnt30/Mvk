@@ -116,11 +116,7 @@ namespace MvkServer.Management
             // Лог запуска игрока
             World.ServerMain.Log.Log("server.player.entry {0} [{1}]", entityPlayer.GetName(), entityPlayer.UUID);
 
-            lastPlayerId++;
-
             // TODO::Тут проверяем место положение персонажа, и заносим при запуске
-
-            entityPlayer.SetEntityId(lastPlayerId);
             SpawnPositionTest(entityPlayer);
             entityPlayer.SetChunkPosManaged(entityPlayer.GetChunkPos());
             //entityPlayer.SetOverviewChunk(entityPlayer.OverviewChunk, 1);
@@ -137,27 +133,18 @@ namespace MvkServer.Management
             // entityPlayer.FlagSpawn = false;
 
             // отладка 5 кур
-            for (int i = 0; i < 1; i++)
+            for (int i = 0; i < 3; i++)
             {
-                lastPlayerId++;
                 EntityChicken entityChicken = new EntityChicken(World);
-                entityChicken.SetEntityId(lastPlayerId);
                 entityChicken.SetPosition(entityPlayer.Position + new vec3(3, World.Rand.Next(40, 64), 0));
                 World.SpawnEntityInWorld(entityChicken);
             }
         }
 
-        public void SpawnItem(EntityItem item)
-        {
-            lastPlayerId++;
-            //EntityChicken entityChicken = new EntityChicken(World);
-            //entityChicken.SetEntityId(lastPlayerId);
-            //entityChicken.SetPosition(item.Position);
-            //World.SpawnEntityInWorld(entityChicken);
-
-            item.SetEntityId(lastPlayerId);
-            World.SpawnEntityInWorld(item);
-        }
+        /// <summary>
+        /// Присвоить порядковый номер сущности
+        /// </summary>
+        public void NewEntity(EntityBase entity) => entity.SetEntityId(++lastPlayerId);
 
         /// <summary>
         /// Проверка вертикально позиции для спавна
@@ -184,7 +171,6 @@ namespace MvkServer.Management
                 entity.SetPosition(new vec3(entity.Position.x, y0, entity.Position.z));
             }
         }
-      
 
         public void SpawnPositionTest(EntityPlayerServer entityPlayer)
         {
@@ -373,6 +359,7 @@ namespace MvkServer.Management
             player.SendPacket(new PacketS02JoinGame(player.Id, player.UUID));
             player.SendPacket(new PacketS08PlayerPosLook(player.Position, player.RotationYawHead, player.RotationPitch));
             player.SendPacket(new PacketS03TimeUpdate(World.ServerMain.TickCounter));
+            player.SendUpdateInventory();
         }
         
         /// <summary>

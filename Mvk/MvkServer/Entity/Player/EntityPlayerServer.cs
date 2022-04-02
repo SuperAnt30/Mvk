@@ -1,4 +1,5 @@
-﻿using MvkServer.Glm;
+﻿using MvkServer.Entity.Item;
+using MvkServer.Glm;
 using MvkServer.Management;
 using MvkServer.Network;
 using MvkServer.Network.Packets;
@@ -55,6 +56,11 @@ namespace MvkServer.Entity.Player
         private MapListId destroyedItemsNetCache = new MapListId();
 
         protected int pingChunk = 0;
+
+        /// <summary>
+        /// Почледнее активное время игрока
+        /// </summary>
+        protected uint playerLastActiveTime = 0;
 
         //private List<vec2i> LoadingChunks = new List<vec2i>();
 
@@ -116,9 +122,25 @@ namespace MvkServer.Entity.Player
             // тут отправление перемещение игрокам если оно надо
             TheItemInWorldManager.UpdateBlock();
 
-
             // если нет хп обновлям смертельную картинку
             if (Health <= 0f) DeathUpdate();
+
+            // Обновления предметов которые могут видеть игроки, что в руке, броня
+            UpdateItems();
+
+            if (Health > 0 && !World.IsRemote)
+            {
+                AxisAlignedBB axis = BoundingBox.Expand(new vec3(1, .5f, 1));
+                MapListEntity map = World.GetEntitiesWithinAABB(ChunkBase.EnumEntityClassAABB.EntityItem, axis, Id);
+                while (map.Count > 0)
+                {
+                    EntityBase entity = map.FirstRemove();
+                    if (!entity.IsDead && entity is EntityItem entityItem)
+                    {
+                        entityItem.OnCollideWithPlayer(this);
+                    }
+                }
+            }
 
             // Отправляем запрос на удаление сущностей которые не видим
             if (destroyedItemsNetCache.Count > 0)
@@ -231,7 +253,15 @@ namespace MvkServer.Entity.Player
         /// </summary>
         public void SendPacket(IPacket packet) => ServerMain.ResponsePacket2(SocketClient, packet);
 
-        
+        /// <summary>
+        /// Пометка активности игрока
+        /// </summary>
+        public void MarkPlayerActive() => playerLastActiveTime = ServerMain.TickCounter;
+
+        /// <summary>
+        /// Обновить инвентарь игрока
+        /// </summary>
+        public void SendUpdateInventory() => SendPacket(new PacketS30WindowItems(Inventory.GetMainAndArmor()));
 
         public override string ToString()
         {

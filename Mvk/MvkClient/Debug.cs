@@ -25,6 +25,10 @@ namespace MvkClient
         /// </summary>
         public static long CountMesh = 0;
         /// <summary>
+        /// Количество мешей всего попадает под обзор
+        /// </summary>
+        public static long CountMeshAll = 0;
+        /// <summary>
         /// Количество полигонов блоков
         /// </summary>
         public static int CountPoligon = 0;
@@ -51,7 +55,8 @@ namespace MvkClient
             string c = strClient == "" ? "" : "Client " + strClient + "\r\n";
             return strTpsFps + "\r\n" 
                 + s + c 
-                + string.Format("Mesh: {0} Poligons:{4}\r\nint: {1} float: {2:0.00} string: {3} long: {5}", CountMesh, DInt, DFloat, DStr, CountPoligon, DLong);
+                + string.Format("Mesh: {0}/{6} Poligons: {4}\r\nint: {1} float: {2:0.00} string: {3} long: {5}", 
+                CountMesh, DInt, DFloat, DStr, CountPoligon, DLong, CountMeshAll);
         }
 
         #region Draw

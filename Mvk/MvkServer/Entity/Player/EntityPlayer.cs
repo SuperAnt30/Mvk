@@ -1,5 +1,6 @@
 ﻿using MvkServer.Glm;
-using MvkServer.Util;
+using MvkServer.Inventory;
+using MvkServer.Item;
 using MvkServer.World;
 using MvkServer.World.Block;
 
@@ -30,16 +31,26 @@ namespace MvkServer.Entity.Player
         /// В каком чанке было обработка чанков
         /// </summary>
         public vec2i ChunkPosManaged { get; protected set; } = new vec2i();
-
         /// <summary>
-        /// Слот выбранного
+        /// Инвенарь игрока
         /// </summary>
-        public int slot = 0;
+        public InventoryPlayer Inventory { get; protected set; }
 
         protected EntityPlayer(WorldBase world) : base(world)
         {
             Type = EnumEntities.Player;
             StepHeight = 1.2f;
+            Inventory = new InventoryPlayer(this);
+            previousEquipment = new ItemStack[InventoryPlayer.COUNT_ARMOR + 1];
+
+            // TODO::2022-03-29 Временно
+            if (!world.IsRemote)
+            {
+                // TODO::доделать, этап при старте видеть игрока в инвентарём что в руке, и сам игрок загружать весь инвентарь
+                Inventory.SetInventorySlotContents(2, new MvkServer.Item.ItemStack(Blocks.GetBlock(EnumBlock.Dirt)));
+                Inventory.SetInventorySlotContents(3, new MvkServer.Item.ItemStack(Blocks.GetBlock(EnumBlock.Cobblestone), 16));
+            }
+
         }
 
         /// <summary>
@@ -75,6 +86,37 @@ namespace MvkServer.Entity.Player
         /// Задать чанк обработки
         /// </summary>
         public void SetChunkPosManaged(vec2i pos) => ChunkPosManaged = pos;
+
+        /// <summary>
+        /// Возвращает элемент, который держит в руке
+        /// </summary>
+        public override ItemStack GetHeldItem() => Inventory.GetCurrentItem();
+
+        /// <summary>
+        /// Получить стак что в правой руке 0 или броня 1-4 (InventoryPlayer.COUNT_ARMOR)
+        /// </summary>
+        public override ItemStack GetEquipmentInSlot(int slot) 
+            => slot == 0 ? Inventory.GetCurrentItem() : Inventory.GetArmorInventory(slot - 1);
+
+        /// <summary>
+        /// Получить слот брони 0-3 InventoryPlayer.COUNT_ARMOR
+        /// </summary>
+        public override ItemStack GetCurrentArmor(int slot) => Inventory.GetArmorInventory(slot);
+
+        /// <summary>
+        /// Задать стак в слот, что в правой руке 0, или 1-4 слот брони InventoryPlayer.COUNT_ARMOR
+        /// </summary>
+        public override void SetCurrentItemOrArmor(int slot, ItemStack itemStack)
+        {
+            if (slot == 0)
+            {
+                Inventory.SetCurrentItem(itemStack);
+            }
+            else
+            {
+                Inventory.SetArmorInventory(slot - 1, itemStack);
+            }
+        }
 
     }
 }

@@ -276,28 +276,28 @@ namespace MvkClient.World
         /// <summary>
         /// Получить попадает ли в луч сущность, выбрать самую близкую
         /// </summary>
-        public MovingObjectPosition RayCastEntity()
-        {
-            float timeIndex = Interpolation();
-            // TODO::RayCastEntity ЗАМЕНИТЬ!!!
-            MovingObjectPosition moving = new MovingObjectPosition();
-            if (ClientMain.Player.EntitiesLook.Length > 0)
-            {
-                EntityPlayerMP[] entities = ClientMain.Player.EntitiesLook.Clone() as EntityPlayerMP[];
-                vec3 pos = ClientMain.Player.GetPositionFrame(timeIndex);
-                float dis = 1000f;
-                foreach (EntityPlayerMP entity in entities)
-                {
-                    float disR = glm.distance(pos, entity.GetPositionFrame(timeIndex));
-                    if (dis > disR)
-                    {
-                        dis = disR;
-                        moving = new MovingObjectPosition(entity);
-                    }
-                }
-            }
-            return moving;
-        }
+        //public MovingObjectPosition RayCastEntity()
+        //{
+        //    float timeIndex = Interpolation();
+        //    // TODO::RayCastEntity ЗАМЕНИТЬ!!!
+        //    MovingObjectPosition moving = new MovingObjectPosition();
+        //    if (ClientMain.Player.EntitiesLook.Length > 0)
+        //    {
+        //        EntityPlayerMP[] entities = ClientMain.Player.EntitiesLook.Clone() as EntityPlayerMP[];
+        //        vec3 pos = ClientMain.Player.GetPositionFrame(timeIndex);
+        //        float dis = 1000f;
+        //        foreach (EntityPlayerMP entity in entities)
+        //        {
+        //            float disR = glm.distance(pos, entity.GetPositionFrame(timeIndex));
+        //            if (dis > disR)
+        //            {
+        //                dis = disR;
+        //                moving = new MovingObjectPosition(entity);
+        //            }
+        //        }
+        //    }
+        //    return moving;
+        //}
 
         /// <summary>
         /// Отправить процесс разрущения блока
@@ -468,11 +468,11 @@ namespace MvkClient.World
         /// </summary>
         public override string ToStringDebug()
         {
-            return string.Format("t {2} {0} E:{4}/{5}\r\n{1}\r\n@!{6}/{7}\r\nParticles: {8}",
+            return string.Format("t {2} {0} E:{4}/{5}\r\n{1}\r\n@!{6}/{7}\r\nParticles: {8}\r\n{3}",
                 ChunkPrClient.ToString(), // 0
                 ClientMain.Player,  // 1
                 ClientMain.TickCounter / 20,  // 2
-                "", // 3
+                ClientMain.Player.Inventory, // 3
                 PlayerEntities.Count + 1, // 4
                 entitiesCountShow, // 5
                 EntityList.Count, // 6

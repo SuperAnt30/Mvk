@@ -46,6 +46,10 @@
         /// <summary>
         /// Частицы
         /// </summary>
-        Particles
+        Particles,
+        /// <summary>
+        /// Тень у сущностей
+        /// </summary>
+        Shadow
     }
 }

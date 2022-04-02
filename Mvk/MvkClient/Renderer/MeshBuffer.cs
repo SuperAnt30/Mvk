@@ -30,7 +30,6 @@ namespace MvkClient.Renderer
         /// </summary>
         public virtual void BindBuffer(float[] buffer)
         {
-
             if (mesh != null)
             {
                 mesh.Reload(buffer);
@@ -43,12 +42,18 @@ namespace MvkClient.Renderer
         }
 
         /// <summary>
+        /// Пустой ли буффер
+        /// </summary>
+        public bool IsEmpty() => mesh == null || CountPoligon == 0;
+
+        /// <summary>
         /// Прорисовать
         /// </summary>
         public void Draw()
         {
-            if (mesh != null)
+            if (!IsEmpty())
             {
+                Debug.CountPoligon += CountPoligon;
                 Debug.CountMesh++;
                 mesh.Draw();
             }

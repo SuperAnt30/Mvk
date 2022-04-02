@@ -325,21 +325,8 @@ namespace MvkClient
         {
             if (IsGamePlayAction() && isMouseGamePlay && Player != null)
             {
-                bool b = false;
-                if (Player.slot > 0 && delta < 0)
-                {
-                    Player.slot--;
-                    b = true;
-                }
-                if (Player.slot < 4 && delta > 0)
-                {
-                    Player.slot++;
-                    b = true;
-                }
-                if (b)
-                {
-                    TrancivePacket(new PacketC09HeldItemChange(Player.slot));
-                }
+                if (delta > 0) Player.Inventory.SlotLess();
+                else if (delta < 0) Player.Inventory.SlotMore();
             }
         }
 

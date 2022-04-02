@@ -35,7 +35,7 @@ namespace MvkServer.Entity
         {
             if (entity is EntityPlayerServer)
             {
-                AddEntityToTracker(entity, 256, 2, false);
+                AddEntityToTracker(entity, 64, 2, false);
                 
                 for (int i = 0; i < trackedEntities.Count; i++)
                 {

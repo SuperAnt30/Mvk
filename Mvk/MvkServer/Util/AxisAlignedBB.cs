@@ -172,7 +172,7 @@ namespace MvkServer.Util
                 : false;
 
         /// <summary>
-        /// Возвращает среднюю длину краев ограничивающей рамки.
+        /// Возвращает среднюю длину краев ограничивающей рамки
         /// </summary>
         public float GetAverageEdgeLength()
         {
