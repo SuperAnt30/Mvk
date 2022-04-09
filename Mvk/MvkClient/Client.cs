@@ -13,9 +13,11 @@ using MvkServer.Glm;
 using MvkServer.Network;
 using MvkServer.Network.Packets.Client;
 using MvkServer.Util;
+using MvkServer.World.Block;
 using SharpGL;
 using System;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace MvkClient
 {
@@ -57,6 +59,10 @@ namespace MvkClient
         /// Объект отвечающий за прорисовку эффектов частиц
         /// </summary>
         public EffectRenderer EffectRender { get; private set; }
+        /// <summary>
+        /// Назвние игры с версией
+        /// </summary>
+        public string NameVersion { get; private set; }
 
         /// <summary>
         /// Счётчик тиков без синхронизации с сервером, отсчёт от запуска программы
@@ -103,9 +109,14 @@ namespace MvkClient
         /// </summary>
         public void Initialize()
         {
+            Version ver = Assembly.GetExecutingAssembly().GetName().Version;
+            //Version = string.Format("{0}.{1}.{2}", ver.Major, ver.Minor, ver.Build);
+            Debug.version = NameVersion = "МаЛЮВеКi " + ver.ToString();
+
             Sample.Initialize();
             glm.Initialized();
             MvkStatic.Initialized();
+            Blocks.Initialized();
             Screen = new GuiScreen(this);
             Screen.Changed += Screen_Changed;
             packets = new ProcessClientPackets(this);

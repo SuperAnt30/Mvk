@@ -68,7 +68,7 @@ namespace MvkServer.Network
                 byte[] buffer = ReceivingBytes.BytesSender(bytes);
                 SocketAsyncEventArgs e = new SocketAsyncEventArgs();
                 e.SetBuffer(buffer, 0, buffer.Length);
-                // TODO:: SendAsync продумать 
+                // UNDONE:: SendAsync продумать 
                 e.Completed += new EventHandler<SocketAsyncEventArgs>(SendCallback);
 
                 SendCompleted = false;

@@ -25,7 +25,7 @@ namespace MvkClient.Entity.Particle
             particleScale /= 2f;
             color = new vec4(.8f, .8f, .8f, 1f);
 
-            BlockBase block = Blocks.GetBlock(eBlock);
+            BlockBase block = Blocks.GetBlockCache(eBlock);
 
             // пробуем цвет травы подкрасить
             color *= new vec4(block.Color, 1f);

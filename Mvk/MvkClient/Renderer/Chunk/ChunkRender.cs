@@ -18,187 +18,184 @@ namespace MvkClient.Renderer.Chunk
         /// Клиентский объект мира
         /// </summary>
         public WorldClient ClientWorld { get; protected set; }
+
         /// <summary>
         /// Сетка чанка сплошных блоков
         /// </summary>
-        public ChunkMesh[] MeshDense { get; private set; } = new ChunkMesh[COUNT_HEIGHT];
+        private ChunkMesh[] meshDense = new ChunkMesh[COUNT_HEIGHT];
         /// <summary>
         /// Сетка чанка альфа блоков
         /// </summary>
-        public ChunkMesh MeshAlpha { get; private set; } = new ChunkMesh();
-        /// <summary>
-        /// Нужен ли рендер
-        /// </summary>
-        public bool IsModifiedToRender { get; private set; } = false;
-        
-        /// <summary>
-        /// Буфер сплошных блоков
-        /// </summary>
-        private readonly float[] bufferDense = new float[0];
+        private readonly ChunkMesh[] meshAlpha = new ChunkMesh[COUNT_HEIGHT];
         /// <summary>
         /// Массив блоков которые разрушаются
         /// </summary>
-        private List<DestroyBlockProgress> destroyBlocks = new List<DestroyBlockProgress>(); 
+        private List<DestroyBlockProgress> destroyBlocks = new List<DestroyBlockProgress>();
+        /// <summary>
+        /// Количество альфа блоков в псевдо чанке
+        /// </summary>
+        private readonly int[] countAlpha = new int[COUNT_HEIGHT];
 
         public ChunkRender(WorldClient worldIn, vec2i pos) :base (worldIn, pos)
         {
             ClientWorld = worldIn;
             for (int y = 0; y < COUNT_HEIGHT; y++)
             {
-            //    StorageArrays[y] = new ChunkStorage(y);
-
-                MeshDense[y] = new ChunkMesh();
+                meshDense[y] = new ChunkMesh();
+                meshAlpha[y] = new ChunkMesh();
             }
         }
 
         /// <summary>
-        /// Пометить что надо перерендерить сетку чанка
+        /// Проверка псевдо чанка на количество альфа блоков, если равно 0 то true
         /// </summary>
-        public void ModifiedToRender() => IsModifiedToRender = true;
+        public bool CheckAlphaZero(int y) => countAlpha[y] == 0;
 
         /// <summary>
         /// Пометить что надо перерендерить сетку чанка
         /// </summary>
-        /// <param name="y"></param>
         public void ModifiedToRender(int y)
         {
-            if (y >= 0 && y < COUNT_HEIGHT)
-            {
-                IsModifiedToRender = true;
-                MeshDense[y].SetModifiedRender();
-            }
+            if (y >= 0 && y < COUNT_HEIGHT) meshDense[y].SetModifiedRender();
         }
-
-        public bool IsModifiedRender(int y) => MeshDense[y].IsModifiedRender;
+        /// <summary>
+        /// Проверка, нужен ли рендер этого псевдо чанка
+        /// </summary>
+        public bool IsModifiedRender(int y) => meshDense[y].IsModifiedRender;
 
         /// <summary>
-        /// Количество полигонов
+        /// Пометить что надо перерендерить сетку чанка альфа блоков
         /// </summary>
-        public int CountPoligon => 0;// MeshAlpha.CountPoligon + MeshDense.CountPoligon;
+        public void ModifiedToRenderAlpha(int y)
+        {
+            if (y >= 0 && y < COUNT_HEIGHT) meshAlpha[y].SetModifiedRender();
+        }
+        /// <summary>
+        /// Проверка, нужен ли рендер этого псевдо чанка  альфа блоков
+        /// </summary>
+        public bool IsModifiedRenderAlpha(int y) => meshAlpha[y].IsModifiedRender;
 
         /// <summary>
         /// Удалить сетки
         /// </summary>
         public void MeshDelete()
         {
-            MeshAlpha.Delete();
-            for (int y = 0; y < MeshDense.Length; y++)
+            for (int y = 0; y < meshDense.Length; y++)
             {
-                MeshDense[y].Delete();
+                meshDense[y].Delete();
+                meshAlpha[y].Delete();
+                countAlpha[y] = 0;
             }
         }
 
-        public void RenderY(int chY)
+        /// <summary>
+        /// Старт рендеринга
+        /// </summary>
+        public void StartRendering(int y)
         {
-            if (MeshDense[chY].IsModifiedRender)
-            {
-                // буфер блоков
-                List<float> bufferCache = new List<float>();
-                for (int y = 0; y < 16; y++)
-                {
-                    for (int z = 0; z < 16; z++)
-                    {
-                        for (int x = 0; x < 16; x++)
-                        {
-                            if (StorageArrays[chY].GetEBlock(x, y, z) == EnumBlock.Air) continue;
-                            int yBlock = chY << 4 | y;
-                            BlockBase block = GetBlock0(new vec3i(x, yBlock, z));
-                            if (block == null) continue;
+            meshDense[y].StatusRendering();
+            meshAlpha[y].StatusRendering();
+        }
 
-                            BlockRender blockRender = new BlockRender(this, block)
+        /// <summary>
+        /// Рендер псевдо чанка, сплошных и альфа блоков
+        /// </summary>
+        public void Render(int chY)
+        {
+            // буфер блоков
+            List<float> bufferCache = new List<float>();
+            // буфер альфа блоков
+            List<BlockBuffer> alphas = new List<BlockBuffer>();
+            vec3i posPlayer = ClientWorld.ClientMain.Player.PositionAlphaBlock;
+            for (int y = 0; y < 16; y++)
+            {
+                for (int z = 0; z < 16; z++)
+                {
+                    for (int x = 0; x < 16; x++)
+                    {
+                        if (StorageArrays[chY].GetEBlock(x, y, z) == EnumBlock.Air) continue;
+                        int yBlock = chY << 4 | y;
+                        BlockBase block = GetBlock0(new vec3i(x, yBlock, z));
+                        if (block == null) continue;
+
+                        BlockRender blockRender = new BlockRender(this, block)
+                        {
+                            DamagedBlocksValue = GetDestroyBlocksValue(x, yBlock, z)
+                        };
+                        
+                        float[] buffer = blockRender.RenderMesh(true);
+                        if (buffer.Length > 0)
+                        {
+                            if (block.IsAlphe)
                             {
-                                DamagedBlocksValue = GetDestroyBlocksValue(x, yBlock, z)
-                            };
-                            bufferCache.AddRange(blockRender.RenderMesh(true));
+                                alphas.Add(new BlockBuffer(block.EBlock, new vec3i(x, y, z), buffer,
+                                    glm.distance(posPlayer, new vec3i(Position.x << 4 | x, yBlock, Position.y << 4 | z))
+                                ));
+                            }
+                            else
+                            {
+                                bufferCache.AddRange(buffer);
+                            }
                         }
                     }
                 }
-                MeshDense[chY].SetBuffer(bufferCache.ToArray());
-                bufferCache.Clear();
             }
+            countAlpha[chY] = alphas.Count;
+            meshAlpha[chY].SetBuffer(ToBufferAlphaY(alphas));
+            meshDense[chY].SetBuffer(bufferCache.ToArray());
+            bufferCache.Clear();
         }
 
         /// <summary>
-        /// Рендер чанка
+        /// Вернуть массив буфера альфа
         /// </summary>
-        //public void Render()
+        public float[] ToBufferAlphaY(List<BlockBuffer> alphas)
+        {
+            int count = alphas.Count;
+            if (count > 0)
+            {
+                alphas.Sort();
+                List<float> buffer = new List<float>();
+                for (int i = count - 1; i >= 0; i--)
+                {
+                    buffer.AddRange(alphas[i].Buffer());
+                }
+                return buffer.ToArray();
+            }
+            return new float[0];
+        }
+
+        /// <summary>
+        /// Прорисовка сплошных блоков псевдо чанка
+        /// </summary>
+        public void DrawDense(int y) => meshDense[y].Draw();
+        /// <summary>
+        /// Прорисовка альфа блоков псевдо чанка
+        /// </summary>
+        public void DrawAlpha(int y) => meshAlpha[y].Draw();
+
+        /// <summary>
+        /// Занести буфер сплошных блоков псевдо чанка если это требуется
+        /// </summary>
+        public bool BindBufferDense(int y) => meshDense[y].BindBuffer();
+        //// <summary>
+        /// Занести буфер альфа блоков псевдо чанка если это требуется
+        /// </summary>
+        public bool BindBufferAlpha(int y) => meshAlpha[y].BindBuffer();
+
+        /// <summary>
+        /// проверка есть ли альфа блоки во всём чанке
+        /// </summary>
+        //public bool IsAlpha()
         //{
-        //    bool isRender = false;
-        //    //IsModifiedToRender = false;
-        //    //TODO:: Надо вытягивать наивысший блок, чтоб не тратить ресурс на рендер воздуха
-        //    int yMax = 15; 
-        //    for (int i = 0; i <= yMax; i++)
+        //    for (int i = 0; i < COUNT_HEIGHT; i++)
         //    {
-        //        if (MeshDense[i].IsModifiedRender)
-        //        //if (!show[i] && MeshDense[i].IsModifiedRender)
-        //        //{
-        //        //    isRender = true;
-        //        //}
-        //        //else if (show[i] && MeshDense[i].IsModifiedRender)
-        //        {
-
-        //            int y0 = 0;// i * 16;
-        //            // буфер блоков
-        //            List<float> bufferCache = new List<float>();
-        //            for (int y = y0; y < y0 + 16; y++)
-        //            {
-        //                for (int z = 0; z < 16; z++)
-        //                {
-        //                    for (int x = 0; x < 16; x++)
-        //                    {
-                                 
-        //                        if (StorageArrays[i].GetEBlock(x, y, z) == EnumBlock.Air) continue;
-        //                        int yBlock = i << 4 | y;
-        //                        BlockBase block = GetBlock0(new vec3i(x, yBlock, z));
-        //                        if (block == null) continue;
-
-        //                        BlockRender blockRender = new BlockRender(this, block)
-        //                        {
-        //                            DamagedBlocksValue = GetDestroyBlocksValue(x, yBlock, z)
-        //                        };
-        //                        bufferCache.AddRange(blockRender.RenderMesh(true));
-        //                        //if (block.IsAlphe)
-        //                        //{
-        //                        //    if (buffer.Length > 0)
-        //                        //    {
-        //                        //        Chunk.StorageArrays[i].Buffer.Alphas.Add(new VoxelData()
-        //                        //        {
-        //                        //            Block = block,
-        //                        //            Buffer = buffer,
-        //                        //            Distance = camera.DistanceTo(
-        //                        //                new vec3(Chunk.X << 4 | x, y, Chunk.Z << 4 | z)
-        //                        //                )
-        //                        //        });
-        //                        //    }
-        //                        //}
-        //                        //else
-        //                        //{
-        //                        //    bufferCache.AddRange(buffer);
-        //                        //}
-        //                    }
-        //                }
-        //            }
-        //            MeshDense[i].SetBuffer(bufferCache.ToArray());
-        //            bufferCache.Clear();
-        //        }
+        //        if (countAlpha[i] > 0) return true;
         //    }
-
-        //    IsModifiedToRender = isRender;
+        //    return false;
         //}
 
-
-
-        public void Draw(int y) => MeshDense[y].Draw();
-
-        /// <summary>
-        /// Пустой ли буффер
-        /// </summary>
-        public bool IsBufferEmpty(int y) => MeshDense[y].IsEmpty();
-
-        /// <summary>
-        /// Занести буфер в рендер если это требуется
-        /// </summary>
-        public bool BindBuffer(int y) => MeshDense[y].BindBuffer();
+        #region DestroyBlock
 
         /// <summary>
         /// Занести разрушение блока
@@ -263,5 +260,40 @@ namespace MvkClient.Renderer.Chunk
             }
             return -1;
         }
+
+        #endregion
+
+        #region Status
+
+        /// <summary>
+        /// Статсус возможности для рендера сплошных блоков
+        /// </summary>
+        public bool IsMeshDenseWait(int y) => meshDense[y].Status == ChunkMesh.StatusMesh.Wait || meshDense[y].Status == ChunkMesh.StatusMesh.Null;
+        /// <summary>
+        /// Статсус возможности для рендера альфа блоков
+        /// </summary>
+        public bool IsMeshAlphaWait(int y) => meshAlpha[y].Status == ChunkMesh.StatusMesh.Wait || meshAlpha[y].Status == ChunkMesh.StatusMesh.Null;
+        /// <summary>
+        /// Статсус связывания сетки с OpenGL для рендера сплошных блоков
+        /// </summary>
+        public bool IsMeshDenseBinding(int y) => meshDense[y].Status == ChunkMesh.StatusMesh.Binding;
+        /// <summary>
+        /// Статсус связывания сетки с OpenGL для рендера альфа блоков
+        /// </summary>
+        public bool IsMeshAlphaBinding(int y) => meshAlpha[y].Status == ChunkMesh.StatusMesh.Binding;
+        /// <summary>
+        /// Статсус не пустой для рендера сплошных блоков
+        /// </summary>
+        public bool NotNullMeshDense(int y) => meshDense[y].Status != ChunkMesh.StatusMesh.Null;
+        /// <summary>
+        /// Статсус не пустой для рендера альфа блоков
+        /// </summary>
+        public bool NotNullMeshAlpha(int y) => meshAlpha[y].Status != ChunkMesh.StatusMesh.Null;
+        /// <summary>
+        /// Изменить статус на отмена рендеринга альфа блоков
+        /// </summary>
+        public void NotRenderingAlpha(int y) => meshAlpha[y].NotRendering();
+
+        #endregion
     }
 }

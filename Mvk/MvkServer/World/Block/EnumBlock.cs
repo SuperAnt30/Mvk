@@ -28,7 +28,19 @@
         /// <summary>
         /// Дёрн
         /// </summary>
-        Turf = 4
+        Turf = 4,
+        /// <summary>
+        /// Вода
+        /// </summary>
+        Water = 5,
+        /// <summary>
+        /// Стекло
+        /// </summary>
+        Glass = 6,
+        /// <summary>
+        /// Стекло красное
+        /// </summary>
+        GlassRed = 7
     }
 
     /// <summary>
@@ -36,6 +48,6 @@
     /// </summary>
     public class BlocksCount
     {
-        public const int COUNT = 4;
+        public const int COUNT = 7;
     }
 }

@@ -82,7 +82,7 @@ namespace MvkServer.Network
             Encoding stringEncoding = Encoding.BigEndianUnicode;
             short length = ReadShort();
             if (length == 0) return string.Empty;
-            // TODO::попробовать! было ранее другая методика ReadArray
+            // попробовать! было ранее другая методика ReadArray
             var data = ReadBytes(length * 2);// ReadArray(length * 2);
             return stringEncoding.GetString(data);
         }

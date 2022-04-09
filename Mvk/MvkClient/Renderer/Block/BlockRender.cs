@@ -30,27 +30,39 @@ namespace MvkClient.Renderer.Block
         /// <summary>
         /// позиция блока в чанке
         /// </summary>
-        protected vec3i posChunk;
+        private vec3i posChunk;
         /// <summary>
         /// кэш коробка
         /// </summary>
-        protected Box cBox;
+        private Box cBox;
         /// <summary>
         /// кэш сторона блока
         /// </summary>
-        protected Face cFace;
+        private Face cFace;
         /// <summary>
         /// кэш Направление
         /// </summary>
-        protected Pole cSide;
+        private Pole cSide;
+        /// <summary>
+        /// Объект создан для генерации блока в мире, не GUI
+        /// </summary>
+        private readonly bool isWorld = false;
 
-        public BlockRender(ChunkRender chunkRender, BlockBase block)
+        /// <summary>
+        /// Создание блока генерации для мира
+        /// </summary>
+        public BlockRender(ChunkRender chunkRender, BlockBase block) : this(block)
         {
+            isWorld = true;
             Chunk = chunkRender;
-            Block = block;
             // позиция блока в чанке
             posChunk = new vec3i(Block.Position.X & 15, Block.Position.Y, Block.Position.Z & 15);
         }
+
+        /// <summary>
+        /// Создание блока генерации для GUI
+        /// </summary>
+        public BlockRender(BlockBase block) => Block = block;
 
 
         /// <summary>
@@ -91,22 +103,28 @@ namespace MvkClient.Renderer.Block
         /// <summary>
         /// Получть Сетку стороны блока с проверкой соседнего блока и разрушения его
         /// </summary>
-        protected void RenderMeshSideCheck(List<float> buffer)
+        private void RenderMeshSideCheck(List<float> buffer)
         {
-            EnumBlock enumBlock = GetEBlock(posChunk + EnumFacing.DirectionVec(cSide));
-            //_br = BlockedLight(posChunk + EnumFacing.DirectionVec(side));
-            //   if (Blk.AllDrawing || _br.IsDraw)
-            if (enumBlock == EnumBlock.Air || Block.AllDrawing || enumBlock == EnumBlock.Cobblestone)
+            if (isWorld)
+            {
+                ResultSide resultSide = GetResultSide(cSide);
+
+                if (resultSide.IsEmpty() || resultSide.IsDraw())
+                {
+                    buffer.AddRange(RenderMeshFace());
+                    if (DamagedBlocksValue != -1)
+                    {
+                        Face face = cFace;
+                        cFace = new Face(cSide, 4032 + DamagedBlocksValue, true, cFace.GetColor());
+                        buffer.AddRange(RenderMeshFace());
+                        cFace = face;
+                    }
+
+                }
+            }
+            else
             {
                 buffer.AddRange(RenderMeshFace());
-                if (DamagedBlocksValue != -1)
-                {
-                    Face face = cFace;
-                    cFace = new Face(cSide, 4032 + DamagedBlocksValue, true, cFace.GetColor());
-                    buffer.AddRange(RenderMeshFace());
-                    cFace = face;
-                }
-
             }
         }
 
@@ -134,7 +152,7 @@ namespace MvkClient.Renderer.Block
         /// <param name="box">объект коробки</param>
         /// <param name="lightValue">яркость дневного соседнего блока</param>
         /// <returns></returns>
-        protected float[] RenderMeshFace()
+        private float[] RenderMeshFace()
         {
             vec4 uv = GetUV();
             vec4 color = cFace.GetIsColor() ? new vec4(cFace.GetColor(), 1f) : new vec4(1f);
@@ -166,7 +184,7 @@ namespace MvkClient.Renderer.Block
         /// <summary>
         /// Затемнение стороны от стороны блока
         /// </summary>
-        protected float LightPole()
+        private float LightPole()
         {
             switch (cSide)
             {
@@ -177,31 +195,6 @@ namespace MvkClient.Renderer.Block
                 case Pole.North: return 0.85f;
             }
             return 0.6f;
-        }
-
-
-        /// <summary>
-        /// Поиск тип блока
-        /// </summary>
-        public EnumBlock GetEBlock(vec3i pos)
-        {
-            if (pos.y < 0 || pos.y > 255) return EnumBlock.Air;
-
-            int xc = Chunk.Position.x + (pos.x >> 4);
-            int zc = Chunk.Position.y + (pos.z >> 4);
-            int xv = pos.x & 15;
-            int zv = pos.z & 15;
-
-            if (xc == Chunk.Position.x && zc == Chunk.Position.y)
-            {
-                // Соседний блок в этом чанке
-                return Chunk.GetEBlock(new vec3i(xv, pos.y, zv));
-            }
-            // Соседний блок в соседнем чанке
-            ChunkBase chunk = Chunk.World.ChunkPr.GetChunk(new vec2i(xc, zc));
-            if (chunk != null) return chunk.GetEBlock(new vec3i(xv, pos.y, zv));
-
-            return EnumBlock.Air;
         }
 
         /// <summary>
@@ -223,6 +216,108 @@ namespace MvkClient.Renderer.Block
                 GLRender.End();
             }
             GLRender.PopMatrix();
+        }
+
+
+        /// <summary>
+        /// Получить результат стороны с соседним блоком
+        /// </summary>
+        /// <param name="side">сторона соседнего блока</param>
+        private ResultSide GetResultSide(Pole side)
+        {
+            vec3i pos = posChunk + EnumFacing.DirectionVec(side);
+            int yc = pos.y >> 4;
+            // проверка высоты
+            if (yc < 0 || yc >= ChunkBase.COUNT_HEIGHT) return new ResultSide();
+
+            int xc = Chunk.Position.x + (pos.x >> 4);
+            int zc = Chunk.Position.y + (pos.z >> 4);
+            int xv = pos.x & 15;
+            int yv = pos.y & 15;
+            int zv = pos.z & 15;
+
+            // Определяем рабочий чанк соседнего блока
+            ChunkBase chunk = (xc == Chunk.Position.x && zc == Chunk.Position.y) ? Chunk
+                : Chunk.World.ChunkPr.GetChunk(new vec2i(xc, zc));
+
+            if (chunk == null) return new ResultSide();
+
+            EnumBlock eBlock = chunk.StorageArrays[yc].GetEBlock(xv, yv, zv);
+            BlockBase block = Blocks.GetBlockCache(eBlock);
+
+            bool isDraw = eBlock == EnumBlock.Air || !block.IsNotTransparent();
+
+            // Для слияния однотипных блоков
+            if (isDraw && (eBlock == Block.EBlock /*|| (Block.IsWater && Blocks.IsWater(eBlock)*/))
+            {
+                isDraw = false;
+            }
+
+            if (!isDraw && Block.AllDrawing) isDraw = true;
+
+            return new ResultSide(
+                isDraw,
+                chunk.StorageArrays[yc].GetLightFor(xv, yv, zv, EnumSkyBlock.Sky),
+                chunk.StorageArrays[yc].GetLightFor(xv, yv, zv, EnumSkyBlock.Block),
+                chunk.StorageArrays[yc].GetLightsFor(xv, yv, zv),
+                block
+            );
+        }
+
+        /// <summary>
+        /// Результат стороны блока
+        /// </summary>
+        private struct ResultSide
+        {
+            private readonly bool isDraw;
+            private readonly byte lightSky;
+            private readonly byte lightBlock;
+            private readonly byte light;
+            private readonly BlockBase block;
+            private readonly bool body;
+
+            /// <summary>
+            /// Результат стороны блока
+            /// </summary>
+            /// <param name="isDraw">Прорисовывать ли сторону</param>
+            /// <param name="lightSky">Яркость света от блока</param>
+            /// <param name="lightBlock">Яркость света от блока</param>
+            /// <param name="light">Общаяя яркость света неба и блока в одном байте</param>
+            /// <param name="blockCache">блок кэша для параметров</param>
+            public ResultSide(bool isDraw, byte lightSky, byte lightBlock, byte light, BlockBase blockCache)
+            {
+                this.isDraw = isDraw;
+                this.lightSky = lightSky;
+                this.lightBlock = lightBlock;
+                this.light = light;
+                block = blockCache;
+                body = true;
+            }
+
+            /// <summary>
+            /// Прорисовывать ли сторону
+            /// </summary>
+            public bool IsDraw() => isDraw;
+            /// <summary>
+            /// Яркость света неба
+            /// </summary>
+            public byte LightSky() => lightSky;
+            /// <summary>
+            /// Яркость света от блока
+            /// </summary>
+            public byte LightBlock() => lightBlock;
+            /// <summary>
+            /// Общаяя яркость света неба и блока в одном байте
+            /// </summary>
+            public byte Light() => light;
+            /// <summary>
+            /// Блок кэша
+            /// </summary>
+            public BlockBase BlockCache() => block;
+            /// <summary>
+            /// Пустой ли объект
+            /// </summary>
+            public bool IsEmpty() => !body;
         }
     }
 }

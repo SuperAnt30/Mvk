@@ -116,7 +116,7 @@ namespace MvkServer.Management
             // Лог запуска игрока
             World.ServerMain.Log.Log("server.player.entry {0} [{1}]", entityPlayer.GetName(), entityPlayer.UUID);
 
-            // TODO::Тут проверяем место положение персонажа, и заносим при запуске
+            
             SpawnPositionTest(entityPlayer);
             entityPlayer.SetChunkPosManaged(entityPlayer.GetChunkPos());
             //entityPlayer.SetOverviewChunk(entityPlayer.OverviewChunk, 1);
@@ -129,6 +129,7 @@ namespace MvkServer.Management
             GetPlayerInstance(entityPlayer.PositionChunk, true).AddPlayer(entityPlayer, true);
 
             entityPlayer.FlagSpawn = true;
+            // Тут проверяем место положение персонажа, и заносим при запуске
             World.SpawnEntityInWorld(entityPlayer);
             // entityPlayer.FlagSpawn = false;
 
@@ -356,7 +357,7 @@ namespace MvkServer.Management
         /// </summary>
         private void ResponsePacketJoinGame(EntityPlayerServer player)
         {
-            player.SendPacket(new PacketS02JoinGame(player.Id, player.UUID));
+            player.SendPacket(new PacketS02JoinGame(player.Id, player.UUID, player.IsCreativeMode));
             player.SendPacket(new PacketS08PlayerPosLook(player.Position, player.RotationYawHead, player.RotationPitch));
             player.SendPacket(new PacketS03TimeUpdate(World.ServerMain.TickCounter));
             player.SendUpdateInventory();
@@ -809,7 +810,7 @@ namespace MvkServer.Management
                 for (int i = 0; i < players.Count; i++)
                 {
                     EntityPlayerServer entity = players[i];
-                    strPlayers += entity.GetName() + " [p" + entity.Ping + "|" + (entity.IsDead ? "Dead" : ("h" + entity.Health)) + (entity.IsSprinting ? "S" : "-") + "]";
+                    strPlayers += entity.GetName() + " [p" + entity.Ping + "|" + (entity.IsDead ? "Dead" : ("h" + entity.Health)) + (entity.IsSprinting() ? "S" : "-") + "]";
                 }
             }
             return strPlayers;

@@ -47,9 +47,12 @@ namespace MvkClient.Actions
                 stopwatch.Restart();
                 if (ms < 300 && key == keyPrev)
                 {
-                    //TODO:: дабл клик пробела
-                    //if (ClientMain.Player.IsFlying) ClientMain.Player.ModeSurvival();
-                    //else if (!ClientMain.Player.IsSneaking) ClientMain.Player.ModeFly();
+                    if (ClientMain.Player.IsCreativeMode)
+                    {
+                        // Только креатив может летать, покуда
+                        if (ClientMain.Player.IsFlying) ClientMain.Player.ModeSurvival();
+                        else if (!ClientMain.Player.IsSneaking()) ClientMain.Player.ModeFly();
+                    }
                 }
             }
             keyPrev = key;
@@ -61,6 +64,8 @@ namespace MvkClient.Actions
             else if (key == 114) keyF3 = true; // F3
             else if (key == 27 || key == 18) World.ClientMain.Screen.InGameMenu(); // Esc или Alt
             else if (key == 116) ClientMain.Player.ViewCameraNext(); // F5
+            else if (key == 118) Debug.IsDrawFrustumCulling = !Debug.IsDrawFrustumCulling; // F7
+            else if (key == 119) Debug.IsDrawVoxelLine = !Debug.IsDrawVoxelLine; // F8
             else if (key == 75) ClientMain.Player.Kill(); // K
             //else if (key == 117) // F6
             else ClientMain.Player.InputAdd(KeyActionToInput(key));

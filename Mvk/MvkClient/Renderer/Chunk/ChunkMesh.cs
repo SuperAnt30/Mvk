@@ -13,7 +13,7 @@
         /// <summary>
         /// Пометка изменения
         /// </summary>
-        public bool IsModifiedRender { get; protected set; } = true;
+        public bool IsModifiedRender { get; private set; } = true;
         /// <summary>
         /// Пометка псевдо чанка для рендера
         /// </summary>
@@ -22,6 +22,23 @@
         /// Массив буфера сетки
         /// </summary>
         public float[] Buffer { get; protected set; }
+        /// <summary>
+        /// Статус обработки сетки
+        /// </summary>
+        public StatusMesh Status { get; private set; } = StatusMesh.Null;
+
+        /// <summary>
+        /// Изменить статус на рендеринг
+        /// </summary>
+        public void StatusRendering()
+        {
+            IsModifiedRender = false;
+            Status = StatusMesh.Rendering;
+        }
+        /// <summary>
+        /// Изменить статус отменить рендеринг
+        /// </summary>
+        public void NotRendering() => IsModifiedRender = false;
 
         /// <summary>
         /// Удалить
@@ -29,6 +46,7 @@
         public override void Delete()
         {
             base.Delete();
+            Status = StatusMesh.Null;
             Buffer = null;
         }
 
@@ -38,7 +56,7 @@
         public void SetBuffer(float[] buffer)
         {
             Buffer = buffer;
-            IsModifiedRender = false;
+            Status = StatusMesh.Binding;
         }
 
         /// <summary>
@@ -46,13 +64,37 @@
         /// </summary>
         public bool BindBuffer()
         {
-            if (Buffer != null)
+            if (Buffer != null)// && !IsRendering && IsBinding)
             {
                 BindBuffer(Buffer);
                 Buffer = null;
+                Status = StatusMesh.Wait;
                 return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// Статус обработки сетки
+        /// </summary>
+        public enum StatusMesh
+        {
+            /// <summary>
+            /// Пустой
+            /// </summary>
+            Null,
+            /// <summary>
+            /// Ждём
+            /// </summary>
+            Wait,
+            /// <summary>
+            /// Процесс рендеринга
+            /// </summary>
+            Rendering,
+            /// <summary>
+            /// Процесс связывания сетки с OpenGL
+            /// </summary>
+            Binding
         }
     }
 }

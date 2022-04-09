@@ -35,6 +35,7 @@
   <ItemGroup>
     <Compile Include="Entity\EntityBase.cs" />
     <Compile Include="Entity\EntityLook.cs" />
+    <Compile Include="Entity\DataWatcher.cs" />
     <Compile Include="Entity\EntityTracker.cs" />
     <Compile Include="Entity\EntityTrackerEntry.cs" />
     <Compile Include="Entity\EnumActionChanged.cs" />
@@ -72,6 +73,7 @@
     <Compile Include="Network\Packets\Server\PacketS00Pong.cs" />
     <Compile Include="Network\Packets\Client\PacketC00Ping.cs" />
     <Compile Include="Network\Packets\Client\PacketC16ClientStatus.cs" />
+    <Compile Include="Network\Packets\Server\PacketS1CEntityMetadata.cs" />
     <Compile Include="Network\Packets\Server\PacketS2FSetSlot.cs" />
     <Compile Include="Network\Packets\Server\PacketS04EntityEquipment.cs" />
     <Compile Include="Network\Packets\Server\PacketS07Respawn.cs" />
@@ -130,6 +132,9 @@
     <Compile Include="World\Block\Face.cs" />
     <Compile Include="World\Block\List\BlockAir.cs" />
     <Compile Include="World\Block\List\BlockCobblestone.cs" />
+    <Compile Include="World\Block\List\BlockWater.cs" />
+    <Compile Include="World\Block\List\BlockGlassRed.cs" />
+    <Compile Include="World\Block\List\BlockGlass.cs" />
     <Compile Include="World\Block\List\BlockDirt.cs" />
     <Compile Include="World\Block\List\BlockTurf.cs" />
     <Compile Include="World\Block\List\BlockStone.cs" />

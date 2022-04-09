@@ -101,6 +101,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Renderer\Block\BlockFaceUV.cs" />
     <Compile Include="Renderer\Block\BlockRender.cs" />
+    <Compile Include="Renderer\Block\BlockBuffer.cs" />
     <Compile Include="Renderer\Chunk\ChunkBuffer.cs" />
     <Compile Include="Renderer\Chunk\ChunkMesh.cs" />
     <Compile Include="Renderer\Chunk\ChunkRender.cs" />

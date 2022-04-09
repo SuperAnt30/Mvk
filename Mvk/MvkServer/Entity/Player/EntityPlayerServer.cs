@@ -47,6 +47,11 @@ namespace MvkServer.Entity.Player
         /// ItemInWorldManager, принадлежащий этому игроку
         /// </summary>
         public ItemInWorldManager TheItemInWorldManager { get; private set; }
+        /// <summary>
+        /// Флаг для загрузки всех ближайших сущностей в трекере
+        /// 0 - старт, 1 - загрузка, 2 - далее, нет загрузки
+        /// </summary>
+        public byte TrackerBeginFlag { get; private set; } = 0;
 
         private Profiler profiler;
 
@@ -74,6 +79,7 @@ namespace MvkServer.Entity.Player
             base.name = name;
             UUID = GetHash(name);
             profiler = new Profiler(server.Log);
+            IsCreativeMode = world.IsCreativeMode;
             TheItemInWorldManager = new ItemInWorldManager(world, this);
         }
 
@@ -87,8 +93,12 @@ namespace MvkServer.Entity.Player
         /// </summary>
         public void SetSneakingSprinting(bool sneaking, bool sprinting)
         {
-            IsSneaking = sneaking;
-            IsSprinting = sprinting;
+            if (IsSneaking() != sneaking)
+            {
+                SetSneaking(sneaking);
+                if (sneaking) Sitting(); else Standing();
+            }
+            SetSprinting(sprinting);
             ActionAdd(EnumActionChanged.IsSneaking);
             ActionAdd(EnumActionChanged.IsSprinting);
         }
@@ -118,6 +128,8 @@ namespace MvkServer.Entity.Player
         /// </summary>
         public override void Update()
         {
+            if (TrackerBeginFlag < 2) TrackerBeginFlag++;
+
             // Tут base.Update не надо, так-как это обрабатывается на клиенте, 
             // тут отправление перемещение игрокам если оно надо
             TheItemInWorldManager.UpdateBlock();
@@ -167,7 +179,7 @@ namespace MvkServer.Entity.Player
                 pingChunk--;
 
                 List<vec2i> loadedNull = new List<vec2i>();
-                // TODO::2022-02-08 протестировать корректность загрузки чанков по пингу, именно по сети!
+                // 2022-02-08 протестировать корректность загрузки чанков по пингу, именно по сети!
                 while (LoadedChunks.Count > 0 && i < MvkGlobal.COUNT_PACKET_CHUNK_TPS && pingChunk <= 0)
                 {
                     profiler.StartSection("LoadChunk");
@@ -185,7 +197,7 @@ namespace MvkServer.Entity.Player
                         SendPacket(packet);
 
                         i++;
-                        // TODO:: Нужен алгорит загрузки чанков по пингу
+                        // Нужен алгорит загрузки чанков по пингу
                         pingChunk = Ping > 50 ? 10 : 0;
                     } else
                     {

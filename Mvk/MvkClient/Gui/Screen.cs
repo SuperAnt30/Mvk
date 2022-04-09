@@ -178,9 +178,7 @@ namespace MvkClient.Gui
                 int h = Width < 1500 ? Width / 8 : 256;
                 GLRender.Rectangle(0, 0, w, h, 0f, 0.5f, 1f, 0.75f);
                 GLWindow.Texture.BindTexture(AssetsTexture.Font8);
-                Version ver = Assembly.GetExecutingAssembly().GetName().Version;
-                //Version = string.Format("{0}.{1}.{2}", ver.Major, ver.Minor, ver.Build);
-                string text = "МаЛЮВеКi " + ver.ToString();
+                string text = ClientMain.NameVersion;
                 vec4 colorB = new vec4(0.2f, 0.2f, 0.2f, 1f);
                 vec4 color = new vec4(1.0f, 1.0f, 1.0f, 1f);
                 FontRenderer.RenderString(11, Height - 19, colorB, text, FontSize.Font8);

@@ -1,4 +1,5 @@
-﻿using MvkServer.Entity.Player;
+﻿using MvkServer.Entity.Item;
+using MvkServer.Entity.Player;
 using MvkServer.Network;
 using MvkServer.World;
 using System;
@@ -35,8 +36,8 @@ namespace MvkServer.Entity
         {
             if (entity is EntityPlayerServer)
             {
-                AddEntityToTracker(entity, 64, 2, false);
-                
+                AddEntityToTracker(entity, 128, 2, false);
+
                 for (int i = 0; i < trackedEntities.Count; i++)
                 {
                     EntityTrackerEntry trackerEntry = trackedEntities.GetAt(i);
@@ -46,12 +47,13 @@ namespace MvkServer.Entity
                     }
                 }
             }
+            else if (entity is EntityItem)
+            {
+                AddEntityToTracker(entity, 32, 20, true); // item
+            }
             else
             {
                 AddEntityToTracker(entity, 64, 10, false);
-
-
-                //AddEntityToTracker(entity, 64, 20, true); // item
             }
         }
 
@@ -76,10 +78,8 @@ namespace MvkServer.Entity
                     World.Log.Log("EntityTracker: Сущность уже отслеживается!");
                     return;
                 }
-
                 EntityTrackerEntry trackerEntry = new EntityTrackerEntry(entity, trackingRange, updateFrequency, sendVelocityUpdates);
                 trackedEntities.Add(trackerEntry);
-                trackerEntry.UpdatePlayerEntities(World.PlayerEntities);
             }
             catch (Exception ex)
             {

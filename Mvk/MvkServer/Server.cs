@@ -458,7 +458,6 @@ namespace MvkServer
         /// </summary>
         protected string ToStringDebugTps()
         {
-            //TODO:: дебаг для сервера
             // Среднее время выполнения 4 тактов, должно быть меньше 50
             float averageTime = Mth.Average(tickTimeArray) / frequencyMs;
             // TPS за последние 4 тактов (1/5 сек), должен быть 20

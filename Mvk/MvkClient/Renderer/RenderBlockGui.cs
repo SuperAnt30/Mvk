@@ -42,8 +42,7 @@ namespace MvkClient.Renderer
                 IsHidden = true;
                 return;
             }
-
-            BlockRender blockRender = new BlockRender(null, Blocks.GetBlock(enumBlock));
+            BlockRender blockRender = new BlockRender(Blocks.GetBlockCache(enumBlock));
 
             GLRender.Texture2DEnable();
             TextureStruct ts = GLWindow.Texture.GetData(AssetsTexture.Atlas);

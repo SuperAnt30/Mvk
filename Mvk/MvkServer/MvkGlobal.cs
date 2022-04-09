@@ -37,9 +37,9 @@
         public const int COUNT_PACKET_CHUNK_TPS = 10;
 
         /// <summary>
-        /// Cколько чанков рендерим в один кадр
+        /// Cколько псевдочанков рендерим в один кадр
         /// </summary>
-        public const int COUNT_RENDER_CHUNK_FRAME = 50; // было 5 целых чанков, теперь псевдо чанки;
+        public const int COUNT_RENDER_CHUNK_FRAME = 16; // было 5 целых чанков, теперь псевдо чанки; потом 50
 
         /// <summary>
         /// Эффект покачивания при движении
@@ -50,5 +50,13 @@
         /// На каком растоянии от глаз, камера при виде сзади или спереди
         /// </summary>
         public const float CAMERA_DIST = 8f;// 12f;
+        /// <summary>
+        /// Расстояние для блоков
+        /// </summary>
+        public const float RAY_CAST_DISTANCE = 6f;
+        /// <summary>
+        /// Какой радиус для рендера псевдо чанков альфа блоков, при смещении больше 16 блоков
+        /// </summary>
+        public const int UPDATE_ALPHE_CHUNK = 4;
     }
 }

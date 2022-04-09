@@ -12,6 +12,7 @@ using MvkServer.Network.Packets;
 using MvkServer.Network.Packets.Client;
 using MvkServer.Network.Packets.Server;
 using MvkServer.World.Block;
+using System.Collections;
 using System.Threading.Tasks;
 
 namespace MvkClient.Network
@@ -63,6 +64,7 @@ namespace MvkClient.Network
                         case 0x13: Handle13DestroyEntities((PacketS13DestroyEntities)packet); break;
                         case 0x14: Handle14EntityMotion((PacketS14EntityMotion)packet); break;
                         case 0x19: Handle19EntityStatus((PacketS19EntityStatus)packet); break;
+                        case 0x1C: Handle1CEntityMetadata((PacketS1CEntityMetadata)packet); break;
                         case 0x21: Packet21((PacketS21ChunkData)packet); break;
                         case 0x23: Handle23BlockChange((PacketS23BlockChange)packet); break;
                         case 0x25: Handle25BlockBreakAnim((PacketS25BlockBreakAnim)packet); break;
@@ -91,7 +93,7 @@ namespace MvkClient.Network
         /// </summary>
         private void Handle02JoinGame(PacketS02JoinGame packet)
         {
-            ClientMain.Player.SetDataPlayer(packet.GetId(), packet.GetUuid(), ToNikname());
+            ClientMain.Player.SetDataPlayer(packet.GetId(), packet.GetUuid(), packet.IsCreativeMode(), ToNikname());
             ClientMain.GameModeBegin();
             // отправляем настройки
             ClientMain.TrancivePacket(new PacketC15ClientSetting(Setting.OverviewChunk));
@@ -173,9 +175,14 @@ namespace MvkClient.Network
             // Удачный вход сетевого игрока, типа приветствие
             // Или после смерти
             EntityPlayerMP entity = new EntityPlayerMP(ClientMain.World);
-            entity.SetDataPlayer(packet.GetId(), packet.GetUuid(), packet.GetName());
+            entity.SetDataPlayer(packet.GetId(), packet.GetUuid(), false, packet.GetName());
             entity.SetPosLook(packet.GetPos(), packet.GetYaw(), packet.GetPitch());
             entity.Inventory.SetCurrentItemAndArmor(packet.GetStacks());
+            ArrayList list = packet.GetList();
+            if (list != null && list.Count > 0)
+            {
+                entity.MetaData.UpdateWatchedObjectsFromList(list);
+            }
 
             //entity.FlagSpawn = true;
             //ClientMain.World.SpawnEntityInWorld(entity);
@@ -200,7 +207,7 @@ namespace MvkClient.Network
                 if (entity == null) entity = ClientMain.Player;
 
                 ClientMain.Sample.PlaySound(AssetsSample.Click, .2f);
-                // TODO:: надо как-то вынести в игровой поток, а то ошибка вылетает
+                // HACK::2022-04-04 надо как-то вынести в игровой поток, а то ошибка вылетает
                 ClientMain.World.RemoveEntityFromWorld(packet.GetItemId());
             }
         }
@@ -213,15 +220,20 @@ namespace MvkClient.Network
             ItemBase item = null;
             if (packet.IsBlock())
             {
-                item = new ItemBlock(Blocks.GetBlock((EnumBlock)packet.GetItemId()));
+                item = new ItemBlock(Blocks.GetBlockCache((EnumBlock)packet.GetItemId()));
             }
 
             if (item != null)
             {
-                ItemStack stack = new ItemStack(item, packet.GetAmount(), 5);
+                ItemStack stack = new ItemStack(item);
                 EntityItem entity = new EntityItem(ClientMain.World, packet.GetPos(), stack);
                 entity.SetEntityId(packet.GetEntityId());
                 entity.SetPosSpawn(packet.GetPos());
+                ArrayList list = packet.GetList();
+                if (list != null && list.Count > 0)
+                {
+                    entity.MetaData.UpdateWatchedObjectsFromList(list);
+                }
                 ClientMain.World.AddEntityToWorld(entity.Id, entity);
             }
             //ItemStack stack = new ItemStack(ClientMain.World.GetBlock(new vec3i(packet.GetPos())));
@@ -238,9 +250,15 @@ namespace MvkClient.Network
         {
             if (packet.GetEnum() == EnumEntities.Chicken)
             {
-                EntityLiving entity = new EntityChicken(ClientMain.World);
+                EntityChicken entity = new EntityChicken(ClientMain.World);
                 entity.SetEntityId(packet.GetId());
                 entity.SetPosLook(packet.GetPos(), packet.GetYaw(), packet.GetPitch());
+                ArrayList list = packet.GetList();
+                if (list != null && list.Count > 0)
+                {
+                    entity.MetaData.UpdateWatchedObjectsFromList(list);
+                }
+                //entity.Test();
                 ClientMain.World.AddEntityToWorld(entity.Id, entity);
             }
             //else if (packet.GetEnum() == EnumEntities.Item)
@@ -297,7 +315,7 @@ namespace MvkClient.Network
                 {
                     entityLiving.SetMotionServer(
                         packet.GetPos(), packet.GetYaw(), packet.GetPitch(),
-                        packet.IsSneaking(), packet.OnGround(), packet.IsSprinting());
+                        packet.OnGround());
                 }
                 else if (entity is EntityItem entityItem)
                 {
@@ -305,7 +323,6 @@ namespace MvkClient.Network
                 }
             }
         }
-
 
         /// <summary>
         /// Пакет статуса сущности, умирает, урон и прочее
@@ -320,6 +337,36 @@ namespace MvkClient.Network
                     case PacketS19EntityStatus.EnumStatus.Die: entity.SetHealth(0); break;
                 }
             }
+        }
+
+        /// <summary>
+        /// Пакет дополнительных данных сущности
+        /// </summary>
+        private void Handle1CEntityMetadata(PacketS1CEntityMetadata packet)
+        {
+            EntityBase entity = ClientMain.World.GetEntityByID(packet.GetId());
+            ArrayList list = packet.GetList();
+            if (entity != null && list != null && list.Count > 0)
+            {
+                entity.MetaData.UpdateWatchedObjectsFromList(list);
+            }
+
+            //PacketS1CEntityMetadata.EnumData data = packet.GetEnumData();
+            //if (data == PacketS1CEntityMetadata.EnumData.Amount)
+            //{
+            //    EntityBase entity = ClientMain.World.GetEntityByID(packet.GetId());
+            //    if (entity != null && entity is EntityItem entityItem)
+            //    {
+            //        entityItem.Stack.SetAmount(packet.GetAmount());
+            //    }
+            //} else if (data == PacketS1CEntityMetadata.EnumData.SneakingSprinting)
+            //{
+            //    EntityLiving entityLiving = ClientMain.World.GetEntityLivingByID(packet.GetId());
+            //    if (entityLiving != null)
+            //    {
+            //        entityLiving.SetSneakingSprinting(packet.IsSneaking(), packet.IsSprinting());
+            //    }
+            //}
         }
 
         private void Handle23BlockChange(PacketS23BlockChange packet)

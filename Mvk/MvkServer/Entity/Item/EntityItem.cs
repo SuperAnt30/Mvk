@@ -14,10 +14,6 @@ namespace MvkServer.Entity.Item
     public class EntityItem : EntityBase
     {
         /// <summary>
-        /// Объект стака предметов
-        /// </summary>
-        public ItemStack Stack { get; private set; }
-        /// <summary>
         /// Возраст (используется для его анимации вверх и вниз, а также для истечения срока его действия) 
         /// </summary>
         public int Age { get; private set; }
@@ -54,7 +50,6 @@ namespace MvkServer.Entity.Item
         {
             SetSize(.25f, .5f);
             Type = EnumEntities.Item;
-            Stack = new ItemStack(Blocks.GetBlock(EnumBlock.Dirt));
         }
 
         public EntityItem(WorldBase world, vec3 pos) : this(world)
@@ -65,12 +60,14 @@ namespace MvkServer.Entity.Item
             Motion = new vec3((float)World.Rand.NextDouble() * .2f - .1f, .2f, (float)World.Rand.NextDouble() * .2f - .1f);
         }
 
-        public EntityItem(WorldBase world, vec3 pos, ItemStack stack) : this(world, pos) => Stack = stack;
+        public EntityItem(WorldBase world, vec3 pos, ItemStack stack) : this(world, pos) => SetEntityItemStack(stack);
+
+        protected override void AddMetaData() => MetaData.AddByDataType(10, 5);
 
         /// <summary>
         /// Получить название для рендеринга
         /// </summary>
-        public override string GetName() => "item." + Stack.ToString();
+        public override string GetName() => "item." + GetEntityItemStack().ToString();
 
         public void SetPosSpawn(vec3 pos)
         {
@@ -90,7 +87,7 @@ namespace MvkServer.Entity.Item
 
         public override void Update()
         {
-            if (Stack == null || Position.y < -16)
+            if (GetEntityItemStack() == null || Position.y < -16)
             {
                 SetDead();
             }
@@ -177,8 +174,8 @@ namespace MvkServer.Entity.Item
             if (other == this) return false;
             else if (!other.IsDead && !IsDead)
             {
-                ItemStack stack = Stack;
-                ItemStack stackOther = other.Stack;
+                ItemStack stack = GetEntityItemStack();
+                ItemStack stackOther = other.GetEntityItemStack();
 
                 if (delayBeforeCanPickup != 32767 && other.delayBeforeCanPickup != 32767
                     && Age != -32768 && other.Age != -32768)
@@ -193,7 +190,7 @@ namespace MvkServer.Entity.Item
                             stackOther.AddAmount(stack.Amount);
                             other.delayBeforeCanPickup = Mth.Max(other.delayBeforeCanPickup, delayBeforeCanPickup);
                             other.Age = Mth.Min(other.Age, Age);
-                            //other.SetEntityItemStack(stackOther);
+                            other.SetEntityItemStack(stackOther);
                             SetDead();
                             return true;
                         }
@@ -204,11 +201,40 @@ namespace MvkServer.Entity.Item
         }
 
         /// <summary>
+        /// Возвращает ItemStack, соответствующий Entity 
+        /// (Примечание: если предмет не существует, регистрируется ошибка, 
+        /// но все равно возвращается ItemStack, содержащий Block.stone)
+        /// </summary>
+        public ItemStack GetEntityItemStack()
+        {
+            ItemStack itemStack = MetaData.GetWatchableObjectItemStack(10);
+
+            if (itemStack == null)
+            {
+                if (World != null && World is WorldServer worldServer)
+                {
+                    worldServer.Log.Log("Item entity " + Id + " has no item?!");
+                }
+                return new ItemStack(Blocks.GetBlockCache(EnumBlock.Stone));
+            }
+            return itemStack;
+        }
+
+        /// <summary>
+        /// Заменить данные по стаку в сущности
+        /// </summary>
+        private void SetEntityItemStack(ItemStack itemStack)
+        {
+            MetaData.UpdateObject(10, itemStack);
+            MetaData.SetObjectWatched(10);
+        }
+
+        /// <summary>
         /// Вызывается сущностью игрока при столкновении с сущностью 
         /// </summary>
         public void OnCollideWithPlayer(EntityPlayer entityIn)
         {
-            ItemStack var2 = Stack;
+            ItemStack var2 = GetEntityItemStack();
             int var3 = var2.Amount;
 
             // добавляем стак в инвентарь, и отминусовываем с валяющего

@@ -20,6 +20,10 @@ namespace MvkServer.World.Block
         /// </summary>
         public bool AllDrawing { get; protected set; } = false;
         /// <summary>
+        /// Альфа блок, вода, стекло...
+        /// </summary>
+        public bool IsAlphe { get; protected set; } = false;
+        /// <summary>
         /// Получить тип блока
         /// </summary>
         public EnumBlock EBlock { get; protected set; }
@@ -30,11 +34,19 @@ namespace MvkServer.World.Block
         /// <summary>
         /// Явлыется ли блок небом
         /// </summary>
-        public bool IsAir => EBlock == EnumBlock.Air;
+        public bool IsAir { get; protected set; } = false;
+        /// <summary>
+        /// Можно ли выбирать блок
+        /// </summary>
+        public bool IsAction { get; protected set; } = true;
         /// <summary>
         /// Трава ли это
         /// </summary>
-        public bool IsGrass { get; protected set; } = false;
+       // public bool IsGrass { get; protected set; } = false;
+        /// <summary>
+        /// Вода ли это
+        /// </summary>
+        //public bool IsWater { get; protected set; } = false;
         /// <summary>
         /// Может ли блок сталкиваться
         /// </summary>
@@ -52,16 +64,32 @@ namespace MvkServer.World.Block
         /// Имеется ли у блока частичка
         /// </summary>
         public bool IsParticle { get; protected set; } = true;
-
+        /// <summary>
+        /// Может на этот блок поставить другой, к примеру трава
+        /// </summary>
+        public bool CanPut { get; protected set; } = false;
         /// <summary>
         /// Ограничительная рамка занимает весь блок, для оптимизации, без проверки AABB блока
         /// </summary>
         public bool IsBoundingBoxAll { get; protected set; } = true;
-
         /// <summary>
         /// Сколько ударов требуется, чтобы сломать блок в тактах (20 тактов = 1 секунда)
         /// </summary>
         public int Hardness { get; protected set; } = 0;
+        /// <summary>
+        /// Сколько света вычитается для прохождения этого блока Air = 0
+        /// В VoxelEngine он в public static byte GetBlockLightOpacity(EnumBlock eblock)
+        /// получть инфу не создавая блок
+        /// </summary>
+        public byte LightOpacity { get; protected set; } = 15;
+        /// <summary>
+        /// Является ли объект кубом, если не куб, не будет тени от мобов, и не будет АmbientOcclusion
+        /// </summary>
+        public bool IsFullCube { get; protected set; } = true;
+        /// <summary>
+        /// Спавнится блок, если на его месте ставят другой, при параметре CanPut=true, Air и Water = false
+        /// </summary>
+        public bool IsSpawn { get; protected set; } = true;
 
         /// <summary>
         /// Задать позицию блока
@@ -109,7 +137,7 @@ namespace MvkServer.World.Block
         /// <param name="maxDist">максимальная дистания</param>
         public bool CollisionRayTrace(vec3 pos, vec3 dir, float maxDist)
         {
-            if (IsCollidable)
+            if (IsAction)
             {
                 if (IsBoundingBoxAll) return true;
 
@@ -133,11 +161,17 @@ namespace MvkServer.World.Block
         /// </summary>
         public int GetPlayerRelativeBlockHardness(EntityPlayer playerIn)
         {
+            if (playerIn.IsCreativeMode) return 0;
             //return 0; // креатив
             return Hardness; // выживание
             //return Hardness / 3; // выживание
             //return hardness < 0.0F ? 0.0F : (!playerIn.canHarvestBlock(this) ? playerIn.func_180471_a(this) / hardness / 100.0F : playerIn.func_180471_a(this) / hardness / 30.0F);
         }
+
+        /// <summary>
+        /// Блок не прозрачный
+        /// </summary>
+        public bool IsNotTransparent() => LightOpacity > 13;
 
 
         /// <summary>
@@ -148,7 +182,7 @@ namespace MvkServer.World.Block
         /// <param name="itemStack"></param>
         public static void SpawnAsEntity(WorldBase worldIn, BlockPos blockPos, ItemStack itemStack)
         {
-            if (!worldIn.IsRemote) // TODO:: добавить проверку выпадает ли дроп, пример креатив
+            if (!worldIn.IsRemote)
             {
                 vec3 pos = new vec3(
                     blockPos.X + (float)worldIn.Rand.NextDouble() * .5f + .25f,

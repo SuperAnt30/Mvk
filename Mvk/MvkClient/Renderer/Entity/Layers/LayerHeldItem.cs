@@ -40,7 +40,7 @@ namespace MvkClient.Renderer.Entity.Layers
                 GLRender.PushMatrix();
 
                 ItemBase item = itemStack.Item;
-                if (entity.IsSneaking) GLRender.Translate(0, .2f, 0);
+                if (entity.IsSneaking()) GLRender.Translate(0, .2f, 0);
 
                 // Дублирование поворотов и смещения модели
                 modelRender.PostRender(.0625f);

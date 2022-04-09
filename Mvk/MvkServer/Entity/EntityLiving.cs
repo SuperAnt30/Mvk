@@ -32,14 +32,6 @@ namespace MvkServer.Entity
         /// </summary>
         public vec3 MotionPush { get; set; } = new vec3(0);
         /// <summary>
-        /// Бежим
-        /// </summary>
-        public bool IsSprinting { get; protected set; } = false;
-        /// <summary>
-        /// Результат сидеть
-        /// </summary>
-        public bool IsSneaking { get; protected set; } = false;
-        /// <summary>
         /// Прыгаем
         /// </summary>
         public bool IsJumping { get; protected set; } = false;
@@ -129,6 +121,49 @@ namespace MvkServer.Entity
             Standing();
             SpeedSurvival();
         }
+
+        protected override void AddMetaData() => MetaData.Add(0, (byte)0);
+
+        #region Flag
+
+        /// <summary>
+        /// Возвращает true, если флаг активен для сущности.Известные флаги:
+        /// 0) горит; 1) крадется; 2) едет на чем-то; 3) бегает; 4) ест; 5) невидимый
+        /// </summary>
+        /// <param name="flag">0) горит; 1) крадется; 2) едет на чем-то; 3) бегает; 4) ест; 5) невидимый</param>
+        protected bool GetFlag(int flag) => (MetaData.GetWatchableObjectByte(0) & 1 << flag) != 0;
+
+        /// <summary>
+        /// Включите или отключите флаг сущности
+        /// 0) горит; 1) крадется; 2) едет на чем-то; 3) бегает; 4) ест; 5) невидимый
+        /// </summary>
+        /// <param name="flag">0) горит; 1) крадется; 2) едет на чем-то; 3) бегает; 4) ест; 5) невидимый</param>
+        protected void SetFlag(int flag, bool set)
+        {
+            byte var3 = MetaData.GetWatchableObjectByte(0);
+            if (set) MetaData.UpdateObject(0, (byte)(var3 | 1 << flag));
+            else MetaData.UpdateObject(0, (byte)(var3 & ~(1 << flag)));
+        }
+
+        /// <summary>
+        /// Ускорение
+        /// </summary>
+        public bool IsSprinting() => GetFlag(3);
+        /// <summary>
+        /// Задать значение ускоряется ли
+        /// </summary>
+        protected void SetSprinting(bool sprinting) => SetFlag(3, sprinting);
+
+        /// <summary>
+        /// Крадется
+        /// </summary>
+        public bool IsSneaking() => GetFlag(1);
+        /// <summary>
+        /// Задать значение крадется ли
+        /// </summary>
+        protected void SetSneaking(bool sneaking) => SetFlag(1, sneaking);
+
+        #endregion
 
         /// <summary>
         /// Получить название для рендеринга
@@ -335,38 +370,38 @@ namespace MvkServer.Entity
 
 
             // Обновить положение сидя
-            bool isSneaking = IsSneaking;
-            if (!IsFlying && OnGround && Input.HasFlag(EnumInput.Down) && !IsSneaking)
+            bool isSneaking = IsSneaking();
+            if (!IsFlying && OnGround && Input.HasFlag(EnumInput.Down) && !isSneaking)
             {
                 // Только в выживании можно сесть
-                IsSneaking = true;
+                SetSneaking(true);
                 Sitting();
             }
             // Если хотим встать
-            if (!Input.HasFlag(EnumInput.Down) && IsSneaking)
+            if (!Input.HasFlag(EnumInput.Down) && IsSneaking())
             {
                 // Проверка коллизии вверхней части при положении стоя
                 Standing();
-                // TODO:: хочется как-то ловить колизию положение встать в MoveCheckCollision
+                // UNDONE:: хочется как-то ловить колизию положение встать в MoveCheckCollision
                 if (NoClip || !World.Collision.IsCollisionBody(this, new vec3(Position)))
                 {
-                    IsSneaking = false;
+                    SetSneaking(false);
                 }
                 else
                 {
                     Sitting();
                 }
             }
-            if (isSneaking != IsSneaking)
+            if (isSneaking != IsSneaking())
             {
                 ActionAdd(EnumActionChanged.IsSneaking);
             }
 
             // Sprinting
-            bool isSprinting = Input.HasFlag(EnumInput.Sprinting | EnumInput.Forward) && !IsSneaking;
-            if (IsSprinting != isSprinting)
+            bool isSprinting = Input.HasFlag(EnumInput.Sprinting | EnumInput.Forward) && !IsSneaking();
+            if (IsSprinting() != isSprinting)
             {
-                IsSprinting = isSprinting;
+                SetSprinting(isSprinting);
                 ActionAdd(EnumActionChanged.IsSprinting);
             }
 
@@ -418,7 +453,7 @@ namespace MvkServer.Entity
             if (IsFlying)
             {
                 float y = Motion.y;
-                MoveWithHeading(strafe, forward, .6f * Speed.Forward * (IsSprinting ? Speed.Sprinting : 1f));
+                MoveWithHeading(strafe, forward, .6f * Speed.Forward * (IsSprinting() ? Speed.Sprinting : 1f));
                 Motion = new vec3(Motion.x, y * .6f, Motion.z);
             }
             else
@@ -476,14 +511,14 @@ namespace MvkServer.Entity
                 if (OnGround)
                 {
                     // если на земле, определяем скорость, можно в отдельном методе, у каждого моба может быть свои параметры
-
+                    bool isSneaking = IsSneaking();
                     float speed = Mth.Max(Speed.Strafe * Mth.Abs(strafe), Speed.Forward * Mth.Abs(forward));
-                    if (IsSprinting && forward < 0 && !IsSneaking)
+                    if (IsSprinting() && forward < 0 && !isSneaking)
                     {
                         // Бег 
                         speed *= Speed.Sprinting;
                     }
-                    else if (!IsFlying && (forward != 0 || strafe != 0) && IsSneaking)
+                    else if (!IsFlying && (forward != 0 || strafe != 0) && isSneaking)
                     {
                         // Крадёмся
                         speed *= Speed.Sneaking;
@@ -525,7 +560,7 @@ namespace MvkServer.Entity
             // Стартовое значение прыжка, чтоб на 6 так допрыгнут наивысшую точку в 2,5 блока
             vec3 motion = new vec3(0, .84f, 0);
             //vec3 motion = new vec3(0, .42f, 0);
-            if (IsSprinting)
+            if (IsSprinting())
             {
                 // Если прыжок с бегом, то скорость увеличивается
                 motion.x += glm.sin(RotationYaw) * 0.4f;
@@ -667,17 +702,30 @@ namespace MvkServer.Entity
             swingProgress = (float)swingProgressInt / (float)asa;
         }
 
+        ///// <summary>
+        ///// Задать положение сидя и бега
+        ///// </summary>
+        //public virtual void SetSneakingSprinting(bool sneaking, bool sprinting)
+        //{
+        //    if (IsSneaking() != sneaking)
+        //    {
+        //        SetSneaking(sneaking);
+        //        if (sneaking) Sitting(); else Standing();
+        //    }
+        //    SetSprinting(sprinting);
+        //}
+
         /// <summary>
         /// Задать позицию от сервера
         /// </summary>
-        public void SetMotionServer(vec3 pos, float yaw, float pitch, bool sneaking, bool onGround, bool sprinting)
+        public void SetMotionServer(vec3 pos, float yaw, float pitch, bool onGround)
         {
-            if (IsSneaking != sneaking)
-            {
-                IsSneaking = sneaking;
-                if (IsSneaking) Sitting(); else Standing();
-            }
-            IsSprinting = sprinting;
+            //if (IsSneaking != sneaking)
+            //{
+            //    IsSneaking = sneaking;
+            //    if (IsSneaking) Sitting(); else Standing();
+            //}
+            //IsSprinting = sprinting;
             RotationYawServer = yaw;
             RotationPitchServer = pitch;
             SetMotionServer(pos, onGround);
@@ -898,7 +946,7 @@ namespace MvkServer.Entity
         /// </summary>
         private void ParticleBlockSprinting()
         {
-            if (IsSprinting)// && !IsInWater())
+            if (IsSprinting())// && !IsInWater())
             {
                 ParticleBlockDown(Position, 1);
             }

@@ -35,6 +35,10 @@ namespace MvkServer.Entity.Player
         /// Инвенарь игрока
         /// </summary>
         public InventoryPlayer Inventory { get; protected set; }
+        /// <summary>
+        /// Творческий режим
+        /// </summary>
+        public bool IsCreativeMode { get; protected set; } = false;
 
         protected EntityPlayer(WorldBase world) : base(world)
         {
@@ -43,12 +47,14 @@ namespace MvkServer.Entity.Player
             Inventory = new InventoryPlayer(this);
             previousEquipment = new ItemStack[InventoryPlayer.COUNT_ARMOR + 1];
 
-            // TODO::2022-03-29 Временно
+            // TODO::2022-03-29 Временно предметы при старте у игрока
             if (!world.IsRemote)
             {
-                // TODO::доделать, этап при старте видеть игрока в инвентарём что в руке, и сам игрок загружать весь инвентарь
-                Inventory.SetInventorySlotContents(2, new MvkServer.Item.ItemStack(Blocks.GetBlock(EnumBlock.Dirt)));
-                Inventory.SetInventorySlotContents(3, new MvkServer.Item.ItemStack(Blocks.GetBlock(EnumBlock.Cobblestone), 16));
+                Inventory.SetInventorySlotContents(1, new MvkServer.Item.ItemStack(Blocks.GetBlockCache(EnumBlock.Dirt), 64));
+                Inventory.SetInventorySlotContents(2, new MvkServer.Item.ItemStack(Blocks.GetBlockCache(EnumBlock.Water), 64));
+                Inventory.SetInventorySlotContents(3, new MvkServer.Item.ItemStack(Blocks.GetBlockCache(EnumBlock.Cobblestone), 16));
+                Inventory.SetInventorySlotContents(4, new MvkServer.Item.ItemStack(Blocks.GetBlockCache(EnumBlock.GlassRed), 64));
+                Inventory.SetInventorySlotContents(5, new MvkServer.Item.ItemStack(Blocks.GetBlockCache(EnumBlock.Glass), 64));
             }
 
         }

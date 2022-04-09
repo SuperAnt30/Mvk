@@ -152,8 +152,45 @@ namespace MvkClient.Renderer
         public static void Begin(uint mode) => gl.Begin(mode);
         public static void End() => gl.End();
 
+        /// <summary>
+        /// Включить тест глубины
+        /// </summary>
         public static void DepthEnable() => gl.Enable(OpenGL.GL_DEPTH_TEST);
+        /// <summary>
+        /// Выключить тест глубины
+        /// </summary>
         public static void DepthDisable() => gl.Disable(OpenGL.GL_DEPTH_TEST);
+
+        /// <summary>
+        /// Включить или выключить запись глубинв
+        /// </summary>
+        public static void DepthMask(bool mask) => gl.DepthMask((byte)(mask ? 1 : 0));
+
+        /// <summary>
+        /// Включить смешивание
+        /// </summary>
+        public static void BlendEnable() => gl.Enable(OpenGL.GL_BLEND);
+        /// <summary>
+        /// Выключить смешивание
+        /// </summary>
+        public static void BlendDisable() => gl.Disable(OpenGL.GL_BLEND);
+
+        /// <summary>
+        /// Включить полигоновское смещение
+        /// </summary>
+        public static void PolygonOffsetEnable()
+        {
+            gl.Enable(OpenGL.GL_POLYGON_OFFSET_FILL);
+            gl.PolygonOffset(-3f, -3f);
+        }
+        /// <summary>
+        /// Выключить полигоновское смещение
+        /// </summary>
+        public static void PolygonOffsetDisable()
+        {
+            gl.Disable(OpenGL.GL_POLYGON_OFFSET_FILL);
+            gl.PolygonOffset(0, 0);
+        }
 
         /// <summary>
         /// Нарисовать рамку, с заданным цветом и выбранной толщиной линии

@@ -57,11 +57,6 @@ namespace MvkServer.Entity
         /// Отправлять обновления скорости 
         /// </summary>
       //  private bool sendVelocityUpdates;
-        /// <summary>
-        /// На земле
-        /// </summary>
-       // private bool onGround;
-        private bool firstUpdateDone;
 
         public EntityTrackerEntry(EntityBase entity, int trackingRange, int updateFrequency, bool sendVelocityUpdates)
         {
@@ -128,27 +123,10 @@ namespace MvkServer.Entity
                         //        }
                         //    }
                         //}
-
-
-
-                        //        if (this.trackedEntity instanceof EntityLivingBase)
-                        //    {
-                        //            ServersideAttributeMap var4 = (ServersideAttributeMap)((EntityLivingBase)this.trackedEntity).getAttributeMap();
-                        //            Collection var5 = var4.getWatchedAttributes();
-
-                        //            if (!var5.isEmpty())
-                        //            {
-                        //                entityPlayer.playerNetServerHandler.sendPacket(new S20PacketEntityProperties(this.trackedEntity.getEntityId(), var5));
-                        //            }
-                        //        }
-
-
                     }
                 }
                 else if (TrackingPlayers.ContainsValue(entityPlayer))
                 {
-                    // TODO:: 2022-03-24 тут где-то ненужное удаление сущностей ,когда игрок умер и респавнится. сущности исчезают, по чём зря удаляются.
-                    // Если надо сделать просто респавн всех сущностей!
                     TrackingPlayers.Remove(entityPlayer);
                     entityPlayer.SendRemoveEntity(TrackedEntity);
                 }
@@ -175,9 +153,9 @@ namespace MvkServer.Entity
         public void SendPacketPlayersCurrent(IPacket packet)
         {
             SendPacketPlayers(packet);
-            if (TrackedEntity is EntityPlayerServer)
+            if (TrackedEntity is EntityPlayerServer entityPlayerServer)
             {
-                ((EntityPlayerServer)TrackedEntity).SendPacket(packet);
+                entityPlayerServer.SendPacket(packet);
             }
         }
 
@@ -190,6 +168,18 @@ namespace MvkServer.Entity
             {
                 EntityPlayerServer entity = (EntityPlayerServer)TrackingPlayers.GetAt(i);
                 entity.SendRemoveEntity(TrackedEntity);
+            }
+        }
+
+        /// <summary>
+        /// Отправить метаданные всем игрокам которые видят эту сущность без этой
+        /// </summary>
+        private void SendMetadataToAllAssociatedPlayers()
+        {
+            DataWatcher dataWatcher = TrackedEntity.MetaData;
+            if (dataWatcher.IsChanged)
+            {
+                SendPacketPlayersCurrent(new PacketS1CEntityMetadata(TrackedEntity.Id, dataWatcher, false));
             }
         }
 
@@ -214,31 +204,34 @@ namespace MvkServer.Entity
         {
             PlayerEntitiesUpdated = false;
 
-            if (!firstUpdateDone || TrackedEntity.IsDead || glm.distance(TrackedEntity.Position, LastTrackedEntityPos) > 2f)
+            // Загружаем сущности игроку, в первом такте игрока
+            bool beginFlagPlayer = (TrackedEntity is EntityPlayerServer entityPlayerServer && entityPlayerServer.TrackerBeginFlag == 1);
+            
+            if (beginFlagPlayer || TrackedEntity.IsDead || glm.distance(TrackedEntity.Position, LastTrackedEntityPos) > 2f)
             {
                 LastTrackedEntityPos = TrackedEntity.Position;
-                firstUpdateDone = true;
                 PlayerEntitiesUpdated = true;
                 UpdatePlayerEntities(playerEntities);
             }
 
-            if (TrackedEntity is EntityLiving)
+            if (TrackedEntity is EntityLiving entityLiving)
             {
-                if (((EntityLiving)TrackedEntity).ActionChanged != EnumActionChanged.None)
+                if (entityLiving.ActionChanged != EnumActionChanged.None)
                 {
-                    SendPacketPlayers(new PacketS14EntityMotion(TrackedEntity));
-                    ((EntityLiving)TrackedEntity).ActionNone();
+                    SendPacketPlayers(new PacketS14EntityMotion(entityLiving));
+                    entityLiving.ActionNone();
                 }
-            } else if (TrackedEntity is EntityItem)
+            } else if (TrackedEntity is EntityItem entityItem)
             {
-                if (((EntityItem)TrackedEntity).IsMoving)
+                if (entityItem.IsMoving)
                 {
-                    SendPacketPlayers(new PacketS14EntityMotion(TrackedEntity));
+                    SendPacketPlayers(new PacketS14EntityMotion(entityItem));
                 }
             }
 
-            if (UpdateCounter % UpdateFrequency == 0)
+            if (TrackedEntity.MetaData.IsChanged) //UpdateCounter % UpdateFrequency == 0)
             {
+                SendMetadataToAllAssociatedPlayers();
                 //if ("передвижение самостоятельное, не на ком-то или чём-то")
                 {
                  //   EncodedPos = new vec3i(TrackedEntity.Position * 32f);
@@ -365,6 +358,8 @@ namespace MvkServer.Entity
         //    }
         }
 
+        
+
         /// <summary>
         /// Проверка позиции
         /// </summary>
@@ -393,13 +388,13 @@ namespace MvkServer.Entity
         /// </summary>
         private IPacket PacketSpawn()
         {
-            if (TrackedEntity is EntityPlayerServer)
+            if (TrackedEntity is EntityPlayerServer entityPlayerServer)
             {
-                return new PacketS0CSpawnPlayer((EntityPlayer)TrackedEntity);
+                return new PacketS0CSpawnPlayer(entityPlayerServer);
             }
-            else if (TrackedEntity is EntityItem)
+            else if (TrackedEntity is EntityItem entityItem)
             {
-                return new PacketS0ESpawnItem((EntityItem)TrackedEntity);
+                return new PacketS0ESpawnItem(entityItem);
             }
             //if (TrackedEntity is EntityPlayerServer)
             else

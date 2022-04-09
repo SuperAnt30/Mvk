@@ -40,8 +40,16 @@ namespace MvkServer.Glm
             float var6 = v1.z - v2.z;
             return Mth.Sqrt(var2 * var2 + var4 * var4 + var6 * var6);
         }
-
-        
+        /// <summary>
+        /// Получить растояние между двумя точками
+        /// </summary>
+        public static float distance(vec3i v1, vec3i v2)
+        {
+            int var2 = v1.x - v2.x;
+            int var4 = v1.y - v2.y;
+            int var6 = v1.z - v2.z;
+            return Mth.Sqrt(var2 * var2 + var4 * var4 + var6 * var6);
+        }
 
         /// <summary>
         /// Получить растояние вектора

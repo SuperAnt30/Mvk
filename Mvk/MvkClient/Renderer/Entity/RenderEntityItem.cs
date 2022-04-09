@@ -31,12 +31,13 @@ namespace MvkClient.Renderer.Entity
         {
             if (entity is EntityItem entityItem)
             {
-                ItemStack stack = entityItem.Stack;
+                ItemStack stack = entityItem.GetEntityItemStack();
                 vec3 pos = entity.GetPositionFrame(timeIndex);
                 vec3 offsetPos = pos - offset;
                 rand = new Random(entity.Id);
                 int begin = rand.Next(360);
                 rand = new Random(187);
+                int count = CountItem(stack);
 
                 GLRender.Texture2DEnable();
                 TextureStruct ts = GLWindow.Texture.GetData(AssetsTexture.Atlas);
@@ -56,7 +57,7 @@ namespace MvkClient.Renderer.Entity
                     //GLRender.Rotate(fff, 0, 1, 0);
                     GLRender.Rotate(yaw, 0, 1, 0);
                     // GLRender.Rotate(glm.degrees(yaw), 0, 1, 0);
-                    for (int i = 0; i < 1; i++)
+                    for (int i = 0; i < count; i++)
                     {
                         GLRender.PushMatrix();
                         {
@@ -80,6 +81,18 @@ namespace MvkClient.Renderer.Entity
             
         }
 
+        /// <summary>
+        /// Количество предметов в зависимости от количества 
+        /// </summary>
+        private int CountItem(ItemStack itemStack)
+        {
+            int amount = itemStack.Amount;
+            if (amount > 47) return 5;
+            if (amount > 31) return 4;
+            if (amount > 15) return 3;
+            if (amount > 1) return 2;
+            return 1;
+        }
 
 
     }

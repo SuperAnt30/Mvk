@@ -108,7 +108,7 @@ namespace MvkServer.World.Chunk
         /// </summary>
         //public void DroopedChunkStatusMin(MapListVec2i droppedChunks, List<EntityPlayerServer> players)
         //{
-        //    // TODO::2022-03-01 НЕАКТИВНА!!!
+        //    // UNDONE ::2022-03-01 НЕАКТИВНА!!!
         //    Hashtable ht = map.Clone() as Hashtable;
         //    foreach (ChunkBase chunk in ht.Values)
         //    {

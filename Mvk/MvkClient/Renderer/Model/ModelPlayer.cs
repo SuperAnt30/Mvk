@@ -45,7 +45,7 @@ namespace MvkClient.Renderer.Model
             SetRotationAngles(entity, limbSwing, limbSwingAmount, ageInTicks, headYaw, headPitch, scale);
             GLRender.PushMatrix();
 
-            if (entity.IsSneaking)
+            if (entity.IsSneaking())
             {
                 GLRender.Translate(0, .2f, 0);//GLRender.Translate(0, .3f, 0);
             }
@@ -120,7 +120,7 @@ namespace MvkClient.Renderer.Model
             boxArmLeft.RotationPointZ = -glm.sin(boxBody.RotateAngleY) * 5f;
             boxArmLeft.RotationPointX = glm.cos(boxBody.RotateAngleY) * 5f;
 
-            if (entity.IsSneaking)
+            if (entity.IsSneaking())
             {
                 // Положение сидя
                 boxBody.RotateAngleX = 0.5f;

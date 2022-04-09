@@ -63,11 +63,12 @@ namespace MvkServer.Entity.Mob
                 iii2--;
                 if (iii2 <= 0)
                 {
-                    Input = f ? Util.EnumInput.Forward : Util.EnumInput.None;
+                    Input = f ? Util.EnumInput.Forward : Util.EnumInput.Down;
                     f = !f;
                     iii2 = rand.Next(200) + 100;
                     if (f) iii2 += 200;
                 }
+                //InputAdd(Util.EnumInput.Down);
                 //ChunkBase chunk = World.GetChunk(GetChunkPos());
                 //if (chunk != null && chunk.CountEntity() > 1)
                 //{

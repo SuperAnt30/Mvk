@@ -4,7 +4,6 @@ using MvkClient.Util;
 using MvkClient.World;
 using MvkServer;
 using MvkServer.Entity;
-using MvkServer.Entity.Item;
 using MvkServer.Glm;
 using MvkServer.Item;
 using MvkServer.Item.List;
@@ -27,57 +26,77 @@ namespace MvkClient.Entity
         /// <summary>
         /// Плавное перемещение угла обзора
         /// </summary>
-        public SmoothFrame Fov { get; protected set; }
+        public SmoothFrame Fov { get; private set; }
         /// <summary>
         /// Плавное перемещение глаз, сел/встал
         /// </summary>
-        public SmoothFrame Eye { get; protected set; }
+        public SmoothFrame Eye { get; private set; }
         /// <summary>
         /// массив матрицы перспективу камеры 3D
         /// </summary>
-        public float[] Projection { get; protected set; }
+        public float[] Projection { get; private set; }
         /// <summary>
         /// массив матрицы расположения камеры в пространстве
         /// </summary>
-        public float[] LookAt { get; protected set; }
+        public float[] LookAt { get; private set; }
         /// <summary>
         /// Вектор луча
         /// </summary>
-        public vec3 RayLook { get; protected set; }
+        public vec3 RayLook { get; private set; }
 
         /// <summary>
         /// Принудительно обработать FrustumCulling
         /// </summary>
-        public bool IsFrustumCulling { get; protected set; } = false;
+        public bool IsFrustumCulling { get; private set; } = false;
         /// <summary>
         /// Объект расчёта FrustumCulling
         /// </summary>
-        public Frustum FrustumCulling { get; protected set; } = new Frustum();
+        public Frustum FrustumCulling { get; private set; } = new Frustum();
         /// <summary>
         /// Массив чанков которые попадают под FrustumCulling для рендера
         /// </summary>
-        public FrustumStruct[] ChunkFC { get; protected set; } = new FrustumStruct[0];
+        public FrustumStruct[] ChunkFC { get; private set; } = new FrustumStruct[0];
         /// <summary>
         /// Список сущностей которые попали в луч
         /// </summary>
-        public EntityPlayerMP[] EntitiesLook { get; protected set; } = new EntityPlayerMP[0];
+        public EntityPlayerMP[] EntitiesLook { get; private set; } = new EntityPlayerMP[0];
         /// <summary>
         /// Вид камеры
         /// </summary>
-        public EnumViewCamera ViewCamera { get; protected set; } = EnumViewCamera.Eye;
+        public EnumViewCamera ViewCamera { get; private set; } = EnumViewCamera.Eye;
         /// <summary>
         /// Последнее значение поворота вокруг своей оси
         /// </summary>
-        public float RotationYawLast { get; protected set; }
+        public float RotationYawLast { get; private set; }
         /// <summary>
         /// Последнее значение поворота вверх вниз
         /// </summary>
-        public float RotationPitchLast { get; protected set; }
+        public float RotationPitchLast { get; private set; }
         /// <summary>
         /// Выбранный блок
         /// </summary>
-        public BlockBase SelectBlock { get; protected set; } = null;
+        public BlockBase SelectBlock { get; private set; } = null;
+        /// <summary>
+        /// Позиция камеры в блоке для альфа, в зависимости от вида (с глаз, с зади, спереди)
+        /// </summary>
+        public vec3i PositionAlphaBlock { get; private set; }
 
+        /// <summary>
+        /// Массив по длинам используя квадратный корень для всей видимости в объёме для обновление чанков в объёме
+        /// </summary>
+        private vec3i[] distSqrtAlpha;
+        /// <summary>
+        /// Позиция камеры в чанке для альфа, в зависимости от вида (с глаз, с зади, спереди)
+        /// </summary>
+        private vec3i positionAlphaChunk;
+        /// <summary>
+        /// Позиция когда был запрос рендера для альфа блоков для малого смещения, в чанке
+        /// </summary>
+        private vec3i positionAlphaBlockPrev;
+        /// <summary>
+        /// Позиция когда был запрос рендера для альфа блоков для большого смещения, за пределами чанка
+        /// </summary>
+        private vec3i positionAlphaChunkPrev;
         /// <summary>
         /// Позиция с учётом итерполяции кадра
         /// </summary>
@@ -151,7 +170,7 @@ namespace MvkClient.Entity
         /// <summary>
         /// Обновить матрицу
         /// </summary>
-        protected void UpMatrixProjection()
+        private void UpMatrixProjection()
         {
             if (lookAtDL != null && lookAtDL.Length == 3)
             {
@@ -204,6 +223,9 @@ namespace MvkClient.Entity
 
             // Обновление курсоро, не зависимо от действия игрока, так как рядом может быть изминение
             UpCursor();
+
+            // Проверка на обновление чанков альфа блоков, в такте после перемещения
+            UpdateChunkRenderAlphe();
 
             if (RotationEquals())
             {
@@ -299,7 +321,7 @@ namespace MvkClient.Entity
             }
             if (ActionChanged.HasFlag(EnumActionChanged.IsSprinting))
             {
-                Fov.Set(IsSprinting ? 1.22f : 1.43f, 4);
+                Fov.Set(IsSprinting() ? 1.22f : 1.43f, 4);
                 isSS = true;
             }
 
@@ -309,16 +331,16 @@ namespace MvkClient.Entity
             if (isPos && isLook)
             {
                 ClientWorld.ClientMain.TrancivePacket(new PacketC06PlayerPosLook(
-                    Position, RotationYawHead, RotationPitch, IsSneaking, IsSprinting
+                    Position, RotationYawHead, RotationPitch, IsSneaking(), IsSprinting()
                 ));
             }
             else if (isLook)
             {
-                ClientWorld.ClientMain.TrancivePacket(new PacketC05PlayerLook(RotationYawHead, RotationPitch, IsSneaking));
+                ClientWorld.ClientMain.TrancivePacket(new PacketC05PlayerLook(RotationYawHead, RotationPitch, IsSneaking()));
             }
             else if (isPos || isSS)
             {
-                ClientWorld.ClientMain.TrancivePacket(new PacketC04PlayerPosition(Position, IsSneaking, IsSprinting));
+                ClientWorld.ClientMain.TrancivePacket(new PacketC04PlayerPosition(Position, IsSneaking(), IsSprinting()));
             }
             ActionNone();
         }
@@ -362,7 +384,7 @@ namespace MvkClient.Entity
         /// </summary>
         private void UpCursor()
         {
-            MovingObjectPosition moving = RayCast(10f);
+            MovingObjectPosition moving = RayCast();
             SelectBlock = moving.Block;
             Debug.DStr = moving.ToString();
         }
@@ -408,6 +430,8 @@ namespace MvkClient.Entity
             float[] lookAt = glm.lookAt(pos, pos + front, up).to_array();
             if (!Mth.EqualsArrayFloat(lookAt, LookAt, 0.00001f))
             {
+                PositionAlphaBlock = new vec3i(Position + pos);
+                positionAlphaChunk = new vec3i(PositionAlphaBlock.x >> 4, PositionAlphaBlock.y >> 4, PositionAlphaBlock.z >> 4);
                 LookAt = lookAt;
                 RayLook = front;
                 lookAtDL = new vec3[] { pos, pos + front, up };
@@ -444,6 +468,7 @@ namespace MvkClient.Entity
             if (Fov.UpdateFrame(timeIndex)) { }
             UpProjection();
 
+            vec3 offset = new vec3(positionFrame.x, positionFrame.y + eyeFrame, positionFrame.z);
             ClientWorld.RenderEntityManager.SetCamera(positionFrame, yawHeadFrame, pitchFrame);
 
             // Изменяем матрицу глаз игрока
@@ -465,11 +490,14 @@ namespace MvkClient.Entity
         public void InitFrustumCulling()
         {
             if (LookAt == null || Projection == null) return;
-
             FrustumCulling.Init(LookAt, Projection);
-
+            
+            Debug.DrawFrustumCulling.Clear();
             int countFC = 0;
-            vec2i chunkPos = new vec2i(Mth.Floor(positionFrame.x) >> 4, Mth.Floor(positionFrame.z) >> 4);
+            vec3i chunkPos = new vec3i(
+                Mth.Floor(positionFrame.x) >> 4,
+                Mth.Floor(positionFrame.y) >> 4,
+                Mth.Floor(positionFrame.z) >> 4);
             
             List<FrustumStruct> listC = new List<FrustumStruct>();
 
@@ -483,33 +511,35 @@ namespace MvkClient.Entity
                     int zb = zc << 4;
 
                     int x1 = xb - 15;
+                    int y1 = -255;
                     int z1 = zb - 15;
                     int x2 = xb + 15;
+                    int y2 = 255;
                     int z2 = zb + 15;
-                    if (FrustumCulling.IsBoxInFrustum(x1, -255, z1, x2, 255, z2))
+                    if (FrustumCulling.IsBoxInFrustum(x1, y1, z1, x2, y2, z2))
                     {
-                        vec2i coord = new vec2i(xc + chunkPos.x, zc + chunkPos.y);
+                        vec2i coord = new vec2i(xc + chunkPos.x, zc + chunkPos.z);
                         ChunkRender chunk = ClientWorld.ChunkPrClient.GetChunkRender(coord);
                         FrustumStruct frustum;
-                        if (chunk == null)
-                        {
-                            frustum = new FrustumStruct(coord);
-                        }
-                        else
-                        {
-                            frustum = new FrustumStruct(chunk);
-                        }
+                        if (chunk == null) frustum = new FrustumStruct(coord);
+                        else frustum = new FrustumStruct(chunk);
 
-                        int count = frustum.FrustumShow(FrustumCulling, x1, z1, x2, z2, positionFrame.y);
+                        int count = frustum.FrustumShow(FrustumCulling, x1, z1, x2, z2, Mth.Floor(positionFrame.y + eyeFrame));// positionFrame.y);
                         if (count > 0)
                         {
+                            if (Debug.IsDrawFrustumCulling)
+                            {
+                                coord = new vec2i(xc, zc);
+                                if (!Debug.DrawFrustumCulling.Contains(coord)) Debug.DrawFrustumCulling.Add(coord);
+                            }
                             listC.Add(frustum);
-                            countFC+=count;
+                            countFC += count;
                         }
                     }
                 }
             }
             Debug.CountMeshAll = countFC;
+            Debug.RenderFrustumCulling = true;
             ChunkFC = listC.ToArray();
             IsFrustumCulling = false;
         }
@@ -522,13 +552,13 @@ namespace MvkClient.Entity
             for (int i = 0; i < ChunkFC.Length; i++)
             {
                 FrustumStruct fs = ChunkFC[i];
+                
                 if (!fs.IsChunk())
                 {
                     ChunkRender chunk = ClientWorld.ChunkPrClient.GetChunkRender(fs.GetCoord());
                     if (chunk != null)
                     {
-                        //frustum.FrustumShow(FrustumCulling, x1, z1, x2, z2, positionFrame.y)
-                        ChunkFC[i] = new FrustumStruct(chunk, ChunkFC[i].GetShowList());
+                        ChunkFC[i] = new FrustumStruct(chunk, fs.GetSortList());
                     }
                 }
             }
@@ -566,9 +596,10 @@ namespace MvkClient.Entity
         /// <summary>
         /// Получить объект по тикущему лучу
         /// </summary>
-        /// <param name="maxDis">дистанция луча</param>
-        protected MovingObjectPosition RayCast(float maxDis)
+        private MovingObjectPosition RayCast()
         {
+            // максимальная дистанция луча
+            float maxDis = MvkGlobal.RAY_CAST_DISTANCE;
             vec3 pos = GetPositionFrame();
             pos.y += GetEyeHeightFrame();
             vec3 dir = RayLook;
@@ -607,7 +638,7 @@ namespace MvkClient.Entity
         /// </summary>
         private void HandActionUpdate()
         {
-            MovingObjectPosition moving = RayCast(10f);
+            MovingObjectPosition moving = RayCast();
 
             if (handAction == ActionHand.Left)
             {
@@ -645,7 +676,7 @@ namespace MvkClient.Entity
         /// </summary>
         public void HandAction()
         {
-            MovingObjectPosition moving = RayCast(10f);
+            MovingObjectPosition moving = RayCast();
             if (moving.IsEntity())
             {
                 // Курсор попал на сущность
@@ -664,7 +695,7 @@ namespace MvkClient.Entity
         /// </summary>
         public void HandActionTwo()
         {
-            MovingObjectPosition moving = RayCast(10f);
+            MovingObjectPosition moving = RayCast();
             PutBlockStart(moving, true);
         }
 
@@ -694,39 +725,6 @@ namespace MvkClient.Entity
             }
         }
 
-        //private void PutBlockStart2(MovingObjectPosition moving, bool start)
-        //{
-        //    // TODO:: Рассмотреть реализацию через ItemBlock.onItemUse
-        //    if (moving.IsBlock())
-        //    {
-        //        ItemStack itemStack = Inventory.GetCurrentItem();
-        //        if (itemStack != null && itemStack.Item is ItemBlock itemBlock)
-        //        {
-        //            BlockPos blockPos = new BlockPos(moving.Put);
-        //            vec3 facing = moving.RayHit - new vec3(moving.Put);
-        //            // устанавливаем блок
-        //            BlockBase blockNew = Blocks.GetBlock(itemBlock.Block.EBlock, blockPos);
-        //            bool putAbout = true;
-        //            if (blockNew != null && !blockNew.IsAir)
-        //            {
-        //                AxisAlignedBB axisBlock = blockNew.GetCollision();
-        //                // Проверка коллизии игрока и блока
-        //                if (!BoundingBox.IntersectsWith(axisBlock) && World.GetEntitiesWithinAABBExcludingEntity(this, axisBlock).Count == 0)
-        //                {
-        //                    ClientMain.TrancivePacket(new PacketC08PlayerBlockPlacement(blockPos, facing));
-        //                    itemInWorldManager.Put(blockPos, facing, blockNew.EBlock);
-        //                    itemInWorldManager.PutPause(start);
-        //                    putAbout = false;
-        //                    Inventory.DecrStackSize(Inventory.CurrentItem, 1);
-        //                }
-        //            }
-        //            if (putAbout) itemInWorldManager.PutAbout();
-        //            handAction = ActionHand.Right;
-        //        }
-        //    }
-        //}
-
-
         /// <summary>
         /// Начало разрушения блока
         /// </summary>
@@ -743,7 +741,6 @@ namespace MvkClient.Entity
                 blankShot = true;
             }
         }
-
 
         /// <summary>
         /// Отмена действия правой рукой
@@ -803,8 +800,8 @@ namespace MvkClient.Entity
         {
             OverviewChunkPrev = OverviewChunk = overviewChunk;
             DistSqrt = MvkStatic.GetSqrt(OverviewChunk);
+            distSqrtAlpha = MvkStatic.GetSqrt3d(OverviewChunk < MvkGlobal.UPDATE_ALPHE_CHUNK ? OverviewChunk : MvkGlobal.UPDATE_ALPHE_CHUNK);
         }
-
 
         /// <summary>
         /// Проверить изменение слота если изменён, отправить на сервер
@@ -816,6 +813,34 @@ namespace MvkClient.Entity
             {
                 currentPlayerItem = currentItem;
                 ClientMain.TrancivePacket(new PacketC09HeldItemChange(currentPlayerItem));
+            }
+        }
+
+        /// <summary>
+        /// Проверка на обновление чанков альфа блоков, в такте после перемещения
+        /// </summary>
+        private void UpdateChunkRenderAlphe()
+        {
+            if (!positionAlphaChunk.Equals(positionAlphaChunkPrev))
+            {
+                // Если смещение чанком
+                positionAlphaChunkPrev = positionAlphaChunk;
+                positionAlphaBlockPrev = PositionAlphaBlock;
+                vec2i posCh = GetChunkPos();
+                int posY = GetChunkY();
+                for (int d = 0; d < distSqrtAlpha.Length; d++)
+                {
+                    vec2i pos = new vec2i(posCh.x + distSqrtAlpha[d].x, posCh.y + distSqrtAlpha[d].z);
+                    ChunkRender chunk = ClientWorld.ChunkPrClient.GetChunkRender(pos);
+                    if (chunk != null) chunk.ModifiedToRenderAlpha(posY + distSqrtAlpha[d].y);
+                }
+            }
+            else if (!PositionAlphaBlock.Equals(positionAlphaBlockPrev))
+            {
+                // Если смещение блока
+                positionAlphaBlockPrev = PositionAlphaBlock;
+                vec2i posCh = GetChunkPos();
+                ClientWorld.ChunkPrClient.ModifiedToRenderAlpha(posCh.x, GetChunkY(), posCh.y);
             }
         }
 

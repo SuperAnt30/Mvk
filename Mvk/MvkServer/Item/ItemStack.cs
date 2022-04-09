@@ -172,9 +172,24 @@ namespace MvkServer.Item
             return null;
         }
 
-        public override string ToString()
+        public override string ToString() => Item.GetName() + " " + Amount;
+
+        public override bool Equals(object obj)
         {
-            return Item.GetName() + " " + Amount;
+            if (obj != null && obj.GetType() == typeof(ItemStack))
+            {
+                var vec = (ItemStack)obj;
+                if (Amount == vec.Amount && ItemDamage == vec.ItemDamage && Item.Id == vec.Item.Id) return true;
+            }
+            return false;
         }
+
+        /// <summary>
+        /// Returns a hash code for this instance.
+        /// </summary>
+        /// <returns>
+        /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table. 
+        /// </returns>
+        public override int GetHashCode() => Item.Id.GetHashCode() ^ Amount.GetHashCode() ^ ItemDamage.GetHashCode();
     }
 }

@@ -43,6 +43,11 @@ namespace MvkServer.World
         /// </summary>
         public NoiseStorge Noise { get; private set; }
 
+        /// <summary>
+        /// Тестовый параметр, мир весь для креатива
+        /// </summary>
+        public bool IsCreativeMode { get; private set; }
+
         public WorldServer(Server server, int seed) : base()
         {
             IsRemote = false;
@@ -53,6 +58,7 @@ namespace MvkServer.World
             Log = ServerMain.Log;
             profiler = new Profiler(Log);
             Seed = seed;
+            IsCreativeMode = seed > 3;
             Rand = new Random(seed);
             Noise = new NoiseStorge(this);
         }
@@ -132,11 +138,6 @@ namespace MvkServer.World
         protected override void OnEntityRemoved(EntityBase entity)
         {
             base.OnEntityRemoved(entity);
-
-            // TODO::25-03-2022 продолжаю исправлять багу по трекеру, это если закомитить не удаляет.
-            // Пока проблема так,  на сервере всё норм. Но на клиенте удаляются сущности, и если появляешься возле них, они не подгружаются.
-            // Так как они выгружены ранее.
-            // Надо либо не выгружать если в этой облости, либо загружать заного, сущности спавнить их.
             Tracker.UntrackEntity(entity);
         }
 

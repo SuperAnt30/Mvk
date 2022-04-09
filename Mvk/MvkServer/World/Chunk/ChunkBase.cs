@@ -278,7 +278,7 @@ namespace MvkServer.World.Chunk
         public BlockBase GetBlock0(int x, int y, int z)
         {
             EnumBlock eblock = GetEBlock(x, y, z);
-            return Blocks.GetBlock(eblock, new BlockPos(Position.x << 4 | x, y, Position.y << 4 | z));
+            return Blocks.CreateBlock(eblock, new BlockPos(Position.x << 4 | x, y, Position.y << 4 | z));
         }
 
         /// <summary>
@@ -301,7 +301,7 @@ namespace MvkServer.World.Chunk
         /// <param name="enumBlock"></param>
         public void SetEBlock(vec3i pos, EnumBlock eBlock)
         {
-            if (pos.x >> 4 == 0 && pos.z >> 4 == 0)
+            if (pos.x >> 4 == 0 && pos.z >> 4 == 0 && pos.y >= 0 && pos.y < COUNT_HEIGHT << 4)
             {
                 StorageArrays[pos.y >> 4].SetEBlock(pos.x, pos.y & 15, pos.z, eBlock);
             }

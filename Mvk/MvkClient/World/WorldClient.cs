@@ -254,23 +254,31 @@ namespace MvkClient.World
                 vec3i c0 = new vec3i(min.x >> 4, min.y >> 4, min.z >> 4);
                 vec3i c1 = new vec3i(max.x >> 4, max.y >> 4, max.z >> 4);
 
-                for (int x = c0.x; x <= c1.x; x++)
-                {
-                    for (int z = c0.z; z <= c1.z; z++)
-                    {
-                        ChunkRender chunk = ChunkPrClient.GetChunkRender(new vec2i(x, z));
-                        if (chunk != null && c0.y >= 0 && c1.y < ChunkRender.COUNT_HEIGHT)
-                        {
-                            for (int y = c0.y; y <= c1.y; y++)
-                            {
-                                chunk.ModifiedToRender(y);
-                            }
-                        }
-                    }
-                }
+                AreaModifiedToRender(c0, c1);
                 return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// Сделать запрос перерендера выбранной облости псевдочанков
+        /// </summary>
+        public void AreaModifiedToRender(vec3i c0, vec3i c1)
+        {
+            for (int x = c0.x; x <= c1.x; x++)
+            {
+                for (int z = c0.z; z <= c1.z; z++)
+                {
+                    ChunkRender chunk = ChunkPrClient.GetChunkRender(new vec2i(x, z));
+                    if (chunk != null && c0.y >= -1 && c1.y <= ChunkRender.COUNT_HEIGHT)
+                    {
+                        for (int y = c0.y; y <= c1.y; y++)
+                        {
+                            chunk.ModifiedToRender(y);
+                        }
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -279,7 +287,6 @@ namespace MvkClient.World
         //public MovingObjectPosition RayCastEntity()
         //{
         //    float timeIndex = Interpolation();
-        //    // TODO::RayCastEntity ЗАМЕНИТЬ!!!
         //    MovingObjectPosition moving = new MovingObjectPosition();
         //    if (ClientMain.Player.EntitiesLook.Length > 0)
         //    {
@@ -374,8 +381,6 @@ namespace MvkClient.World
                     EntitySpawnQueue.Add(entity);
                     LoadedEntityList.Remove(entity);
                 }
-                // TODO:: проверить трекер, если обзор меньше trackingRang, то при приближении сущность не появляется!!!
-                // Вроде тут, 21-03-2022, надо у клиента очищать сущность, 
                 else
                 {
                     EntityList.Remove(entity);

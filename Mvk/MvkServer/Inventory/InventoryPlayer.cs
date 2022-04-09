@@ -178,12 +178,11 @@ namespace MvkServer.Inventory
                             SendSetSlotPlayer(slot);
                             return true;
                         }
-                        //else if (Player.IsCreativeMode)
-                        //{
-                        //    // TODO::2022-04-01 Если креатив, подбираем предмет, без хранения инвентаря
-                        //    stack.Zero();
-                        //    return true;
-                        //}
+                        else if (Player.IsCreativeMode)
+                        {
+                            stack.Zero();
+                            return true;
+                        }
                         else
                         {
                             return false;
@@ -199,12 +198,12 @@ namespace MvkServer.Inventory
                         }
                         while (stack.Amount > 0 && stack.Amount < amount);
 
-                        //if (stack.Amount == amount && Player.IsCreativeMode)
-                        //{
-                        //    stack.Zero();
-                        //    return true;
-                        //}
-                        //else
+                        if (stack.Amount == amount && Player.IsCreativeMode)
+                        {
+                            stack.Zero();
+                            return true;
+                        }
+                        else
                         {
                             return stack.Amount < amount;
                         }
@@ -305,7 +304,7 @@ namespace MvkServer.Inventory
         /// но я не трезвый, лень соображать. Это оправдания
         /// Но думаю если в ItemBase будет лимит 120 то стак сформируется по GetInventoryStackLimit тогда.
         /// </summary>
-        public int GetInventoryStackLimit() => 16;
+        public int GetInventoryStackLimit() => 64;
 
         /// <summary>
         /// Удаляет из слота инвентаря (первый аргумент) до указанного количества (второй аргумент) предметов и возвращает их в новый стек.

@@ -93,11 +93,11 @@ namespace MvkClient.World
                 {
                     ChunkRender chunk = new ChunkRender(ClientWorld, packet.GetPos());
                     chunk.SetBinary(packet.GetBuffer(), packet.GetHeight());
-                    chunk.ModifiedToRender();
                     lock (locker) addChunks.Add(chunk);
                 }
                 else
                 {
+                    // Пока этот раздел вроде не работает 04-04-2022
                     ChunkRender chunk = GetChunkRender(packet.GetPos());
                     if (chunk != null)
                     {
@@ -157,6 +157,12 @@ namespace MvkClient.World
             while (addChunks.Count > 0 && count > 0)
             {
                 chunkMapping.Set(addChunks[0]);
+                vec2i pos = addChunks[0].Position;
+                // надо соседние чанки попросить перерендерить
+                vec3i c0 = new vec3i(pos.x - 1, 0, pos.y - 1);
+                vec3i c1 = new vec3i(pos.x + 1, ChunkRender.COUNT_HEIGHT - 1, pos.y + 1);
+                ClientWorld.AreaModifiedToRender(c0, c1);
+
                 addChunks.RemoveAt(0);
                 count--;
             }
@@ -204,6 +210,31 @@ namespace MvkClient.World
                     UnloadChunk(chunk);
                 }
             }
+        }
+
+        /// <summary>
+        /// Сделать запрос на обновление близ лежащих псевдо чанков для альфа блоков
+        /// </summary>
+        /// <param name="x">координата чанка X</param>
+        /// <param name="y">координата псевдо чанка Y</param>
+        /// <param name="z">координата чанка Z</param>
+        public void ModifiedToRenderAlpha(int x, int y, int z)
+        {
+            ChunkRender chunk = ClientWorld.ChunkPrClient.GetChunkRender(new vec2i(x, z));
+            if (chunk != null)
+            {
+                chunk.ModifiedToRenderAlpha(y);
+                chunk.ModifiedToRenderAlpha(y - 1);
+                chunk.ModifiedToRenderAlpha(y + 1);
+            }
+            chunk = ClientWorld.ChunkPrClient.GetChunkRender(new vec2i(x + 1, z));
+            if (chunk != null) chunk.ModifiedToRenderAlpha(y);
+            chunk = ClientWorld.ChunkPrClient.GetChunkRender(new vec2i(x - 1, z));
+            if (chunk != null) chunk.ModifiedToRenderAlpha(y);
+            chunk = ClientWorld.ChunkPrClient.GetChunkRender(new vec2i(x, z + 1));
+            if (chunk != null) chunk.ModifiedToRenderAlpha(y);
+            chunk = ClientWorld.ChunkPrClient.GetChunkRender(new vec2i(x, z - 1));
+            if (chunk != null) chunk.ModifiedToRenderAlpha(y);
         }
 
         public override string ToString()

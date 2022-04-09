@@ -53,6 +53,7 @@ namespace MvkClient.Renderer
             stopwatch.Start();
 
             gl.ClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+            gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);
             gl.Enable(OpenGL.GL_DEPTH_TEST);
             gl.Enable(OpenGL.GL_BLEND);
             gl.BlendFunc(OpenGL.GL_SRC_ALPHA, OpenGL.GL_ONE_MINUS_SRC_ALPHA);
@@ -147,9 +148,11 @@ namespace MvkClient.Renderer
             // Перерасчёт кадров раз в секунду, и среднее время прорисовки кадра
             if (Client.Time() >= timerSecond + 1000)
             {
+                int countChunk = Debug.CountUpdateChunck;
+                Debug.CountUpdateChunck = 0;
                 float speedTick = 0;
                 if (tps > 0) speedTick = speedTickAll / tps;
-                Debug.SetTpsFps(fps, speedFrameAll / fps, tps, speedTick);
+                Debug.SetTpsFps(fps, speedFrameAll / fps, tps, speedTick, countChunk);
                 timerSecond += 1000;
                 speedFrameAll = 0;
                 speedTickAll = 0;

@@ -28,11 +28,12 @@ namespace MvkClient.Entity
         /// <summary>
         /// Задать данные игрока
         /// </summary>
-        public void SetDataPlayer(ushort id, string uuid, string name)
+        public void SetDataPlayer(ushort id, string uuid, bool isCreativeMode, string name)
         {
             base.name = name;
             UUID = uuid;
             Id = id;
+            IsCreativeMode = isCreativeMode;
         }
 
         /// <summary>

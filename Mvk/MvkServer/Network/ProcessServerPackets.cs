@@ -154,7 +154,7 @@ namespace MvkServer.Network
             EntityPlayerServer entityPlayer = ServerMain.World.Players.GetPlayerSocket(socket);
             if (entityPlayer != null)
             {
-                entityPlayer.SetSneakingSprinting(packet.IsSneaking(), entityPlayer.IsSprinting);
+                entityPlayer.SetSneakingSprinting(packet.IsSneaking(), entityPlayer.IsSprinting());
                 entityPlayer.SetRotationHead(packet.GetYaw(), packet.GetPitch());
                 entityPlayer.MarkPlayerActive();
             }

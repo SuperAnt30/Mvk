@@ -328,7 +328,7 @@ namespace MvkServer.World
                     return chunk.GetBlock0(new vec3i(pos.x & 15, pos.y, pos.z & 15));
                 }
             }
-            return Blocks.GetAir(pos);
+            return Blocks.CreateAir(pos);
         }
         /// <summary>
         /// Получить тип блока

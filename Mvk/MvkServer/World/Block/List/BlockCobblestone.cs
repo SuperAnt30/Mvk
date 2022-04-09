@@ -86,6 +86,10 @@ namespace MvkServer.World.Block.List
             Particle = 1;
             IsBoundingBoxAll = false;
             AllDrawing = true;
+            IsCollidable = false;
+            IsFullCube = false;
+            CanPut = true;
+            LightOpacity = 0;
         }
 
         /// <summary>

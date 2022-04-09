@@ -33,7 +33,7 @@ namespace MvkServer.World
                 }
             }
             // Для колизи важно, если чанк не загружен, то блоки все с колизией, так-как начнём падать
-            return Blocks.GetBlock(EnumBlock.None, new BlockPos(x, y, z));
+            return Blocks.CreateBlock(EnumBlock.None, new BlockPos(x, y, z));
         }
 
         /// <summary>

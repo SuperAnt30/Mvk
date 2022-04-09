@@ -41,7 +41,7 @@ namespace MvkServer.World.Block.List
             };
             Particle = 3;
             Color = colorGreen;
-            IsGrass = true;
+            //IsGrass = true;
             Hardness = 10;
         }
     }

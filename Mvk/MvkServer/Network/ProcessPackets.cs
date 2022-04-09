@@ -69,6 +69,7 @@ namespace MvkServer.Network
                     case 0x13: return new PacketS13DestroyEntities();
                     case 0x14: return new PacketS14EntityMotion();
                     case 0x19: return new PacketS19EntityStatus();
+                    case 0x1C: return new PacketS1CEntityMetadata();
                     case 0x23: return new PacketS23BlockChange();
                     case 0x25: return new PacketS25BlockBreakAnim();
                     case 0x2F: return new PacketS2FSetSlot();

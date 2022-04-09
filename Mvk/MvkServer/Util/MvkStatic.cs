@@ -1,4 +1,5 @@
 ﻿using MvkServer.Glm;
+using MvkServer.World.Chunk;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -69,14 +70,40 @@ namespace MvkServer.Util
             {
                 for (int y = -overview; y <= overview; y++)
                 {
-                    r.Add(new ArrayDistance(new vec2i(x, y), Mth.Sqrt(x * x + y * y)));
+                    r.Add(new ArrayDistance(new vec3i(x, y, 0), Mth.Sqrt(x * x + y * y)));
                 }
             }
             r.Sort();
             vec2i[] list = new vec2i[r.Count];
             for (int i = 0; i < r.Count; i++)
             {
-                list[i] = r[i].Position;
+                list[i] = r[i].GetPos2d();
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// Сгенерировать массив по длинам используя квадратный корень в объёме
+        /// </summary>
+        /// <param name="overview">Обзор, в одну сторону от ноля</param>
+        public static vec3i[] GetSqrt3d(int overview)
+        {
+            List<ArrayDistance> r = new List<ArrayDistance>();
+            for (int x = -overview; x <= overview; x++)
+            {
+                for (int y = -overview; y <= overview; y++)
+                {
+                    for (int z = -overview; z <= overview; z++)
+                    {
+                        r.Add(new ArrayDistance(new vec3i(x, y, z), Mth.Sqrt(x * x + y * y + z * z)));
+                    }
+                }
+            }
+            r.Sort();
+            vec3i[] list = new vec3i[r.Count];
+            for (int i = 0; i < r.Count; i++)
+            {
+                list[i] = r[i].Position();
             }
             return list;
         }

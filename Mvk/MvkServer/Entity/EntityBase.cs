@@ -102,7 +102,10 @@ namespace MvkServer.Entity
         /// Был ли эта сущность добавлена в чанк, в котором он находится? 
         /// </summary>
         public bool AddedToChunk { get; set; } = false;
-
+        /// <summary>
+        /// Объект дополнительных данных
+        /// </summary>
+        public DataWatcher MetaData { get; protected set; }
 
         /// <summary>
         /// Генератор случайных чисел данной сущности
@@ -127,7 +130,11 @@ namespace MvkServer.Entity
             {
                 worldServer.Players.NewEntity(this);
             }
+            MetaData = new DataWatcher(this);
+            AddMetaData();
         }
+
+        protected virtual void AddMetaData() { }
 
         /// <summary>
         /// Получить название для рендеринга
@@ -271,7 +278,7 @@ namespace MvkServer.Entity
             bool isSneaking = false;
             if (this is EntityLiving entityLiving)
             {
-                isSneaking = entityLiving.IsSneaking;
+                isSneaking = entityLiving.IsSneaking();
             }
 
             // Защита от падения с края блока если сидишь и являешься игроком
@@ -480,6 +487,11 @@ namespace MvkServer.Entity
             byte index = 3;
             float value = 9999.0f;
 
+            if (!World.GetAverageEdgeLengthBlock(blockPos.OffsetUp()) && 1 - vecPos.y < value)
+            {
+                value = 1 - vecPos.y;
+                index = 3;
+            }
             if (!World.GetAverageEdgeLengthBlock(blockPos.OffsetWest()) && vecPos.x < value)
             {
                 value = vecPos.x;
@@ -489,11 +501,6 @@ namespace MvkServer.Entity
             {
                 value = 1 - vecPos.x;
                 index = 1;
-            }
-            if (!World.GetAverageEdgeLengthBlock(blockPos.OffsetUp()) && 1 - vecPos.y < value)
-            {
-                value = 1 - vecPos.y;
-                index = 3;
             }
             if (!World.GetAverageEdgeLengthBlock(blockPos.OffsetNorth()) && vecPos.z < value)
             {
@@ -510,12 +517,18 @@ namespace MvkServer.Entity
 
             vec3 motion = Motion;
             if (index == 0) motion.x = -value;
-            if (index == 1) motion.x = value;
-            if (index == 3) motion.y = value;
-            if (index == 4) motion.z = -value;
-            if (index == 5) motion.z = value;
+            else if (index == 1) motion.x = value;
+            else if (index == 3) motion.y = value;
+            else if (index == 4) motion.z = -value;
+            else if (index == 5) motion.z = value;
             Motion = motion;
             return true;
         }
+
+        /// <summary>
+        /// Обновлено знчение в метданных
+        /// </summary>
+        /// <param name="id">индекс значения какое данное было обнавлено</param>
+        public virtual void UpdatedWatchedObjec(int id) { }
     }
 }

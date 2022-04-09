@@ -12,46 +12,21 @@ namespace MvkServer.Network.Packets.Server
         private vec3 pos;
         private float yaw;
         private float pitch;
-        private bool sneaking;
         private bool onGround;
-        private bool sprinting;
 
         public ushort GetId() => id;
         public vec3 GetPos() => pos;
         public float GetYaw() => yaw;
         public float GetPitch() => pitch;
-        public bool IsSneaking() => sneaking;
         public bool OnGround() => onGround;
-        public bool IsSprinting() => sprinting;
 
         public PacketS14EntityMotion(EntityBase entity)
         {
             id = entity.Id;
             pos = entity.Position;
-            if (entity is EntityLivingHead)
-            {
-                yaw = ((EntityLivingHead)entity).RotationYawHead;
-            }
-            else if (entity is EntityLook)
-            {
-                yaw = ((EntityLook)entity).RotationYaw;
-            }
-            else
-            {
-                yaw = 0;
-            }
-            if (entity is EntityLiving)
-            {
-                EntityLiving entityLiving = (EntityLiving)entity;
-                pitch = entityLiving.RotationPitch;
-                sneaking = entityLiving.IsSneaking;
-                sprinting = entityLiving.IsSprinting;
-            } else
-            {
-                pitch = 0;
-                sneaking = false;
-                sprinting = false;
-            }
+            yaw = entity is EntityLivingHead entityLivingHead ? entityLivingHead.RotationYawHead
+                : entity is EntityLook entityLook ? entityLook.RotationYaw : 0;
+            pitch = entity is EntityLiving entityLiving ? entityLiving.RotationPitch : 0;
             onGround = entity.OnGround;
         }
 
@@ -61,9 +36,7 @@ namespace MvkServer.Network.Packets.Server
             pos = new vec3(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat());
             yaw = stream.ReadFloat();
             pitch = stream.ReadFloat();
-            sneaking = stream.ReadBool();
             onGround = stream.ReadBool();
-            sprinting = stream.ReadBool();
         }
 
         public void WritePacket(StreamBase stream)
@@ -74,9 +47,7 @@ namespace MvkServer.Network.Packets.Server
             stream.WriteFloat(pos.z);
             stream.WriteFloat(yaw);
             stream.WriteFloat(pitch);
-            stream.WriteBool(sneaking);
             stream.WriteBool(onGround);
-            stream.WriteBool(sprinting);
         }
     }
 }

@@ -1,6 +1,8 @@
-﻿using MvkServer.Entity.Item;
+﻿using MvkServer.Entity;
+using MvkServer.Entity.Item;
 using MvkServer.Glm;
 using MvkServer.Item.List;
+using System.Collections;
 
 namespace MvkServer.Network.Packets.Server
 {
@@ -13,20 +15,20 @@ namespace MvkServer.Network.Packets.Server
         private vec3 pos;
         private bool isBlock;
         private ushort itemId;
-        private int amount;
+        private ArrayList list;
 
         public ushort GetEntityId() => id;
         public vec3 GetPos() => pos;
         public bool IsBlock() => isBlock;
-        public int GetAmount() => amount;
         public ushort GetItemId() => itemId;
+        public ArrayList GetList() => list;
 
         public PacketS0ESpawnItem(EntityItem entity)
         {
             id = entity.Id;
             pos = entity.Position;
-            amount = entity.Stack.Amount;
-            if (entity.Stack.Item is ItemBlock itemBlock)
+            list = entity.MetaData.GetAllWatched();
+            if (entity.GetEntityItemStack().Item is ItemBlock itemBlock)
             {
                 isBlock = true;
                 itemId = (ushort)itemBlock.Block.EBlock;
@@ -40,21 +42,21 @@ namespace MvkServer.Network.Packets.Server
         public void ReadPacket(StreamBase stream)
         {
             id = stream.ReadUShort();
-            amount = stream.ReadByte();
             pos = new vec3(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat());
             isBlock = stream.ReadBool();
             itemId = stream.ReadUShort();
+            list = DataWatcher.ReadWatchedListFromPacketBuffer(stream);
         }
 
         public void WritePacket(StreamBase stream)
         {
             stream.WriteUShort(id);
-            stream.WriteByte((byte)amount);
             stream.WriteFloat(pos.x);
             stream.WriteFloat(pos.y);
             stream.WriteFloat(pos.z);
             stream.WriteBool(isBlock);
             stream.WriteUShort(itemId);
+            DataWatcher.WriteWatchedListToPacketBuffer(list, stream);
         }
     }
 }

@@ -44,10 +44,10 @@ namespace MvkServer.Item
         /// </summary>
         public static ItemBase GetItemById(int id)
         {
-            // TODO:доделать
+            // HACK:: доделать id item
             if (id > 0 && id < 4096) // Block
             {
-                return new ItemBlock(Blocks.GetBlock((EnumBlock)id));
+                return new ItemBlock(Blocks.GetBlockCache((EnumBlock)id));
             }
             // остальное предметы, пока их нет
             return null;

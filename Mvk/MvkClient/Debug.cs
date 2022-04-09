@@ -4,6 +4,7 @@ using MvkClient.Renderer.Font;
 using MvkServer.Glm;
 using MvkServer.Util;
 using SharpGL;
+using System.Collections.Generic;
 
 namespace MvkClient
 {
@@ -21,6 +22,22 @@ namespace MvkClient
         /// </summary>
         public static bool IsDrawServerChunk = false;
         /// <summary>
+        /// Демонстрация FrustumCulling
+        /// </summary>
+        public static bool IsDrawFrustumCulling = false;
+        /// <summary>
+        /// Массив 2д чанков, которые попадают в FrustumCulling без офсет для отладки
+        /// </summary>
+        public static List<vec2i> DrawFrustumCulling = new List<vec2i>();
+        /// <summary>
+        /// Нужен рендер для отладки FrustumCulling
+        /// </summary>
+        public static bool RenderFrustumCulling = false;
+        /// <summary>
+        /// Прорисовка вокселей контуром линий
+        /// </summary>
+        public static bool IsDrawVoxelLine = false;
+        /// <summary>
         /// Количество мешей
         /// </summary>
         public static long CountMesh = 0;
@@ -32,6 +49,10 @@ namespace MvkClient
         /// Количество полигонов блоков
         /// </summary>
         public static int CountPoligon = 0;
+        /// <summary>
+        /// Сколько обновилось чанков
+        /// </summary>
+        public static int CountUpdateChunck = 0;
 
         public static int DInt = 0;
         public static long DLong = 0;
@@ -39,13 +60,14 @@ namespace MvkClient
         public static string DStr = "";
 
         protected static string strTpsFps = "";
-        public static void SetTpsFps(int fps, float speedFrame, int tps, float speedTick) => strTpsFps = string.Format("Speed: {0} fps {1:0.00} ms {2} tps {3:0.00} ms", fps, speedFrame, tps, speedTick);
+        public static void SetTpsFps(int fps, float speedFrame, int tps, float speedTick, int countUpdateChunk) 
+            => strTpsFps = string.Format("Speed: {0} fps {1:0.00} ms {2} tps {3:0.00} ms ({4})", fps, speedFrame, tps, speedTick, countUpdateChunk);
 
         public static string strServer = "";
         public static string strClient = "";
+        public static string version = "";
 
 
-        
 
         public static DebugChunk ListChunks { get; set; } = new DebugChunk();
 
@@ -53,7 +75,9 @@ namespace MvkClient
         {
             string s = strServer == "" ? "" : "Server " + strServer + "\r\n";
             string c = strClient == "" ? "" : "Client " + strClient + "\r\n";
-            return strTpsFps + "\r\n" 
+
+            return version + "\r\n"
+                + strTpsFps + "\r\n" 
                 + s + c 
                 + string.Format("Mesh: {0}/{6} Poligons: {4}\r\nint: {1} float: {2:0.00} string: {3} long: {5}", 
                 CountMesh, DInt, DFloat, DStr, CountPoligon, DLong, CountMeshAll);
@@ -63,6 +87,8 @@ namespace MvkClient
 
         private static uint dList;
         private static uint dListCh;
+        private static uint dListFC;
+        
 
         public static void RenderDebug()
         {
@@ -138,6 +164,31 @@ namespace MvkClient
                         GLRender.Rectangle(pos.x + x + 3, -pos.y + z + 3, pos.x + x + size - 3, -pos.y + z + size - 3, colPr[6]);
                     }
                 }
+
+                GLRender.ListEnd();
+            }
+
+            if (IsDrawFrustumCulling && RenderFrustumCulling)
+            {
+                RenderFrustumCulling = false;
+                GLRender.ListDelete(dListFC);
+                dListFC = GLRender.ListBegin();
+                // сетка карты
+                GLWindow.gl.Disable(OpenGL.GL_TEXTURE_2D);
+
+                int x = GLWindow.WindowWidth / 2;
+                int z = GLWindow.WindowHeight / 2;
+                int size = 8;
+
+                if (DrawFrustumCulling.Count > 0)
+                {
+                    foreach (vec2i p in DrawFrustumCulling)
+                    {
+                        vec2i pos = new vec2i(p.x * size, p.y * size);
+                        GLRender.Rectangle(pos.x + x + 1, -pos.y + z + 1, pos.x + x + size - 1, -pos.y + z + size - 1, new vec4(.2f, .7f, .7f, 1f));
+                    }
+                }
+                GLRender.Rectangle(3, 3, -2, -2, new vec4(.9f, .9f, .9f, 1f));
                 GLRender.ListEnd();
             }
         }
@@ -146,6 +197,7 @@ namespace MvkClient
         {
             if (IsDraw) GLRender.ListCall(dList);
             if (IsDrawServerChunk) GLRender.ListCall(dListCh);
+            if (IsDrawFrustumCulling) GLRender.ListCall(dListFC);
         }
 
         #endregion

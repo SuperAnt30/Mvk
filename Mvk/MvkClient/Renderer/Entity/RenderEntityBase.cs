@@ -98,16 +98,16 @@ namespace MvkClient.Renderer.Entity
         {
             float dis = glm.distance(renderManager.CameraPosition, entity.Position);
 
-            if (dis < 16) // дистанция между сущностями
+            if (dis < 32) // дистанция между сущностями
             {
                 vec3 pos = entity.GetPositionFrame(timeIndex);
                 vec3 offsetPos = pos - offset;
                 WorldClient world = renderManager.World;
                 float shadowSize = this.shadowSize * 2f;
 
-                if (dis > 8)
+                if (dis > 16)
                 {
-                    float adis = (16 - dis) / 8f;
+                    float adis = (32 - dis) / 16f;
                     shadowAlpha *= adis;
                 }
 
@@ -116,16 +116,19 @@ namespace MvkClient.Renderer.Entity
 
                 BlockPos[] blocks = BlockPos.GetAllInBox(pos0, pos1);
 
+                GLRender.DepthEnable();
+                GLRender.DepthMask(false);
+                GLRender.PolygonOffsetEnable();
+                GLRender.CullDisable();
 
                 for (int i = 0; i < blocks.Length; i++)
                 {
                     BlockBase block = world.GetBlock(blocks[i]);
                     BlockBase blockUp = world.GetBlock(block.Position.OffsetUp());
-                    if (blockUp.IsAir && !block.IsAir) // block.isFullCube
+                    if (blockUp.IsAir && block.IsFullCube)
                     {
                         GLRender.PushMatrix();
                         {
-                            GLRender.CullDisable();
                             GLRender.Translate(offsetPos.x, offsetPos.y, offsetPos.z);
                             GLRender.Scale(1, 1, 1);
                             GLRender.Texture2DEnable();
@@ -137,7 +140,7 @@ namespace MvkClient.Renderer.Entity
                            
                             float x1 = blocks[i].X - pos.x;
                             float x2 = blocks[i].X + 1f - pos.x;
-                            float y = blocks[i].Y + 1.015625f - pos.y;
+                            float y = blocks[i].Y + 1f - pos.y;
                             float z1 = blocks[i].Z - pos.z;
                             float z2 = blocks[i].Z + 1f - pos.z;
 
@@ -159,11 +162,13 @@ namespace MvkClient.Renderer.Entity
                             GLRender.End();
 
                             GLRender.Texture2DEnable();
-                            GLRender.CullEnable();
                         }
                         GLRender.PopMatrix();
                     }
                 }
+                GLRender.CullEnable();
+                GLRender.PolygonOffsetDisable();
+                GLRender.DepthMask(true);
             }
         }
     }

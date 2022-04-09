@@ -61,7 +61,7 @@ namespace MvkServer.Util
         public vec3 ToVec3Center() => new vec3(Position.x + .5f, Position.y + .5f, Position.z + .5f);
 
         /// <summary>
-        /// Получить позицию блока в чанке, 0..15
+        /// Получить позицию блока в чанке, 0..15 0..255 0..15
         /// </summary>
         public vec3i GetPosition0() => new vec3i(Position.x & 15, Position.y, Position.z & 15);
 
@@ -116,5 +116,23 @@ namespace MvkServer.Util
         }
 
         public override string ToString() => Position.ToString();
+
+        public override bool Equals(object obj)
+        {
+            if (obj.GetType() == typeof(BlockPos))
+            {
+                var vec = (BlockPos)obj;
+                if (X == vec.X && Y == vec.Y && Z == vec.Z) return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Returns a hash code for this instance.
+        /// </summary>
+        /// <returns>
+        /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table. 
+        /// </returns>
+        public override int GetHashCode() => X.GetHashCode() ^ Y.GetHashCode() ^ Z.GetHashCode();
     }
 }

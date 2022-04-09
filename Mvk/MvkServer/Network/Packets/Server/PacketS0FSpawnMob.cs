@@ -1,5 +1,7 @@
 ﻿using MvkServer.Entity;
 using MvkServer.Glm;
+using MvkServer.Item;
+using System.Collections;
 
 namespace MvkServer.Network.Packets.Server
 {
@@ -14,6 +16,8 @@ namespace MvkServer.Network.Packets.Server
         private float yaw;
         private float yawHead;
         private float pitch;
+        //private ItemStack[] stacks;
+        private ArrayList list;
 
         public ushort GetId() => id;
         public EnumEntities GetEnum() => type;
@@ -21,6 +25,8 @@ namespace MvkServer.Network.Packets.Server
         public float GetYaw() => yaw;
         public float GetYawHead() => yawHead;
         public float GetPitch() => pitch;
+        //public ItemStack[] GetStacks() => stacks;
+        public ArrayList GetList() => list;
 
         public PacketS0FSpawnMob(EntityBase entity)
         {
@@ -39,6 +45,14 @@ namespace MvkServer.Network.Packets.Server
                 yaw = 0;
                 pitch = 0;
             }
+            //if (entity is EntityLiving entityLiving)
+            //{
+            //    stacks = entityLiving.Inventory.GetCurrentItemAndArmor();
+            //} else
+            //{
+            //    stacks = new ItemStack[0];
+            //}
+            list = entity.MetaData.GetAllWatched();
         }
 
         public void ReadPacket(StreamBase stream)
@@ -49,6 +63,7 @@ namespace MvkServer.Network.Packets.Server
             yawHead = stream.ReadFloat();
             yaw = stream.ReadFloat();
             pitch = stream.ReadFloat();
+            list = DataWatcher.ReadWatchedListFromPacketBuffer(stream);
         }
 
         public void WritePacket(StreamBase stream)
@@ -61,6 +76,7 @@ namespace MvkServer.Network.Packets.Server
             stream.WriteFloat(yawHead);
             stream.WriteFloat(yaw);
             stream.WriteFloat(pitch);
+            DataWatcher.WriteWatchedListToPacketBuffer(list, stream);
         }
     }
 }

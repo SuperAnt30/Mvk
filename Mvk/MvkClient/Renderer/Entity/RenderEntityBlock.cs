@@ -17,7 +17,7 @@ namespace MvkClient.Renderer.Entity
 
         protected override void DoRender()
         {
-            BlockRender blockRender = new BlockRender(null, Blocks.GetBlock(enumBlock));
+            BlockRender blockRender = new BlockRender(Blocks.GetBlockCache(enumBlock));
             blockRender.RenderVBOtoDL();
         }
     }
