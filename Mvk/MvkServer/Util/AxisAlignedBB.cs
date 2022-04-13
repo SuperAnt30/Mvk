@@ -77,6 +77,11 @@ namespace MvkServer.Util
         public AxisAlignedBB Expand(vec3 vec) => new AxisAlignedBB(Min - vec, Max + vec);
 
         /// <summary>
+        /// Возвращает ограничивающую рамку, уменьшенную указанным вектором
+        /// </summary>
+        public AxisAlignedBB Contract(vec3 vec) => new AxisAlignedBB(Min + vec, Max - vec);
+
+        /// <summary>
         /// Если экземпляр и ограничивающие рамки аргумента перекрываются в измерениях Y и Z, 
         /// вычислите смещение между ними в измерении X. вернуть offset, если ограничивающие 
         /// рамки не перекрываются или если offset ближе к 0, чем вычисленное смещение. 

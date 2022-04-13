@@ -37,16 +37,19 @@ namespace MvkClient.Renderer.Entity
             {
                 RenderLivingLabel(entity, entity.GetName(), offset, timeIndex);
             }
+            //if (IsShadowLabel(entity))
+            //{
+            //    RenderShadow(entity, offset, .5f, timeIndex);
+            //}
+        }
+
+        public void DoRenderShadowAndFire(EntityBase entity, vec3 offset, float timeIndex)
+        {
             if (IsShadowLabel(entity))
             {
                 RenderShadow(entity, offset, .5f, timeIndex);
             }
         }
-
-        //public void DoRenderShadowAndFire(EntityBase entity, vec3 offset, float timeIndex)
-        //{
-        //    RenderShadow(entity, offset, 1, timeIndex);
-        //}
 
         /// <summary>
         /// Можно ли прописывать название над сущностью

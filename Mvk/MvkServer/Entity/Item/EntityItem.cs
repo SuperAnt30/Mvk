@@ -33,7 +33,10 @@ namespace MvkServer.Entity.Item
         /// Задержка перед получением 
         /// </summary>
         private int delayBeforeCanPickup = 0;
-
+        /// <summary>
+        /// Задержка перед всплытием
+        /// </summary>
+        private int delayBeforeSurface = 0;
         /// <summary>
         /// Владелец, кто выкинул
         /// </summary>
@@ -44,7 +47,7 @@ namespace MvkServer.Entity.Item
         /// </summary>
         //private float rotationYaw;
 
-        
+
 
         public EntityItem(WorldBase world) : base(world)
         {
@@ -96,8 +99,10 @@ namespace MvkServer.Entity.Item
                 base.Update();
                 if (delayBeforeCanPickup > 0 && delayBeforeCanPickup != 32767) delayBeforeCanPickup --;
 
+                bool isWater = IsInWater();
+
                 PositionPrev = Position;
-                Motion += new vec3(0, -.04f, 0);
+                Motion += new vec3(0, isWater ? -.008f : -.04f, 0);
                 NoClip = PushOutOfBlocks(new vec3(Position.x, (BoundingBox.Min.y + BoundingBox.Max.y) / 2f, Position.z));
                 MoveEntity(Motion);
 
@@ -107,11 +112,30 @@ namespace MvkServer.Entity.Item
                     Mth.Abs(Motion.y) < 0.005f ? 0 : Motion.y,
                     Mth.Abs(Motion.z) < 0.005f ? 0 : Motion.z
                 );
+
+
+                // высплываем
+                bool isSurface = false;
+                // Если в воде
+                if (isWater)
+                {
+                    if (delayBeforeSurface >= 20)
+                    {
+                        Motion = new vec3(Motion.x, .06f, Motion.z);
+                        isSurface = true;
+                    }
+                    else
+                    {
+                        delayBeforeSurface++;
+                    }
+                }
+
                 // Фиксируем было ли перемещение
                 IsMoving = Motion.x != 0 || Motion.y != 0 || Motion.z != 0;
 
                 if (IsMoving)
                 {
+                    
                     // Если лава подпрыгивает , шипит...
                     //if (this.worldObj.getBlockState(new BlockPos(this)).getBlock().getMaterial() == Material.lava)
                     //{
@@ -120,6 +144,7 @@ namespace MvkServer.Entity.Item
                     //    this.motionZ = (double)((this.rand.nextFloat() - this.rand.nextFloat()) * 0.2F);
                     //    this.playSound("random.fizz", 0.4F, 2.0F + this.rand.nextFloat() * 0.4F);
                     //}
+
 
                     if (!World.IsRemote)
                     {
@@ -133,18 +158,22 @@ namespace MvkServer.Entity.Item
                 if (OnGround)
                 {
                     // скользкий блок
-                    move = .6f * .98f;
-                    //move = World.GetBlockState(new BlockPos(MathHelper.floor_double(this.posX), MathHelper.floor_double(this.getEntityBoundingBox().minY) - 1, MathHelper.floor_double(this.posZ))).getBlock().slipperiness * 0.98F;
+                    //move = .6f * .98f;
+                    //BlockBase block = World.GetBlock(new BlockPos(Mth.Floor(Position.x), Mth.Floor(BoundingBox.Min.y) - 1, Mth.Floor(Position.z)));
+                    //move = block != null ? block.Slipperiness * .98f : .588f; //(.6*.98)
+                    move = World.GetBlock(new BlockPos(Mth.Floor(Position.x), Mth.Floor(BoundingBox.Min.y) - 1, Mth.Floor(Position.z))).Slipperiness * .98f;
                 }
 
                 vec3 motion = Motion * new vec3(move, .98f, move);
 
-                if (OnGround) motion.y *= -.5f;
+                if (OnGround && !isSurface) motion.y *= -.5f;
 
                 Motion = motion;
                 // ------------------
 
                 if (Age != -32768) Age++;
+
+                HandleWaterMovement();
 
                 // Если сущность живёт 5 мин или больше она умирает
                 if (!World.IsRemote && Age >= 6000) SetDead();

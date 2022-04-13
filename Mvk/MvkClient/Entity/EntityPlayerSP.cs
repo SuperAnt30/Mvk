@@ -80,6 +80,10 @@ namespace MvkClient.Entity
         /// Позиция камеры в блоке для альфа, в зависимости от вида (с глаз, с зади, спереди)
         /// </summary>
         public vec3i PositionAlphaBlock { get; private set; }
+        /// <summary>
+        /// Позиция камеры
+        /// </summary>
+        public vec3 PositionCamera { get; private set; }
 
         /// <summary>
         /// Массив по длинам используя квадратный корень для всей видимости в объёме для обновление чанков в объёме
@@ -275,6 +279,26 @@ namespace MvkClient.Entity
         }
 
         /// <summary>
+        /// Скорость перемещения
+        /// </summary>
+        protected override float GetAIMoveSpeed(float strafe, float forward)
+        {
+            bool isSneaking = IsSneaking();
+            float speed = Mth.Max(Speed.Strafe * Mth.Abs(strafe), Speed.Forward * Mth.Abs(forward));
+            if (IsSprinting() && forward < 0 && !isSneaking)
+            {
+                // Бег 
+                speed *= Speed.Sprinting;
+            }
+            else if (!IsFlying && (forward != 0 || strafe != 0) && isSneaking)
+            {
+                // Крадёмся
+                speed *= Speed.Sneaking;
+            }
+            return speed;
+        }
+
+        /// <summary>
         /// Удар рукой по сущности в такте игры
         /// </summary>
         private bool AtackUpdate()
@@ -430,8 +454,7 @@ namespace MvkClient.Entity
             float[] lookAt = glm.lookAt(pos, pos + front, up).to_array();
             if (!Mth.EqualsArrayFloat(lookAt, LookAt, 0.00001f))
             {
-                PositionAlphaBlock = new vec3i(Position + pos);
-                positionAlphaChunk = new vec3i(PositionAlphaBlock.x >> 4, PositionAlphaBlock.y >> 4, PositionAlphaBlock.z >> 4);
+                PositionCamera = pos;
                 LookAt = lookAt;
                 RayLook = front;
                 lookAtDL = new vec3[] { pos, pos + front, up };
@@ -775,7 +798,7 @@ namespace MvkClient.Entity
         /// </summary>
         protected override void Fall()
         {
-            if (fallDistanceResult > 0)
+            if (fallDistanceResult > .0001f)
             {
                 ClientWorld.ClientMain.TrancivePacket(new PacketC0CPlayerAction(PacketC0CPlayerAction.EnumAction.Fall, fallDistanceResult));
                 ParticleFall(fallDistanceResult);
@@ -821,6 +844,9 @@ namespace MvkClient.Entity
         /// </summary>
         private void UpdateChunkRenderAlphe()
         {
+            PositionAlphaBlock = new vec3i(new vec3(Position.x, Position.y + GetEyeHeight(), Position.z));
+            positionAlphaChunk = new vec3i(PositionAlphaBlock.x >> 4, PositionAlphaBlock.y >> 4, PositionAlphaBlock.z >> 4);
+
             if (!positionAlphaChunk.Equals(positionAlphaChunkPrev))
             {
                 // Если смещение чанком

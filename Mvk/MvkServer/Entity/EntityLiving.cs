@@ -114,6 +114,10 @@ namespace MvkServer.Entity
         /// Оборудование, которое этот моб ранее носил, использовалось для синхронизации
         /// </summary>
         protected ItemStack[] previousEquipment = new ItemStack[0];
+        /// <summary>
+        /// Возраст этой сущности (используется для определения, когда она умирает)
+        /// </summary>
+        protected int entityAge;
 
         public EntityLiving(WorldBase world) : base(world)
         {
@@ -122,7 +126,11 @@ namespace MvkServer.Entity
             SpeedSurvival();
         }
 
-        protected override void AddMetaData() => MetaData.Add(0, (byte)0);
+        protected override void AddMetaData()
+        {
+            MetaData.Add(0, (byte)0); // флаги
+            MetaData.Add(1, (short)300); // флаги
+        }
 
         #region Flag
 
@@ -162,6 +170,16 @@ namespace MvkServer.Entity
         /// Задать значение крадется ли
         /// </summary>
         protected void SetSneaking(bool sneaking) => SetFlag(1, sneaking);
+
+        /// <summary>
+        /// Получить параметр кислорода
+        /// </summary>
+        public int GetAir() => MetaData.GetWatchableObjectShort(1);
+
+        /// <summary>
+        /// Задать параметр кислорода
+        /// </summary>
+        public void SetAir(int air) => MetaData.UpdateObject(1, (short)air);
 
         #endregion
 
@@ -230,6 +248,11 @@ namespace MvkServer.Entity
         #endregion
 
         /// <summary>
+        /// Проверяет, жив ли целевой объект
+        /// </summary>
+        public bool IsEntityAlive() => !IsDead && Health > 0f;
+
+        /// <summary>
         /// Надо ли обрабатывать LivingUpdate, для мобов на сервере, и игроки у себя
         /// </summary>
         protected virtual bool IsLivingUpdate()
@@ -288,28 +311,54 @@ namespace MvkServer.Entity
             }
         }
 
-        protected void EntityUpdate()
+        /// <summary>
+        /// Обновление сущности на сервер
+        /// </summary>
+        protected void EntityUpdateServer()
         {
-            // метод определения если есть ускорение и мы не на воде, определяем по нижниму блоку какой спавн частиц и спавним их
-            // ... func_174830_Y
+            if (!World.IsRemote)
+            {
+                // метод определения если есть ускорение и мы не на воде, определяем по нижниму блоку какой спавн частиц и спавним их
+                // ... func_174830_Y
 
+                // определяем горим ли мы, и раз в секунду %20, наносим урон
+                // ...
+
+                // определяем тонем ли мы
+                DrownServer();
+
+                //// если мы ниже -128 по Y убиваем игрока
+                //if (Position.y < -128) Kill();
+            }
+        }
+
+        /// <summary>
+        /// Определение местоположение сущности
+        /// </summary>
+        protected void EntityUpdateLocation()
+        {
             // метод проверки нахождения по кализии в воде ли мы, и меняем статус IsWater
-            // ... handleWaterMovement
-
-            // определяем горим ли мы, и раз в секунду %20, наносим урон
-            // ...
+            HandleWaterMovement();
 
             // определяем в лаве ли мы по кализии
             // ... func_180799_ab
+
+            // если мы ниже -128 по Y убиваем игрока
+            if (Position.y < -128) Kill();
+        }
+
+        protected void EntityUpdate()
+        {
+            EntityUpdateLocation();
+
+            // Только на сервере
+            EntityUpdateServer();
 
             // Частички при беге блока
             ParticleBlockSprinting();
 
             // Было ли падение
             Fall();
-
-            // если мы ниже -128 по Y убиваем игрока
-            if (Position.y < -128) Kill();
 
             // если нет хп обновлям смертельную картинку
             if (Health <= 0f && DeathTime != -1) DeathUpdate();
@@ -329,11 +378,88 @@ namespace MvkServer.Entity
         }
 
         /// <summary>
+        /// Уменьшает подачу воздуха сущности под водой
+        /// </summary>
+        protected int DecreaseAirSupply(int oldAir)
+        {
+            //int air = 1; // TODO:: тут чара, броня и прочее в будущем для воды
+            return oldAir - 1;
+            //return air > 0 && rand.Next(air + 1) > 0 ? oldAir : oldAir - 1;
+        }
+
+        /// <summary>
+        /// Определяем тонем ли мы
+        /// </summary>
+        protected void DrownServer()
+        {
+            if (IsEntityAlive() && IsInsideOfMaterial(EnumBlock.Water))
+            {
+                //if (!this.canBreatheUnderwater() && !this.isPotionActive(Potion.waterBreathing.id) && !var7)
+                {
+                    SetAir(DecreaseAirSupply(GetAir()));
+
+                    if (GetAir() == -20)
+                    {
+                        SetAir(0);
+
+                        // эффект раз в секунду, и урон
+                        //for (int var3 = 0; var3 < 8; ++var3)
+                        //{
+                        //    float var4 = this.rand.nextFloat() - this.rand.nextFloat();
+                        //    float var5 = this.rand.nextFloat() - this.rand.nextFloat();
+                        //    float var6 = this.rand.nextFloat() - this.rand.nextFloat();
+                        //    this.worldObj.spawnParticle(EnumParticleTypes.WATER_BUBBLE, this.posX + (double)var4, this.posY + (double)var5, this.posZ + (double)var6, this.motionX, this.motionY, this.motionZ, new int[0]);
+                        //}
+                        //this.attackEntityFrom(DamageSource.drown, 2.0F);
+                        AttackEntityFrom(2f);
+                    }
+                }
+
+                //if (!World.IsRemote && this.IsRiding() && this.ridingEntity instanceof EntityLivingBase)
+                //{
+                //    this.mountEntity((Entity)null);
+                //}
+            }
+            else
+            {
+                int air = GetAir();
+                if (air < 300)
+                {
+                    // воссстановление кислорода в 2 раза быстрее
+                    air += 2;
+                    if (air > 300) air = 300;
+                    SetAir(air);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Сущности наносит урон только на сервере
+        /// </summary>
+        /// <param name="amount">сила урона</param>
+        /// <returns>true - урон был нанесён</returns>
+        public bool AttackEntityFrom(float amount)
+        {
+            if (World.IsRemote) return false;
+            entityAge = 0;
+            if (Health <= 0f) return false;
+
+            Health -= amount;
+            if (World is WorldServer worldServer)
+            {
+                worldServer.ResponseHealth(this);
+            }
+            
+            return true;
+        }
+
+        /// <summary>
         /// Обновляет активное действие, и возращает strafe, forward, vertical через vec3
         /// </summary>
         /// <returns>strafe, forward</returns>
         protected vec2 UpdateEntityActionState()
         {
+            entityAge++;
             float strafe = 0f;
             float forward = 0f;
 
@@ -350,11 +476,14 @@ namespace MvkServer.Entity
             else if (IsJumping)
             {
                 // для воды свои правила, плыть вверх
-                //... updateAITick
+                if (IsInWater()) 
+                {
+                    WaterUp();
+                }
                 // для лавы свои
                 //... func_180466_bG
                 // Для прыжка надо стоять на земле, и чтоб счётик прыжка был = 0
-                if (OnGround && jumpTicks == 0)
+                else if (OnGround && jumpTicks == 0)
                 {
                     Jump();
                     jumpTicks = 10;
@@ -363,15 +492,19 @@ namespace MvkServer.Entity
             else
             {
                 jumpTicks = 0;
+                // для воды свои правила, плыть вниз
+                if (Input.HasFlag(EnumInput.Down) && IsInWater())
+                {
+                    WaterDown();
+                }
             }
 
             strafe = (Input.HasFlag(EnumInput.Right) ? 1f : 0) - (Input.HasFlag(EnumInput.Left) ? 1f : 0);
             forward = (Input.HasFlag(EnumInput.Back) ? 1f : 0f) - (Input.HasFlag(EnumInput.Forward) ? 1f : 0f);
 
-
             // Обновить положение сидя
             bool isSneaking = IsSneaking();
-            if (!IsFlying && OnGround && Input.HasFlag(EnumInput.Down) && !isSneaking)
+            if (!IsFlying && (OnGround || IsInWater()) && Input.HasFlag(EnumInput.Down) && !isSneaking)
             {
                 // Только в выживании можно сесть
                 SetSneaking(true);
@@ -492,16 +625,56 @@ namespace MvkServer.Entity
         protected void MoveWithHeading(float strafe, float forward, float jumpMovementFactor)
         {
             vec3 motion = new vec3();
-
+            
+            // трение
+            float study;
             // делим на три части, вода, лава, остальное
+            if (IsInWater())// && this is EntityPlayer)
+            {
+                float posY = Position.y;
+                study = .8f; // .8f;
+                // скорость
+                float speed = .02f;// .02f;
+                float speedEnch = 1f;//  (float)EnchantmentHelper.func_180318_b(this); чара
+                //if (speedEnch > 3f) speedEnch = 3f;
 
+                if (!OnGround) speedEnch *= .5f;
+
+                if (speedEnch > 0f)
+                {
+                    study += (0.54600006f - study) * speedEnch / 3f;
+                    speed += (GetAIMoveSpeed(strafe, forward) - speed) * speedEnch / 3f;
+                }
+
+                motion = MotionAngle(strafe, forward, speed);
+                MoveEntity(motion);
+                motion = Motion;
+                motion.x *= study;
+                motion.y *= .800001f;
+                motion.z *= study;
+                // Настроено на падение 0,4 м/с
+                motion.y -= .008f;// .02f;
+
+                // дополнительный прыжок, возле обрыва, если хотим вылести с воды на берег
+                if (IsCollidedHorizontally && IsOffsetPositionInLiquid(new vec3(motion.x, motion.y + .6f - Position.y + posY, motion.z)))
+                {
+                    // при 0.6 запрыгиваем на блок над водой
+                    // при 0.3 запрыгиваем на блок в ровень с водой
+                    motion.y = 0.600001f; 
+                }
+            }
+            else
             // расматриваем остальное
             {
                 // Коэффициент трения блока
                 //float study = .954f;// 0.91f; // для воздух
                 //if (OnGround) study = 0.739F;// 0.546f; // трение блока, определить на каком блоке стоим (.6f блок) * .91f
-                float study = 0.91f; // для воздух
-                if (OnGround) study = 0.546f; // трение блока, определить на каком блоке стоим (.6f блок) * .91f
+                study = 0.91f; // для воздух
+                if (OnGround)
+                {
+                    study = World.GetBlock(new BlockPos(Mth.Floor(Position.x), Mth.Floor(BoundingBox.Min.y) - 1, Mth.Floor(Position.z))).Slipperiness * .91f;
+                }
+                //if (OnGround) study = 0.546f; // трение блока, определить на каком блоке стоим (.6f блок) * .91f
 
                 //float param = 0.403583419f / (study * study * study);
                 float param = 0.16277136f / (study * study * study);
@@ -510,22 +683,8 @@ namespace MvkServer.Entity
                 float friction = jumpMovementFactor;
                 if (OnGround)
                 {
-                    // если на земле, определяем скорость, можно в отдельном методе, у каждого моба может быть свои параметры
-                    bool isSneaking = IsSneaking();
-                    float speed = Mth.Max(Speed.Strafe * Mth.Abs(strafe), Speed.Forward * Mth.Abs(forward));
-                    if (IsSprinting() && forward < 0 && !isSneaking)
-                    {
-                        // Бег 
-                        speed *= Speed.Sprinting;
-                    }
-                    else if (!IsFlying && (forward != 0 || strafe != 0) && isSneaking)
-                    {
-                        // Крадёмся
-                        speed *= Speed.Sneaking;
-                    }
-
                     // корректировка скорости, с трением
-                    friction = speed * param;
+                    friction = GetAIMoveSpeed(strafe, forward) * param;
                 }
 
                 motion = MotionAngle(strafe, forward, friction);
@@ -553,6 +712,26 @@ namespace MvkServer.Entity
         }
 
         /// <summary>
+        /// Скорость перемещения
+        /// </summary>
+        protected virtual float GetAIMoveSpeed(float strafe, float forward)
+        {
+            bool isSneaking = IsSneaking();
+            float speed = Speed.Forward * Mth.Abs(forward);
+            if (IsSprinting() && forward < 0 && !isSneaking)
+            {
+                // Бег 
+                speed *= Speed.Sprinting;
+            }
+            else if (!IsFlying && (forward != 0 || strafe != 0) && isSneaking)
+            {
+                // Крадёмся
+                speed *= Speed.Sneaking;
+            }
+            return speed;
+        }
+
+        /// <summary>
         /// Значения для првжка
         /// </summary>
         protected void Jump()
@@ -570,6 +749,17 @@ namespace MvkServer.Entity
             }
             Motion = new vec3(Motion.x + motion.x, motion.y, Motion.z + motion.z);
         }
+        //0,008
+        /// <summary>
+        /// Плыввёем вверх в воде
+        /// настроено на скорость 2 м/с
+        /// </summary>
+        protected void WaterUp() => Motion = new vec3(Motion.x, Motion.y + .048f, Motion.z);
+        /// <summary>
+        /// Плывём вниз
+        /// настроено на скорость 2 м/с
+        /// </summary>
+        protected void WaterDown() => Motion = new vec3(Motion.x, Motion.y - .032f, Motion.z);
 
         /// <summary>
         /// Определение вращения
@@ -824,6 +1014,11 @@ namespace MvkServer.Entity
         /// <param name="y">позиция Y</param>
         protected override void FallDetection(float y)
         {
+            if (!IsInWater())
+            {
+                HandleWaterMovement();
+            }
+
             if (y < 0f) fallDistance -= y;
             if (OnGround)
             {
@@ -946,7 +1141,7 @@ namespace MvkServer.Entity
         /// </summary>
         private void ParticleBlockSprinting()
         {
-            if (IsSprinting())// && !IsInWater())
+            if (IsSprinting() && !IsInWater())
             {
                 ParticleBlockDown(Position, 1);
             }
@@ -969,8 +1164,7 @@ namespace MvkServer.Entity
         /// </summary>
         protected void ParticleBlockDown(vec3 pos, int count)
         {
-            BlockPos blockPos = new BlockPos(pos.x, pos.y - 0.20002f, pos.z);
-            BlockBase block = World.GetBlock(blockPos);
+            BlockBase block = World.GetBlock(new BlockPos(pos.x, pos.y - 0.20002f, pos.z));
             if (block.IsParticle)
             {
                 for (int i = 0; i < count; i++)
@@ -982,6 +1176,53 @@ namespace MvkServer.Entity
                     new vec3(0),
                     (int)block.EBlock);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Воздействия при попадании воду
+        /// </summary>
+        protected override void EffectsContactWithWater()
+        {
+            fallDistance = 0f;
+            //fire = 0;
+        }
+
+        /// <summary>
+        /// Проверяет, находится ли смещенная позиция от текущей позиции объекта внутри жидкости
+        /// </summary>
+        /// <param name="vec">вектор смещения</param>
+        private bool IsOffsetPositionInLiquid(vec3 vec)
+        {
+            AxisAlignedBB aabb = BoundingBox.Offset(vec);
+            return World.Collision.GetCollidingBoundingBoxes(aabb).Count == 0
+                && !World.IsAnyLiquid(aabb);
+        }
+
+        /// <summary>
+        /// Проверяет, относится ли текущий блок объекта находящий на глазах к указанному типу материала
+        /// </summary>
+        /// <param name="materialIn"></param>
+        public bool IsInsideOfMaterial(EnumBlock materialIn)
+        {
+            // TODO::2022-04-12 добавить материал
+            float y = Position.y + GetEyeHeight();
+            BlockPos blockPos = new BlockPos(Position.x, y, Position.z);
+            BlockBase block = World.GetBlock(blockPos);
+
+            if (block.EBlock == materialIn)
+            {
+                // нужна проверка течении воды, у неё блок не целый
+                //float var7 = BlockLiquid.getLiquidHeightPercent(var5.getBlock().getMetaFromState(var5)) - 0.11111111F;
+                //float var8 = (float)(blockPos.Y + 1f) - var7;
+                //bool var9 = y < (double)var8;
+                //return !var9 && this is EntityPlayer ? false : var9;
+                return true;
+                     
+            }
+            else
+            {
+                return false;
             }
         }
 

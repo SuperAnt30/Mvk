@@ -117,7 +117,8 @@ namespace MvkServer.Network
                 if (packet.GetAction() == PacketC03UseEntity.EnumAction.Attack)
                 {
                     float damage = 1f;
-                    entity.SetHealth(entity.Health - damage);
+                    entity.AttackEntityFrom(damage);
+                    //entity.SetHealth(entity.Health - damage);
                     vec3 vec = packet.GetVec() * .5f;
                     vec.y = .84f;
                     if (entity is EntityPlayerServer)
@@ -127,7 +128,7 @@ namespace MvkServer.Network
                     {
                         entity.MotionPush = vec;
                     }
-                    ResponseHealth(entity);
+                    ServerMain.World.ResponseHealth(entity);
                 }
             }
         }
@@ -259,8 +260,9 @@ namespace MvkServer.Network
                 if (packet.GetParam() >= 5)
                 {
                     float damage = packet.GetParam() - 5;
-                    entityPlayer.SetHealth(entityPlayer.Health - damage);
-                    ResponseHealth(entityPlayer);
+                    entityPlayer.AttackEntityFrom(damage);
+                    //entityPlayer.SetHealth(entityPlayer.Health - damage);
+                    ServerMain.World.ResponseHealth(entityPlayer);
                     ServerMain.World.Tracker.SendToAllTrackingEntity(entityPlayer, new PacketS0BAnimation(entityPlayer.Id, PacketS0BAnimation.EnumAnimation.Fall));
                 }
                 entityPlayer.MarkPlayerActive();
@@ -283,28 +285,28 @@ namespace MvkServer.Network
             ServerMain.World.Players.ClientStatus(socket, packet.GetState());
         }
 
-        /// <summary>
-        /// Отправить изменение по здоровью
-        /// </summary>
-        private void ResponseHealth(EntityLiving entity)
-        {
-            if (entity is EntityPlayerServer)
-            {
-                ((EntityPlayerServer)entity).SendPacket(new PacketS06UpdateHealth(entity.Health));
-            }
+        ///// <summary>
+        ///// Отправить изменение по здоровью
+        ///// </summary>
+        //private void ResponseHealth(EntityLiving entity)
+        //{
+        //    if (entity is EntityPlayerServer)
+        //    {
+        //        ((EntityPlayerServer)entity).SendPacket(new PacketS06UpdateHealth(entity.Health));
+        //    }
 
-            if (entity.Health > 0)
-            {
-                // Анимация урона
-                ServerMain.World.Tracker.SendToAllTrackingEntity(entity, new PacketS0BAnimation(entity.Id,
-                    PacketS0BAnimation.EnumAnimation.Hurt));
-            } else
-            {
-                // Начала смерти
-                ServerMain.World.Tracker.SendToAllTrackingEntity(entity, new PacketS19EntityStatus(entity.Id,
-                    PacketS19EntityStatus.EnumStatus.Die));
-            }
-        }
+        //    if (entity.Health > 0)
+        //    {
+        //        // Анимация урона
+        //        ServerMain.World.Tracker.SendToAllTrackingEntity(entity, new PacketS0BAnimation(entity.Id,
+        //            PacketS0BAnimation.EnumAnimation.Hurt));
+        //    } else
+        //    {
+        //        // Начала смерти
+        //        ServerMain.World.Tracker.SendToAllTrackingEntity(entity, new PacketS19EntityStatus(entity.Id,
+        //            PacketS19EntityStatus.EnumStatus.Die));
+        //    }
+        //}
 
         
     }

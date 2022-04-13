@@ -90,6 +90,26 @@ namespace MvkServer.World.Block
         /// Спавнится блок, если на его месте ставят другой, при параметре CanPut=true, Air и Water = false
         /// </summary>
         public bool IsSpawn { get; protected set; } = true;
+        /// <summary>
+        /// Скользкость
+        /// 0.6 стандартная
+        /// 0.8 медленее, типа по песку
+        /// 0.98 по льду, скользко
+        /// </summary>
+        public float Slipperiness { get; protected set; } = .6f;
+
+        /// <summary>
+        /// Для анимации блока, указывается количество кадров в игровом времени (50 мс),
+        /// можно кратно 2 в степени (2, 4, 8, 16, 32, 64...)
+        /// 0 - нет анимации
+        /// </summary>
+        public byte AnimationFrame { get; protected set; } = 0;
+        /// <summary>
+        /// Для анимации блока, указывается пауза между кадрами в игровом времени (50 мс),
+        /// можно кратно 2 в степени (2, 4, 8, 16, 32, 64...)
+        /// 0 или 1 - нет задержки, каждый такт игры смена кадра
+        /// </summary>
+        public byte AnimationPause { get; protected set; } = 0;
 
         /// <summary>
         /// Задать позицию блока
@@ -99,6 +119,8 @@ namespace MvkServer.World.Block
         /// Задать тип блока
         /// </summary>
         public void SetEnumBlock(EnumBlock enumBlock) => EBlock = enumBlock;
+
+
 
         /// <summary>
         /// Передать список  ограничительных рамок блока

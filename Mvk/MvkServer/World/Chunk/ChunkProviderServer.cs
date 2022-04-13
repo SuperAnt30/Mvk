@@ -96,9 +96,10 @@ namespace MvkServer.World.Chunk
                     {
                         for (int y = 1; y <= 16; y++)
                         {
-                            //chunk.SetEBlock(new vec3i(7, y + stolb, 7), Block.EnumBlock.Dirt);
+                            chunk.SetEBlock(new vec3i(3, y + stolb, 7), Block.EnumBlock.Dirt);
                             chunk.SetEBlock(new vec3i(7, y + stolb, 5), Block.EnumBlock.Glass);
                             chunk.SetEBlock(new vec3i(7, y + stolb, 9), Block.EnumBlock.GlassRed);
+                            chunk.SetEBlock(new vec3i(11, y + stolb, 7), Block.EnumBlock.Water);
                         }
                     }
                 }

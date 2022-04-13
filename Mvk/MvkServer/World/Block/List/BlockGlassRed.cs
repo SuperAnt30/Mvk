@@ -12,7 +12,7 @@ namespace MvkServer.World.Block.List
         /// </summary>
         public BlockGlassRed()
         {
-            Boxes = new Box[] { new Box(5, true, new vec3(1f, 0f, 0f)) };
+            Boxes = new Box[] { new Box(5, true, new vec3(1f, 0f, 0f)) { RotateYaw = glm.pi45 } };
             IsAlphe = true;
             Color = new vec3(1f, 0f, 0f);
             Particle = 5;

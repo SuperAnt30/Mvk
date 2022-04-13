@@ -41,6 +41,7 @@ namespace MvkServer.World.Block.List
             };
             Particle = 3;
             Color = colorGreen;
+            //Slipperiness = 0.8f;
             //IsGrass = true;
             Hardness = 10;
         }

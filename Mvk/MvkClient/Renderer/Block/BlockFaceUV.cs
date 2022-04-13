@@ -1,4 +1,5 @@
 ﻿
+using MvkClient.Util;
 using MvkServer.Glm;
 using MvkServer.Util;
 
@@ -7,39 +8,56 @@ namespace MvkClient.Renderer.Block
     /// <summary>
     /// Построение блока с разных сторон
     /// </summary>
-    public class BlockFaceUV
+    public struct BlockFaceUV
     {
-        protected vec3 v1 = new vec3();
-        protected vec3 v2 = new vec3();
-        protected vec3 v3 = new vec3();
-        protected vec3 v4 = new vec3();
+        private vec3 v1;
+        private vec3 v2;
+        private vec3 v3;
+        private vec3 v4;
 
-        protected vec2 u1 = new vec2();
-        protected vec2 u2 = new vec2();
-        protected vec2 u3 = new vec2();
-        protected vec2 u4 = new vec2();
+        private vec2 u1;
+        private vec2 u2;
+        private vec2 u3;
+        private vec2 u4;
 
-        protected vec3 c = new vec3();
+        private vec3 c;
         /// <summary>
         /// Тень стороны
         /// </summary>
-        protected vec4 l = new vec4(1f);
+        private vec4 l;
 
-        protected vec2 leg = new vec2();
+        private vec2 leg;
         /// <summary>
         /// Позиция центра блока, для вращения
         /// </summary>
-        protected vec3 pos;
+        private vec3 pos;
 
         /// <summary>
         /// сторона прямоугольник ли
         /// </summary>
-        protected bool isRectangle = true;
+        private bool isRectangle;
+        private float radY;
+        private float radP;
+
 
         public BlockFaceUV(vec3 color, vec3 pos)
         {
             c = color;
             this.pos = pos + .5f;
+
+            v1 = new vec3();
+            v2 = new vec3();
+            v3 = new vec3();
+            v4 = new vec3();
+            u1 = new vec2();
+            u2 = new vec2();
+            u3 = new vec2();
+            u4 = new vec2();
+            radY = 0f;
+            radP = 0f;
+            isRectangle = true;
+            l = new vec4(1f);
+            leg = new vec2();
         }
 
         public void SetVecUV(vec3 vec1, vec3 vec2, vec2 uv1, vec2 uv2)
@@ -68,49 +86,53 @@ namespace MvkClient.Renderer.Block
             u4 = uv4;
         }
 
-        protected float radY = 0f;
+        
         /// <summary>
         /// Указываем вращение блока по оси Y в радианах
         /// </summary>
-        public void RotateYaw(float rad)
-        {
-            radY = rad;
-        }
-        protected float radP = 0f;
+        public void RotateYaw(float rad) => radY = rad;
+        
         /// <summary>
         /// Указываем вращение блока по оси X в радианах
         /// </summary>
-        public void RotatePitch(float rad)
-        {
-            radP = rad;
-        }
+        public void RotatePitch(float rad) => radP = rad;
 
         /// <summary>
         /// Ввернуть сторону по индексу
         /// </summary>
         /// <param name="index">индекс стороны</param>
         /// <param name="l">освещение стороны</param>
-        public float[] Side(Pole pole)//, vec4 l)
+        public byte[] Side(Pole pole, bool isWater)//, vec4 l)
         {
             //vec4 l = new vec4(1f);
+            ByteBuffer byteBuffer = new ByteBuffer();
             if (isRectangle)
             {
-                float[] f;
-                switch (pole)
-                {
-                    case Pole.Down: f = Down(); break;
-                    case Pole.East: f = East(); break;
-                    case Pole.West: f = West(); break;
-                    case Pole.North: f = North(); break;
-                    case Pole.South: f = South(); break;
-                    default: f = Up(); break;
-                }
-                return Rotate(f);
+                if (pole != Pole.Up) return new byte[0];
+                return Up(isWater);
+                //float[] f;
+                //switch (pole)
+                //{
+                //    //case Pole.Down: f = Down(); break;
+                //    //case Pole.East: f = East(); break;
+                //    //case Pole.West: f = West(); break;
+                //    //case Pole.North: f = North(); break;
+                //    //case Pole.South: f = South(); break;
+                //    default: f = Up(); break;
+                //}
+                ////byteBuffer.ArrayByte(f);
+                //byteBuffer.ArrayFloat(Rotate(f));
+                //return Rotate(f);
             }
-            return NotRectangle();
+            else
+            {
+                byteBuffer.ArrayFloat(NotRectangle());
+            }
+            return byteBuffer.ToArray();
+            //return NotRectangle();
         }
 
-        protected float[] Rotate(float[] f)
+        private float[] Rotate(float[] f)
         {
             if (radY == 0f && radP == 0f) return f;
             vec3 vY = new vec3(0, 1f, 0);
@@ -128,7 +150,7 @@ namespace MvkClient.Renderer.Block
             return f;
         }
 
-        protected vec3 Rotate(vec3 v)
+        private vec3 Rotate(vec3 v)
         {
             vec3 r = v - pos;
             if (radP != 0f) r = glm.rotate(r, radP, new vec3(1f, 0, 0));
@@ -153,18 +175,52 @@ namespace MvkClient.Renderer.Block
         /// <summary>
         /// Вверх
         /// </summary>
-        public float[] Up()
+        public byte[] Up(bool isWater)
         {
-            return new float[] {
-                v1.x, v2.y, v1.z, u2.x, u1.y, c.x * l.x, c.y * l.x, c.z * l.x, leg.x, leg.y,
-                v1.x, v2.y, v2.z, u2.x, u2.y, c.x * l.y, c.y * l.y, c.z * l.y, leg.x, leg.y,
-                v2.x, v2.y, v2.z, u1.x, u2.y, c.x * l.z, c.y * l.z, c.z * l.z, leg.x, leg.y,
+            byte frame = (byte)(isWater ? 32 : 0);
+            byte pause = (byte)(isWater ? 4 : 0);
 
-                v1.x, v2.y, v1.z, u2.x, u1.y, c.x * l.x, c.y * l.x, c.z * l.x, leg.x, leg.y,
-                v2.x, v2.y, v2.z, u1.x, u2.y, c.x * l.z, c.y * l.z, c.z * l.z, leg.x, leg.y,
-                v2.x, v2.y, v1.z, u1.x, u1.y, c.x * l.w, c.y * l.w, c.z * l.w, leg.x, leg.y
-            };
+            ByteBuffer byteBuffer = new ByteBuffer();
+            byteBuffer.ArrayFloat(new float[] { v1.x, v2.y, v1.z, u2.x, u1.y });
+            byteBuffer.ArrayByte(new byte[] { (byte)(c.x * l.x * 255), (byte)(c.y * l.x * 255), (byte)(c.z * l.x * 255), 0 });
+            byteBuffer.ArrayByte(new byte[] { frame, pause, 0, 0 });
+            byteBuffer.ArrayFloat(new float[] { v1.x, v2.y, v2.z, u2.x, u2.y });
+            byteBuffer.ArrayByte(new byte[] { (byte)(c.x * l.y * 255), (byte)(c.y * l.y * 255), (byte)(c.z * l.y * 255), 0 });
+            byteBuffer.ArrayByte(new byte[] { frame, pause, 0, 0 });
+            byteBuffer.ArrayFloat(new float[] { v2.x, v2.y, v2.z, u1.x, u2.y });
+            byteBuffer.ArrayByte(new byte[] { (byte)(c.x * l.z * 255), (byte)(c.y * l.z * 255), (byte)(c.z * l.z * 255), 0 });
+            byteBuffer.ArrayByte(new byte[] { frame, pause, 0, 0 });
+
+
+            byteBuffer.ArrayFloat(new float[] { v1.x, v2.y, v1.z, u2.x, u1.y });
+            byteBuffer.ArrayByte(new byte[] { (byte)(c.x * l.x * 255), (byte)(c.y * l.x * 255), (byte)(c.z * l.x * 255), 0 });
+            byteBuffer.ArrayByte(new byte[] { frame, pause, 0, 0 });
+            byteBuffer.ArrayFloat(new float[] { v2.x, v2.y, v2.z, u1.x, u2.y });
+            byteBuffer.ArrayByte(new byte[] { (byte)(c.x * l.z * 255), (byte)(c.y * l.z * 255), (byte)(c.z * l.z * 255), 0 });
+            byteBuffer.ArrayByte(new byte[] { frame, pause, 0, 0 });
+            byteBuffer.ArrayFloat(new float[] { v2.x, v2.y, v1.z, u1.x, u1.y });
+            byteBuffer.ArrayByte(new byte[] { (byte)(c.x * l.w * 255), (byte)(c.y * l.w * 255), (byte)(c.z * l.w * 255), 0 });
+            byteBuffer.ArrayByte(new byte[] { frame, pause, 0, 0 });
+
+            return byteBuffer.ToArray();
         }
+
+
+        ///// <summary>
+        ///// Вверх
+        ///// </summary>
+        //public float[] Up()
+        //{
+        //    return new float[] {
+        //        v1.x, v2.y, v1.z, u2.x, u1.y, c.x * l.x, c.y * l.x, c.z * l.x, leg.x, leg.y,
+        //        v1.x, v2.y, v2.z, u2.x, u2.y, c.x * l.y, c.y * l.y, c.z * l.y, leg.x, leg.y,
+        //        v2.x, v2.y, v2.z, u1.x, u2.y, c.x * l.z, c.y * l.z, c.z * l.z, leg.x, leg.y,
+
+        //        v1.x, v2.y, v1.z, u2.x, u1.y, c.x * l.x, c.y * l.x, c.z * l.x, leg.x, leg.y,
+        //        v2.x, v2.y, v2.z, u1.x, u2.y, c.x * l.z, c.y * l.z, c.z * l.z, leg.x, leg.y,
+        //        v2.x, v2.y, v1.z, u1.x, u1.y, c.x * l.w, c.y * l.w, c.z * l.w, leg.x, leg.y
+        //    };
+        //}
 
         /// <summary>
         /// Низ

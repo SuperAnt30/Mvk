@@ -106,7 +106,7 @@ namespace MvkServer.Entity
         /// Объект дополнительных данных
         /// </summary>
         public DataWatcher MetaData { get; protected set; }
-
+        
         /// <summary>
         /// Генератор случайных чисел данной сущности
         /// </summary>
@@ -115,12 +115,15 @@ namespace MvkServer.Entity
         /// Для отладки движения
         /// </summary>
         protected vec3 motionDebug = new vec3(0);
-
+        /// <summary>
+        /// Находится ли этот объект в настоящее время в воде
+        /// </summary>
+        protected bool inWater;
         /// <summary>
         /// Происходит ли сейчас движение
         /// </summary>
-       //private bool isMotionMoving = false;
-        
+        //private bool isMotionMoving = false;
+
         public EntityBase(WorldBase world)
         {
             World = world;
@@ -414,11 +417,11 @@ namespace MvkServer.Entity
             OnGround = IsCollidedVertically && y0 < 0.0f;
             IsCollided = IsCollidedHorizontally || IsCollidedVertically;
 
-            // Определение дистанции падения, и фиксаия падения
-            FallDetection(y);
-
             Motion = new vec3(x0 != x ? 0 : x, y, z0 != z ? 0 : z);
             UpPositionMotion();
+
+            // Определение дистанции падения, и фиксаия падения
+            FallDetection(y);
         }
 
         /// <summary>
@@ -530,5 +533,41 @@ namespace MvkServer.Entity
         /// </summary>
         /// <param name="id">индекс значения какое данное было обнавлено</param>
         public virtual void UpdatedWatchedObjec(int id) { }
+
+        /// <summary>
+        /// Проверяет, находится ли этот объект внутри воды (если поле inWater имеет значение 
+        /// true в результате того, что handleWaterMovement() возвращает значение true)
+        /// </summary>
+        public virtual bool IsInWater() => inWater;
+
+        /// <summary>
+        /// Возвращает, если этот объект находится в воде, и в конечном итоге 
+        /// добавляет скорость воды к объекту.
+        /// </summary>
+        protected bool HandleWaterMovement()
+        {
+            if (World.HandleMaterialAcceleration(BoundingBox.Expand(new vec3(0f, -0.40001f, 0f)).Contract(new vec3(0.001f)), EnumBlock.Water, this))
+            {
+                //if (!inWater && !this.firstUpdate)
+                //{
+                //    this.resetHeight();
+                //}
+                inWater = true;
+                EffectsContactWithWater();
+            }
+            else 
+            {
+                inWater = false;
+            }
+
+            return inWater;
+        }
+
+        /// <summary>
+        /// Воздействия при попадании воду
+        /// </summary>
+        protected virtual void EffectsContactWithWater() { }
+
+        
     }
 }

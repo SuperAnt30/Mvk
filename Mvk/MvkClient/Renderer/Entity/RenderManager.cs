@@ -87,6 +87,7 @@ namespace MvkClient.Renderer.Entity
                  
                 if (render != null)
                 {
+                    render.DoRenderShadowAndFire(entity, CameraOffset, timeIndex);
                     render.DoRender(entity, CameraOffset, timeIndex);
                     if (!IsHiddenHitbox)
                     {

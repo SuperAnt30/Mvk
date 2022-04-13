@@ -1,6 +1,8 @@
 ﻿using MvkServer.Entity;
+using MvkServer.Entity.Player;
 using MvkServer.Gen;
 using MvkServer.Management;
+using MvkServer.Network.Packets.Server;
 using MvkServer.Util;
 using MvkServer.World.Chunk;
 using System;
@@ -151,6 +153,31 @@ namespace MvkServer.World
         /// <param name="progress">сколько тактом блок должен разрушаться</param>
         public override void SendBlockBreakProgress(int breakerId, BlockPos pos, int progress) 
             => Players.SendBlockBreakProgress(breakerId, pos, progress);
+
+
+        /// <summary>
+        /// Отправить изменение по здоровью
+        /// </summary>
+        public void ResponseHealth(EntityLiving entity)
+        {
+            if (entity is EntityPlayerServer entityPlayerServer)
+            {
+                entityPlayerServer.SendPacket(new PacketS06UpdateHealth(entity.Health));
+            }
+
+            if (entity.Health > 0)
+            {
+                // Анимация урона
+                Tracker.SendToAllTrackingEntity(entity, new PacketS0BAnimation(entity.Id,
+                    PacketS0BAnimation.EnumAnimation.Hurt));
+            }
+            else
+            {
+                // Начала смерти
+                Tracker.SendToAllTrackingEntity(entity, new PacketS19EntityStatus(entity.Id,
+                    PacketS19EntityStatus.EnumStatus.Die));
+            }
+        }
 
         /// <summary>
         /// Строка для дебага

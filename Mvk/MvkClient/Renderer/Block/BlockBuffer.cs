@@ -11,11 +11,11 @@ namespace MvkClient.Renderer.Block
     {
         private readonly EnumBlock eBlock;
         private readonly vec3i pos;
-        private readonly float[] buffer;
+        private readonly byte[] buffer;
         private float distance;
         private readonly bool body;
 
-        public BlockBuffer(EnumBlock eBlock, vec3i pos, float[] buffer, float distance)
+        public BlockBuffer(EnumBlock eBlock, vec3i pos, byte[] buffer, float distance)
         {
             this.eBlock = eBlock;
             this.pos = pos;
@@ -40,7 +40,7 @@ namespace MvkClient.Renderer.Block
         /// <summary>
         /// Буфер сетки VBO
         /// </summary>
-        public float[] Buffer() => buffer;
+        public byte[] Buffer() => buffer;
         /// <summary>
         /// Дистанция
         /// </summary>

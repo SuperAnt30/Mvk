@@ -132,6 +132,11 @@ namespace MvkServer.Entity.Player
 
             // Tут base.Update не надо, так-как это обрабатывается на клиенте, 
             // тут отправление перемещение игрокам если оно надо
+
+            EntityUpdateLocation();
+
+            EntityUpdateServer();
+
             TheItemInWorldManager.UpdateBlock();
 
             // если нет хп обновлям смертельную картинку

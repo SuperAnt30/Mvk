@@ -4,6 +4,7 @@ using MvkServer.Util;
 using MvkServer.World.Block;
 using MvkServer.World.Chunk;
 using SharpGL;
+using System;
 using System.Collections.Generic;
 
 namespace MvkClient.Renderer.Block
@@ -49,6 +50,11 @@ namespace MvkClient.Renderer.Block
         private readonly bool isWorld = false;
 
         /// <summary>
+        /// Видим только лицевую сторону полигона
+        /// </summary>
+        private bool cullFace = true;
+
+        /// <summary>
         /// Создание блока генерации для мира
         /// </summary>
         public BlockRender(ChunkRender chunkRender, BlockBase block) : this(block)
@@ -66,13 +72,30 @@ namespace MvkClient.Renderer.Block
 
 
         /// <summary>
-        /// Получть Сетку блока
+        /// Получть Сетку блока с возможностью двух сторон
         /// </summary>
-        /// <param name="pos">позиция блока</param>
         /// <returns>сетка</returns>
-        public float[] RenderMesh(bool check)
+        public byte[] RenderMesh(bool check)
         {
-            List<float> buffer = new List<float>();
+            if (Block.EBlock == EnumBlock.Water)
+            {
+                List<byte> buffer = new List<byte>();
+                cullFace = false;
+                buffer.AddRange(RenderMeshBlock(check));
+                cullFace = true;
+                buffer.AddRange(RenderMeshBlock(check));
+                return buffer.ToArray();
+            }
+            return RenderMeshBlock(check);
+            
+        }
+
+        /// <summary>
+        /// Получить сетку блока с одной стороны
+        /// </summary>
+        private byte[] RenderMeshBlock(bool check)
+        {
+            List<byte> buffer = new List<byte>();
 
             foreach (Box box in Block.Boxes)
             {
@@ -103,7 +126,7 @@ namespace MvkClient.Renderer.Block
         /// <summary>
         /// Получть Сетку стороны блока с проверкой соседнего блока и разрушения его
         /// </summary>
-        private void RenderMeshSideCheck(List<float> buffer)
+        private void RenderMeshSideCheck(List<byte> buffer)
         {
             if (isWorld)
             {
@@ -152,10 +175,18 @@ namespace MvkClient.Renderer.Block
         /// <param name="box">объект коробки</param>
         /// <param name="lightValue">яркость дневного соседнего блока</param>
         /// <returns></returns>
-        private float[] RenderMeshFace()
+        private byte[] RenderMeshFace()
         {
             vec4 uv = GetUV();
             vec4 color = cFace.GetIsColor() ? new vec4(cFace.GetColor(), 1f) : new vec4(1f);
+            // подготовка для теста плавности цвета
+            //if (Block.EBlock == EnumBlock.Turf && cFace.GetIsColor() && Chunk.Position.x == -1 && Chunk.Position.y == -1)
+            //{
+            //    color = new vec4(.76f, .53f, .25f, 1f);
+            //}
+
+            bool isWater = Block.EBlock == EnumBlock.Water;
+
             float l = 1f - LightPole();
             color.x -= l; if (color.x < 0) color.x = 0;
             color.y -= l; if (color.y < 0) color.y = 0;
@@ -165,19 +196,22 @@ namespace MvkClient.Renderer.Block
             vec3i posi = Block.Position.Position;
             vec3 pos = new vec3(posi.x & 15, posi.y & 15, posi.z & 15);
             //vec3 pos = Block.Position.ToVec3();
-            BlockFaceUV blockUV = new BlockFaceUV(col, pos);
 
-            blockUV.SetVecUV(
+            BlockSide blockUV = new BlockSide(
+                col, 
                 pos + cBox.From,
                 pos + cBox.To,
                 new vec2(uv.x, uv.y),
-                new vec2(uv.z, uv.w)
+                new vec2(uv.z, uv.w),
+                Block.AnimationFrame,
+                Block.AnimationPause
             );
 
-            blockUV.RotateYaw(cBox.RotateYaw);
-            blockUV.RotatePitch(cBox.RotatePitch);
-
-            return blockUV.Side(cSide);
+            if (cBox.RotateYaw != 0 || cBox.RotatePitch != 0)
+            {
+                blockUV.Rotate(pos + .5f, cBox.RotateYaw, cBox.RotatePitch);
+            }
+            return blockUV.Side(cSide, cullFace);
         }
 
 
@@ -188,13 +222,13 @@ namespace MvkClient.Renderer.Block
         {
             switch (cSide)
             {
-                case Pole.Up: return 1f;
+                case Pole.Up: return cullFace ? 1f : .6f;
                 case Pole.South: return 0.85f;
                 case Pole.East: return 0.7f;
                 case Pole.West: return 0.7f;
                 case Pole.North: return 0.85f;
             }
-            return 0.6f;
+            return cullFace ? 0.6f : 1f;
         }
 
         /// <summary>
@@ -202,22 +236,29 @@ namespace MvkClient.Renderer.Block
         /// </summary>
         public void RenderVBOtoDL()
         {
-            float[] buffer = RenderMesh(false);
+            byte[] buffer = RenderMesh(false);
 
             GLRender.PushMatrix();
             {
                 GLRender.Begin(OpenGL.GL_TRIANGLES);
-                for (int i = 0; i < buffer.Length; i +=10)
+                for (int i = 0; i < buffer.Length; i += 28)
                 {
-                    GLRender.Color(buffer[i + 5], buffer[i + 6], buffer[i + 7]);
-                    GLRender.TexCoord(buffer[i + 3], buffer[i + 4]);
-                    GLRender.Vertex(buffer[i] - .5f, buffer[i + 1] - .5f, buffer[i + 2] - .5f);
+                    float r = buffer[i + 20] / 255f;
+                    float g = buffer[i + 21] / 255f;
+                    float b = buffer[i + 22] / 255f;
+                    GLRender.Color(r, g, b);
+                    float u = BitConverter.ToSingle(buffer, i + 12);
+                    float v = BitConverter.ToSingle(buffer, i + 16);
+                    GLRender.TexCoord(u, v);
+                    float x = BitConverter.ToSingle(buffer, i);
+                    float y = BitConverter.ToSingle(buffer, i + 4);
+                    float z = BitConverter.ToSingle(buffer, i + 8);
+                    GLRender.Vertex(x - .5f, y - .5f, z - .5f);
                 }
                 GLRender.End();
             }
             GLRender.PopMatrix();
         }
-
 
         /// <summary>
         /// Получить результат стороны с соседним блоком

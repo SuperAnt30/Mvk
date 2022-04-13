@@ -107,6 +107,11 @@ namespace MvkClient.Renderer
             // Воксели альфа VBO
             DrawVoxelAlpha(timeIndex);
 
+            // Эффект 2д
+            DrawEff2d(timeIndex);
+
+            // Матрица камеры
+            ClientMain.Player.CameraMatrixProjection();
             // Прорисовка руки
             if (ClientMain.Player.ViewCamera == EnumViewCamera.Eye)
                 World.RenderEntityManager.RenderEntity(ClientMain.Player, timeIndex);
@@ -114,6 +119,28 @@ namespace MvkClient.Renderer
             // Чистка сетки чанков при необходимости
             World.ChunkPrClient.RemoteMeshChunks();
         }
+
+        private void DrawEff2d(float timeIndex)
+        {
+            // вода
+            vec3 pos = ClientMain.Player.Position + ClientMain.Player.PositionCamera;
+            BlockBase block = World.GetBlock(new BlockPos(pos));
+
+            // TODO:: water material
+            if (block.EBlock == EnumBlock.Water)
+            {
+                DrawEffWater(timeIndex);
+            }
+
+            // урон
+            if (ClientMain.Player.DamageTime > 0 && ClientMain.Player.ViewCamera == EnumViewCamera.Eye)
+            {
+                DrawEffDamage(ClientMain.Player.DamageTime, timeIndex);
+            }
+
+            ClientMain.World.WorldRender.Draw2D();
+        }
+
 
         /// <summary>
         /// Смена видимости курсора чанка
@@ -286,6 +313,7 @@ namespace MvkClient.Renderer
             shader.Bind(GLWindow.gl);
             shader.SetUniformMatrix4(GLWindow.gl, "projection", ClientMain.Player.Projection);
             shader.SetUniformMatrix4(GLWindow.gl, "lookat", ClientMain.Player.LookAt);
+            shader.SetUniform1(GLWindow.gl, "takt", ClientMain.TickCounter); // & 31
             return shader;
         }
 
@@ -334,7 +362,24 @@ namespace MvkClient.Renderer
             //}
         }
 
-        public void DrawEff(float damageTime, float timeIndex)
+        private void DrawEffWater(float timeIndex)
+        {
+            int w = GLWindow.WindowWidth;
+            int h = GLWindow.WindowHeight;
+            // Эффект
+            GLWindow.gl.MatrixMode(OpenGL.GL_PROJECTION);
+            GLWindow.gl.LoadIdentity();
+            GLWindow.gl.Ortho2D(0, w, h, 0);
+            GLWindow.gl.MatrixMode(OpenGL.GL_MODELVIEW);
+            GLWindow.gl.LoadIdentity();
+
+            GLRender.PushMatrix();
+            GLRender.Texture2DDisable();
+            GLRender.Rectangle(0, 0, w, h, new vec4(0.0f, 0.1f, 0.4f, 0.7f));
+            GLRender.PopMatrix();
+        }
+
+        private void DrawEffDamage(float damageTime, float timeIndex)
         {
             float dt = Mth.Sqrt((damageTime + timeIndex - 1f) / 5f * 1.6f);
             if (dt > 1f) dt = 1f;
@@ -358,7 +403,7 @@ namespace MvkClient.Renderer
         /// <summary>
         /// Прорисовать 2д
         /// </summary>
-        public void Draw2D()
+        private void Draw2D()
         {
             int w = GLWindow.WindowWidth;
             int h = GLWindow.WindowHeight;

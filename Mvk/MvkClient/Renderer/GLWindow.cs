@@ -87,16 +87,6 @@ namespace MvkClient.Renderer
 
                     // Мир
                     client.World.WorldRender.Draw(timeIndex);
-
-
-                    //  if (client.Screen.IsEmptyScreen())// && client.World.Player.ViewCamera == EnumViewCamera.Eye)
-                    {
-                        client.World.WorldRender.Draw2D();
-                        if (client.Player.DamageTime > 0
-                            && client.Player.ViewCamera == EnumViewCamera.Eye) client.World.WorldRender.DrawEff(client.Player.DamageTime, timeIndex);
-                    }
-
-
                 }
                 // тут gui
                 client.Screen.DrawScreen();

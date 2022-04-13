@@ -561,5 +561,123 @@ namespace MvkServer.World
         /// <param name="pos">позиция блока</param>
         /// <param name="progress">сколько тактом блок должен разрушаться</param>
         public virtual void SendBlockBreakProgress(int breakerId, BlockPos pos, int progress) { }
+
+        /// <summary>
+        /// Проверить облость загруженных чанков, координаты в блоках
+        /// </summary>
+        protected bool IsAreaLoaded(int minX, int minY, int minZ, int maxX, int maxY, int maxZ)
+        {
+            if (maxY >= 0 && minY < ChunkBase.COUNT_HEIGHT * 16)
+            {
+                minX >>= 4;
+                minZ >>= 4;
+                maxX >>= 4;
+                maxZ >>= 4;
+
+                for (int x = minX; x <= maxX; ++x)
+                {
+                    for (int z = minZ; z <= maxZ; ++z)
+                    {
+                        if (!ChunkPr.IsChunk(new vec2i(x, z))) return false;
+                    }
+                }
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Возвращает, если какой-либо из блоков внутри aabb является жидкостью
+        /// </summary>
+        /// <returns>true - есть вода</returns>
+        public bool IsAnyLiquid(AxisAlignedBB aabb)
+        {
+            vec3i min = aabb.MinInt();
+            vec3i max = aabb.MaxInt();
+
+            for (int x = min.x; x <= max.x; x++)
+            {
+                for (int y = min.y; y <= max.y; y++)
+                {
+                    for (int z = min.z; z <= max.z; z++)
+                    {
+                        BlockBase block = GetBlock(new BlockPos(x, y, z));
+                        // TODO::2022-04-12 добавть материал, и заменить на воду
+                        if (block.EBlock == EnumBlock.Water) return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Проверка нахождения сущности в воде
+        /// </summary>
+        /// <param name="aabb"></param>
+        /// <param name="enumBlock"></param>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        public bool HandleMaterialAcceleration(AxisAlignedBB aabb, EnumBlock enumBlock, EntityBase entity)
+        {
+            vec3i min = aabb.MinInt();
+            vec3i max = aabb.MaxInt();
+            int minX = min.x;
+            int maxX = max.x + 1;
+            int minY = min.y;
+            int maxY = max.y + 1;
+            int minZ = min.z;
+            int maxZ = max.z + 1;
+
+            if (!IsAreaLoaded(minX, minY, minZ, maxX, maxY, maxZ))
+            {
+                return false;
+            }
+            else
+            {
+                bool result = false;
+                vec3 var11 = new vec3(0f);
+
+                for (int x = minX; x < maxX; x++)
+                {
+                    for (int y = minY; y < maxY; y++)
+                    {
+                        for (int z = minZ; z < maxZ; z++)
+                        {
+                            BlockPos blockPos = new BlockPos(x, y, z);
+                            BlockBase block = GetBlock(blockPos);
+
+                            // TODO::2022-04-12 добавть материал, и заменить
+                            if (block.EBlock == enumBlock)
+                            {
+                                //double var18 = (double)((float)(y + 1) - BlockLiquid.getLiquidHeightPercent(((Integer)var16.getValue(BlockLiquid.LEVEL)).intValue()));
+
+                                //if ((double)maxY >= var18)
+                                {
+                                    result = true;
+                                    return result;
+                                    // Толчки воды
+                                    //var11 = block.modifyAcceleration(this, blockPos, entity, var11);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Толчки воды
+                //if (var11.lengthVector() > 0.0D && entity.isPushedByWater())
+                //{
+                //    var11 = var11.normalize();
+                //    double var20 = 0.014D;
+                //    entity.motionX += var11.xCoord * var20;
+                //    entity.motionY += var11.yCoord * var20;
+                //    entity.motionZ += var11.zCoord * var20;
+                //}
+
+                return result;
+            }
+        }
     }
 }

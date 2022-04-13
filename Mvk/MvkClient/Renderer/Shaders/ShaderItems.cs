@@ -12,15 +12,17 @@ namespace MvkClient.Renderer.Shaders
         /// Шейдер вокселей
         /// </summary>
         public ShaderVoxel ShVoxel { get; protected set; } = new ShaderVoxel();
-        /// <summary>
-        /// Шейдер линий
-        /// </summary>
-        public ShaderLine ShLine { get; protected set; } = new ShaderLine();
 
         public void Create(OpenGL gl)
         {
-            ShVoxel.Create(gl, new Dictionary<uint, string> { { 0, "v_position" }, { 1, "v_texCoord" }, { 2, "v_color" } });
-            ShLine.Create(gl, new Dictionary<uint, string> { { 0, "v_position" }, { 1, "v_color" } });
+            ShVoxel.Create(gl, new Dictionary<uint, string> {
+                { 0, "v_position" },
+                { 1, "v_texCoord" },
+                //{ 2, "v_color" },
+                { 2, "v_r" },
+                { 3, "v_g" },
+                { 4, "v_b" }
+            });
         }
     }
 }

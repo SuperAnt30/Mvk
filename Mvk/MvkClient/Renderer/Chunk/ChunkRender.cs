@@ -103,7 +103,7 @@ namespace MvkClient.Renderer.Chunk
         public void Render(int chY)
         {
             // буфер блоков
-            List<float> bufferCache = new List<float>();
+            List<byte> bufferCache = new List<byte>();
             // буфер альфа блоков
             List<BlockBuffer> alphas = new List<BlockBuffer>();
             vec3i posPlayer = ClientWorld.ClientMain.Player.PositionAlphaBlock;
@@ -123,7 +123,7 @@ namespace MvkClient.Renderer.Chunk
                             DamagedBlocksValue = GetDestroyBlocksValue(x, yBlock, z)
                         };
                         
-                        float[] buffer = blockRender.RenderMesh(true);
+                        byte[] buffer = blockRender.RenderMesh(true);
                         if (buffer.Length > 0)
                         {
                             if (block.IsAlphe)
@@ -149,20 +149,20 @@ namespace MvkClient.Renderer.Chunk
         /// <summary>
         /// Вернуть массив буфера альфа
         /// </summary>
-        public float[] ToBufferAlphaY(List<BlockBuffer> alphas)
+        public byte[] ToBufferAlphaY(List<BlockBuffer> alphas)
         {
             int count = alphas.Count;
             if (count > 0)
             {
                 alphas.Sort();
-                List<float> buffer = new List<float>();
+                List<byte> buffer = new List<byte>();
                 for (int i = count - 1; i >= 0; i--)
                 {
                     buffer.AddRange(alphas[i].Buffer());
                 }
                 return buffer.ToArray();
             }
-            return new float[0];
+            return new byte[0];
         }
 
         /// <summary>

@@ -1,127 +1,127 @@
-﻿using MvkServer.Glm;
-using System;
-using System.Collections.Generic;
+﻿//using MvkServer.Glm;
+//using System;
+//using System.Collections.Generic;
 
-namespace MvkClient.Renderer
-{
-    /// <summary>
-    /// Объект создания сетки буфера, прорисовки и удаления
-    /// </summary>
-    public abstract class MeshBuffer : IDisposable
-    {
-        protected Mesh mesh;
-        /// <summary>
-        /// Буфер точки, точка xyz, текстура точки uv, цвет точки rgba
-        /// </summary>
-        protected virtual int[] attrs { get; } = new int[] { 3, 2, 4 };
+//namespace MvkClient.Renderer
+//{
+//    /// <summary>
+//    /// Объект создания сетки буфера, прорисовки и удаления
+//    /// </summary>
+//    public abstract class MeshBuffer : IDisposable
+//    {
+//        protected Mesh mesh;
+//        /// <summary>
+//        /// Буфер точки, точка xyz, текстура точки uv, цвет точки rgba
+//        /// </summary>
+//        protected virtual int[] attrs { get; } = new int[] { 3, 2, 4 };
 
-        public int CountPoligon { get; protected set; } = 0;
+//        public int CountPoligon { get; protected set; } = 0;
 
-        /// <summary>
-        /// Сгенерировать
-        /// </summary>
-        public virtual void BindBuffer(List<float> buffer)
-        {
-            BindBuffer(buffer.ToArray());
-        }
+//        /// <summary>
+//        /// Сгенерировать
+//        /// </summary>
+//        public virtual void BindBuffer(List<float> buffer)
+//        {
+//            BindBuffer(buffer.ToArray());
+//        }
 
-        /// <summary>
-        /// Сгенерировать
-        /// </summary>
-        public virtual void BindBuffer(float[] buffer)
-        {
-            if (mesh != null)
-            {
-                mesh.Reload(buffer);
-            }
-            else
-            {
-                mesh = new Mesh(buffer, attrs);
-            }
-            CountPoligon = buffer.Length / mesh.PoligonFloat;
-        }
+//        /// <summary>
+//        /// Сгенерировать
+//        /// </summary>
+//        public virtual void BindBuffer(float[] buffer)
+//        {
+//            if (mesh != null)
+//            {
+//                mesh.Reload(buffer);
+//            }
+//            else
+//            {
+//                mesh = new Mesh(buffer, attrs);
+//            }
+//            CountPoligon = buffer.Length / mesh.PoligonFloat;
+//        }
 
-        /// <summary>
-        /// Пустой ли буффер
-        /// </summary>
-        public bool IsEmpty() => mesh == null || CountPoligon == 0;
+//        /// <summary>
+//        /// Пустой ли буффер
+//        /// </summary>
+//        public bool IsEmpty() => mesh == null || CountPoligon == 0;
 
-        /// <summary>
-        /// Прорисовать
-        /// </summary>
-        public void Draw()
-        {
-            if (!IsEmpty())
-            {
-                Debug.CountPoligon += CountPoligon;
-                Debug.CountMesh++;
-                mesh.Draw();
-            }
-        }
+//        /// <summary>
+//        /// Прорисовать
+//        /// </summary>
+//        public void Draw()
+//        {
+//            if (!IsEmpty())
+//            {
+//                Debug.CountPoligon += CountPoligon;
+//                Debug.CountMesh++;
+//                mesh.Draw();
+//            }
+//        }
 
-        /// <summary>
-        /// Прорисовать
-        /// </summary>
-        public void DrawLine()
-        {
-            Debug.CountMesh++;
-            mesh.DrawLine();
-        }
+//        /// <summary>
+//        /// Прорисовать
+//        /// </summary>
+//        public void DrawLine()
+//        {
+//            Debug.CountMesh++;
+//            mesh.DrawLine();
+//        }
 
-        /// <summary>
-        /// Удалить
-        /// </summary>
-        public virtual void Delete()
-        {
-            CountPoligon = 0;
-            if (mesh != null) mesh.Delete();
-        }
+//        /// <summary>
+//        /// Удалить
+//        /// </summary>
+//        public virtual void Delete()
+//        {
+//            CountPoligon = 0;
+//            if (mesh != null) mesh.Delete();
+//        }
 
-        /// <summary>
-        /// Удаление если объект удалиться сам
-        /// </summary>
-        public void Dispose() => Delete();
+//        /// <summary>
+//        /// Удаление если объект удалиться сам
+//        /// </summary>
+//        public void Dispose() => Delete();
 
-        #region Rectangle
+//        #region Rectangle
 
-        /// <summary>
-        /// Нарисовать прямоугольник в 2д
-        /// </summary>
-        /// <param name="v1">угол левый вверх</param>
-        /// <param name="v2">угол правый низ</param>
-        /// <param name="z">глубина</param>
-        /// <param name="u1">текстура угол 1</param>
-        /// <param name="u2">текстура угол 2</param>
-        /// <param name="c">цвет</param>
-        /// <returns></returns>
-        public static float[] Rectangle2d(vec2 v1, vec2 v2, float z, vec2 u1, vec2 u2, vec4 c)
-        {
-            return new float[]
-            {
-                v1.x, v1.y, z, u1.x, u1.y, c.x, c.y, c.z, c.w,
-                v1.x, v2.y, z, u1.x, u2.y, c.x, c.y, c.z, c.w,
-                v2.x, v1.y, z, u2.x, u1.y, c.x, c.y, c.z, c.w,
+//        /// <summary>
+//        /// Нарисовать прямоугольник в 2д
+//        /// </summary>
+//        /// <param name="v1">угол левый вверх</param>
+//        /// <param name="v2">угол правый низ</param>
+//        /// <param name="z">глубина</param>
+//        /// <param name="u1">текстура угол 1</param>
+//        /// <param name="u2">текстура угол 2</param>
+//        /// <param name="c">цвет</param>
+//        /// <returns></returns>
+//        public static float[] Rectangle2d(vec2 v1, vec2 v2, float z, vec2 u1, vec2 u2, vec4 c)
+//        {
+//            return new float[]
+//            {
+//                v1.x, v1.y, z, u1.x, u1.y, c.x, c.y, c.z, c.w,
+//                v1.x, v2.y, z, u1.x, u2.y, c.x, c.y, c.z, c.w,
+//                v2.x, v1.y, z, u2.x, u1.y, c.x, c.y, c.z, c.w,
 
-                v1.x, v2.y, z, u1.x, u2.y, c.x, c.y, c.z, c.w,
-                v2.x, v2.y, z, u2.x, u2.y, c.x, c.y, c.z, c.w,
-                v2.x, v1.y, z, u2.x, u1.y, c.x, c.y, c.z, c.w
-            };
-        }
+//                v1.x, v2.y, z, u1.x, u2.y, c.x, c.y, c.z, c.w,
+//                v2.x, v2.y, z, u2.x, u2.y, c.x, c.y, c.z, c.w,
+//                v2.x, v1.y, z, u2.x, u1.y, c.x, c.y, c.z, c.w
+//            };
+//        }
 
-        /// <summary>
-        /// Нарисовать прямоугольник в 2д
-        /// </summary>
-        /// <param name="v1">угол левый вверх</param>
-        /// <param name="v2">угол правый низ</param>
-        /// <param name="u1">текстура угол 1</param>
-        /// <param name="u2">текстура угол 2</param>
-        /// <param name="c">цвет</param>
-        /// <returns></returns>
-        public static float[] Rectangle2d(vec2 v1, vec2 v2, vec2 u1, vec2 u2, vec4 c)
-        {
-            return Rectangle2d(v1, v2, 0, u1, u2, c);
-        }
+//        /// <summary>
+//        /// Нарисовать прямоугольник в 2д
+//        /// </summary>
+//        /// <param name="v1">угол левый вверх</param>
+//        /// <param name="v2">угол правый низ</param>
+//        /// <param name="u1">текстура угол 1</param>
+//        /// <param name="u2">текстура угол 2</param>
+//        /// <param name="c">цвет</param>
+//        /// <returns></returns>
+//        public static float[] Rectangle2d(vec2 v1, vec2 v2, vec2 u1, vec2 u2, vec4 c)
+//        {
+//            return Rectangle2d(v1, v2, 0, u1, u2, c);
+//        }
 
-        #endregion
-    }
-}
+//        #endregion
+//    }
+//}
