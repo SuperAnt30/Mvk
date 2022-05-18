@@ -90,6 +90,8 @@ namespace MvkServer.World.Block.List
             IsFullCube = false;
             CanPut = true;
             LightOpacity = 0;
+            //LightValue = 15;
+            Material = EnumMaterial.Stone;
         }
 
         /// <summary>

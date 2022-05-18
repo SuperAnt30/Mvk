@@ -20,17 +20,17 @@ namespace MvkServer.World.Block.List
                 {
                     Faces = new Face[]
                     {
-                        new Face(Pole.Up, 63, true, color),
-                        new Face(Pole.Down, 63, true, color),
-                        new Face(Pole.East, 62, true, color),
-                        new Face(Pole.North, 62, true, color),
-                        new Face(Pole.South, 62, true, color),
-                        new Face(Pole.West, 62, true, color)
+                        new Face(Pole.Up, 63, true, color).SetAnimation(32, 4),
+                        new Face(Pole.Down, 63, true, color).SetAnimation(32, 4),
+                        new Face(Pole.East, 62, true, color).SetAnimation(64, 1),
+                        new Face(Pole.North, 62, true, color).SetAnimation(64, 1),
+                        new Face(Pole.South, 62, true, color).SetAnimation(64, 1),
+                        new Face(Pole.West, 62, true, color).SetAnimation(64, 1)
                     }
                 }
             };
 
-            IsAlphe = true;
+            IsAlpha = true;
             IsAction = false;
             //IsWater = true;
             IsCollidable = false;
@@ -40,9 +40,8 @@ namespace MvkServer.World.Block.List
             Particle = 63;
             Hardness = 2;
             LightOpacity = 2;
-            AnimationFrame = 32;
-            AnimationPause = 2;
             IsParticle = false;
+            Material = EnumMaterial.Water;
         }
     }
 }

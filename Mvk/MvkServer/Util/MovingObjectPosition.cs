@@ -94,6 +94,9 @@ namespace MvkServer.Util
             {
                 float h = Entity is EntityLiving ? ((EntityLiving)Entity).Health : 0; 
                 str = Entity.GetName() + " " + h + " " + Entity.Position;
+            //} else if (type == MovingObjectType.Block)
+            //{
+            //    str = Block.W
             }
             return string.Format("{0} {3} {1} {2}", type, Hit, RayHit, str);
         }

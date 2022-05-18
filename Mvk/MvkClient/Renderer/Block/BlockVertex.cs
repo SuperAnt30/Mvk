@@ -16,11 +16,11 @@ namespace MvkClient.Renderer.Block
         private readonly byte g;
         private readonly byte b;
 
-        public BlockVertex(vec3 pos, vec2 uv, vec3 color, byte light, float shadow)
+        public BlockVertex(vec3 pos, vec2 uv, vec3 color, byte light)
         {
             this.pos = pos;
             this.uv = uv;
-            this.color = color * shadow;
+            this.color = color;
             this.light = light;
             r = (byte)(color.x * 255);
             g = (byte)(color.y * 255);

@@ -5,19 +5,15 @@ namespace MvkServer.World.Block.List
     /// <summary>
     /// Блок стекла красного
     /// </summary>
-    public class BlockGlassRed : BlockBase
+    public class BlockGlassRed : BlockGlass
     {
         /// <summary>
         /// Блок стекла красного
         /// </summary>
         public BlockGlassRed()
         {
-            Boxes = new Box[] { new Box(5, true, new vec3(1f, 0f, 0f)) { RotateYaw = glm.pi45 } };
-            IsAlphe = true;
+            Boxes = new Box[] { new Box(5, true, new vec3(1f, 0f, 0f)) };// { RotateYaw = glm.pi45 } };
             Color = new vec3(1f, 0f, 0f);
-            Particle = 5;
-            Hardness = 10;
-            LightOpacity = 2;
         }
     }
 }

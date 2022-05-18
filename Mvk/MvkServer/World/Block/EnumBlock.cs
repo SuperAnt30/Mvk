@@ -40,7 +40,11 @@
         /// <summary>
         /// Стекло красное
         /// </summary>
-        GlassRed = 7
+        GlassRed = 7,
+        /// <summary>
+        /// Брол
+        /// </summary>
+        Brol = 8
     }
 
     /// <summary>
@@ -48,6 +52,6 @@
     /// </summary>
     public class BlocksCount
     {
-        public const int COUNT = 7;
+        public const int COUNT = 8;
     }
 }

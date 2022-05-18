@@ -53,7 +53,15 @@ namespace MvkClient
         /// Сколько обновилось чанков
         /// </summary>
         public static int CountUpdateChunck = 0;
-
+        /// <summary>
+        /// Фокус блок
+        /// </summary>
+        public static string BlockFocus = "";
+        /// <summary>
+        /// Время рендера чанка в мс, среднее из последних 8
+        /// </summary>
+        public static float RenderChunckTime8 = 0;
+        public static float RenderChunckTime = 0;
         public static int DInt = 0;
         public static long DLong = 0;
         public static float DFloat = 0;
@@ -74,11 +82,13 @@ namespace MvkClient
         protected static string ToStringDebug()
         {
             string s = strServer == "" ? "" : "Server " + strServer + "\r\n";
-            string c = strClient == "" ? "" : "Client " + strClient + "\r\n";
+            string c = strClient == "" ? "" : "Client " + strClient + "\r\n" 
+                    + "RenderChunk8 ms:" + RenderChunckTime8.ToString("0.00") + " | " + RenderChunckTime.ToString("0.00") + "\r\n";
 
             return version + "\r\n"
                 + strTpsFps + "\r\n" 
                 + s + c 
+                + BlockFocus
                 + string.Format("Mesh: {0}/{6} Poligons: {4}\r\nint: {1} float: {2:0.00} string: {3} long: {5}", 
                 CountMesh, DInt, DFloat, DStr, CountPoligon, DLong, CountMeshAll);
         }

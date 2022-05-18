@@ -5,7 +5,10 @@ using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World.Block;
 using MvkServer.World.Chunk;
+using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace MvkClient.Renderer.Chunk
 {
@@ -36,6 +39,11 @@ namespace MvkClient.Renderer.Chunk
         /// </summary>
         private readonly int[] countAlpha = new int[COUNT_HEIGHT];
 
+        /// <summary>
+        /// Соседние чанки, заполняются перед рендером
+        /// </summary>
+        private Hashtable chunks = new Hashtable(); 
+
         public ChunkRender(WorldClient worldIn, vec2i pos) :base (worldIn, pos)
         {
             ClientWorld = worldIn;
@@ -54,7 +62,7 @@ namespace MvkClient.Renderer.Chunk
         /// <summary>
         /// Пометить что надо перерендерить сетку чанка
         /// </summary>
-        public void ModifiedToRender(int y)
+        public override void ModifiedToRender(int y)
         {
             if (y >= 0 && y < COUNT_HEIGHT) meshDense[y].SetModifiedRender();
         }
@@ -95,62 +103,135 @@ namespace MvkClient.Renderer.Chunk
         {
             meshDense[y].StatusRendering();
             meshAlpha[y].StatusRendering();
+            chunks.Clear();
+            foreach (vec2i pos in MvkStatic.AreaOne8)
+            {
+                vec2i pos2 = Position + pos;
+                chunks.Add(pos2, World.ChunkPr.GetChunk(pos2));
+            }
         }
 
+        public ChunkBase Chunk(vec2i pos)
+        {
+            if (chunks.ContainsKey(pos)) return chunks[pos] as ChunkBase;
+            return null;
+        }
+
+        Stopwatch stopwatch = new Stopwatch();
+        
         /// <summary>
         /// Рендер псевдо чанка, сплошных и альфа блоков
         /// </summary>
         public void Render(int chY)
         {
-            // буфер блоков
-            List<byte> bufferCache = new List<byte>();
-            // буфер альфа блоков
-            List<BlockBuffer> alphas = new List<BlockBuffer>();
-            vec3i posPlayer = ClientWorld.ClientMain.Player.PositionAlphaBlock;
-            for (int y = 0; y < 16; y++)
+            try
             {
-                for (int z = 0; z < 16; z++)
-                {
-                    for (int x = 0; x < 16; x++)
-                    {
-                        if (StorageArrays[chY].GetEBlock(x, y, z) == EnumBlock.Air) continue;
-                        int yBlock = chY << 4 | y;
-                        BlockBase block = GetBlock0(new vec3i(x, yBlock, z));
-                        if (block == null) continue;
+                long timeBegin = GLWindow.stopwatch.ElapsedTicks;
 
-                        BlockRender blockRender = new BlockRender(this, block)
+                //chunks.Clear();
+                //foreach(vec2i pos in MvkStatic.AreaOne8)
+                //{
+                //    vec2i pos2 = Position + pos;
+                //    chunks.Add(pos2, World.ChunkPr.GetChunk(pos2));
+                //}
+
+                // буфер блоков
+                List<byte> bufferCache = new List<byte>();
+                // буфер альфа блоков
+                List<BlockBuffer> alphas = new List<BlockBuffer>();
+                vec3i posPlayer = ClientWorld.ClientMain.Player.PositionAlphaBlock;
+                BlockState blockState = new BlockState().Empty();
+                BlockPos blockPos = new BlockPos();
+                BlockRender blockRender = new BlockRender(this);
+                BlockBase block;
+                byte[] buffer = new byte[0];
+                for (int y = 0; y < 16; y++)
+                {
+                    for (int z = 0; z < 16; z++)
+                    {
+                        for (int x = 0; x < 16; x++)
                         {
-                            DamagedBlocksValue = GetDestroyBlocksValue(x, yBlock, z)
-                        };
-                        
-                        byte[] buffer = blockRender.RenderMesh(true);
-                        if (buffer.Length > 0)
-                        {
-                            if (block.IsAlphe)
-                            {
-                                alphas.Add(new BlockBuffer(block.EBlock, new vec3i(x, y, z), buffer,
-                                    glm.distance(posPlayer, new vec3i(Position.x << 4 | x, yBlock, Position.y << 4 | z))
-                                ));
-                            }
-                            else
-                            {
-                                bufferCache.AddRange(buffer);
-                            }
+                            blockState.data = StorageArrays[chY].data[y, x, z];
+                            //blockState.data = StorageArrays[chY].GetData(x, y, z);
+                            int id = blockState.data & 0xFFF;// blockState.Id();
+                            if (id == 0) continue;
+
+                            int yBlock = chY << 4 | y;
+                            blockPos.X = Position.x << 4 | x;
+                            blockPos.Y = yBlock;
+                            blockPos.Z = Position.y << 4 | z;
+
+                            // TODO::2022-05-09
+                            // тут 0,01
+                            block = Blocks.BlocksInt[id];
+                            blockRender.blockState = blockState;
+                            blockRender.block = block;
+                            blockRender.blockPos = blockPos;
+                            blockRender.buffer = bufferCache;
+
+                            if (block.IsAlpha) blockRender.bufferAlpha = new List<byte>();
+                                //blockRender.Set(block, blockPos);
+                                //blockRender.Set(blockState.GetBlock(), blockPos);
+                                blockRender.DamagedBlocksValue = GetDestroyBlocksValue(x, yBlock, z);
+                            // тут 0,2
+                            blockRender.RenderMesh();
+                            // тут 0,5 - 3,5
+                            //blockRender.
+                            //BlockPos blockPos = new BlockPos(Position.x << 4 | x, yBlock, Position.y << 4 | z);
+                            //blockState.data = GetBlockState(blockPos);
+                            //if (StorageArrays[chY].GetEBlock(x, y, z) == EnumBlock.Air) continue;
+
+                            //BlockPos blockPos = new BlockPos(Position.x << 4 | x, yBlock, Position.y << 4 | z);
+                            //BlockState blockState = GetBlockState(blockPos);
+                            //if (blockState.IsEmpty()) continue;
+
+                            //BlockBase block = GetBlock0(new vec3i(x, yBlock, z));
+                            //if (block == null) continue;
+
+                            //BlockRender blockRender = new BlockRender(this, blockState, blockPos)
+                            //{
+                            //    DamagedBlocksValue = GetDestroyBlocksValue(x, yBlock, z)
+                            //};
+
+                            //byte[] buffer = new byte[0];
+                            //buffer = blockRender.RenderMesh(true);
+                            //if (buffer.Length > 0)
+                            //{
+                            //    BlockBase block = blockState.GetBlock();
+                                if (block.IsAlpha)
+                                {
+                                    alphas.Add(new BlockBuffer(block.EBlock, new vec3i(x, y, z), blockRender.bufferAlpha.ToArray(),
+                                        glm.distance(posPlayer, new vec3i(Position.x << 4 | x, yBlock, Position.y << 4 | z))
+                                    ));
+                                }
+                            //    else
+                            //    {
+                            //        bufferCache.AddRange(buffer);
+                            //    }
+                            //}
                         }
                     }
                 }
+                countAlpha[chY] = alphas.Count;
+                meshAlpha[chY].SetBuffer(ToBufferAlphaY(alphas));
+                meshDense[chY].SetBuffer(bufferCache.ToArray());
+                bufferCache.Clear();
+                long timeEnd = GLWindow.stopwatch.ElapsedTicks;
+                float time = (timeEnd - timeBegin) / (float)MvkStatic.TimerFrequency;
+                Debug.RenderChunckTime8 = (Debug.RenderChunckTime8 * 3f + time) / 4f;
+                Debug.RenderChunckTime = time;
             }
-            countAlpha[chY] = alphas.Count;
-            meshAlpha[chY].SetBuffer(ToBufferAlphaY(alphas));
-            meshDense[chY].SetBuffer(bufferCache.ToArray());
-            bufferCache.Clear();
+            catch (Exception ex)
+            {
+                Logger.Crach(ex);
+            }
         }
 
         /// <summary>
         /// Вернуть массив буфера альфа
         /// </summary>
         public byte[] ToBufferAlphaY(List<BlockBuffer> alphas)
-        {
+        { 
             int count = alphas.Count;
             if (count > 0)
             {
@@ -177,12 +258,17 @@ namespace MvkClient.Renderer.Chunk
         /// <summary>
         /// Занести буфер сплошных блоков псевдо чанка если это требуется
         /// </summary>
-        public bool BindBufferDense(int y) => meshDense[y].BindBuffer();
+        public void BindBufferDense(int y) => meshDense[y].BindBuffer();
         //// <summary>
         /// Занести буфер альфа блоков псевдо чанка если это требуется
         /// </summary>
-        public bool BindBufferAlpha(int y) => meshAlpha[y].BindBuffer();
+        public void BindBufferAlpha(int y) => meshAlpha[y].BindBuffer();
 
+        public void BindDelete(int y)
+        {
+            meshDense[y].Delete();
+            meshAlpha[y].Delete();
+        }
         /// <summary>
         /// проверка есть ли альфа блоки во всём чанке
         /// </summary>

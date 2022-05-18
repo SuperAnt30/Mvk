@@ -22,7 +22,7 @@ namespace MvkServer.World.Block
         /// <summary>
         /// Альфа блок, вода, стекло...
         /// </summary>
-        public bool IsAlphe { get; protected set; } = false;
+        public bool IsAlpha { get; protected set; } = false;
         /// <summary>
         /// Получить тип блока
         /// </summary>
@@ -30,7 +30,7 @@ namespace MvkServer.World.Block
         /// <summary>
         /// Позиция блока в мире
         /// </summary>
-        public BlockPos Position { get; protected set; } = new BlockPos();
+        public BlockPos Position { get; protected set; }// = new BlockPos();
         /// <summary>
         /// Явлыется ли блок небом
         /// </summary>
@@ -39,14 +39,6 @@ namespace MvkServer.World.Block
         /// Можно ли выбирать блок
         /// </summary>
         public bool IsAction { get; protected set; } = true;
-        /// <summary>
-        /// Трава ли это
-        /// </summary>
-       // public bool IsGrass { get; protected set; } = false;
-        /// <summary>
-        /// Вода ли это
-        /// </summary>
-        //public bool IsWater { get; protected set; } = false;
         /// <summary>
         /// Может ли блок сталкиваться
         /// </summary>
@@ -97,19 +89,15 @@ namespace MvkServer.World.Block
         /// 0.98 по льду, скользко
         /// </summary>
         public float Slipperiness { get; protected set; } = .6f;
+        /// <summary>
+        /// Количество излучаемого света (плафон)
+        /// </summary>
+        public int LightValue { get; protected set; } = 0;
 
         /// <summary>
-        /// Для анимации блока, указывается количество кадров в игровом времени (50 мс),
-        /// можно кратно 2 в степени (2, 4, 8, 16, 32, 64...)
-        /// 0 - нет анимации
+        /// Материал блока
         /// </summary>
-        public byte AnimationFrame { get; protected set; } = 0;
-        /// <summary>
-        /// Для анимации блока, указывается пауза между кадрами в игровом времени (50 мс),
-        /// можно кратно 2 в степени (2, 4, 8, 16, 32, 64...)
-        /// 0 или 1 - нет задержки, каждый такт игры смена кадра
-        /// </summary>
-        public byte AnimationPause { get; protected set; } = 0;
+        public EnumMaterial Material { get; protected set; } = EnumMaterial.Air;
 
         /// <summary>
         /// Задать позицию блока
@@ -191,10 +179,15 @@ namespace MvkServer.World.Block
         }
 
         /// <summary>
-        /// Блок не прозрачный
+        /// Блок не прозрачный, для расчёта освещения
         /// </summary>
         public bool IsNotTransparent() => LightOpacity > 13;
 
+        /// <summary>
+        /// Указывает, является ли материал полупрозрачным, от материала
+        /// </summary>
+        //public bool IsTranslucent() => Material == EnumMaterial.Air || Material == EnumMaterial.Glass 
+        //    || Material == EnumMaterial.Water || Material == EnumMaterial.Debug;
 
         /// <summary>
         /// Создает данный ItemStack как EntityItem в мире в заданной позиции 

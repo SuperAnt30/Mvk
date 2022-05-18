@@ -16,7 +16,11 @@ namespace MvkServer.Management
         /// <summary>
         /// Позиция блока который разрушаем
         /// </summary>
-        public BlockPos BlockPosDestroy { get; private set; } = new BlockPos();
+        public BlockPos BlockPosDestroy { get; private set; }// = new BlockPos();
+        /// <summary>
+        /// Истинно, если игрок уничтожает блок или ставит
+        /// </summary>
+        public bool IsDestroyingBlock { get; private set; } = false;
         /// <summary>
         /// Направление установки блока
         /// </summary>
@@ -73,7 +77,7 @@ namespace MvkServer.Management
         /// <summary>
         /// Истинно, если игрок уничтожает блок или ставит
         /// </summary>
-        public bool IsDestroyingBlock => !BlockPosDestroy.IsEmpty;
+        //public bool IsDestroyingBlock => !BlockPosDestroy.IsEmpty;
 
         /// <summary>
         /// Начато разрушение
@@ -84,6 +88,7 @@ namespace MvkServer.Management
             if (block != null && !block.IsAir)
             {
                 BlockPosDestroy = blockPos;
+                IsDestroyingBlock = true;
                 curblockDamage = 0;
                 initialDamage = block.GetPlayerRelativeBlockHardness(entityPlayer);
                 durabilityRemainingOnBlock = GetProcess();
@@ -114,6 +119,7 @@ namespace MvkServer.Management
             BlockBase block = world.GetBlock(blockPos);
             if (block != null && block.CanPut)
             {
+                IsDestroyingBlock = true;
                 BlockPosDestroy = blockPos;
                 this.facing = facing;
                 slotPut = slot;
@@ -133,7 +139,8 @@ namespace MvkServer.Management
         /// </summary>
         public void PutAbout()
         {
-            BlockPosDestroy = new BlockPos();
+            //BlockPosDestroy = new BlockPos();
+            IsDestroyingBlock = false;
             pause = 0;
         }
 
@@ -177,7 +184,10 @@ namespace MvkServer.Management
                         {
                             BlockBase.SpawnAsEntity(world, BlockPosDestroy, new ItemStack(world.GetBlock(BlockPosDestroy)));
                         }
-                        world.SetBlockState(BlockPosDestroy, EnumBlock.Air);
+                        //if (!world.IsRemote)
+                        {
+                            world.SetBlockState(BlockPosDestroy, new BlockState(EnumBlock.Air));
+                        }
                     }
                     else if (durabilityRemainingOnBlock == (int)Status.Put)
                     {
@@ -185,17 +195,16 @@ namespace MvkServer.Management
                         BlockBase blockOld = world.GetBlock(BlockPosDestroy);
                         if (blockOld != null)
                         {
-                            if (world is WorldServer && entityPlayer is EntityPlayerServer entityPlayerServer)
+                            ItemStack itemStack = entityPlayer.Inventory.GetStackInSlot(slotPut);
+                            if (itemStack != null
+                                && itemStack.ItemUse(entityPlayer, world, BlockPosDestroy, new EnumFacing(), new vec3(0)))
                             {
-                                ItemStack itemStack = entityPlayer.Inventory.GetStackInSlot(slotPut);
-
-                                if (itemStack != null 
-                                    && itemStack.ItemUse(entityPlayer, world, BlockPosDestroy, new EnumFacing(), new vec3(0)))
+                                if (world is WorldServer && entityPlayer is EntityPlayerServer entityPlayerServer)
                                 {
                                     // установлен
                                     if (!entityPlayer.IsCreativeMode)
                                     {
-                                        if (blockOld.IsSpawn) 
+                                        if (blockOld.IsSpawn)
                                         {
                                             // Можно ли спавнить блок при разрушении
                                             BlockBase.SpawnAsEntity(world, BlockPosDestroy, new ItemStack(blockOld));
@@ -203,16 +212,16 @@ namespace MvkServer.Management
                                         entityPlayer.Inventory.DecrStackSize(slotPut, 1);
                                     }
                                 }
-                            }
-                            else
-                            {
-                                // Для клиентской
-                                statusUpdate = StatusAnimation.Animation;
-                               // world.SetBlockState(BlockPosDestroy, enumBlock);
+                                else
+                                {
+                                    // Для клиентской
+                                    statusUpdate = StatusAnimation.Animation;
+                                }
                             }
                         }
                     }
-                    BlockPosDestroy = new BlockPos();
+                   // BlockPosDestroy = new BlockPos();
+                    IsDestroyingBlock = false;
                 }
                 else
                 {

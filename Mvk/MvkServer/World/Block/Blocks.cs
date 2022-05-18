@@ -15,6 +15,7 @@ namespace MvkServer.World.Block
         /// Массив всех кэш блоков
         /// </summary>
         private static Dictionary<EnumBlock, BlockBase> blocks = new Dictionary<EnumBlock, BlockBase>();
+        public static Dictionary<int, BlockBase> BlocksInt = new Dictionary<int, BlockBase>();
 
         private static BlockBase ToBlock(EnumBlock eBlock)
         {
@@ -29,6 +30,7 @@ namespace MvkServer.World.Block
                 case EnumBlock.Water: return new BlockWater();
                 case EnumBlock.Glass: return new BlockGlass();
                 case EnumBlock.GlassRed: return new BlockGlassRed();
+                case EnumBlock.Brol: return new BlockBrol();
             }
 
             return null;
@@ -46,6 +48,7 @@ namespace MvkServer.World.Block
                 {
                     block.SetEnumBlock(eBlock);
                     blocks.Add(eBlock, block);
+                    BlocksInt.Add((int)eBlock, block);
                 }
             }
         }
@@ -54,6 +57,10 @@ namespace MvkServer.World.Block
         /// Получить объект блока с кеша, для получения информационных данных
         /// </summary>
         public static BlockBase GetBlockCache(EnumBlock eBlock) => blocks[eBlock];
+        /// <summary>
+        /// Получить объект блока с кеша, для получения информационных данных
+        /// </summary>
+        public static BlockBase GetBlockCache(int id) => BlocksInt[id];
 
         /// <summary>
         /// Создать объект блока с позицией

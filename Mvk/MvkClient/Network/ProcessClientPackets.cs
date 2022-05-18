@@ -65,7 +65,7 @@ namespace MvkClient.Network
                         case 0x14: Handle14EntityMotion((PacketS14EntityMotion)packet); break;
                         case 0x19: Handle19EntityStatus((PacketS19EntityStatus)packet); break;
                         case 0x1C: Handle1CEntityMetadata((PacketS1CEntityMetadata)packet); break;
-                        case 0x21: Packet21((PacketS21ChunkData)packet); break;
+                        case 0x21: Handle21ChunkData((PacketS21ChunkData)packet); break;
                         case 0x23: Handle23BlockChange((PacketS23BlockChange)packet); break;
                         case 0x25: Handle25BlockBreakAnim((PacketS25BlockBreakAnim)packet); break;
                         case 0x2F: Handle2FSetSlot((PacketS2FSetSlot)packet); break;
@@ -369,9 +369,17 @@ namespace MvkClient.Network
             //}
         }
 
+        private void Handle21ChunkData(PacketS21ChunkData packet)
+        { 
+            ClientMain.World.ChunkPrClient.PacketChunckData(packet);
+        }
+
         private void Handle23BlockChange(PacketS23BlockChange packet)
         {
-            ClientMain.World.SetBlockState(packet.GetBlockPos(), packet.GetDigging());
+            //ClientMain.World.SetBlockState(packet.GetBlockPos(), packet.GetDigging());
+            //ushort data = packet.GetBlockState().GetData();
+            //EnumBlock eb = (EnumBlock)(data & 0xFFF);
+            ClientMain.World.SetBlockState(packet.GetBlockPos(), packet.GetBlockState());
         }
 
         private void Handle25BlockBreakAnim(PacketS25BlockBreakAnim packet)
@@ -392,8 +400,7 @@ namespace MvkClient.Network
             ClientMain.Player.Inventory.SetMainAndArmor(packet.GetStacks());
         }
 
-        private void Packet21(PacketS21ChunkData packet) 
-            => ClientMain.World.ChunkPrClient.PacketChunckData(packet);
+        
 
         #region ConnectionDisconnect
 

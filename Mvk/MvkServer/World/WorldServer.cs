@@ -1,6 +1,7 @@
 ﻿using MvkServer.Entity;
 using MvkServer.Entity.Player;
 using MvkServer.Gen;
+using MvkServer.Glm;
 using MvkServer.Management;
 using MvkServer.Network.Packets.Server;
 using MvkServer.Util;
@@ -66,6 +67,11 @@ namespace MvkServer.World
         }
 
         /// <summary>
+        /// Игровое время
+        /// </summary>
+        public override uint GetTotalWorldTime() => ServerMain.TickCounter;
+
+        /// <summary>
         /// Обработка каждый тик
         /// </summary>
         public override void Tick()
@@ -81,7 +87,7 @@ namespace MvkServer.World
             profiler.EndStartSection("ChunkSource");
             ChunkPrServ.UnloadQueuedChunks();
             profiler.EndStartSection("TickBlocks");
-            //this.func_147456_g();
+            TickBlocks();
             profiler.EndStartSection("ChunkMap");
             Players.UpdatePlayerInstances();
             profiler.EndStartSection("Village");
@@ -90,10 +96,62 @@ namespace MvkServer.World
             profiler.EndSection();
         }
 
+        private void TickBlocks()
+        {
+            SetActivePlayerChunksAndCheckLight();
+            // цикл активных чанков
+            foreach(vec2i chPos in activeChunkSet)
+            {
+                profiler.StartSection("GetChunk");
+                ChunkBase chunk = GetChunk(chPos);
+                //if (chunk == null) ChunkPrServ.LoadChunk(chPos);
+                profiler.StartSection("TickChunk");
+                if (chunk != null) chunk.Update();
+                profiler.EndSection();
+            }
+        }
+
+        //private void UpdateActiveChunks()
+        //{
+        //    for (int i = 0; i < PlayerEntities.Count; i++)
+        //    {
+        //        EntityBase entity = PlayerEntities.GetAt(i);
+        //        vec3i pos = entity.GetBlockPos();
+        //        if (IsAreaLoaded(pos.x - 16, pos.y - 16, pos.z - 16, pos.x + 16, pos.y + 16, pos.z + 16))
+        //        {
+        //            ChunkBase chunk = GetChunk(entity.GetChunkPos());
+        //            chunk.Update();
+        //        }
+                
+        //    }
+            
+        //    //ChunkPrServ.
+        //}
+
         /// <summary>
         /// Отметить блок для обновления 
         /// </summary>
-        protected override void MarkBlockForUpdate(BlockPos blockPos) => Players.FlagChunkForUpdate(blockPos);
+        public override void MarkBlockForUpdate(BlockPos blockPos) => Players.FlagChunkForUpdate(blockPos);
+
+        /// <summary>
+        /// Отметить блоки для обновления
+        /// </summary>
+        public override void MarkBlockRangeForRenderUpdate(int x0, int y0, int z0, int x1, int y1, int z1)
+        {
+            vec3i min = new vec3i(x0 - 1, y0 - 1, z0 - 1);
+            vec3i max = new vec3i(x0 + 1, y0 + 1, z0 + 1);
+
+            for (int x = min.x; x <= max.x; x++)
+            {
+                for (int y = min.y; y <= max.y; y++)
+                {
+                    for (int z = min.z; z <= max.z; z++)
+                    {
+                        MarkBlockForUpdate(new BlockPos(x, y, z));
+                    }
+                }
+            }
+        }
 
         #region Entity
 

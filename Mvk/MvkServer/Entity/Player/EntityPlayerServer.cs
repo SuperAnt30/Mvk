@@ -137,7 +137,9 @@ namespace MvkServer.Entity.Player
 
             EntityUpdateServer();
 
+            profiler.StartSection("TheItemInWorldManager.UpdateBlock");
             TheItemInWorldManager.UpdateBlock();
+            profiler.EndSection();
 
             // если нет хп обновлям смертельную картинку
             if (Health <= 0f) DeathUpdate();
@@ -197,7 +199,11 @@ namespace MvkServer.Entity.Player
                     if (chunk != null && chunk.IsChunkLoaded)
                     {
                         profiler.EndStartSection("PacketS21ChunckData");
-                        PacketS21ChunkData packet = new PacketS21ChunkData(chunk);
+                        int flag = 0;
+                        int heightMax = chunk.GetTopFilledSegment() >> 4;
+                        for (int y = 0; y <= heightMax; y++) { flag |= 1 << y; }
+                        
+                        PacketS21ChunkData packet = new PacketS21ChunkData(chunk, true, flag);
                         profiler.EndStartSection("ResponsePacket");
                         SendPacket(packet);
 

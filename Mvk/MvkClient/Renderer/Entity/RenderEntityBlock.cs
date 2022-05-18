@@ -1,4 +1,5 @@
 ﻿using MvkClient.Renderer.Block;
+using MvkServer.Util;
 using MvkServer.World.Block;
 
 namespace MvkClient.Renderer.Entity
@@ -17,7 +18,7 @@ namespace MvkClient.Renderer.Entity
 
         protected override void DoRender()
         {
-            BlockRender blockRender = new BlockRender(Blocks.GetBlockCache(enumBlock));
+            BlockRender blockRender = new BlockRender(Blocks.GetBlockCache(enumBlock), new BlockPos());
             blockRender.RenderVBOtoDL();
         }
     }

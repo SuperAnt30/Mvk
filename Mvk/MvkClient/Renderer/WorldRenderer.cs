@@ -52,10 +52,12 @@ namespace MvkClient.Renderer
         /// <summary>
         /// Массив всех блоков для GUI
         /// </summary>
-        private RenderBlockGui[] listBlocksGui = new RenderBlockGui[BlocksCount.COUNT + 1];
+        private readonly RenderBlockGui[] listBlocksGui = new RenderBlockGui[BlocksCount.COUNT + 1];
+        
 
         public WorldRenderer(WorldClient world)
         {
+            //stopwatch5.Start();
             World = world;
             ClientMain = world.ClientMain;
             renderAim = new RenderAim();
@@ -126,8 +128,7 @@ namespace MvkClient.Renderer
             vec3 pos = ClientMain.Player.Position + ClientMain.Player.PositionCamera;
             BlockBase block = World.GetBlock(new BlockPos(pos));
 
-            // TODO:: water material
-            if (block.EBlock == EnumBlock.Water)
+            if (block.Material == EnumMaterial.Water)
             {
                 DrawEffWater(timeIndex);
             }
@@ -147,12 +148,12 @@ namespace MvkClient.Renderer
         /// </summary>
         public void ChunkCursorHiddenShow() => renderChunkCursor.IsHidden = !renderChunkCursor.IsHidden;
 
+
         /// <summary>
         /// Прорисовка вокселей VBO
         /// </summary>
         private List<ChunkRender> DrawVoxel(float timeIndex)
         {
-            
             if (Debug.IsDrawVoxelLine)
             {
                 GLWindow.gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_LINE);
@@ -171,7 +172,9 @@ namespace MvkClient.Renderer
             List<ChunkRender> chunks = new List<ChunkRender>();
 
             int count = ClientMain.Player.ChunkFC.Length - 1;
-
+            
+            
+          //  float frequency = Stopwatch.Frequency / 1000f;
             // Пробегаем по всем чанкам которые видим FrustumCulling
             for (int i = 0; i <= count; i++)
             {
@@ -186,6 +189,12 @@ namespace MvkClient.Renderer
                     foreach(int y in vs)
                     {
                         bool isDense = chunk.IsModifiedRender(y);
+                        if (chunk.StorageArrays[y].IsEmpty())
+                        {
+                            // Удаление
+                            if (isDense) chunk.BindDelete(y);
+                            continue;
+                        }
                         // Проверяем надо ли рендер для псевдо чанка, и возможно ли по времени
                         if ((isDense || chunk.IsModifiedRenderAlpha(y)) && fast && countRender > 0)
                         {
@@ -205,7 +214,9 @@ namespace MvkClient.Renderer
                                     countRender--;
                                     int chY = y;
                                     // в отдельном потоке рендер
-                                    Task.Factory.StartNew(() => { chunk.Render(chY); });
+                                    Task.Factory.StartNew(() => {
+                                        chunk.Render(chY);
+                                    });
                                 }
                             }
                         }

@@ -1,8 +1,8 @@
 ﻿using MvkClient.Renderer.Chunk;
 using MvkServer.Entity.Player;
 using MvkServer.Glm;
-using MvkServer.Network.Packets;
 using MvkServer.Network.Packets.Client;
+using MvkServer.Network.Packets.Server;
 using MvkServer.World.Chunk;
 using System.Collections;
 using System.Collections.Generic;
@@ -31,6 +31,10 @@ namespace MvkClient.World
         /// Список чанков на дабавление
         /// </summary>
         private List<ChunkRender> addChunks = new List<ChunkRender>();
+        /// <summary>
+        /// Список всех видимых чанков аналог chunkMapping
+        /// </summary>
+        //private ChunkMap chunkListing = new ChunkMap();
         /// <summary>
         /// Объект заглушка
         /// </summary>
@@ -83,31 +87,67 @@ namespace MvkClient.World
         /// </summary>
         public void PacketChunckData(PacketS21ChunkData packet)
         {
-            if (packet.Status() == PacketS21ChunkData.EnumChunk.Remove)
+            if (packet.IsRemoved())
             {
                 lock (locker) UnloadChunk((ChunkRender)GetChunk(packet.GetPos()));
             }
             else
             {
-                if (packet.Status() == PacketS21ChunkData.EnumChunk.All)
+                ChunkRender chunk = GetChunkRender(packet.GetPos());
+                bool isNew = chunk == null;
+                if (isNew)
                 {
-                    ChunkRender chunk = new ChunkRender(ClientWorld, packet.GetPos());
-                    chunk.SetBinary(packet.GetBuffer(), packet.GetHeight());
+                    chunk = new ChunkRender(ClientWorld, packet.GetPos());
+                }
+
+                chunk.SetBinary(packet.GetBuffer(), packet.IsBiom(), packet.GetFlagsYAreas());
+
+                if (isNew)
+                {
+                    // Для нового чанка у клиента, генерируем высотную карту и осветляем тут же
+                   // chunk.Light.GenerateHeightMapSky();
                     lock (locker) addChunks.Add(chunk);
                 }
                 else
                 {
-                    // Пока этот раздел вроде не работает 04-04-2022
-                    ChunkRender chunk = GetChunkRender(packet.GetPos());
-                    if (chunk != null)
-                    {
-                        chunk.SetBinaryY(packet.GetBuffer(), packet.GetY());
-                        chunk.ModifiedToRender(packet.GetY());
-                    }
+                    // Пометка для рендера
+                    //ModifiedAreaOne(chunk.Position, packet.GetFlagsYAreas());
                 }
+                //chunk.Light.ResetRelightChecks();
             }
         }
-        
+
+        /// <summary>
+        /// Пометить для рендера соседние псевдо чанки
+        /// </summary>
+        private void ModifiedAreaOne(vec2i chPos, int flagsYAreas)
+        {
+            List<vec3i> list = new List<vec3i>();
+            for (int sy = 0; sy < ChunkRender.COUNT_HEIGHT; sy++)
+            {
+                if ((flagsYAreas & 1 << sy) != 0)
+                {
+                    vec3i pos = new vec3i(chPos.x, sy, chPos.y);
+                    //list.Add(pos);
+
+                    vec3i pos2 = new vec3i(pos.x, pos.y + 1, pos.z);
+                    if (!list.Contains(pos2)) list.Add(pos2);
+                    pos2 = new vec3i(pos.x, pos.y - 1, pos.z);
+                    if (!list.Contains(pos2)) list.Add(pos2);
+
+                    list.Add(new vec3i(pos.x + 1, pos.y, pos.z));
+                    list.Add(new vec3i(pos.x - 1, pos.y, pos.z));
+                    list.Add(new vec3i(pos.x, pos.y, pos.z + 1));
+                    list.Add(new vec3i(pos.x, pos.y, pos.z - 1));
+                    //ClientWorld.AreaModifiedToRender(pos - 1, pos + 1);
+                }
+            }
+            //foreach (vec3i pos in list)
+            //{
+            //    ClientWorld.ModifiedToRender(pos);
+            //}
+        }
+
         /// <summary>
         /// Выгрузить чанк
         /// </summary>
@@ -142,6 +182,7 @@ namespace MvkClient.World
             while (remoteChunks.Count > 0 && count > 0)
             {
                 chunkMapping.Remove(remoteChunks[0]);
+               // chunkListing.Remove(remoteChunks[0]);
                 remoteChunks.RemoveAt(0);
                 count--;
             }
@@ -157,6 +198,7 @@ namespace MvkClient.World
             while (addChunks.Count > 0 && count > 0)
             {
                 chunkMapping.Set(addChunks[0]);
+              //  chunkListing.Set(addChunks[0]);
                 vec2i pos = addChunks[0].Position;
                 // надо соседние чанки попросить перерендерить
                 vec3i c0 = new vec3i(pos.x - 1, 0, pos.y - 1);
@@ -236,6 +278,40 @@ namespace MvkClient.World
             chunk = ClientWorld.ChunkPrClient.GetChunkRender(new vec2i(x, z - 1));
             if (chunk != null) chunk.ModifiedToRenderAlpha(y);
         }
+
+        /**
+     * Unloads chunks that are marked to be unloaded. This is not guaranteed to unload every such chunk.
+     */
+        //public bool UnloadQueuedChunks()
+        //{
+        //    long var1 = System.currentTimeMillis();
+
+        //    Hashtable ht = chunkListing.CloneMap();
+        //    foreach (ChunkRender chunk in ht.Values)
+        //    {
+        //        chunk.
+        //        if ((reset && !chunk.Position.Equals(ClientWorld.ClientMain.Player.GetChunkPos())) || !reset)
+        //        {
+        //            UnloadChunk(chunk);
+        //        }
+        //    }
+
+
+        //    Iterator var3 = chunkListing.iterator();
+
+        //    while (var3.hasNext())
+        //    {
+        //        Chunk var4 = (Chunk)var3.next();
+        //        var4.func_150804_b(System.currentTimeMillis() - var1 > 5L);
+        //    }
+
+        //    if (System.currentTimeMillis() - var1 > 100L)
+        //    {
+        //        logger.info("Warning: Clientside chunk ticking took {} ms", new Object[] { Long.valueOf(System.currentTimeMillis() - var1) });
+        //    }
+
+        //    return false;
+        //}
 
         public override string ToString()
         {

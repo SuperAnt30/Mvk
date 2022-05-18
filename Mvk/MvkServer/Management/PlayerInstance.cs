@@ -87,8 +87,9 @@ namespace MvkServer.Management
 
                 // отправить игроку что чанк удалить
                 //if (chunk.IsPopulated()) 
+                if (chunk != null)
                 {
-                    player.SendPacket(new PacketS21ChunkData(CurrentChunk));
+                    player.SendPacket(new PacketS21ChunkData(chunk, false, 0));
                 }
 
                 playersWatchingChunk.Remove(player);
@@ -183,24 +184,26 @@ namespace MvkServer.Management
                     //    SendTileToAllPlayersWatchingChunk(playerManager.World.GetTileEntity(blockPos));
                     //}
                 }
-                else if (numBlocksToUpdate < 64)
-                {
-                    // Заменён 2 - 64 блока
-                    //SendToAllPlayersWatchingChunk(new PacketS22MultiBlockChange(numBlocksToUpdate, locationOfBlockChange, playerManager.World.GetChunk(CurrentChunk)));
+                //else if (numBlocksToUpdate < 64)
+                //{
+                //    // Заменён 2 - 64 блока
+                //    //SendToAllPlayersWatchingChunk(new PacketS22MultiBlockChange(numBlocksToUpdate, locationOfBlockChange, playerManager.World.GetChunk(CurrentChunk)));
 
-                    // Тайлы
-                    //for (int i = 0; i < numBlocksToUpdate; i++)
-                    //{
-                    //    BlockPos blockPos = GetBlockPos(locationOfBlockChange[i]);
-                    //    if (playerManager.World.GetBlock(blockPos).HasTileEntity())
-                    //    {
-                    //        SendTileToAllPlayersWatchingChunk(playerManager.World.GetTileEntity(blockPos));
-                    //    }
-                    //}
-                }
+                //    // Тайлы
+                //    //for (int i = 0; i < numBlocksToUpdate; i++)
+                //    //{
+                //    //    BlockPos blockPos = GetBlockPos(locationOfBlockChange[i]);
+                //    //    if (playerManager.World.GetBlock(blockPos).HasTileEntity())
+                //    //    {
+                //    //        SendTileToAllPlayersWatchingChunk(playerManager.World.GetTileEntity(blockPos));
+                //    //    }
+                //    //}
+                //}
                 else
                 {
+
                     // больше 64
+                    SendToAllPlayersWatchingChunk(new PacketS21ChunkData(playerManager.World.GetChunk(CurrentChunk), false, flagsYAreasToUpdate));
                     //SendToAllPlayersWatchingChunk(new PacketS21ChunkData(playerManager.World.GetChunk(CurrentChunk), false, flagsYAreasToUpdate));
 
                     // Тайлы

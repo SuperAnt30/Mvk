@@ -16,6 +16,7 @@ namespace MvkServer.World.Block.List
             Particle = 2;
             Hardness = 5;
             Slipperiness = 0.8f;
+            Material = EnumMaterial.Dirt;
         }
     }
 }

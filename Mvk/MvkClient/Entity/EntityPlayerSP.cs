@@ -386,7 +386,7 @@ namespace MvkClient.Entity
         public void MouseMove(float deltaX, float deltaY)
         {
             // Чувствительность мыши
-            float speedMouse = 1.5f;
+            float speedMouse = 2f;// 1.5f;
 
             if (deltaX == 0 && deltaY == 0) return;
             float pitch = RotationPitchLast - deltaY / (float)GLWindow.WindowHeight * speedMouse;
@@ -410,9 +410,43 @@ namespace MvkClient.Entity
         {
             MovingObjectPosition moving = RayCast();
             SelectBlock = moving.Block;
-            Debug.DStr = moving.ToString();
+            if (moving.IsBlock())
+            {
+                ChunkBase chunk = World.GetChunk(moving.Block.Position.GetPositionChunk());
+                vec3i pos = moving.Block.Position.GetPosition0();
+                string s1 = ToBlockDebug(chunk, new vec3i(pos.x, pos.y + 1, pos.z));
+                string s2 = ToBlockDebug(chunk, new vec3i(pos.x, pos.y + 2, pos.z));
+                Debug.BlockFocus = string.Format(
+                    "Block: {0} Light: {1} {2} H:{3}|{4} #{6}\r\n",
+                    moving.Block,
+                    s1, s2,
+                    "*",//chunk.Light.GetHeight(moving.Block.Position.X & 15, moving.Block.Position.Z & 15),
+                        //chunk.Light.HeightMapMax
+                    chunk.GetTopFilledSegment(),
+                    "",
+                    chunk.GetDebugAllSegment()
+                );
+                //Debug.DStr = "";
+            } else
+            {
+               // Debug.DStr = moving.ToString();
+                Debug.BlockFocus = "";
+            }
         }
 
+
+        private string ToBlockDebug(ChunkBase chunk, vec3i pos)
+        {
+            ChunkStorage chunkStorage = chunk.StorageArrays[pos.y >> 4];
+            if (!chunkStorage.IsEmpty())
+            {
+                int ls = chunkStorage.GetLightFor(pos.x, pos.y & 15, pos.z, EnumSkyBlock.Sky);
+                int lb = chunkStorage.GetLightFor(pos.x, pos.y & 15, pos.z, EnumSkyBlock.Block);
+                int cb = chunkStorage.countVoxel;
+                return string.Format("s{0} b{1} c{2}", ls, lb, cb);
+            }
+            return "@-@";
+        }
         /// <summary>
         /// Обновить матрицу камеры
         /// </summary>
@@ -666,7 +700,7 @@ namespace MvkClient.Entity
             if (handAction == ActionHand.Left)
             {
                 // Разрушаем блок
-                if (itemInWorldManager.IsDestroyingBlock && ((moving.IsBlock() && !itemInWorldManager.BlockPosDestroy.Position.Equals(moving.Block.Position.Position)) || !moving.IsBlock()))
+                if (itemInWorldManager.IsDestroyingBlock && ((moving.IsBlock() && !itemInWorldManager.BlockPosDestroy.ToVec3i().Equals(moving.Block.Position.ToVec3i())) || !moving.IsBlock()))
                 {
                     // Отмена разбитие блока, сменился блок
                     ClientMain.TrancivePacket(new PacketC07PlayerDigging(itemInWorldManager.BlockPosDestroy, PacketC07PlayerDigging.EnumDigging.About));
@@ -844,7 +878,7 @@ namespace MvkClient.Entity
         /// </summary>
         private void UpdateChunkRenderAlphe()
         {
-            PositionAlphaBlock = new vec3i(new vec3(Position.x, Position.y + GetEyeHeight(), Position.z));
+            PositionAlphaBlock = new vec3i(Position + PositionCamera);
             positionAlphaChunk = new vec3i(PositionAlphaBlock.x >> 4, PositionAlphaBlock.y >> 4, PositionAlphaBlock.z >> 4);
 
             if (!positionAlphaChunk.Equals(positionAlphaChunkPrev))

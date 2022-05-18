@@ -36,12 +36,13 @@ namespace MvkClient.Renderer
         /// <summary>
         /// Таймер для фиксации времени прорисовки кадра
         /// </summary>
-        private static Stopwatch stopwatch = new Stopwatch();
+        public static Stopwatch stopwatch = new Stopwatch();
         private static float speedFrameAll;
         private static long timerSecond;
         private static int fps;
         private static int tps;
         private static float speedTickAll;
+        private static long tickDraw;
 
         /// <summary>
         /// Инициализировать, первый запуск OpenGL
@@ -118,7 +119,7 @@ namespace MvkClient.Renderer
         private static void DrawBegin()
         {
             fps++;
-            stopwatch.Restart();
+            tickDraw = stopwatch.ElapsedTicks;
             Debug.CountPoligon = 0;
             Debug.CountMesh = 0;
             //Debug.CountMeshAll = 0;
@@ -128,6 +129,7 @@ namespace MvkClient.Renderer
             gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);
             gl.Enable(OpenGL.GL_CULL_FACE);
             gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_FILL);
+            gl.ClearColor(.5f, .7f, .99f, 1f);
         }
 
         /// <summary>
@@ -150,7 +152,7 @@ namespace MvkClient.Renderer
                 tps = 0;
             }
             Debug.DrawDebug();
-            speedFrameAll += (float)stopwatch.ElapsedTicks / MvkStatic.TimerFrequency;
+            speedFrameAll += (float)(stopwatch.ElapsedTicks - tickDraw) / MvkStatic.TimerFrequency;
         }
 
         #endregion

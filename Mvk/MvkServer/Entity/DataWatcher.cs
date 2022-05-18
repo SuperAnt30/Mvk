@@ -111,7 +111,7 @@ namespace MvkServer.Entity
         /// <summary>
         /// Получить объект BlockPos по индексу
         /// </summary>
-        public BlockPos GetWatchableObjectBlockPos(int id) => GetWatchedObject(id).GetObject() as BlockPos;
+        public BlockPos GetWatchableObjectBlockPos(int id) => (BlockPos)GetWatchedObject(id).GetObject();
         /// <summary>
         /// Получить трёхмерный вектор с плавающей запятой по индексу
         /// </summary>
@@ -220,7 +220,7 @@ namespace MvkServer.Entity
                 case 4: stream.WriteString((string)watchableObject.GetObject()); break;
                 case 5: ItemStack.WriteStream(watchableObject.GetObject() as ItemStack, stream); break;
                 case 6:
-                    BlockPos blockPos = watchableObject.GetObject() as BlockPos;
+                    BlockPos blockPos = (BlockPos)watchableObject.GetObject();
                     stream.WriteInt(blockPos.X);
                     stream.WriteInt(blockPos.Y);
                     stream.WriteInt(blockPos.Z);

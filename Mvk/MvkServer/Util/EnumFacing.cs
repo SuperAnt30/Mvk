@@ -23,7 +23,22 @@ namespace MvkServer.Util
                 case Pole.South: return new vec3i(0, 0, 1);
                 default: throw new ArgumentNullException("Не существует такой стороны");
             }
-
+        }
+        /// <summary>
+        /// Нормализованный вектор, указывающий в направлении этой облицовки
+        /// </summary>
+        public static vec3i DirectionVec(int pole)
+        {
+            switch (pole)
+            {
+                case 0: return new vec3i(0, 1, 0);
+                case 1: return new vec3i(0, -1, 0);
+                case 2: return new vec3i(1, 0, 0);
+                case 3: return new vec3i(-1, 0, 0);
+                case 4: return new vec3i(0, 0, -1);
+                case 5: return new vec3i(0, 0, 1);
+                default: throw new ArgumentNullException("Не существует такой стороны");
+            }
         }
 
         /// <summary>
@@ -67,6 +82,13 @@ namespace MvkServer.Util
                 default: throw new ArgumentNullException("Не существует такой стороны");
             }
         }
+
+        /// <summary>
+        /// Вернуть массив всех горизонтальных сторон (0-3). Заказ S-W-N-E.
+        /// </summary>
+        /// <returns></returns>
+        public static Pole[] ArrayHorizontal() => new Pole[] { Pole.South, Pole.West, Pole.North, Pole.East };
+
         /// <summary>
         /// Нормализованный горизонтальный вектор, указывающий в направлении этой облицовки
         /// </summary>
@@ -87,5 +109,22 @@ namespace MvkServer.Util
         /// </summary>
         /// <param name="index">индекс (0-3)</param>
         public static vec3i DirectionHorizontalVec(int index) => DirectionHorizontalVec(GetHorizontal(index));
+
+        /// <summary>
+        /// Получите противоположную ориентацию DOWN => UP
+        /// </summary>
+        public static Pole GetOpposite(Pole pole)
+        {
+            switch (pole)
+            {
+                case Pole.Up: return Pole.Down;
+                case Pole.Down: return Pole.Up;
+                case Pole.East: return Pole.West;
+                case Pole.West: return Pole.East;
+                case Pole.North: return Pole.South;
+                case Pole.South: return Pole.North;
+                default: throw new ArgumentNullException("Не существует такой стороны");
+            }
+        }
     }
 }

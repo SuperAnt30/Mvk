@@ -1,6 +1,7 @@
 ﻿using MvkAssets;
 using MvkClient.Renderer.Block;
 using MvkServer.Glm;
+using MvkServer.Util;
 using MvkServer.World.Block;
 
 namespace MvkClient.Renderer
@@ -42,7 +43,7 @@ namespace MvkClient.Renderer
                 IsHidden = true;
                 return;
             }
-            BlockRender blockRender = new BlockRender(Blocks.GetBlockCache(enumBlock));
+            BlockRender blockRender = new BlockRender(Blocks.GetBlockCache(enumBlock), new BlockPos());
 
             GLRender.Texture2DEnable();
             TextureStruct ts = GLWindow.Texture.GetData(AssetsTexture.Atlas);

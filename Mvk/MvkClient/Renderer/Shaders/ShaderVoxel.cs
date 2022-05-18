@@ -33,8 +33,9 @@ void main()
     float r = (v_rgbl & 0xFF) / 255.0;
     float g = ((v_rgbl >> 8) & 0xFF) / 255.0;
     float b = ((v_rgbl >> 16) & 0xFF) / 255.0;
-    //float lightBlock = ((v_rgbl >> 24) & 0xF) / 15.0;
-    //float lightSky = ((v_rgbl >> 28) & 0xF) / 15.0;
+    float lightSky = ((v_rgbl >> 24) & 0xF) / 15.0;
+    float lightBlock = ((v_rgbl >> 28) & 0xF) / 15.0;
+    float light = max(lightSky, lightBlock);
 
     a_texCoord = v_texCoord;
 
@@ -54,8 +55,10 @@ void main()
         }
         a_texCoord.y += t * 0.015625;
     }
+    if (light < 0.1) light = 0.1;
+    //light = 1.0;
 
-    vec3 v_color = vec3(r, g, b);
+    vec3 v_color = vec3(r * light, g * light, b * light);
     vec3 pos2 = pos + v_position;
     gl_Position = projection * lookat * vec4(pos2, 1.0);
     a_color = vec4(v_color, 1.0);

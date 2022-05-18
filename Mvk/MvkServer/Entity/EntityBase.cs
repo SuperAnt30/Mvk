@@ -546,7 +546,7 @@ namespace MvkServer.Entity
         /// </summary>
         protected bool HandleWaterMovement()
         {
-            if (World.HandleMaterialAcceleration(BoundingBox.Expand(new vec3(0f, -0.40001f, 0f)).Contract(new vec3(0.001f)), EnumBlock.Water, this))
+            if (World.HandleMaterialAcceleration(BoundingBox.Expand(new vec3(0f, -0.40001f, 0f)).Contract(new vec3(0.001f)), EnumMaterial.Water, this))
             {
                 //if (!inWater && !this.firstUpdate)
                 //{

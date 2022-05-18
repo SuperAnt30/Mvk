@@ -52,16 +52,13 @@ namespace MvkServer.Item.List
                     && worldIn.GetEntitiesWithinAABB(ChunkBase.EnumEntityClassAABB.EntityLiving, axisBlock, playerIn.Id).Count == 0;
             }
 
+            
             if (isCheckCollision)
             {
-                if (worldIn is WorldServer worldServer)
-                {
-                    return worldServer.SetBlockState(blockPos, blockNew.EBlock);
-                }
-                return true;
+                //if (worldIn.IsRemote) return true;
+                return worldIn.SetBlockState(blockPos, new BlockState(blockNew.EBlock));
             }
             return false;
-
         }
     }
 }

@@ -5,7 +5,6 @@ using MvkServer.Util;
 using MvkServer.World.Block;
 using MvkServer.World.Chunk;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace MvkServer.World
@@ -16,9 +15,19 @@ namespace MvkServer.World
     public abstract class WorldBase
     {
         /// <summary>
+        /// Радиус активных чанков во круг игрока
+        /// </summary>
+        private const int RADIUS_ACTION_CHUNK = 5;
+
+        /// <summary>
         /// Объект лога
         /// </summary>
         public Logger Log { get; protected set; }
+        /// <summary>
+        /// Объект работы со светом
+        /// </summary>
+        //public WorldLight Light { get; private set; }
+
         /// <summary>
         /// Объект отладки по задержке в лог
         /// </summary>
@@ -52,6 +61,15 @@ namespace MvkServer.World
         /// Это значение true для клиентских миров и false для серверных миров.
         /// </summary>
         public bool IsRemote { get; protected set; } = true;
+        /// <summary>
+        /// Не имеет неба, true. (Может и не пригодится, но для освещения флаг сделал)
+        /// </summary>
+        public bool HasNoSky { get; protected set; } = false;
+
+        /// <summary>
+        /// заполняется чанками, которые находятся в пределах 9 чанков от любого игрока
+        /// </summary>
+        protected List<vec2i> activeChunkSet = new List<vec2i>();
 
         protected WorldBase()
         {
@@ -59,7 +77,15 @@ namespace MvkServer.World
             Log = new Logger();
             profiler = new Profiler(Log);
             Rand = new Random();
+           // Light = new WorldLight();
         }
+
+        public Profiler TheProfiler() => profiler;
+
+        /// <summary>
+        /// Игровое время
+        /// </summary>
+        public virtual uint GetTotalWorldTime() => 0;
 
         /// <summary>
         /// Обработка каждый тик
@@ -305,6 +331,17 @@ namespace MvkServer.World
         /// </summary>
         public ChunkBase GetChunk(vec2i pos) => ChunkPr.GetChunk(pos);
         /// <summary>
+        /// Получить чанк по координатам блока
+        /// </summary>
+        public ChunkBase GetChunk(BlockPos pos) => ChunkPr.GetChunk(new vec2i(pos.X >> 4, pos.Z >> 4));
+
+        /// <summary>
+        /// Проверьте, имеет ли данный BlockPos действительные координаты
+        /// </summary>
+        public bool IsValid(BlockPos pos) => pos.X >= -30000000 && pos.Z >= -30000000 
+            && pos.X < 30000000 && pos.Z < 30000000 && pos.Y >= 0 && pos.Y < 256;
+
+        /// <summary>
         /// Проверить наличие чанка
         /// </summary>
         //public bool IsChunk(vec2i pos) => ChunkPr.IsChunk(pos);
@@ -313,40 +350,66 @@ namespace MvkServer.World
         /// Получить блок
         /// </summary>
         /// <param name="bpos">глобальная позиция блока</param>
-        public BlockBase GetBlock(BlockPos bpos) => GetBlock(bpos.Position);
+        public BlockBase GetBlock(BlockPos bpos) => GetBlock(bpos.X, bpos.Y, bpos.Z);
         /// <summary>
         /// Получить блок
         /// </summary>
         /// <param name="pos">глобальная позиция блока</param>
-        public BlockBase GetBlock(vec3i pos)
+        public BlockBase GetBlock(int x, int y, int z)
         {
-            if (pos.y >= 0 && pos.y <= 255)
+            if (y >= 0 && y <= 255)
             {
-                ChunkBase chunk = GetChunk(new vec2i(pos.x >> 4, pos.z >> 4));
+                ChunkBase chunk = GetChunk(new vec2i(x >> 4, z >> 4));
                 if (chunk != null)
                 {
-                    return chunk.GetBlock0(new vec3i(pos.x & 15, pos.y, pos.z & 15));
+                    return chunk.GetBlock0(new vec3i(x & 15, y, z & 15));
                 }
             }
-            return Blocks.CreateAir(pos);
+            return Blocks.CreateAir(new vec3i(x, y, z));
         }
+
+        /// <summary>
+        /// Получить блок данных
+        /// </summary>
+        public BlockState GetBlockState(BlockPos blockPos)
+        {
+            if (IsValid(blockPos))
+            {
+                ChunkBase chunk = GetChunk(blockPos.GetPositionChunk());
+                if (chunk != null)
+                {
+                    return chunk.GetBlockState(blockPos);
+                }
+            }
+            return new BlockState(EnumBlock.Air).Empty();
+        }
+
+        /// <summary>
+        /// Получить кэшовый блок
+        /// </summary>
+        public BlockBase GetBlockCache(BlockPos bpos)
+        {
+            EnumBlock enumBlock = GetEBlock(bpos);
+            return Blocks.GetBlockCache(enumBlock);
+        }
+
         /// <summary>
         /// Получить тип блока
         /// </summary>
         /// <param name="bpos">глобальная позиция блока</param>
-        public EnumBlock GetEBlock(BlockPos bpos) => GetEBlock(bpos.Position);
+        public EnumBlock GetEBlock(BlockPos bpos) => GetEBlock(bpos.X, bpos.Y, bpos.Z);
         /// <summary>
         /// Получить тип блока
         /// </summary>
         /// <param name="pos">глобальная позиция блока</param>
-        public EnumBlock GetEBlock(vec3i pos)
+        public EnumBlock GetEBlock(int x, int y, int z)
         {
-            if (pos.y >= 0 && pos.y <= 255)
+            if (y >= 0 && y <= 255)
             {
-                ChunkBase chunk = GetChunk(new vec2i(pos.x >> 4, pos.z >> 4));
+                ChunkBase chunk = GetChunk(new vec2i(x >> 4, z >> 4));
                 if (chunk != null)
                 {
-                    return chunk.GetEBlock(new vec3i(pos.x & 15, pos.y, pos.z & 15));
+                    return chunk.GetEBlock(new vec3i(x & 15, y, z & 15));
                 }
             }
             return EnumBlock.Air;
@@ -395,7 +458,7 @@ namespace MvkServer.World
 
             while (t <= maxDist)
             {
-                BlockBase block = GetBlock(new vec3i(ix, iy, iz));
+                BlockBase block = GetBlock(ix, iy, iz);
                 if (block.CollisionRayTrace(a, dir, maxDist))
                 {
                     vec3 end;
@@ -461,25 +524,92 @@ namespace MvkServer.World
         /// <param name="blockPos">позици блока</param>
         /// <param name="eBlock">тип блока</param>
         /// <returns>true смена была</returns>
-        public virtual bool SetBlockState(BlockPos blockPos, EnumBlock eBlock)
+        public virtual bool SetBlockState(BlockPos blockPos, BlockState blockState)
         {
-            if (blockPos.Y >= 0 && blockPos.Y < 256)
-            {
-                ChunkBase chunk = ChunkPr.GetChunk(blockPos.GetPositionChunk());
-                if (chunk != null)
-                {
-                    chunk.SetEBlock(blockPos.GetPosition0(), eBlock);
-                    MarkBlockForUpdate(blockPos);
-                    return true;
-                }
-            }
-            return false;
+            if (!IsValid(blockPos)) return false;
+
+            ChunkBase chunk = ChunkPr.GetChunk(blockPos.GetPositionChunk());
+            //return;
+            BlockState blockStateTrue = chunk.SetBlockState(blockPos, blockState);
+            if (blockStateTrue.IsEmpty()) return false;
+
+            BlockBase block = blockState.GetBlock();
+            BlockBase blockNew = blockStateTrue.GetBlock();
+
+            MarkBlockForUpdate(blockPos);
+
+            //if (block.LightOpacity != blockNew.LightOpacity || block.LightValue != blockNew.LightValue)
+            //{
+            //    TheProfiler().StartSection("checkLight");
+            //    //Light.CheckLight(blockPos);
+            //    if (block.LightValue != blockNew.LightValue)
+            //    {
+            //        // TODO::2022-04-26 СВЕТ блока удаление!!! Надо как-то это сделать!
+            //        //Light.CheclLightBlock(blockPos);
+            //    }
+            //    TheProfiler().EndSection();
+            //    //chunk.Light.ResetRelightChecks();
+            //}
+
+            return true;
+
+
+            //chunk.StorageArrays[chy].SetData(pos.x, by, pos.z, blockState.GetData());
+            //BlockBase blockNew = Blocks.CreateBlock(blockState.GetEBlock(),
+            //                new BlockPos(Position.x << 4 | pos.x, pos.y, Position.y << 4 | pos.z));
+            //BlockBase blockOld = World.GetBlock(blockNew.Position);
+
+
+            //if (blockPos.Y >= 0 && blockPos.Y < 256)
+            //{
+            //    ChunkBase chunk = ChunkPr.GetChunk(blockPos.GetPositionChunk());
+            //    if (chunk != null)
+            //    {
+            //        //if (!IsRemote)
+            //        //{
+            //        //    // сервер
+            //        //    BlockState blockStateOld = chunk.GetBlockState(blockPos.GetPosition0());
+            //        //    //breakBlock()
+            //        //}
+            //        if (chunk.SetBlockState(blockPos.GetPosition0(), blockState))
+            //        {
+            //            MarkBlockForUpdate(blockPos);
+            //            return true;
+            //        }
+            //    }
+            //}
+            //return false;
         }
+
+        /// <summary>
+        /// Сменить блок
+        /// </summary>
+        /// <param name="blockPos">позици блока</param>
+        /// <param name="eBlock">тип блока</param>
+        /// <returns>true смена была</returns>
+        //public void SetBlockDebug(BlockPos blockPos, EnumBlock enumBlock)
+        //{
+        //    if (IsRemote && blockPos.Y >= 0 && blockPos.Y < 256)
+        //    {
+        //        ChunkBase chunk = ChunkPr.GetChunk(blockPos.GetPositionChunk());
+        //        if (chunk != null)
+        //        {
+        //            chunk.SetEBlock(blockPos.GetPosition0(), enumBlock);
+        //            MarkBlockForUpdate(blockPos);
+        //        }
+        //    }
+        //}
 
         /// <summary>
         /// Отметить блок для обновления
         /// </summary>
-        protected virtual void MarkBlockForUpdate(BlockPos blockPos) { }
+        public virtual void MarkBlockForUpdate(BlockPos blockPos) { }
+        /// <summary>
+        /// Отметить блоки для обновления
+        /// </summary>
+        public virtual void MarkBlockRangeForRenderUpdate(int x0, int y0, int z0, int x1, int y1, int z1) { }
+
+
 
         /// <summary>
         /// Возвращает все объекты указанного типа класса, которые пересекаются с AABB кроме переданного в него
@@ -565,6 +695,13 @@ namespace MvkServer.World
         /// <summary>
         /// Проверить облость загруженных чанков, координаты в блоках
         /// </summary>
+        public bool IsAreaLoaded(BlockPos blockPos, int radius) => IsAreaLoaded(
+                blockPos.X - radius, blockPos.Y - radius, blockPos.Z - radius,
+                blockPos.X + radius, blockPos.Y + radius, blockPos.Z + radius);
+
+        /// <summary>
+        /// Проверить облость загруженных чанков, координаты в блоках
+        /// </summary>
         protected bool IsAreaLoaded(int minX, int minY, int minZ, int maxX, int maxY, int maxZ)
         {
             if (maxY >= 0 && minY < ChunkBase.COUNT_HEIGHT * 16)
@@ -590,6 +727,21 @@ namespace MvkServer.World
         }
 
         /// <summary>
+        /// Проверить облость загруженных чанков, координаты в блоках
+        /// </summary>
+        public bool IsAreaLoaded(vec2i pos, int radius)
+        {
+            for (int x = pos.x - radius; x <= pos.x + radius; x++)
+            {
+                for (int z = pos.y - radius; z <= pos.y + radius; z++)
+                {
+                    if (!ChunkPr.IsChunk(new vec2i(x, z))) return false;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
         /// Возвращает, если какой-либо из блоков внутри aabb является жидкостью
         /// </summary>
         /// <returns>true - есть вода</returns>
@@ -606,12 +758,54 @@ namespace MvkServer.World
                     {
                         BlockBase block = GetBlock(new BlockPos(x, y, z));
                         // TODO::2022-04-12 добавть материал, и заменить на воду
-                        if (block.EBlock == EnumBlock.Water) return true;
+                        // Кажется этот раздел не работает, надо проверить!!!
+                        if (block.Material == EnumMaterial.Water) return true;
+                        //if (block.EBlock == EnumBlock.Water) return true;
                     }
                 }
             }
             return false;
         }
+
+
+        //public BlockPos GetHorizon(BlockPos pos)
+        //{
+        //    int hy;
+
+        //    if (pos.X >= -30000000 && pos.Z >= -30000000 && pos.X < 30000000 && pos.Z < 30000000)
+        //    {
+        //        vec2i chPos = new vec2i(pos.X >> 4, pos.Z >> 4);
+        //        if (ChunkPr.IsChunk(chPos))
+        //        {
+        //            ChunkBase chunk = GetChunk(chPos);
+        //            hy = chunk.Light.GetHeight(pos.X & 15, pos.Z & 15);
+        //        }
+        //        else hy = 0;
+        //    }
+        //    else hy = 64;
+
+        //    return new BlockPos(pos.X, hy, pos.Z);
+        //}
+
+        /// <summary>
+        /// Получает наименьшую высоту фрагмента, куда непосредственно попадает солнечный свет.
+        /// </summary>
+        /// <param name="x">глобальная координата блока X</param>
+        /// <param name="z">глобальная координата блока Z</param>
+        //public int GetChunksLowestHorizon(int x, int z)
+        //{
+        //    if (x >= -30000000 && z >= -30000000 && x < 30000000 && z < 30000000)
+        //    {
+        //        vec2i chPos = new vec2i(x >> 4, z >> 4);
+        //        if (!ChunkPr.IsChunk(chPos)) return 0;
+        //        else
+        //        {
+        //            ChunkBase chunk = GetChunk(chPos);
+        //            return chunk.Light.GetLowestHeight();
+        //        }
+        //    }
+        //    return 64;
+        //}
 
         /// <summary>
         /// Проверка нахождения сущности в воде
@@ -620,7 +814,7 @@ namespace MvkServer.World
         /// <param name="enumBlock"></param>
         /// <param name="entity"></param>
         /// <returns></returns>
-        public bool HandleMaterialAcceleration(AxisAlignedBB aabb, EnumBlock enumBlock, EntityBase entity)
+        public bool HandleMaterialAcceleration(AxisAlignedBB aabb, EnumMaterial material, EntityBase entity)
         {
             vec3i min = aabb.MinInt();
             vec3i max = aabb.MaxInt();
@@ -649,8 +843,7 @@ namespace MvkServer.World
                             BlockPos blockPos = new BlockPos(x, y, z);
                             BlockBase block = GetBlock(blockPos);
 
-                            // TODO::2022-04-12 добавть материал, и заменить
-                            if (block.EBlock == enumBlock)
+                            if (block.Material == material)
                             {
                                 //double var18 = (double)((float)(y + 1) - BlockLiquid.getLiquidHeightPercent(((Integer)var16.getValue(BlockLiquid.LEVEL)).intValue()));
 
@@ -678,6 +871,41 @@ namespace MvkServer.World
 
                 return result;
             }
+        }
+
+        /// <summary>
+        /// Собрать активные чанки игроков
+        /// </summary>
+        protected void SetActivePlayerChunksAndCheckLight()
+        {
+            activeChunkSet.Clear();
+            TheProfiler().StartSection("buildList");
+            for (int i = 0; i < PlayerEntities.Count; i++)
+            {
+                EntityBase entity = PlayerEntities.GetAt(i);
+                vec2i chPos = entity.PositionChunk;
+                int dist = RADIUS_ACTION_CHUNK; // радиус активных чанков
+
+                for (int x = -dist; x <= dist; x++)
+                {
+                    for (int z = -dist; z <= dist; z++)
+                    {
+                        activeChunkSet.Add(new vec2i(x + chPos.x, z + chPos.y));
+                    }
+                }
+            }
+            TheProfiler().EndSection();
+
+            TheProfiler().StartSection("playerCheckLight");
+
+            if (PlayerEntities.Count > 0)
+            {
+                int indexRand = Rand.Next(PlayerEntities.Count);
+                EntityBase entity = PlayerEntities.GetAt(indexRand);
+               // Light.CheckLight(new BlockPos(entity.GetBlockPos()));
+            }
+
+            TheProfiler().EndSection();
         }
     }
 }

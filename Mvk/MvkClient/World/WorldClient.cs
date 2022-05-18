@@ -4,6 +4,7 @@ using MvkClient.Renderer;
 using MvkClient.Renderer.Chunk;
 using MvkClient.Renderer.Entity;
 using MvkClient.Setitings;
+using MvkClient.Util;
 using MvkServer.Entity;
 using MvkServer.Glm;
 using MvkServer.Network.Packets.Client;
@@ -12,6 +13,7 @@ using MvkServer.World;
 using MvkServer.World.Block;
 using MvkServer.World.Chunk;
 using System;
+using System.Collections.Generic;
 
 namespace MvkClient.World
 {
@@ -83,6 +85,11 @@ namespace MvkClient.World
             ClientMain.Player.SetOverviewChunk(Setting.OverviewChunk);
             Key = new Keyboard(this);
         }
+
+        /// <summary>
+        /// Игровое время
+        /// </summary>
+        public override uint GetTotalWorldTime() => ClientMain.TickCounter;
 
         /// <summary>
         /// Обработка каждый тик
@@ -242,22 +249,65 @@ namespace MvkClient.World
         /// <param name="blockPos">позици блока</param>
         /// <param name="eBlock">тип блока</param>
         /// <returns>true смена была</returns>
-        public override bool SetBlockState(BlockPos blockPos, EnumBlock eBlock)
+        public override bool SetBlockState(BlockPos blockPos, BlockState blockState)
         {
-            if (base.SetBlockState(blockPos, eBlock))
-            {
-                // Для рендера, проверка соседнего чанка, если блок крайний,
-                // то будет доп рендер чанков рядом
-                vec3i min = blockPos.Position - 1;
-                vec3i max = blockPos.Position + 1;
+            //ChunkBase chunk = ChunkPr.GetChunk(blockPos.GetPositionChunk());
+            //if (chunk != null)
+            //{
+            //    int bx = blockPos.X & 15;
+            //    int by = blockPos.Y;
+            //    int bz = blockPos.Z & 15;
 
-                vec3i c0 = new vec3i(min.x >> 4, min.y >> 4, min.z >> 4);
-                vec3i c1 = new vec3i(max.x >> 4, max.y >> 4, max.z >> 4);
+            //    chunk.StorageArrays[by >> 4].Set(bx, by & 15, bz, blockState);
 
-                AreaModifiedToRender(c0, c1);
-                return true;
-            }
-            return false;
+            //    MarkBlockForUpdate(blockPos);
+            //}
+
+            // Это если обновлять сразу!
+            base.SetBlockState(blockPos, blockState);
+
+            //if (base.SetBlockState(blockPos, blockState))
+            //{
+            //    // Для рендера, проверка соседнего чанка, если блок крайний,
+            //    //// то будет доп рендер чанков рядом
+            //    //vec3i min = blockPos.Position - 1;
+            //    //vec3i max = blockPos.Position + 1;
+
+            //    //vec3i c0 = new vec3i(min.x >> 4, min.y >> 4, min.z >> 4);
+            //    //vec3i c1 = new vec3i(max.x >> 4, max.y >> 4, max.z >> 4);
+
+            //    //AreaModifiedToRender(c0, c1);
+            return true;
+            //}
+            //return false;
+        }
+
+        /// <summary>
+        /// Отметить блок для обновления
+        /// </summary>
+        public override void MarkBlockForUpdate(BlockPos blockPos)
+        {
+            vec3i min = blockPos.ToVec3i() - 1;
+            vec3i max = blockPos.ToVec3i() + 1;
+
+            vec3i c0 = new vec3i(min.x >> 4, min.y >> 4, min.z >> 4);
+            vec3i c1 = new vec3i(max.x >> 4, max.y >> 4, max.z >> 4);
+
+            AreaModifiedToRender(c0, c1);
+        }
+
+        /// <summary>
+        /// Отметить блоки для обновления
+        /// </summary>
+        public override void MarkBlockRangeForRenderUpdate(int x0, int y0, int z0, int x1, int y1, int z1)
+        {
+            vec3i min = new vec3i(x0 - 1, y0 - 1, z0 - 1);
+            vec3i max = new vec3i(x0 + 1, y0 + 1, z0 + 1);
+
+            vec3i c0 = new vec3i(min.x >> 4, min.y >> 4, min.z >> 4);
+            vec3i c1 = new vec3i(max.x >> 4, max.y >> 4, max.z >> 4);
+
+            AreaModifiedToRender(c0, c1);
         }
 
         /// <summary>
@@ -280,6 +330,18 @@ namespace MvkClient.World
                 }
             }
         }
+
+        /// <summary>
+        /// Пометить псевдо чанка на перегенерацию
+        /// </summary>
+        //public void ModifiedToRender(vec3i pos)
+        //{
+        //    if (pos.y >= 0 && pos.y < ChunkRender.COUNT_HEIGHT)
+        //    {
+        //        ChunkRender chunk = ChunkPrClient.GetChunkRender(new vec2i(pos.x, pos.z));
+        //        if (chunk != null) chunk.ModifiedToRender(pos.y);
+        //    }
+        //}
 
         /// <summary>
         /// Получить попадает ли в луч сущность, выбрать самую близкую
@@ -353,6 +415,32 @@ namespace MvkClient.World
                         pos + new vec3((Rand.Next(16) - 8) / 16f, (Rand.Next(12) - 6) / 16f, (Rand.Next(16) - 8) / 16f),
                         new vec3(0),
                         (int)GetEBlock(blockPos));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Помечаем на перерендер всех псевдочанков обзора
+        /// </summary>
+        public void RerenderAllChunks()
+        {
+            if (ClientMain.Player.DistSqrt != null)
+            {
+                for (int i = 0; i < ClientMain.Player.DistSqrt.Length; i++)
+                {
+                    vec2i coord = new vec2i(Mth.Floor(ClientMain.Player.Position.x) >> 4, Mth.Floor(ClientMain.Player.Position.z) >> 4)
+                        + ClientMain.Player.DistSqrt[i];
+                    ChunkRender chunk = ChunkPrClient.GetChunkRender(coord);
+                    if (chunk != null)
+                    {
+                        for (int y = 0; y < chunk.StorageArrays.Length; y++)
+                        {
+                            if (!chunk.StorageArrays[y].IsEmpty())
+                            {
+                                chunk.ModifiedToRender(y);
+                            }
+                        }
+                    }
                 }
             }
         }

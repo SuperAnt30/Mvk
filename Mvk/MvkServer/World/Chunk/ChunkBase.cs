@@ -3,6 +3,8 @@ using MvkServer.Entity.Item;
 using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World.Block;
+using MvkServer.World.Chunk.Light;
+//using MvkServer.World.Light;
 using System;
 using System.Collections.Generic;
 
@@ -17,6 +19,10 @@ namespace MvkServer.World.Chunk
         /// Количество псевдо чанков
         /// </summary>
         public const int COUNT_HEIGHT = 16;
+        /// <summary>
+        /// Количество блоков в высоту
+        /// </summary>
+        public const int COUNT_HEIGHT_BLOCK = 255;
         /// <summary>
         /// Данные чанка
         /// </summary>
@@ -37,6 +43,10 @@ namespace MvkServer.World.Chunk
         /// Список сущностей в каждом псевдочанке
         /// </summary>
         public MapListEntity[] ListEntities { get; protected set; } = new MapListEntity[COUNT_HEIGHT];
+        /// <summary>
+        /// Объект работы с освещением
+        /// </summary>
+        public ChunkLight Light { get; private set; }
 
         /// <summary>
         /// Столбцы биомов
@@ -62,7 +72,24 @@ namespace MvkServer.World.Chunk
         /// </summary>
         protected long updateTime;
 
-        
+
+        /// <summary>
+        /// В тиках проверям, рендер света
+        /// </summary>
+        //private bool isGapLightingUpdated = false;
+
+        /// <summary>
+        /// Установите значение true, если чанк был изменен и нуждается в внутреннем обновлении. Для сохранения
+        /// </summary>
+        private bool isModified;
+        /// <summary>
+        /// Имеет ли этот фрагмент какие-либо сущности и, следовательно, требует сохранения на каждом тике
+        /// </summary>
+        private bool hasEntities = false;
+        /// <summary>
+        /// Время последнего сохранения этого фрагмента согласно World.worldTime
+        /// </summary>
+        private long lastSaveTime;
 
         protected ChunkBase() { }
         public ChunkBase(WorldBase worldIn, vec2i pos)
@@ -71,101 +98,102 @@ namespace MvkServer.World.Chunk
             Position = pos;
             for (int y = 0; y < COUNT_HEIGHT; y++)
             {
-                StorageArrays[y] = new ChunkStorage(y);
+                StorageArrays[y] = new ChunkStorage(y << 4);
                 ListEntities[y] = new MapListEntity();
             }
+            Light = new ChunkLight(this);
         }
 
         /// <summary>
         /// Загружен чанк или сгенерирован
         /// </summary>
-        public void ChunkLoadGen()
-        {
-            StorageArraysClear();
-            //TODO:: Тест генерации
+        //public void ChunkLoadGen()
+        //{
+        //    StorageArraysClear();
+        //    //TODO:: Тест генерации
 
-            //Random random = new Random();
+        //    //Random random = new Random();
 
-            //if (random.Next(20) == 1)
-            //{
-            //    IsChunkLoaded = true;
-            //    return;
-            //}
+        //    //if (random.Next(20) == 1)
+        //    //{
+        //    //    IsChunkLoaded = true;
+        //    //    return;
+        //    //}
 
-            for (int y0 = 0; y0 < 24; y0++)
-            {
-                int sy = y0 >> 4;
-                int y = y0 & 15;
-                if (y0 > 8 && y0 < 16) continue;
-                for (int x = 0; x < 16; x++)
-                {
-                    for (int z = 0; z < 16; z++)
-                    {
-                        StorageArrays[sy].SetEBlock(x, y, z, (y0 == 23) ? EnumBlock.Turf : EnumBlock.Stone);
-                    }
-                }
-            }
-            for (int i = 5; i <= 10; i++)
-            {
-                StorageArrays[1].SetEBlock(12, 7, i, EnumBlock.Air);
-                StorageArrays[1].SetEBlock(13, 7, i, EnumBlock.Air);
-                StorageArrays[1].SetEBlock(14, 7, i, EnumBlock.Air);
-                StorageArrays[1].SetEBlock(15, 7, i, EnumBlock.Air);
-            }
-            StorageArrays[1].SetEBlock(14, 7, 11, EnumBlock.Air);
-            StorageArrays[1].SetEBlock(15, 7, 11, EnumBlock.Air);
-            StorageArrays[1].SetEBlock(14, 7, 12, EnumBlock.Air);
-            StorageArrays[1].SetEBlock(15, 7, 12, EnumBlock.Air);
+        //    for (int y0 = 0; y0 < 24; y0++)
+        //    {
+        //        int sy = y0 >> 4;
+        //        int y = y0 & 15;
+        //        if (y0 > 8 && y0 < 16) continue;
+        //        for (int x = 0; x < 16; x++)
+        //        {
+        //            for (int z = 0; z < 16; z++)
+        //            {
+        //                StorageArrays[sy].SetEBlock(x, y, z, (y0 == 23) ? EnumBlock.Turf : EnumBlock.Stone);
+        //            }
+        //        }
+        //    }
+        //    for (int i = 5; i <= 10; i++)
+        //    {
+        //        StorageArrays[1].SetEBlock(12, 7, i, EnumBlock.Air);
+        //        StorageArrays[1].SetEBlock(13, 7, i, EnumBlock.Air);
+        //        StorageArrays[1].SetEBlock(14, 7, i, EnumBlock.Air);
+        //        StorageArrays[1].SetEBlock(15, 7, i, EnumBlock.Air);
+        //    }
+        //    StorageArrays[1].SetEBlock(14, 7, 11, EnumBlock.Air);
+        //    StorageArrays[1].SetEBlock(15, 7, 11, EnumBlock.Air);
+        //    StorageArrays[1].SetEBlock(14, 7, 12, EnumBlock.Air);
+        //    StorageArrays[1].SetEBlock(15, 7, 12, EnumBlock.Air);
 
-            StorageArrays[1].SetEBlock(10, 8, 6, EnumBlock.Turf);
-            StorageArrays[1].SetEBlock(10, 8, 5, EnumBlock.Turf);
-            StorageArrays[1].SetEBlock(11, 8, 6, EnumBlock.Turf);
-            StorageArrays[1].SetEBlock(11, 8, 5, EnumBlock.Turf);
+        //    StorageArrays[1].SetEBlock(10, 8, 6, EnumBlock.Turf);
+        //    StorageArrays[1].SetEBlock(10, 8, 5, EnumBlock.Turf);
+        //    StorageArrays[1].SetEBlock(11, 8, 6, EnumBlock.Turf);
+        //    StorageArrays[1].SetEBlock(11, 8, 5, EnumBlock.Turf);
 
-            StorageArrays[1].SetEBlock(14, 8, 12, EnumBlock.Cobblestone);
+        //    StorageArrays[1].SetEBlock(14, 8, 12, EnumBlock.Cobblestone);
 
-            //   StorageArrays[1].SetEBlock(8, 8, 0, EnumBlock.Turf);
-            StorageArrays[1].SetEBlock(6, 8, 0, EnumBlock.Cobblestone);
-            StorageArrays[1].SetEBlock(5, 8, 0, EnumBlock.Stone);
-            //StorageArrays[1].SetEBlock(6, 9, 0, EnumBlock.Cobblestone);
-            StorageArrays[1].SetEBlock(5, 9, 0, EnumBlock.Cobblestone);
+        //    //   StorageArrays[1].SetEBlock(8, 8, 0, EnumBlock.Turf);
+        //    StorageArrays[1].SetEBlock(6, 8, 0, EnumBlock.Cobblestone);
+        //    StorageArrays[1].SetEBlock(5, 8, 0, EnumBlock.Stone);
+        //    //StorageArrays[1].SetEBlock(6, 9, 0, EnumBlock.Cobblestone);
+        //    StorageArrays[1].SetEBlock(5, 9, 0, EnumBlock.Cobblestone);
 
-            StorageArrays[1].SetEBlock(3, 8, 0, EnumBlock.Stone);
-            StorageArrays[1].SetEBlock(3, 9, 0, EnumBlock.Stone);
-            StorageArrays[1].SetEBlock(2, 8, 0, EnumBlock.Stone);
-            StorageArrays[1].SetEBlock(2, 9, 0, EnumBlock.Stone);
-            StorageArrays[1].SetEBlock(2, 10, 0, EnumBlock.Cobblestone);
-            StorageArrays[1].SetEBlock(1, 8, 0, EnumBlock.Stone);
-            StorageArrays[1].SetEBlock(1, 9, 0, EnumBlock.Stone);
-            StorageArrays[1].SetEBlock(1, 10, 0, EnumBlock.Stone);
-            StorageArrays[1].SetEBlock(0, 8, 0, EnumBlock.Stone);
-            StorageArrays[1].SetEBlock(0, 9, 0, EnumBlock.Stone);
-            StorageArrays[1].SetEBlock(0, 10, 0, EnumBlock.Cobblestone);
-            StorageArrays[1].SetEBlock(0, 11, 0, EnumBlock.Dirt);
-            StorageArrays[1].SetEBlock(0, 12, 0, EnumBlock.Turf);
-            StorageArrays[1].SetEBlock(0, 12, 14, EnumBlock.Turf);
-            StorageArrays[1].SetEBlock(0, 12, 15, EnumBlock.Turf);
-            StorageArrays[1].SetEBlock(1, 12, 14, EnumBlock.Turf);
-            StorageArrays[1].SetEBlock(1, 12, 15, EnumBlock.Turf);
-            StorageArrays[1].SetEBlock(1, 8, 15, EnumBlock.Cobblestone);
-            StorageArrays[1].SetEBlock(0, 11, 1, EnumBlock.Dirt);
-            StorageArrays[1].SetEBlock(0, 11, 2, EnumBlock.Dirt);
-            StorageArrays[1].SetEBlock(1, 7, 0, EnumBlock.Dirt);
+        //    StorageArrays[1].SetEBlock(3, 8, 0, EnumBlock.Stone);
+        //    StorageArrays[1].SetEBlock(3, 9, 0, EnumBlock.Stone);
+        //    StorageArrays[1].SetEBlock(2, 8, 0, EnumBlock.Stone);
+        //    StorageArrays[1].SetEBlock(2, 9, 0, EnumBlock.Stone);
+        //    StorageArrays[1].SetEBlock(2, 10, 0, EnumBlock.Cobblestone);
+        //    StorageArrays[1].SetEBlock(1, 8, 0, EnumBlock.Stone);
+        //    StorageArrays[1].SetEBlock(1, 9, 0, EnumBlock.Stone);
+        //    StorageArrays[1].SetEBlock(1, 10, 0, EnumBlock.Stone);
+        //    StorageArrays[1].SetEBlock(0, 8, 0, EnumBlock.Stone);
+        //    StorageArrays[1].SetEBlock(0, 9, 0, EnumBlock.Stone);
+        //    StorageArrays[1].SetEBlock(0, 10, 0, EnumBlock.Cobblestone);
+        //    StorageArrays[1].SetEBlock(0, 11, 0, EnumBlock.Dirt);
+        //    StorageArrays[1].SetEBlock(0, 12, 0, EnumBlock.Turf);
+        //    StorageArrays[1].SetEBlock(0, 12, 14, EnumBlock.Turf);
+        //    StorageArrays[1].SetEBlock(0, 12, 15, EnumBlock.Turf);
+        //    StorageArrays[1].SetEBlock(1, 12, 14, EnumBlock.Turf);
+        //    StorageArrays[1].SetEBlock(1, 12, 15, EnumBlock.Turf);
+        //    StorageArrays[1].SetEBlock(1, 8, 15, EnumBlock.Cobblestone);
+        //    StorageArrays[1].SetEBlock(0, 11, 1, EnumBlock.Dirt);
+        //    StorageArrays[1].SetEBlock(0, 11, 2, EnumBlock.Dirt);
+        //    StorageArrays[1].SetEBlock(1, 7, 0, EnumBlock.Dirt);
 
-            int xv = 8;
-            int zv = 1;
+        //    int xv = 8;
+        //    int zv = 1;
 
-            StorageArrays[1].SetEBlock(xv, 8, zv, EnumBlock.Stone);
-            StorageArrays[1].SetEBlock(xv, 9, zv, EnumBlock.Stone);
-            StorageArrays[1].SetEBlock(xv, 10, zv, EnumBlock.Stone);
-            StorageArrays[1].SetEBlock(xv, 11, zv, EnumBlock.Stone);
+        //    StorageArrays[1].SetEBlock(xv, 8, zv, EnumBlock.Stone);
+        //    StorageArrays[1].SetEBlock(xv, 9, zv, EnumBlock.Stone);
+        //    StorageArrays[1].SetEBlock(xv, 10, zv, EnumBlock.Stone);
+        //    StorageArrays[1].SetEBlock(xv, 11, zv, EnumBlock.Stone);
 
-            //IsChunkLoaded = true;// LoadinData();
-            // Продумать, для клиента запрос для сервера данных чанка, 
-            // для сервера чанк пытается загрузиться, если он не создан то создаём
+        //    //IsChunkLoaded = true;// LoadinData();
+        //    // Продумать, для клиента запрос для сервера данных чанка, 
+        //    // для сервера чанк пытается загрузиться, если он не создан то создаём
 
-            System.Threading.Thread.Sleep(2);
-        }
+        //    System.Threading.Thread.Sleep(2);
+        //}
 
         /// <summary>
         /// Выгружаем чанк
@@ -215,26 +243,64 @@ namespace MvkServer.World.Chunk
         /// <summary>
         /// Задать чанк байтами
         /// </summary>
-        public void SetBinary(byte[] buffer, int height)
+        public void SetBinary(byte[] buffer, bool biom, int flagsYAreas)
         {
             int i = 0;
-            for (int sy = 0; sy < height; sy++)
+            for (int sy = 0; sy < COUNT_HEIGHT; sy++)
             {
-                StorageArrays[sy].Clear();
-                for (int y = 0; y < 16; y++)
+                if ((flagsYAreas & 1 << sy) != 0)
                 {
-                    for (int x = 0; x < 16; x++)
+                    //StorageArrays[sy].Clear();
+                    for (int y = 0; y < 16; y++)
                     {
-                        for (int z = 0; z < 16; z++)
+                        for (int x = 0; x < 16; x++)
                         {
-                            StorageArrays[sy].SetData(x, y, z, (ushort)(buffer[i++] | buffer[i++] << 8));
-                            StorageArrays[sy].SetLightsFor(x, y, z, buffer[i++]);
+                            for (int z = 0; z < 16; z++)
+                            {
+                                StorageArrays[sy].SetData(x, y, z, (ushort)(buffer[i++] | buffer[i++] << 8));
+                                StorageArrays[sy].SetLightsFor(x, y, z, buffer[i++]);
+                            }
                         }
                     }
+                    ModifiedToRender(sy);
                 }
+            }
+            // биом
+            if (biom)
+            {
+                
             }
             IsChunkLoaded = true;
         }
+
+        /// <summary>
+        /// Пометить что надо перерендерить сетку чанка для клиента
+        /// </summary>
+        public virtual void ModifiedToRender(int y) { }
+
+        /// <summary>
+        /// Задать чанк байтами
+        /// </summary>
+        //public void SetBinary(byte[] buffer, int height)
+        //{
+        //    int i = 0;
+        //    for (int sy = 0; sy < height; sy++)
+        //    {
+        //        StorageArrays[sy].Clear();
+        //        for (int y = 0; y < 16; y++)
+        //        {
+        //            for (int x = 0; x < 16; x++)
+        //            {
+        //                for (int z = 0; z < 16; z++)
+        //                {
+        //                    StorageArrays[sy].SetData(x, y, z, (ushort)(buffer[i++] | buffer[i++] << 8));
+        //                    StorageArrays[sy].SetLightsFor(x, y, z, buffer[i++]);
+        //                }
+        //            }
+        //        }
+        //    }
+        //    IsChunkLoaded = true;
+        //}
 
         /// <summary>
         /// Задать псевдо чанк байтами
@@ -242,7 +308,7 @@ namespace MvkServer.World.Chunk
         public void SetBinaryY(byte[] buffer, int sy)
         {
             int i = 0;
-            StorageArrays[sy].Clear();
+            //StorageArrays[sy].Clear();
             for (int y = 0; y < 16; y++)
             {
                 for (int x = 0; x < 16; x++)
@@ -266,6 +332,34 @@ namespace MvkServer.World.Chunk
         /// </summary>
         public bool IsOldTime() => DateTime.Now.Ticks - updateTime > 100000000;
 
+        /// <summary>
+        /// Возвращает самый верхний экземпляр BlockStorage для этого фрагмента, который фактически содержит блок.
+        /// </summary>
+        public int GetTopFilledSegment()
+        {
+            for (int y = StorageArrays.Length - 1; y >= 0; y--)
+            {
+                if (!StorageArrays[y].IsEmpty())
+                {
+                    return StorageArrays[y].GetYLocation();
+                }
+            }
+            return 0;
+        }
+
+        /// <summary>
+        /// Возвращает строку всех сегментов
+        /// </summary>
+        public string GetDebugAllSegment()
+        {
+            string s = "";
+            for (int y = 0; y < StorageArrays.Length; y++)
+            {
+                s += StorageArrays[y].IsEmpty() ? "." : "*";
+            }
+            return s;
+        }
+
         #region Block
 
         /// <summary>
@@ -280,6 +374,46 @@ namespace MvkServer.World.Chunk
             EnumBlock eblock = GetEBlock(x, y, z);
             return Blocks.CreateBlock(eblock, new BlockPos(Position.x << 4 | x, y, Position.y << 4 | z));
         }
+        /// <summary>
+        /// Получить блок данных
+        /// </summary>
+        public BlockState GetBlockState(BlockPos blockPos)
+        {
+            int chy = blockPos.Y >> 4;
+            if (blockPos.Y >= 0 && chy < StorageArrays.Length)
+            {
+                ChunkStorage chunkStorage = StorageArrays[chy];
+                if (!chunkStorage.IsEmpty())
+                {
+                    vec3i pos = blockPos.GetPosition0();
+                    int by = blockPos.Y & 15;
+                    return new BlockState(chunkStorage.GetData(pos.x, by, pos.z), chunkStorage.GetLightsFor(pos.x, by, pos.z));
+                }
+            }
+            return new BlockState(EnumBlock.Air);
+        }
+
+        /// <summary>
+        /// Получить блок данных, XZ 0..15, Y 0..255
+        /// </summary>
+        //public BlockState GetBlockState(vec3i pos) => GetBlockState(pos.x, pos.y, pos.z);
+        /// <summary>
+        /// Получить блок данных, XZ 0..15, Y 0..255
+        /// </summary>
+        public BlockState GetBlockState(int x, int y, int z)
+        {
+            if (x >> 4 == 0 && z >> 4 == 0)
+            {
+                int chy = y >> 4;
+                ChunkStorage chunkStorage = StorageArrays[chy];
+                if (!chunkStorage.IsEmpty())
+                {
+                    int by = y & 15;
+                    return new BlockState(chunkStorage.GetData(x, by, z), chunkStorage.GetLightsFor(x, by, z));
+                }
+            }
+            return new BlockState();
+        }
 
         /// <summary>
         /// Получить тип блок по координатам чанка XZ 0..15, Y 0..255
@@ -290,22 +424,185 @@ namespace MvkServer.World.Chunk
         /// </summary>
         public EnumBlock GetEBlock(int x, int y, int z)
         {
-            if (x >> 4 == 0 && z >> 4 == 0) return StorageArrays[y >> 4].GetEBlock(x, y & 15, z);
+            int ys = y >> 4;
+            if (x >> 4 == 0 && z >> 4 == 0 && !StorageArrays[ys].IsEmpty()) return StorageArrays[ys].GetEBlock(x, y & 15, z);
             return EnumBlock.Air;
         }
 
         /// <summary>
         /// Задать тип блок по координатам чанка XZ 0..15, Y 0..255
         /// </summary>
-        /// <param name="pos"></param>
-        /// <param name="enumBlock"></param>
         public void SetEBlock(vec3i pos, EnumBlock eBlock)
         {
-            if (pos.x >> 4 == 0 && pos.z >> 4 == 0 && pos.y >= 0 && pos.y < COUNT_HEIGHT << 4)
+            int y = pos.y >> 4;
+            if (pos.x >> 4 == 0 && pos.z >> 4 == 0 && pos.y >= 0 && y < COUNT_HEIGHT)
             {
-                StorageArrays[pos.y >> 4].SetEBlock(pos.x, pos.y & 15, pos.z, eBlock);
+                StorageArrays[y].SetEBlock(pos.x, pos.y & 15, pos.z, eBlock);
             }
         }
+
+        /// <summary>
+        /// Задать новые данные блока, с перерасчётом освещения если надо и прочего, возвращает прошлые данные блока
+        /// </summary>
+        /// <param name="blockPos">позиция блока</param>
+        /// <param name="blockState">данные нового блока</param>
+        public BlockState SetBlockState(BlockPos blockPos, BlockState blockState)
+        {
+            int bx = blockPos.X & 15;
+            int by = blockPos.Y;
+            int bz = blockPos.Z & 15;
+
+           // Light.CheckPrecipitationHeightMap(blockPos);
+
+            BlockState blockStateOld = GetBlockState(blockPos);
+
+            if (blockState.Equals(blockStateOld)) return new BlockState().Empty();
+
+            //int height = Light.GetHeight(bx, bz);
+
+            BlockBase block = blockState.GetBlock();
+            BlockBase blockOld = blockStateOld.GetBlock();
+            int chy = blockPos.Y >> 4;
+            // bool heightMapUp = false;
+
+            if (StorageArrays[chy].IsEmpty())
+            {
+                if (block.EBlock == EnumBlock.Air) return new BlockState().Empty();
+                //heightMapUp = by >= height;
+
+                // Если вверхняя часть впервые создаётся, заполняем небесный свет все блоки
+                StorageArrays[chy].LightSky();
+            }
+
+            StorageArrays[chy].SetData(bx, by & 15, bz, blockState.data);
+            //StorageArrays[chy].Set(bx, by & 15, bz, blockState);
+
+            if (blockOld != block)
+            {
+                
+                if (!World.IsRemote)
+                {
+                    Light.CheckLightSetBlock(blockPos, block.LightOpacity, blockOld.LightOpacity, block.LightValue != blockOld.LightValue);
+
+                    //blockOld.breakBlock(this.worldObj, blockPos, blockStateOld);
+                }
+                //else if (blockOld is ITileEntityProvider)
+                //{
+                //    this.worldObj.removeTileEntity(blockPos);
+                //}
+            }
+
+            if (StorageArrays[chy].IsEmpty() || StorageArrays[chy].GetEBlock(bx, by & 15, bz) != block.EBlock) return new BlockState();
+
+            //if (heightMapUp)
+            //{
+            //    Light.GenerateSkylightMap();
+            //}
+            //else
+            //{
+            //    Light.CheckBlockState(blockPos, height, block.LightOpacity, blockOld.LightOpacity);
+            //}
+            //Light.CheckLightSetBlock(blockNew.Position, blockNew.LightOpacity, blockOld.LightOpacity,
+            //    blockNew.LightValue != blockOld.LightValue);
+            
+
+            //TileEntity var15;
+
+            //if (blockOld instanceof ITileEntityProvider)
+            //{
+            //    var15 = this.func_177424_a(blockPos, Chunk.EnumCreateEntityType.CHECK);
+
+            //    if (var15 != null)
+            //    {
+            //        var15.updateContainingBlockInfo();
+            //    }
+            //}
+
+            //if (!this.worldObj.isRemote && blockOld != block)
+            //{
+            //    block.onBlockAdded(this.worldObj, blockPos, blockState);
+            //}
+
+            //if (block instanceof ITileEntityProvider)
+            //{
+            //    var15 = this.func_177424_a(blockPos, Chunk.EnumCreateEntityType.CHECK);
+
+            //    if (var15 == null)
+            //    {
+            //        var15 = ((ITileEntityProvider)block).createNewTileEntity(this.worldObj, block.getMetaFromState(blockState));
+            //        this.worldObj.setTileEntity(blockPos, var15);
+            //    }
+
+            //    if (var15 != null)
+            //    {
+            //        var15.updateContainingBlockInfo();
+            //    }
+            //}
+
+            Modified();
+            return blockStateOld;
+        }
+
+        /// <summary>
+        /// Задать блок данных по координатам чанка XZ 0..15, Y 0..255
+        /// </summary>
+        //public bool SetBlockState(vec3i pos, BlockState blockState)
+        //{
+        //    if (pos.x >> 4 == 0 && pos.z >> 4 == 0 && pos.y >= 0 && pos.y < COUNT_HEIGHT << 4)
+        //    {
+        //        int chy = pos.y >> 4;
+        //        int by = pos.y & 15;
+        //        //if (true)//!World.IsRemote)
+        //        if (!World.IsRemote)
+        //        {
+        //            // сервер
+        //            // BlockState blockStateOld = GetBlockState(pos);
+        //            //int height = Light.GetHeight(pos.x, pos.z);
+        //            //// блок выше высотной высоты
+        //            //bool isHeight = pos.y > height;
+
+        //            BlockBase blockNew = Blocks.CreateBlock(blockState.GetEBlock(),
+        //                    new BlockPos(Position.x << 4 | pos.x, pos.y, Position.y << 4 | pos.z));
+        //            BlockBase blockOld = World.GetBlock(blockNew.Position);
+
+        //            //breakBlock()
+        //            StorageArrays[chy].SetData(pos.x, by, pos.z, blockState.GetData());
+        //           // StorageArrays[chy].SetLightsFor(pos.x, by, pos.z, blockState.GetLightsFor());
+
+        //            //if (isHeight)
+        //            //{
+        //            //    Light.GenerateHeightMapSky();
+        //            //}
+        //            //else
+        //            {
+
+        //                // TODO::Light
+        //                //Light.CheckLightSetBlock(blockNew.Position, blockNew.LightOpacity, blockOld.LightOpacity,
+        //                //    blockNew.LightValue != blockOld.LightValue);
+
+        //                //int loNew = blockNew.LightOpacity;
+        //                //int loOld = blockOld.LightOpacity;
+        //                //if (loOld > 0)
+        //                //{
+        //                //    if ()
+        //                //}
+        //            }
+
+        //        }
+        //        else
+        //        {
+        //            StorageArrays[chy].SetData(pos.x, by, pos.z, blockState.GetData());
+        //            //StorageArrays[chy].SetLightsFor(pos.x, by, pos.z, 255);
+        //            //ModifiedToRender(chy);
+        //            // TODO::2022-04-20 сделать свет ближайший, временно
+        //           // StorageArrays[chy].SetLightsFor(pos.x, by, pos.z, blockState.GetLightsFor());
+        //        }
+
+        //        Modified();
+        //        return true;
+        //    }
+        //    return false;
+        //}
 
         #endregion
 
@@ -316,6 +613,7 @@ namespace MvkServer.World.Chunk
         /// </summary>
         public void AddEntity(EntityBase entity)
         {
+            hasEntities = true;
             int x = Mth.Floor(entity.Position.x) >> 4;
             int z = Mth.Floor(entity.Position.z) >> 4;
 
@@ -436,18 +734,59 @@ namespace MvkServer.World.Chunk
 
         #endregion
 
+        #region Modify
+
         /// <summary>
-        /// Обновление в такте
+        /// Пометка что чанк надо будет перезаписать
+        /// </summary>
+        public void Modified() => isModified = true;
+        /// <summary>
+        /// Пыло сохранение чанка, пометка убирается
+        /// </summary>
+        public void SavedNotModified() => isModified = false;
+        /// <summary>
+        /// Внести время сохранения чанка
+        /// </summary>
+        public void SetLastSaveTime(uint time) => lastSaveTime = time;
+
+        /// <summary>
+        /// Возвращает true, если этот чанке необходимо сохранить
+        /// </summary>
+        public bool NeedsSaving()
+        {
+            if (hasEntities && World.GetTotalWorldTime() != lastSaveTime || isModified)
+            {
+                return true;
+            }
+
+            return isModified;
+        }
+
+        /// <summary>
+        /// Заменить флаг на наличие сущностей в чанке.
+        /// Этот метод вызывается в момент сохранения чанка
+        /// </summary>
+        public void SetHasEntities(bool hasEntitiesIn) => hasEntities = hasEntitiesIn;
+
+        #endregion
+
+
+        /// <summary>
+        /// Обновление в такте активных чанков
         /// </summary>
         public void Update()
         {
-
+            Light.StartRecheckGaps();
+            // это скорее всего аналог func_150804_b
+            //Light.Update();
         }
 
         /// <summary>
         /// Задать совокупное количество тиков, которые игроки провели в этом чанке 
         /// </summary>
         public void SetInhabitedTime(uint time) => InhabitedTime = time;
+
+
 
         
     }

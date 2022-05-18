@@ -159,7 +159,6 @@ namespace MvkClient.Gui
                 GLWindow.Texture.BindTexture(AssetsTexture.Title);
                 gl.Color(1.0f, 1.0f, 1.0f, 1f);
                 float k = Height * 2f / (float)Width;
-                Debug.DFloat = k;
                 if (k > 2f)
                 {
                     GLRender.Rectangle(0, 0, Width, Height, 0.5f, 0, 1.0f, 0.5f);

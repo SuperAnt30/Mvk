@@ -5,91 +5,112 @@ namespace MvkServer.Util
     /// <summary>
     /// Позиция блока
     /// </summary>
-    public class BlockPos
+    public struct BlockPos
     {
-        public int X => Position.x;
-        public int Y => Position.y;
-        public int Z => Position.z;
+        public int X;
+        public int Y;
+        public int Z;
 
-        public bool IsEmpty { get; private set; } = false;
-        public vec3i Position { get; private set; }
+        public BlockPos(int x, int y, int z)
+        {
+            X = x;
+            Y = y;
+            Z = z;
+        }
+        public BlockPos(float x, float y, float z)
+        {
+            X = Mth.Floor(x);
+            Y = Mth.Floor(y);
+            Z = Mth.Floor(z);
+        }
+        public BlockPos(vec3 v)
+        {
+            X = Mth.Floor(v.x);
+            Y = Mth.Floor(v.y);
+            Z = Mth.Floor(v.z);
+        }
+        public BlockPos(vec3i v)
+        {
+            X = v.x;
+            Y = v.y;
+            Z = v.z;
+        }
 
-        public BlockPos() => IsEmpty = true;
-        public BlockPos(int x, int y, int z) => Position = new vec3i(x, y, z);
-        public BlockPos(float x, float y, float z) => Position = new vec3i(Mth.Floor(x), Mth.Floor(y), Mth.Floor(z));
-        public BlockPos(vec3 v) => Position = new vec3i(Mth.Floor(v.x), Mth.Floor(v.y), Mth.Floor(v.z));
-        public BlockPos(vec3i v) => Position = v;
-
-        public BlockPos Add(float x, float y, float z) => Add(new BlockPos(x, y, z).Position);
-        public BlockPos Add(int x, int y, int z) => Add(new vec3i(x, y, z));
-        public BlockPos Add(vec3i v) => new BlockPos(Position + v);
+        private BlockPos Plus(float x, float y, float z) => new BlockPos(X + Mth.Floor(x), Y + Mth.Floor(y), Z + Mth.Floor(z));
+        private BlockPos Plus(int x, int y, int z) => new BlockPos(X + x, Y + y, Z + z);
+        private BlockPos Plus(vec3i v) => new BlockPos(X + v.x, Y + v.y, Z + v.z);
 
         /// <summary>
         /// Позиция соседнего блока
         /// </summary>
-        public BlockPos Offset(Pole pole) => new BlockPos(Position + EnumFacing.DirectionVec(pole));
+        public BlockPos Offset(Pole pole) => Plus(EnumFacing.DirectionVec(pole));
+        /// <summary>
+        /// Позиция соседнего блока
+        /// </summary>
+        public BlockPos Offset(vec3i vec) => Plus(vec);
         /// <summary>
         /// Позиция блока снизу
         /// </summary>
-        public BlockPos OffsetDown() => new BlockPos(Position + EnumFacing.DirectionVec(Pole.Down));
+        public BlockPos OffsetDown() => Plus(EnumFacing.DirectionVec(Pole.Down));
         /// <summary>
         /// Позиция блока сверху
         /// </summary>
-        public BlockPos OffsetUp() => new BlockPos(Position + EnumFacing.DirectionVec(Pole.Up));
+        public BlockPos OffsetUp() => Plus(EnumFacing.DirectionVec(Pole.Up));
         /// <summary>
         /// Позиция блока восток
         /// </summary>
-        public BlockPos OffsetEast() => new BlockPos(Position + EnumFacing.DirectionVec(Pole.East));
+        public BlockPos OffsetEast() => Plus(EnumFacing.DirectionVec(Pole.East));
         /// <summary>
         /// Позиция блока запад
         /// </summary>
-        public BlockPos OffsetWest() => new BlockPos(Position + EnumFacing.DirectionVec(Pole.West));
+        public BlockPos OffsetWest() => Plus(EnumFacing.DirectionVec(Pole.West));
         /// <summary>
         /// Позиция блока юг
         /// </summary>
-        public BlockPos OffsetSouth() => new BlockPos(Position + EnumFacing.DirectionVec(Pole.South));
+        public BlockPos OffsetSouth() => Plus(EnumFacing.DirectionVec(Pole.South));
         /// <summary>
         /// Позиция блока север
         /// </summary>
-        public BlockPos OffsetNorth() => new BlockPos(Position + EnumFacing.DirectionVec(Pole.North));
+        public BlockPos OffsetNorth() => Plus(EnumFacing.DirectionVec(Pole.North));
         /// <summary>
         /// Позиция блока сверху
         /// </summary>
-        public BlockPos OffsetUp(int i) => new BlockPos(Position + (EnumFacing.DirectionVec(Pole.Up) * i));
+        public BlockPos OffsetUp(int i) => Plus(EnumFacing.DirectionVec(Pole.Up) * i);
 
-        public vec3 ToVec3() => new vec3(Position.x, Position.y, Position.z);
-        public vec3 ToVec3Center() => new vec3(Position.x + .5f, Position.y + .5f, Position.z + .5f);
+        public vec3i ToVec3i() => new vec3i(X, Y, Z);
+        public vec3 ToVec3() => new vec3(X, Y, Z);
+        public vec3 ToVec3Center() => new vec3(X + .5f, Y + .5f, Z + .5f);
 
         /// <summary>
         /// Получить позицию блока в чанке, 0..15 0..255 0..15
         /// </summary>
-        public vec3i GetPosition0() => new vec3i(Position.x & 15, Position.y, Position.z & 15);
+        public vec3i GetPosition0() => new vec3i(X & 15, Y, Z & 15);
 
         /// <summary>
         /// Получить позицию чанка XZ
         /// </summary>
-        public vec2i GetPositionChunk() => new vec2i(Position.x >> 4, Position.z >> 4);
+        public vec2i GetPositionChunk() => new vec2i(X >> 4, Z >> 4);
 
         /// <summary>
         /// Получить высоту псевдо чанка
         /// </summary>
-        public int GetPositionChunkY() => Position.y >> 4;
+        public int GetPositionChunkY() => Y >> 4;
 
         /// <summary>
         /// Получить растояние между двумя точками но не возводя в квадратный корень, на скорости
         /// </summary>
         public float DistanceNotSqrt(vec3 pos)
         {
-            float x = Position.x - pos.x;
-            float y = Position.y - pos.y;
-            float z = Position.z - pos.z;
+            float x = X - pos.x;
+            float y = Y - pos.y;
+            float z = Z - pos.z;
             return x * x + y * y + z * z;
         }
 
         /// <summary>
         /// Проверить локально позицию блока, 0..15
         /// </summary>
-        public bool EqualsPosition0(int x, int y, int z) => (Position.x & 15) == x && Position.y == y && (Position.z & 15) == z;
+        public bool EqualsPosition0(int x, int y, int z) => (X & 15) == x && Y == y && (Z & 15) == z;
 
         /// <summary>
         /// Получить массив всех позиция попадающих в облость
@@ -115,7 +136,7 @@ namespace MvkServer.Util
             return list;
         }
 
-        public override string ToString() => Position.ToString();
+        public override string ToString() => string.Format("{0}; {1}; {2}", X, Y, Z);
 
         public override bool Equals(object obj)
         {

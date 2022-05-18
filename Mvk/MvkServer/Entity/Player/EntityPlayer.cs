@@ -55,6 +55,7 @@ namespace MvkServer.Entity.Player
                 Inventory.SetInventorySlotContents(3, new MvkServer.Item.ItemStack(Blocks.GetBlockCache(EnumBlock.Cobblestone), 16));
                 Inventory.SetInventorySlotContents(4, new MvkServer.Item.ItemStack(Blocks.GetBlockCache(EnumBlock.GlassRed), 64));
                 Inventory.SetInventorySlotContents(5, new MvkServer.Item.ItemStack(Blocks.GetBlockCache(EnumBlock.Glass), 64));
+                Inventory.SetInventorySlotContents(6, new MvkServer.Item.ItemStack(Blocks.GetBlockCache(EnumBlock.Brol), 64));
             }
 
         }

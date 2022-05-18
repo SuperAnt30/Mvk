@@ -1,5 +1,7 @@
 ﻿using MvkServer.Glm;
 using MvkServer.Util;
+using System;
+using System.Collections;
 
 namespace MvkServer.World.Chunk
 {
@@ -19,6 +21,69 @@ namespace MvkServer.World.Chunk
         private WorldServer worldServer;
 
         public ChunkProviderServer(WorldServer worldIn) => world = worldServer = worldIn;
+
+        /// <summary>
+        /// Два режима работы: если передано true, сохранить все чанки за один раз. Если передано false, сохраните до двух фрагментов.
+        /// </summary>
+        /// <returns>Возвращает true, если все фрагменты были сохранены</returns>
+        public bool SaveChunks(bool all)
+        {
+            int count = 0;
+            Hashtable ht = chunkMapping.CloneMap();
+            foreach (ChunkBase chunk in ht.Values)
+            {
+                if (all)
+                {
+                    SaveChunkExtraData(chunk);
+                }
+                if (chunk.NeedsSaving())
+                {
+                    SaveChunkData(chunk);
+                    chunk.SavedNotModified();
+                    count++;
+                    if (count == 24 && !all) return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Сохранить чанк
+        /// </summary>
+        private void SaveChunkData(ChunkBase chunk)
+        {
+            //if (chunkLoader != null)
+            //{
+            //    try
+            //    {
+            //        chunk.SetLastSaveTime(world.GetTotalWorldTime());
+            //        chunkLoader.SaveChunk(world, chunk);
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        worldServer.Log.Error("Не удалось сохранить чанк {0}\r\n{1}", ex.Message, ex.StackTrace);
+            //    }
+            //}
+        }
+
+        /// <summary>
+        /// Сохранить дополнительные данные чанка
+        /// </summary>
+        private void SaveChunkExtraData(ChunkBase chunk)
+        {
+            //if (chunkLoader != null)
+            //{
+            //    try
+            //    {
+            //        chunkLoader.SaveExtraChunkData(world, chunk);
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        worldServer.Log.Error("Не удалось сохранить чанк {0}\r\n{1}", ex.Message, ex.StackTrace);
+            //    }
+            //}
+        }
 
         /// <summary>
         /// Получить чанк по координатам чанка
@@ -58,6 +123,7 @@ namespace MvkServer.World.Chunk
 
                     int count = 0;
                     int stolb = 0;
+                    int yMax = 0;
                     for (int x = 0; x < 16; x++)
                     {
                         for (int z = 0; z < 16; z++)
@@ -80,6 +146,7 @@ namespace MvkServer.World.Chunk
                                         stop = true;
                                         if (y <= 16) chunk.SetEBlock(new vec3i(x, y, z), Block.EnumBlock.Water);
                                         else chunk.SetEBlock(new vec3i(x, y, z), Block.EnumBlock.Turf);
+                                        if (y > yMax) yMax = y;
                                         //break;
                                     }
                                     if (y >= 16 && stop)
@@ -102,13 +169,120 @@ namespace MvkServer.World.Chunk
                             chunk.SetEBlock(new vec3i(11, y + stolb, 7), Block.EnumBlock.Water);
                         }
                     }
+
+                    if (pos.x == -3 && pos.y == 0)
+                    {
+                        //for (int x = 1; x <= 5; x++)
+                        //    for (int y = 3; y <= 8; y++)
+                        //    {
+                        //        chunk.SetEBlock(new vec3i(x, stolb + y, 5), Block.EnumBlock.Dirt);
+                        //    }
+                        for (int x = 1; x <= 3; x++) for (int y = 6; y <= 8; y++) for (int z = 1; z <= 3; z++)
+                        {
+                            chunk.SetEBlock(new vec3i(x, stolb + y, z), Block.EnumBlock.Dirt);
+                        }
+
+                        //for (int x = 0; x < 16; x++)
+                        //{
+                        //    for (int z = 0; z < 16; z++)
+                        //    {
+                        //        int y = 255;
+                        //        while(y > 0)
+                        //        {
+                        //            if (chunk.GetEBlock(x, y, z) == Block.EnumBlock.Air)
+                        //            {
+                        //                int yc = y >> 4;
+                        //                int yb = y & 15;
+                        //                chunk.StorageArrays[yc].SetLightFor(x, yb, z, Block.EnumSkyBlock.Sky, 15);
+                        //                //chunk.StorageArrays[yc].SetLightFor(x, yb, z, Block.EnumSkyBlock.Block, 15);
+                        //                y--;
+                        //            }
+                        //            else
+                        //            {
+                        //                y = -1;
+                        //            }
+                        //        }
+                        //    }
+                        //}
+                    }
+                    //if (pos.x == -3 && pos.y == 1)
+                    //{
+                    //    for (int x = 0; x < 16; x++)
+                    //    {
+                    //        for (int z = 0; z < 16; z++)
+                    //        {
+                    //            int y = 255;
+                    //            while (y > 0)
+                    //            {
+                    //                if (chunk.GetEBlock(x, y, z) == Block.EnumBlock.Air)
+                    //                {
+                    //                    int yc = y >> 4;
+                    //                    int yb = y & 15;
+                    //                    //chunk.StorageArrays[yc].SetLightFor(x, yb, z, Block.EnumSkyBlock.Sky, 15);
+                    //                    chunk.StorageArrays[yc].SetLightFor(x, yb, z, Block.EnumSkyBlock.Block, 10);
+                    //                    y--;
+                    //                }
+                    //                else
+                    //                {
+                    //                    y = -1;
+                    //                }
+                    //            }
+                    //        }
+                    //    }
+                    //}
+                    Cave(chunk, yMax >> 4);
+
                 }
 
+                // TODO::2022-04-18 !!!
                 chunkMapping.Set(chunk);
+                //chunk.Light.Debug();
+                //chunk.Light.GenerateHeightMap();
+                chunk.Light.GenerateHeightMapSky();
+                // TODO::Light
+                //chunk.Light.GenerateSkylightMap();
+
+                //chunk.Light.ResetRelightChecks();
                 chunk.OnChunkLoad();
             }
             
             return chunk;
+        }
+
+        /// <summary>
+        /// Генерация пещер
+        /// </summary>
+        private void Cave(ChunkBase chunk, int yMax)
+        {
+            int count = 0;
+            float[] noise = new float[4096];
+            //TODO::шум 3д для пещер сильно тормазит, надо оптимизировать как-то
+            for (int y0 = 0; y0 <= yMax; y0++)
+            {
+                //int y0 = 3;
+                worldServer.Noise.Cave.GenerateNoise3d(noise, chunk.Position.x * 16, y0 * 16, chunk.Position.y * 16, 16, 16, 16, .05f, .05f, .05f);
+                count = 0;
+                for (int x = 0; x < 16; x++)
+                {
+                    for (int z = 0; z < 16; z++)
+                    {
+                        for (int y = 0; y < 16; y++)
+                        {
+                            if (noise[count] < -1f)
+                            {
+                                vec3i pos = new vec3i(x, y0 << 4 | y, z);
+                                Block.EnumBlock enumBlock = chunk.GetEBlock(pos);
+                                if (enumBlock != Block.EnumBlock.Air && enumBlock != Block.EnumBlock.Stone
+                                    && enumBlock != Block.EnumBlock.Water)
+                                {
+                                    chunk.SetEBlock(pos, Block.EnumBlock.Air);
+                                }
+                            }
+                            count++;
+                        }
+                    }
+                }
+            }
         }
 
         /// <summary>

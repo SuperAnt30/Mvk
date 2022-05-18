@@ -16,17 +16,20 @@ namespace MvkClient.Gui
         protected Button buttonDone;
         protected Button buttonLanguage;
         protected Button buttonNet;
+        protected Button buttonSmoothLighting;
         protected Slider sliderFps;
         protected Slider sliderChunk;
         protected Slider sliderSoundVolume;
         protected Slider sliderMusicVolume;
         protected TextBox textBoxNickname;
 
-        protected int cacheLanguage;
+        private int cacheLanguage;
+        private bool cacheSmoothLighting;
 
         public ScreenOptions(Client client, EnumScreenKey where) : base(client)
         {
             cacheLanguage = Setting.Language;
+            cacheSmoothLighting = Setting.SmoothLighting;
             this.where = where;
 
             label = new Label(Language.T("gui.options"), FontSize.Font16);
@@ -69,6 +72,8 @@ namespace MvkClient.Gui
             buttonLanguage.Click += ButtonLanguage_Click;
             buttonNet = new Button(Language.T("gui.net")) { Width = 160 };
             buttonNet.Click += ButtonNet_Click;
+            buttonSmoothLighting = new Button(ButtonSmoothLightingName()) { Width = 320 };
+            buttonSmoothLighting.Click += ButtonSmoothLighting_Click;
             buttonDone = new Button(Language.T("gui.apply")) { Width = 256 };
             buttonDone.Click += ButtonDone_Click;
             buttonCancel = new Button(where, Language.T("gui.cancel")) { Width = 256 };
@@ -91,6 +96,7 @@ namespace MvkClient.Gui
             AddControls(sliderChunk);
             AddControls(sliderSoundVolume);
             AddControls(sliderMusicVolume);
+            AddControls(buttonSmoothLighting);
             AddControls(buttonDone);
             AddControls(buttonCancel);
             AddControls(buttonLanguage);
@@ -117,9 +123,10 @@ namespace MvkClient.Gui
             sliderMusicVolume.Position = new vec2i(Width / 2 + 2, 164);
             sliderFps.Position = new vec2i(Width / 2 - 258, 208);
             sliderChunk.Position = new vec2i(Width / 2 + 2, 208);
-            labelLanguage.Position = new vec2i(Width / 2 - 162, 252);
-            buttonLanguage.Position = new vec2i(Width / 2 + 2, 252);
-            buttonNet.Position = new vec2i(Width / 2 + 2, 296);
+            buttonSmoothLighting.Position = new vec2i(Width / 2 - 158, 252);
+            labelLanguage.Position = new vec2i(Width / 2 - 162, 296);
+            buttonLanguage.Position = new vec2i(Width / 2 + 2, 296);
+            buttonNet.Position = new vec2i(Width / 2 + 2, 340);
             buttonDone.Position = new vec2i(Width / 2 - 258, 400);
             buttonCancel.Position = new vec2i(Width / 2 + 2, 400);
         }
@@ -128,6 +135,14 @@ namespace MvkClient.Gui
         {
             cacheLanguage = Language.Next(cacheLanguage);
             buttonLanguage.SetText(Language.GetName(cacheLanguage));
+        }
+
+        private string ButtonSmoothLightingName() => Language.T("gui.smooth.lighting." + (cacheSmoothLighting ? "on" : "off"));
+
+        private void ButtonSmoothLighting_Click(object sender, EventArgs e)
+        {
+            cacheSmoothLighting = !cacheSmoothLighting;
+            buttonSmoothLighting.SetText(ButtonSmoothLightingName());
         }
 
         private void ButtonNet_Click(object sender, EventArgs e)
@@ -143,14 +158,17 @@ namespace MvkClient.Gui
         private void ButtonDone_Click(object sender, EventArgs e)
         {
             // Сохранение настроек
-
-            if (where == EnumScreenKey.InGameMenu && Setting.OverviewChunk != sliderChunk.Value)
+            if (where == EnumScreenKey.InGameMenu)
             {
-                // Отправить запрос серверу на смену опций
-                ClientMain.World.ChunkPrClient.SetOverviewChunk();
-                //ClientMain.World.ChunkPrClient.ClearAllChunks(true);
-                //ClientMain.TrancivePacket(new PacketC13ClientSetting(sliderChunk.Value));
-                ClientMain.Player.SetOverviewChunk(sliderChunk.Value);
+                if (Setting.OverviewChunk != sliderChunk.Value)
+                {
+                    ClientMain.World.ChunkPrClient.SetOverviewChunk();
+                    ClientMain.Player.SetOverviewChunk(sliderChunk.Value);
+                }
+                if (Setting.SmoothLighting != cacheSmoothLighting)
+                {
+                    ClientMain.World.RerenderAllChunks();
+                }
             }
 
             Setting.OverviewChunk = sliderChunk.Value;
@@ -159,6 +177,7 @@ namespace MvkClient.Gui
             Setting.Fps = sliderFps.Value;
             Setting.Nickname = textBoxNickname.Text;
             Setting.Language = cacheLanguage;
+            Setting.SmoothLighting = cacheSmoothLighting;
             Setting.Save();
             Language.SetLanguage((AssetsLanguage)cacheLanguage);
 

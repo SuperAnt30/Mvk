@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace MvkClient.Util
 {
-    public class ByteBuffer
+    public struct ByteBuffer
     {
-        private List<byte> buffer = new List<byte>();
+        public List<byte> buffer;
 
         public void PutByte(byte value) => buffer.Add(value);
 

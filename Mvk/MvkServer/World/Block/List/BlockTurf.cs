@@ -44,6 +44,7 @@ namespace MvkServer.World.Block.List
             //Slipperiness = 0.8f;
             //IsGrass = true;
             Hardness = 10;
+            Material = EnumMaterial.Turf;
         }
     }
 }

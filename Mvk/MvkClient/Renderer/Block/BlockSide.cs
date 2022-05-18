@@ -10,18 +10,20 @@ namespace MvkClient.Renderer.Block
     /// </summary>
     public struct BlockSide
     {
+        public ByteBuffer BufferByte;
+
         private readonly vec3 v1;
         private readonly vec3 v2;
         private readonly vec2 u1;
         private readonly vec2 u2;
 
-        private readonly vec3 color;
+        private readonly vec3[] colors;
+        private readonly byte[] lights;
         private float radY;
         private float radP;
         private vec3 posCenter;
 
-        private vec3 c;
-        private vec4 l;
+      //  private vec4 l;
 
         private readonly byte animationFrame;
         private readonly byte animationPause;
@@ -30,9 +32,9 @@ namespace MvkClient.Renderer.Block
         /// </summary>
         private bool cullFace;
 
-        public BlockSide(vec3 color, vec3 vec1, vec3 vec2, vec2 uv1, vec2 uv2, byte animationFrame, byte animationPause)
+        public BlockSide(vec3[] colors, byte[] lights, vec3 vec1, vec3 vec2, vec2 uv1, vec2 uv2, byte animationFrame, byte animationPause)
         {
-            this.color = color;
+            this.colors = colors;
             v1 = vec1;
             v2 = vec2;
             u1 = uv1;
@@ -40,13 +42,20 @@ namespace MvkClient.Renderer.Block
             this.animationFrame = animationFrame;
             this.animationPause = animationPause;
 
-            l = new vec4(255f);
-            c = color;
+            this.lights = lights;
+            // l = new vec4(255f);
             radY = 0f;
             radP = 0f;
             posCenter = new vec3();
             cullFace = true;
+            BufferByte = new ByteBuffer();
         }
+
+        ///// <summary>
+        ///// Задать цвет сторон
+        ///// </summary>
+        //public void SetColor(vec3 color1, vec3 color2, vec3 color3, vec3 color4) 
+        //    => colors = new vec3[] { color1, color2, color3, color4 };
 
         /// <summary>
         /// Указываем вращение блока в радианах
@@ -61,26 +70,26 @@ namespace MvkClient.Renderer.Block
         /// <summary>
         /// Ввернуть сторону блока с проверкой вращения
         /// </summary>
-        public byte[] Side(Pole pole, bool cullFace)
+        public void Side(Pole pole, bool cullFace)
         {
             this.cullFace = cullFace;
-            return Rotate(SideNotRotate(pole));
+            //return Rotate(SideNotRotate(pole));
+            SideNotRotate(pole);
         }
 
         /// <summary>
         /// Ввернуть сторону блока, без проверки вращения 
         /// </summary>
-        private byte[] SideNotRotate(Pole pole)
+        private void SideNotRotate(Pole pole)
         {
             switch (pole)
             {
-                case Pole.Up: return Up();
-                case Pole.Down: return Down();
-                case Pole.East: return East();
-                case Pole.West: return West();
-                case Pole.North: return North();
-                case Pole.South: return South();
-                default: return new byte[0];
+                case Pole.Up: Up(); break;
+                case Pole.Down: Down(); break;
+                case Pole.East: East(); break;
+                case Pole.West: West(); break;
+                case Pole.North: North(); break;
+                case Pole.South: South(); break;
             }
         }
 
@@ -125,78 +134,94 @@ namespace MvkClient.Renderer.Block
         /// <summary>
         /// Вверх
         /// </summary>
-        private byte[] Up()
+        private void Up()
         {
-            return GetBufferSide(new BlockVertex[] {
-                new BlockVertex(new vec3(v1.x, v2.y, v1.z), new vec2(u2.x, u1.y), new vec3(color.x, color.y, color.z), 0, l.x),
-                new BlockVertex(new vec3(v1.x, v2.y, v2.z), new vec2(u2.x, u2.y), new vec3(color.x, color.y, color.z), 0, l.y),
-                new BlockVertex(new vec3(v2.x, v2.y, v2.z), new vec2(u1.x, u2.y), new vec3(color.x, color.y, color.z), 0, l.z),
-                new BlockVertex(new vec3(v2.x, v2.y, v1.z), new vec2(u1.x, u1.y), new vec3(color.x, color.y, color.z), 0, l.w)
-            });
+            BufferSide(new vec3(v1.x, v2.y, v1.z), new vec3(v1.x, v2.y, v2.z), new vec3(v2.x, v2.y, v2.z), new vec3(v2.x, v2.y, v1.z));
+            //return GetBufferSide(new BlockVertex[] {
+            //    new BlockVertex(new vec3(v1.x, v2.y, v1.z), new vec2(u2.x, u1.y), color[0], 0),
+            //    new BlockVertex(new vec3(v1.x, v2.y, v2.z), new vec2(u2.x, u2.y), color[0], 0),
+            //    new BlockVertex(new vec3(v2.x, v2.y, v2.z), new vec2(u1.x, u2.y), color[0], 0),
+            //    new BlockVertex(new vec3(v2.x, v2.y, v1.z), new vec2(u1.x, u1.y), color[0], 0)
+            //});
         }
 
         /// <summary>
         /// Низ
         /// </summary>
-        private byte[] Down()
+        private void Down()
         {
-            return GetBufferSide(new BlockVertex[] {
-                new BlockVertex(new vec3(v2.x, v1.y, v1.z), new vec2(u2.x, u1.y), new vec3(color.x, color.y, color.z), 0, l.x),
-                new BlockVertex(new vec3(v2.x, v1.y, v2.z), new vec2(u2.x, u2.y), new vec3(color.x, color.y, color.z), 0, l.y),
-                new BlockVertex(new vec3(v1.x, v1.y, v2.z), new vec2(u1.x, u2.y), new vec3(color.x, color.y, color.z), 0, l.z),
-                new BlockVertex(new vec3(v1.x, v1.y, v1.z), new vec2(u1.x, u1.y), new vec3(color.x, color.y, color.z), 0, l.w)
-            });
+            BufferSide(new vec3(v2.x, v1.y, v1.z), new vec3(v2.x, v1.y, v2.z), new vec3(v1.x, v1.y, v2.z), new vec3(v1.x, v1.y, v1.z));
+            //return GetBufferSide(new BlockVertex[] {
+            //    new BlockVertex(new vec3(v2.x, v1.y, v1.z), new vec2(u2.x, u1.y), color[0], 0),
+            //    new BlockVertex(new vec3(v2.x, v1.y, v2.z), new vec2(u2.x, u2.y), color[0], 0),
+            //    new BlockVertex(new vec3(v1.x, v1.y, v2.z), new vec2(u1.x, u2.y), color[0], 0),
+            //    new BlockVertex(new vec3(v1.x, v1.y, v1.z), new vec2(u1.x, u1.y), color[0], 0)
+            //});
         }
 
         /// <summary>
         /// Восточная сторона
         /// </summary>
-        private byte[] East()
+        private void East()
         {
-            return GetBufferSide(new BlockVertex[] {
-                new BlockVertex(new vec3(v2.x, v1.y, v1.z), new vec2(u2.x, u1.y), new vec3(color.x, color.y, color.z), 0, l.x),
-                new BlockVertex(new vec3(v2.x, v2.y, v1.z), new vec2(u2.x, u2.y), new vec3(color.x, color.y, color.z), 0, l.y),
-                new BlockVertex(new vec3(v2.x, v2.y, v2.z), new vec2(u1.x, u2.y), new vec3(color.x, color.y, color.z), 0, l.z),
-                new BlockVertex(new vec3(v2.x, v1.y, v2.z), new vec2(u1.x, u1.y), new vec3(color.x, color.y, color.z), 0, l.w)
-            });
+            BufferSide(new vec3(v2.x, v1.y, v1.z), new vec3(v2.x, v2.y, v1.z), new vec3(v2.x, v2.y, v2.z), new vec3(v2.x, v1.y, v2.z));
+            //return GetBufferSide(new BlockVertex[] {
+            //    new BlockVertex(new vec3(v2.x, v1.y, v1.z), new vec2(u2.x, u1.y), color[0], 0),
+            //    new BlockVertex(new vec3(v2.x, v2.y, v1.z), new vec2(u2.x, u2.y), color[0], 0),
+            //    new BlockVertex(new vec3(v2.x, v2.y, v2.z), new vec2(u1.x, u2.y), color[0], 0),
+            //    new BlockVertex(new vec3(v2.x, v1.y, v2.z), new vec2(u1.x, u1.y), color[0], 0)
+            //});
         }
 
         /// <summary>
         /// Западная сторона
         /// </summary>
-        private byte[] West()
+        private void West()
         {
-            return GetBufferSide(new BlockVertex[] {
-                new BlockVertex(new vec3(v1.x, v1.y, v2.z), new vec2(u2.x, u1.y), new vec3(color.x, color.y, color.z), 0, l.x),
-                new BlockVertex(new vec3(v1.x, v2.y, v2.z), new vec2(u2.x, u2.y), new vec3(color.x, color.y, color.z), 0, l.y),
-                new BlockVertex(new vec3(v1.x, v2.y, v1.z), new vec2(u1.x, u2.y), new vec3(color.x, color.y, color.z), 0, l.z),
-                new BlockVertex(new vec3(v1.x, v1.y, v1.z), new vec2(u1.x, u1.y), new vec3(color.x, color.y, color.z), 0, l.w)
-            });
+            BufferSide(new vec3(v1.x, v1.y, v2.z), new vec3(v1.x, v2.y, v2.z), new vec3(v1.x, v2.y, v1.z), new vec3(v1.x, v1.y, v1.z));
+            //return GetBufferSide(new BlockVertex[] {
+            //    new BlockVertex(new vec3(v1.x, v1.y, v2.z), new vec2(u2.x, u1.y), color[0], 0),
+            //    new BlockVertex(new vec3(v1.x, v2.y, v2.z), new vec2(u2.x, u2.y), color[0], 0),
+            //    new BlockVertex(new vec3(v1.x, v2.y, v1.z), new vec2(u1.x, u2.y), color[0], 0),
+            //    new BlockVertex(new vec3(v1.x, v1.y, v1.z), new vec2(u1.x, u1.y), color[0], 0)
+            //});
         }
 
         /// <summary>
         /// Южная сторона
         /// </summary>
-        private byte[] North()
+        private void North()
         {
-            return GetBufferSide(new BlockVertex[] {
-                new BlockVertex(new vec3(v1.x, v1.y, v1.z), new vec2(u2.x, u1.y), new vec3(color.x, color.y, color.z), 0, l.x),
-                new BlockVertex(new vec3(v1.x, v2.y, v1.z), new vec2(u2.x, u2.y), new vec3(color.x, color.y, color.z), 0, l.y),
-                new BlockVertex(new vec3(v2.x, v2.y, v1.z), new vec2(u1.x, u2.y), new vec3(color.x, color.y, color.z), 0, l.z),
-                new BlockVertex(new vec3(v2.x, v1.y, v1.z), new vec2(u1.x, u1.y), new vec3(color.x, color.y, color.z), 0, l.w)
-            });
+            BufferSide(new vec3(v1.x, v1.y, v1.z), new vec3(v1.x, v2.y, v1.z), new vec3(v2.x, v2.y, v1.z), new vec3(v2.x, v1.y, v1.z));
+            //return GetBufferSide(new BlockVertex[] {
+            //    new BlockVertex(new vec3(v1.x, v1.y, v1.z), new vec2(u2.x, u1.y), color[0], 0),
+            //    new BlockVertex(new vec3(v1.x, v2.y, v1.z), new vec2(u2.x, u2.y), color[0], 0),
+            //    new BlockVertex(new vec3(v2.x, v2.y, v1.z), new vec2(u1.x, u2.y), color[0], 0),
+            //    new BlockVertex(new vec3(v2.x, v1.y, v1.z), new vec2(u1.x, u1.y), color[0], 0)
+            //});
         }
 
         /// <summary>
         /// Северная сторона
         /// </summary>
-        private byte[] South()
+        private void South()
         {
-            return GetBufferSide(new BlockVertex[] {
-                new BlockVertex(new vec3(v2.x, v1.y, v2.z), new vec2(u2.x, u1.y), new vec3(color.x, color.y, color.z), 0, l.x),
-                new BlockVertex(new vec3(v2.x, v2.y, v2.z), new vec2(u2.x, u2.y), new vec3(color.x, color.y, color.z), 0, l.y),
-                new BlockVertex(new vec3(v1.x, v2.y, v2.z), new vec2(u1.x, u2.y), new vec3(color.x, color.y, color.z), 0, l.z),
-                new BlockVertex(new vec3(v1.x, v1.y, v2.z), new vec2(u1.x, u1.y), new vec3(color.x, color.y, color.z), 0, l.w)
+            BufferSide(new vec3(v2.x, v1.y, v2.z), new vec3(v2.x, v2.y, v2.z), new vec3(v1.x, v2.y, v2.z), new vec3(v1.x, v1.y, v2.z));
+            //return GetBufferSide(new BlockVertex[] {
+            //    new BlockVertex(new vec3(v2.x, v1.y, v2.z), new vec2(u2.x, u1.y), color[0], 0),
+            //    new BlockVertex(new vec3(v2.x, v2.y, v2.z), new vec2(u2.x, u2.y), color[0], 0),
+            //    new BlockVertex(new vec3(v1.x, v2.y, v2.z), new vec2(u1.x, u2.y), color[0], 0),
+            //    new BlockVertex(new vec3(v1.x, v1.y, v2.z), new vec2(u1.x, u1.y), color[0], 0)
+            //});
+        }
+
+        private void BufferSide(vec3 pos1, vec3 pos2, vec3 pos3, vec3 pos4)
+        {
+            GetBufferSide(new BlockVertex[] {
+                new BlockVertex(pos1, new vec2(u2.x, u1.y), colors[0], lights[0]),
+                new BlockVertex(pos2, new vec2(u2.x, u2.y), colors[1], lights[1]),
+                new BlockVertex(pos3, new vec2(u1.x, u2.y), colors[2], lights[2]),
+                new BlockVertex(pos4, new vec2(u1.x, u1.y), colors[3], lights[3])
             });
         }
 
@@ -204,39 +229,36 @@ namespace MvkClient.Renderer.Block
         /// Сгенерировать буфер сетки одной стороны
         /// </summary>
         /// <param name="blockVertex">массив вершин</param>
-        private byte[] GetBufferSide(BlockVertex[] blockVertex)
+        private void GetBufferSide(BlockVertex[] blockVertex)
         {
-            ByteBuffer byteBuffer = new ByteBuffer();
             if (cullFace)
             {
-                AddVertex(byteBuffer, blockVertex[0]);
-                AddVertex(byteBuffer, blockVertex[1]);
-                AddVertex(byteBuffer, blockVertex[2]);
-                AddVertex(byteBuffer, blockVertex[0]);
-                AddVertex(byteBuffer, blockVertex[2]);
-                AddVertex(byteBuffer, blockVertex[3]);
+                AddVertex(blockVertex[0]);
+                AddVertex(blockVertex[1]);
+                AddVertex(blockVertex[2]);
+                AddVertex(blockVertex[0]);
+                AddVertex(blockVertex[2]);
+                AddVertex(blockVertex[3]);
             }
             else
             {
-                AddVertex(byteBuffer, blockVertex[2]);
-                AddVertex(byteBuffer, blockVertex[1]);
-                AddVertex(byteBuffer, blockVertex[0]);
-                AddVertex(byteBuffer, blockVertex[3]);
-                AddVertex(byteBuffer, blockVertex[2]);
-                AddVertex(byteBuffer, blockVertex[0]);
+                AddVertex(blockVertex[2]);
+                AddVertex(blockVertex[1]);
+                AddVertex(blockVertex[0]);
+                AddVertex(blockVertex[3]);
+                AddVertex(blockVertex[2]);
+                AddVertex(blockVertex[0]);
             }
-
-            return byteBuffer.ToArray();
         }
 
         /// <summary>
         /// Добавить вершину
         /// </summary>
-        private void AddVertex(ByteBuffer byteBuffer, BlockVertex blockVertex)
+        private void AddVertex(BlockVertex blockVertex)
         {
-            byteBuffer.ArrayFloat(blockVertex.GetArrayPosUV());
-            byteBuffer.ArrayByte(blockVertex.GetArrayColorLight());
-            byteBuffer.ArrayByte(new byte[] { animationFrame, animationPause, 0, 0 });
+            BufferByte.ArrayFloat(blockVertex.GetArrayPosUV());
+            BufferByte.ArrayByte(blockVertex.GetArrayColorLight());
+            BufferByte.ArrayByte(new byte[] { animationFrame, animationPause, 0, 0 });
         }
     }
 }

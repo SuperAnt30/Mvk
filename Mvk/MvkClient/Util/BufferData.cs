@@ -6,20 +6,20 @@ namespace MvkClient.Util
     /// <summary>
     /// Объект конвертирует массив в неуправляемую память
     /// </summary>
-    public class BufferData
+    public struct BufferData
     {
         /// <summary>
         /// Размер
         /// </summary>
-        public int Size { get; private set; }
+        public int size;
         /// <summary>
         /// Указатель данных
         /// </summary>
-        public IntPtr Data { get; private set; }
+        public IntPtr data;
         /// <summary>
-        /// Пустой ли объект
+        /// имеется ли тело
         /// </summary>
-        public bool IsEmpty { get; private set; } = true;
+        public bool body;
         /// <summary>
         /// Количество полигонов
         /// </summary>
@@ -30,23 +30,30 @@ namespace MvkClient.Util
         /// <summary>
         /// Занести в память массив из float
         /// </summary>
-        public void ConvertFloat(float[] data)
-        {
-            Size = data.Length * sizeof(float);
-            Data = Marshal.AllocHGlobal(Size);
-            Marshal.Copy(data, 0, Data, data.Length);
-            IsEmpty = false;
-        }
+        //public void ConvertFloat(float[] data)
+        //{
+        //    Size = data.Length * sizeof(float);
+        //    Data = Marshal.AllocHGlobal(Size);
+        //    Marshal.Copy(data, 0, Data, data.Length);
+        //    IsEmpty = false;
+        //}
 
         /// <summary>
         /// Занести в память массив из float
         /// </summary>
         public void ConvertByte(byte[] data)
         {
-            Size = data.Length * sizeof(byte);
-            Data = Marshal.AllocHGlobal(Size);
-            Marshal.Copy(data, 0, Data, data.Length);
-            IsEmpty = false;
+            if (data.Length == 0)
+            {
+                Free();
+            }
+            else
+            {
+                size = data.Length * sizeof(byte);
+                this.data = Marshal.AllocHGlobal(size);
+                Marshal.Copy(data, 0, this.data, data.Length);
+                body = true;
+            }
         }
 
         /// <summary>
@@ -54,10 +61,10 @@ namespace MvkClient.Util
         /// </summary>
         public void Free()
         {
-            if (!IsEmpty)
+            if (body)
             {
-                Marshal.FreeHGlobal(Data);
-                IsEmpty = true;
+                Marshal.FreeHGlobal(data);
+                body = false;
             }
         }
     }

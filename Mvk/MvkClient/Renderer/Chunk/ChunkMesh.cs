@@ -12,7 +12,7 @@ namespace MvkClient.Renderer.Chunk
         /// <summary>
         /// Пометка изменения
         /// </summary>
-        public bool IsModifiedRender { get; private set; } = true;
+        public bool IsModifiedRender { get; private set; } = false;
         /// <summary>
         /// Статус обработки сетки
         /// </summary>
@@ -24,11 +24,11 @@ namespace MvkClient.Renderer.Chunk
         /// <summary>
         /// Количество float на одну вершину
         /// </summary>
-        private readonly int vertexSize = 10;
+        private readonly int vertexSize = 7;
         /// <summary>
         /// Количество float в буфере на один полигон
         /// </summary>
-        private readonly int poligonFloat = 30;
+        private readonly int poligonFloat = 21;
         /// <summary>
         /// Количество вершин
         /// </summary>
@@ -49,6 +49,7 @@ namespace MvkClient.Renderer.Chunk
         public ChunkMesh()
         {
             gl = GLWindow.gl;
+            bufferData = new BufferData();
         }
 
         /// <summary>
@@ -76,7 +77,6 @@ namespace MvkClient.Renderer.Chunk
         {
             countPoligon = buffer.Length / poligonFloat;
             countVertices = buffer.Length / vertexSize;
-            bufferData = new BufferData();
             //ByteBuffer byteBuffer = new ByteBuffer();
             //byteBuffer.ArrayFloat(buffer);
             //bufferData.ConvertByte(byteBuffer.ToArray());
@@ -87,20 +87,19 @@ namespace MvkClient.Renderer.Chunk
         /// <summary>
         /// Занести буфер в OpenGL 
         /// </summary>
-        public bool BindBuffer()
+        public void BindBuffer()
         {
-            if (bufferData != null)
+            if (bufferData.body && countPoligon > 0)
             {
-                if (countPoligon > 0)
-                {
-                    if (!empty) BindBufferReload();
-                    else BindBufferNew();
-                    bufferData.Free();
-                }
+                if (!empty) BindBufferReload();
+                else BindBufferNew();
+                bufferData.Free();
                 Status = StatusMesh.Wait;
-                return true;
             }
-            return false;
+            else
+            {
+                Delete();
+            }
         }
 
         private void BindBufferNew()
@@ -110,7 +109,7 @@ namespace MvkClient.Renderer.Chunk
             gl.GenBuffers(1, vbo);
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, vbo[0]);
 
-            gl.BufferData(OpenGL.GL_ARRAY_BUFFER, bufferData.Size, bufferData.Data, OpenGL.GL_STATIC_DRAW);
+            gl.BufferData(OpenGL.GL_ARRAY_BUFFER, bufferData.size, bufferData.data, OpenGL.GL_STATIC_DRAW);
             int stride = 28;//  vertexSize * sizeof(float);
 
             EnableVertex(0, 3, OpenGL.GL_FLOAT, stride, 0);
@@ -155,7 +154,7 @@ namespace MvkClient.Renderer.Chunk
         {
             gl.BindVertexArray(vao[0]);
             gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, vbo[0]);
-            gl.BufferData(OpenGL.GL_ARRAY_BUFFER, bufferData.Size, bufferData.Data, OpenGL.GL_STATIC_DRAW);
+            gl.BufferData(OpenGL.GL_ARRAY_BUFFER, bufferData.size, bufferData.data, OpenGL.GL_STATIC_DRAW);
         }
 
         /// <summary>
@@ -191,11 +190,7 @@ namespace MvkClient.Renderer.Chunk
                 empty = true;
             }
             Status = StatusMesh.Null;
-            if (bufferData != null)
-            {
-                bufferData.Free();
-                bufferData = null;
-            }
+            bufferData.Free();
         }
 
         /// <summary>

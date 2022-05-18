@@ -392,7 +392,7 @@ namespace MvkServer.Entity
         /// </summary>
         protected void DrownServer()
         {
-            if (IsEntityAlive() && IsInsideOfMaterial(EnumBlock.Water))
+            if (IsEntityAlive() && IsInsideOfMaterial(EnumMaterial.Water))
             {
                 //if (!this.canBreatheUnderwater() && !this.isPotionActive(Potion.waterBreathing.id) && !var7)
                 {
@@ -1203,14 +1203,13 @@ namespace MvkServer.Entity
         /// Проверяет, относится ли текущий блок объекта находящий на глазах к указанному типу материала
         /// </summary>
         /// <param name="materialIn"></param>
-        public bool IsInsideOfMaterial(EnumBlock materialIn)
+        public bool IsInsideOfMaterial(EnumMaterial materialIn)
         {
-            // TODO::2022-04-12 добавить материал
             float y = Position.y + GetEyeHeight();
             BlockPos blockPos = new BlockPos(Position.x, y, Position.z);
             BlockBase block = World.GetBlock(blockPos);
 
-            if (block.EBlock == materialIn)
+            if (block.Material == materialIn)
             {
                 // нужна проверка течении воды, у неё блок не целый
                 //float var7 = BlockLiquid.getLiquidHeightPercent(var5.getBlock().getMetaFromState(var5)) - 0.11111111F;

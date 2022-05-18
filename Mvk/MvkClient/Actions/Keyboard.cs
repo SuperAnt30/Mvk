@@ -1,5 +1,6 @@
 ﻿using MvkClient.World;
 using MvkServer.Util;
+using MvkServer.World.Chunk;
 using System.Diagnostics;
 
 namespace MvkClient.Actions
@@ -64,9 +65,15 @@ namespace MvkClient.Actions
             else if (key == 114) keyF3 = true; // F3
             else if (key == 27 || key == 18) World.ClientMain.Screen.InGameMenu(); // Esc или Alt
             else if (key == 116) ClientMain.Player.ViewCameraNext(); // F5
-            else if (key == 118) Debug.IsDrawFrustumCulling = !Debug.IsDrawFrustumCulling; // F7
+            else if (key == 118)
+            {
+                //Debug.IsDrawFrustumCulling = !Debug.IsDrawFrustumCulling; // F7
+                //ChunkBase chunk = World.GetChunk(ClientMain.Player.GetChunkPos());
+                //chunk.Light.StartRecheckGaps();
+            }
             else if (key == 119) Debug.IsDrawVoxelLine = !Debug.IsDrawVoxelLine; // F8
             else if (key == 75) ClientMain.Player.Kill(); // K
+            else if (key == 82) World.GetChunk(ClientMain.Player.GetChunkPos()).ModifiedToRender(ClientMain.Player.GetChunkY()); // R
             //else if (key == 117) // F6
             else ClientMain.Player.InputAdd(KeyActionToInput(key));
         }
