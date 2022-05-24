@@ -26,6 +26,7 @@ uniform mat4 projection;
 uniform mat4 lookat;
 uniform vec3 pos;
 uniform float takt;
+uniform float sky;
 
 void main()
 {
@@ -34,6 +35,7 @@ void main()
     float g = ((v_rgbl >> 8) & 0xFF) / 255.0;
     float b = ((v_rgbl >> 16) & 0xFF) / 255.0;
     float lightSky = ((v_rgbl >> 24) & 0xF) / 15.0;
+    lightSky *= sky;
     float lightBlock = ((v_rgbl >> 28) & 0xF) / 15.0;
     float light = max(lightSky, lightBlock);
 

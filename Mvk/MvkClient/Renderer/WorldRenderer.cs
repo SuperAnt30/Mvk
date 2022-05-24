@@ -12,6 +12,8 @@ using MvkServer.Item.List;
 using MvkServer.Util;
 using MvkServer.World.Block;
 using SharpGL;
+using SharpGL.Enumerations;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -48,6 +50,15 @@ namespace MvkClient.Renderer
         /// DL курсора чанков
         /// </summary>
         private RenderChunkCursor renderChunkCursor;
+        
+        /// <summary>
+        /// id DL звёзд
+        /// </summary>
+        private uint dlStar = 0;
+        /// <summary>
+        /// id DL облака неба
+        /// </summary>
+        private uint dlSky = 0;
 
         /// <summary>
         /// Массив всех блоков для GUI
@@ -68,6 +79,12 @@ namespace MvkClient.Renderer
             {
                 listBlocksGui[i] = new RenderBlockGui((EnumBlock)i, 64f);
             }
+
+            // создаём DL звёзд
+            RenderStar();
+            // создаём DL неба
+            RenderSky();
+            
         }
 
         /// <summary>
@@ -84,11 +101,14 @@ namespace MvkClient.Renderer
             // Обновить кадр основного игрока, камера и прочее
             //ClientMain.Player.UpdateFrame(timeIndex);
 
-            // Воксели VBO
-            List<ChunkRender> chunks = DrawVoxel(timeIndex);
-
             // Матрица камеры
             ClientMain.Player.CameraMatrixProjection();
+
+            // Небо
+            DrawSky(timeIndex);
+
+            // Воксели VBO
+            List<ChunkRender> chunks = DrawVoxel(timeIndex);
 
             // Сущности DisplayList
             DrawEntities(chunks, timeIndex);
@@ -166,7 +186,7 @@ namespace MvkClient.Renderer
             }
 
             long time = Client.Time();
-            ShaderVoxel shader = VoxelsBegin();
+            ShaderVoxel shader = VoxelsBegin(timeIndex);
             int countRender = MvkGlobal.COUNT_RENDER_CHUNK_FRAME;
             bool fastTime = Client.Time() - time <= MvkGlobal.COUNT_RENDER_CHUNK_FRAME;
             List<ChunkRender> chunks = new List<ChunkRender>();
@@ -274,7 +294,7 @@ namespace MvkClient.Renderer
         private void DrawVoxelAlpha(float timeIndex)
         {
             GLRender.CullEnable();
-            ShaderVoxel shader = VoxelsBegin();
+            ShaderVoxel shader = VoxelsBegin(timeIndex);
             GLRender.DepthEnable();
             GLRender.DepthMask(false);
             GLRender.BlendEnable();
@@ -317,7 +337,7 @@ namespace MvkClient.Renderer
         /// Запуск шейдеров и текстуры для прорисовки вокселей
         /// </summary>
         /// <returns></returns>
-        private ShaderVoxel VoxelsBegin()
+        private ShaderVoxel VoxelsBegin(float timeIndex)
         {
             GLWindow.Texture.BindTexture(AssetsTexture.Atlas);
             ShaderVoxel shader = GLWindow.Shaders.ShVoxel;
@@ -325,6 +345,7 @@ namespace MvkClient.Renderer
             shader.SetUniformMatrix4(GLWindow.gl, "projection", ClientMain.Player.Projection);
             shader.SetUniformMatrix4(GLWindow.gl, "lookat", ClientMain.Player.LookAt);
             shader.SetUniform1(GLWindow.gl, "takt", ClientMain.TickCounter); // & 31
+            shader.SetUniform1(GLWindow.gl, "sky", World.GetSkyLight(timeIndex));
             return shader;
         }
 
@@ -465,6 +486,203 @@ namespace MvkClient.Renderer
         }
 
         /// <summary>
+        /// Прорисовка неба
+        /// </summary>
+        private void DrawSky(float timeIndex)
+        {
+            vec3 colorSky = World.GetSkyColor(timeIndex);
+            vec3 colorBg = World.GetFogColor(timeIndex);
+            GLRender.DepthMask(false);
+
+            GLWindow.gl.ClearColor(colorBg.x, colorBg.y, colorBg.z, 1f);
+
+            // Включаем туман
+            GLRender.FogEnable();
+            GLWindow.gl.Fog(OpenGL.GL_FOG_COORDINATE_SOURCE_EXT, OpenGL.GL_CURRENT_FOG_COORDINATE_EXT);
+            GLWindow.gl.Fog(OpenGL.GL_FOG_COLOR, new float[] { colorBg.x, colorBg.y, colorBg.z, 1f });
+            GLWindow.gl.Hint(OpenGL.GL_FOG_HINT, OpenGL.GL_DONT_CARE);
+            GLWindow.gl.Fog(OpenGL.GL_FOG_MODE, OpenGL.GL_LINEAR);
+            GLWindow.gl.Fog(OpenGL.GL_FOG_START, 0);
+            GLWindow.gl.Fog(OpenGL.GL_FOG_END, 260f);
+
+            // Верхняя часть неба
+            GLRender.Texture2DDisable();
+            GLRender.Color(colorSky.x, colorSky.y, colorSky.z);
+            GLRender.Begin(OpenGL.GL_TRIANGLE_STRIP);
+            GLRender.Vertex(448, 16, -384);
+            GLRender.Vertex(448, 16, 448);
+            GLRender.Vertex(-384, 16, -384);
+            GLRender.Vertex(-384, 16, 448);
+            GLRender.End();
+            GLRender.FogDisable();
+
+            GLRender.BlendEnable();
+            GLRender.AlphaDisable();
+            GLWindow.gl.BlendFuncSeparate(OpenGL.GL_SRC_ALPHA, OpenGL.GL_ONE_MINUS_SRC_ALPHA, OpenGL.GL_ONE, OpenGL.GL_ZERO);
+            GLRender.Texture2DEnable();
+
+            // Закат и рассвет
+            float angle = World.CalculateCelestialAngle(timeIndex);
+            float angleRad = angle * glm.pi360;
+            float[] colors = World.CalcSunriseSunsetColors(angle, timeIndex);
+
+            if (colors.Length > 0)
+            {
+                GLRender.Texture2DDisable();
+                GLRender.PushMatrix();
+                {
+                    GLRender.Rotate(90f, 1f, 0, 0);
+                    GLRender.Rotate(glm.sin(angleRad) < 0 ? 180f : 0f, 0, 0, 1f);
+                    GLRender.Rotate(90f, 0, 0, 1f);
+                    GLRender.Begin(OpenGL.GL_TRIANGLE_FAN);
+                    GLRender.Color(colors[0], colors[1], colors[2], colors[3]);
+                    GLRender.Vertex(0, 100f, 0);
+                    GLRender.Color(colors[0], colors[1], colors[2], 0f);
+
+                    for (int i = 0; i <= 16; i++)
+                    {
+                        float f1 = (float)i * glm.pi * 2f / 16f;
+                        float fx = glm.sin(f1);
+                        float fy = glm.cos(f1);
+                        GLRender.Vertex(fx * 120f, fy * 120f, -fy * 40f * colors[3]);
+                    }
+                    GLRender.End();
+                }
+                GLRender.PopMatrix();
+            }
+
+            // Солнце и луна
+            GLWindow.gl.BlendFuncSeparate(OpenGL.GL_SRC_ALPHA, OpenGL.GL_ONE, OpenGL.GL_ONE, OpenGL.GL_ZERO);
+            GLRender.Texture2DEnable();
+            
+            GLRender.PushMatrix();
+            {
+                GLRender.Color(1f, 1f, 1f, .9f);
+                GLRender.Rotate(-90f, 0f, 1f, 0f);
+                GLRender.Rotate(angle * 360f, 1f, 0, 0);
+
+                // Солнце
+                TextureStruct ts = GLWindow.Texture.GetData(AssetsTexture.Sun);
+                GLWindow.Texture.BindTexture(ts.GetKey());
+                GLRender.Begin(OpenGL.GL_TRIANGLE_STRIP);
+                GLRender.VertexWithUV(30, 100, -30, 1, 0);
+                GLRender.VertexWithUV(30, 100, 30, 1, 1);
+                GLRender.VertexWithUV(-30, 100, -30, 0, 0);
+                GLRender.VertexWithUV(-30, 100, 30, 0, 1);
+                GLRender.End();
+
+                // Луна с фазами
+                ts = GLWindow.Texture.GetData(AssetsTexture.MoonPhases);
+                GLWindow.Texture.BindTexture(ts.GetKey());
+                int phase = World.GetMoonPhase();
+                int phaseV = phase % 4;
+                int phaseH = phase / 4 % 2;
+                float u1 = phaseV / 4f;
+                float v1 = phaseH / 2f;
+                float u2 = (phaseV + 1) / 4f;
+                float v2 = (phaseH + 1) / 2f;
+                GLRender.Begin(OpenGL.GL_TRIANGLE_STRIP);
+                GLRender.VertexWithUV(20, -100, 20, u1, v2);
+                GLRender.VertexWithUV(20, -100, -20, u1, v1);
+                GLRender.VertexWithUV(-20, -100, 20, u2, v2);
+                GLRender.VertexWithUV(-20, -100, -20, u2, v1);
+                GLRender.End();
+
+                // Звёзда
+                float starBrightness = World.GetStarBrightness(timeIndex);
+                if (starBrightness > 0)
+                {
+                    ts = GLWindow.Texture.GetData(AssetsTexture.StarBrightness);
+                    GLWindow.Texture.BindTexture(ts.GetKey());
+                    GLRender.Color(starBrightness, starBrightness, starBrightness, starBrightness);
+                    GLRender.ListCall(dlStar);
+                }
+            }
+            GLRender.PopMatrix();
+
+            GLRender.BlendDisable();
+            GLRender.DepthMask(true);
+            GLWindow.gl.BlendFuncSeparate(OpenGL.GL_SRC_ALPHA, OpenGL.GL_ONE_MINUS_SRC_ALPHA, OpenGL.GL_ONE, OpenGL.GL_ZERO);
+            GLRender.AlphaEnable();
+        }
+
+        /// <summary>
+        /// Рендер звёзд
+        /// </summary>
+        private void RenderStar()
+        {
+            if (dlStar > 0) GLRender.ListDelete(dlStar);
+            dlStar = GLRender.ListBegin();
+            Random random = new Random(10842);
+            GLRender.Begin(OpenGL.GL_QUADS);
+
+            // Предполагаемое количество звёзд 1500
+            for (int i = 0; i < 1500; i++)
+            {
+                float x = (float)random.NextDouble() * 2f - 1f;
+                float y = (float)random.NextDouble() * 2f - 1f;
+                float z = (float)random.NextDouble() * 2f - 1f;
+                float size = .15f + (float)random.NextDouble() * .1f;
+                float distance = x * x + y * y + z * z;
+
+                // будет 1234 согласно рандома seed 10842
+                if (distance < 1.5f)
+                {
+                    distance = 1f / Mth.Sqrt(distance);
+                    x *= distance;
+                    y *= distance;
+                    z *= distance;
+                    float x2 = x * 100f;
+                    float y2 = y * 100f;
+                    float z2 = z * 100f;
+                    float angle = glm.atan2(x, z);
+                    float sa1 = glm.sin(angle);
+                    float ca1 = glm.cos(angle);
+                    angle = glm.atan2(Mth.Sqrt(x * x + z * z), y);
+                    float sa2 = glm.sin(angle);
+                    float ca2 = glm.cos(angle);
+                    angle = (float)random.NextDouble() * glm.pi360;
+                    float sa3 = glm.sin(angle);
+                    float ca3 = glm.cos(angle);
+
+                    int colorI = random.Next(214);
+                    colorI = colorI < 208 ? colorI / 8 : colorI - 182;
+                    float color = colorI / 32f;
+
+                    for (int j = 0; j < 4; j++)
+                    {
+                        float u = (j & 2) / 64f;
+                        float v = (j == 1 || j == 2) ? 1f : 0;
+
+                        float f1 = ((j & 2) - 1) * size;
+                        float f2 = ((j + 1 & 2) - 1) * size;
+                        float f3 = f1 * ca3 - f2 * sa3;
+                        float f4 = f2 * ca3 + f1 * sa3;
+                        float f5 = f3 * ca2;
+
+                        float x3 = -f5 * sa1 - f4 * ca1;
+                        float y3 = f3 * sa2;
+                        float z3 = f4 * sa1 - f5 * ca1;
+                        GLRender.VertexWithUV(x2 + x3, y2 + y3, z2 + z3, u + color, v);
+                    }
+                }
+            }
+            GLRender.End();
+            GLRender.ListEnd();
+        }
+
+        /// <summary>
+        /// Облака неба
+        /// </summary>
+        private void RenderSky()
+        {
+            if (dlSky > 0) GLRender.ListDelete(dlSky);
+            dlSky = GLRender.ListBegin();
+
+            GLRender.ListEnd();
+        }
+
+        /// <summary>
         /// Рендер и прорисовка курсора выбранного блока по AABB
         /// DisplayList
         /// </summary>
@@ -527,7 +745,7 @@ namespace MvkClient.Renderer
 
         //    pos += new vec3(rayHead.x, 0, rayHead.z) * 2f;
         //    float xz = glm.cos(entity.LimbSwing * 0.6662f) * 1.4f * entity.GetLimbSwingAmountFrame(timeIndex);
-            
+
         //    buffer.AddRange(hitboxPlayer.Line(pos.x, y, pos.z, pos.x, y + xz, pos.z, col));
 
         //    return buffer;

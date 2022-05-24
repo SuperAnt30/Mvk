@@ -180,14 +180,21 @@ namespace MvkClient.Entity
             {
                 GLRender.ListDelete(dListLookAt);
                 dListLookAt = GLRender.ListBegin();
+                GLWindow.gl.Viewport(0, 0, GLWindow.WindowWidth, GLWindow.WindowHeight);
+
                 GLWindow.gl.MatrixMode(OpenGL.GL_PROJECTION);
                 GLWindow.gl.LoadIdentity();
                 GLWindow.gl.Perspective(glm.degrees(Fov.ValueFrame), (float)GLWindow.WindowWidth / (float)GLWindow.WindowHeight, 0.001f, OverviewChunk * 22.624f * 2f);
+                //GLWindow.gl.LookAt(lookAtDL[0].x, lookAtDL[0].y, lookAtDL[0].z,
+                //    lookAtDL[1].x, lookAtDL[1].y, lookAtDL[1].z,
+                //    lookAtDL[2].x, lookAtDL[2].y, lookAtDL[2].z);
+                GLWindow.gl.MatrixMode(OpenGL.GL_MODELVIEW);
+                GLWindow.gl.LoadIdentity();
+
                 GLWindow.gl.LookAt(lookAtDL[0].x, lookAtDL[0].y, lookAtDL[0].z,
                     lookAtDL[1].x, lookAtDL[1].y, lookAtDL[1].z,
                     lookAtDL[2].x, lookAtDL[2].y, lookAtDL[2].z);
-                GLWindow.gl.MatrixMode(OpenGL.GL_MODELVIEW);
-                GLWindow.gl.LoadIdentity();
+
                 // Код с фиксированной функцией может использовать альфа-тестирование
                 // Чтоб корректно прорисовывался кактус
                 GLWindow.gl.AlphaFunc(OpenGL.GL_GREATER, 0.1f);

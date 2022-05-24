@@ -558,7 +558,7 @@ namespace MvkClient.Renderer.Block
             //vec3i pos = posChunk + EnumFacing.DirectionVec(side);
             int yc = y >> 4;
             // проверка высоты
-            if (yc < 0 || yc >= ChunkBase.COUNT_HEIGHT) return 255;
+            if (yc < 0 || yc >= ChunkBase.COUNT_HEIGHT) return 15;
 
             int xc = chunk.Position.x + (x >> 4);
             int zc = chunk.Position.y + (z >> 4);
@@ -572,7 +572,7 @@ namespace MvkClient.Renderer.Block
             //: Chunk.World.ChunkPr.GetChunk(new vec2i(xc, zc));
 
             // TODO::!!!
-            if (chunkCheck == null || chunkCheck.StorageArrays[yc].IsEmpty()) return 255; // 1f
+            if (chunkCheck == null || chunkCheck.StorageArrays[yc].IsEmpty()) return 15; // 1f
 
             ChunkStorage chunkStorage = chunkCheck.StorageArrays[yc];
             ushort data = chunkStorage.data[yv, xv, zv];

@@ -24,11 +24,11 @@ namespace MvkClient.Renderer.Chunk
         /// <summary>
         /// Количество float на одну вершину
         /// </summary>
-        private readonly int vertexSize = 7;
+        //private readonly int vertexSize = 7;
         /// <summary>
         /// Количество float в буфере на один полигон
         /// </summary>
-        private readonly int poligonFloat = 21;
+        //private readonly int poligonFloat = 21;
         /// <summary>
         /// Количество вершин
         /// </summary>
@@ -75,8 +75,8 @@ namespace MvkClient.Renderer.Chunk
         /// </summary>
         public void SetBuffer(byte[] buffer)
         {
-            countPoligon = buffer.Length / poligonFloat;
-            countVertices = buffer.Length / vertexSize;
+            countPoligon = buffer.Length / 84;
+            countVertices = buffer.Length / 28;
             //ByteBuffer byteBuffer = new ByteBuffer();
             //byteBuffer.ArrayFloat(buffer);
             //bufferData.ConvertByte(byteBuffer.ToArray());

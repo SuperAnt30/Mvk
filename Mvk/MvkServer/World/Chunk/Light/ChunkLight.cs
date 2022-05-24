@@ -291,7 +291,7 @@ namespace MvkServer.World.Chunk.Light
                         if (yh < yh2)
                         {
                             // Координата Y от которой анализируем, на блок выше вверхней, так-как блок нам не интересен
-                            int yDown = yh + 1;
+                            int yDown = yh;// + 1;
                             // Координата Y до которой анализируем, на блок ниже, так-как нам надо найти ущелие, а блок является перекрытием
                             int yUp = yh2 - 1;
                             // Если нижняя координата ниже вверхней или равны, начинаем анализ
@@ -324,7 +324,7 @@ namespace MvkServer.World.Chunk.Light
                     {
                         light.CheckLightFor(xReal, yMin2, yMax2, zReal);
                         // Тест столба для визуализации ввиде стекла
-                        //for (int y = yMin2; y <= yMax2; y++) Chunk.SetBlockState(new BlockPos(x, y, z), new BlockState(6, 0));
+                        //for (int y = yMin2; y <= yMax2; y++) World.SetBlockDebug(new BlockPos(xReal, y, zReal), EnumBlock.Glass);
                     }
                 }
             }

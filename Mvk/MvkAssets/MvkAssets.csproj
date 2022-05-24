@@ -130,5 +130,14 @@
   <ItemGroup>
     <None Include="Resources\Shadow.png" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Sun.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\MoonPhases.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\StarBrightness.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

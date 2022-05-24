@@ -174,6 +174,37 @@ namespace MvkClient.Renderer
         /// Выключить смешивание
         /// </summary>
         public static void BlendDisable() => gl.Disable(OpenGL.GL_BLEND);
+        /// <summary>
+        /// Включить альфа
+        /// </summary>
+        public static void AlphaEnable() => gl.Enable(OpenGL.GL_ALPHA_TEST);
+        /// <summary>
+        /// Выключить альфа
+        /// </summary>
+        public static void AlphaDisable() => gl.Disable(OpenGL.GL_ALPHA_TEST);
+        /// <summary>
+        /// Включить туман
+        /// </summary>
+        public static void FogEnable() => gl.Enable(OpenGL.GL_FOG);
+        /// <summary>
+        /// Выключить туман
+        /// </summary>
+        public static void FogDisable() => gl.Disable(OpenGL.GL_FOG);
+        /// <summary>
+        /// Параметры тумана
+        /// </summary>
+        /// <param name="start">Начало</param>
+        /// <param name="end">конец</param>
+        /// <param name="density">густота</param>
+        public static void Fog(float start, float end, float density)
+        {
+            
+            gl.Fog(OpenGL.GL_FOG_MODE, OpenGL.GL_LINEAR);
+            //gl.Fog(OpenGL.GL_FOG_MODE, OpenGL.GL_EXP);
+            gl.Fog(OpenGL.GL_FOG_START, start);
+            gl.Fog(OpenGL.GL_FOG_END, end);
+            gl.Fog(OpenGL.GL_FOG_DENSITY, density);
+        }
 
         /// <summary>
         /// Включить полигоновское смещение

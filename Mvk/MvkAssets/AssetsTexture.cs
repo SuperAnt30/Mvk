@@ -50,6 +50,18 @@
         /// <summary>
         /// Тень у сущностей
         /// </summary>
-        Shadow
+        Shadow,
+        /// <summary>
+        /// Солнце
+        /// </summary>
+        Sun,
+        /// <summary>
+        /// Фазы луны
+        /// </summary>
+        MoonPhases,
+        /// <summary>
+        /// Яркость звёзд
+        /// </summary>
+        StarBrightness
     }
 }

@@ -187,6 +187,7 @@
     <Compile Include="World\Light\WorldLight.cs" />
     <Compile Include="World\RangeModified.cs" />
     <Compile Include="World\WorldBase.cs" />
+    <Compile Include="World\WorldBaseSky.cs" />
     <Compile Include="World\WorldServer.cs" />
   </ItemGroup>
   <ItemGroup />

@@ -12,7 +12,7 @@ namespace MvkServer.World
     /// <summary>
     /// Базовый объект мира
     /// </summary>
-    public abstract class WorldBase
+    public abstract partial class WorldBase
     {
         /// <summary>
         /// Радиус активных чанков во круг игрока
@@ -587,18 +587,18 @@ namespace MvkServer.World
         /// <param name="blockPos">позици блока</param>
         /// <param name="eBlock">тип блока</param>
         /// <returns>true смена была</returns>
-        //public void SetBlockDebug(BlockPos blockPos, EnumBlock enumBlock)
-        //{
-        //    if (IsRemote && blockPos.Y >= 0 && blockPos.Y < 256)
-        //    {
-        //        ChunkBase chunk = ChunkPr.GetChunk(blockPos.GetPositionChunk());
-        //        if (chunk != null)
-        //        {
-        //            chunk.SetEBlock(blockPos.GetPosition0(), enumBlock);
-        //            MarkBlockForUpdate(blockPos);
-        //        }
-        //    }
-        //}
+        public void SetBlockDebug(BlockPos blockPos, EnumBlock enumBlock)
+        {
+            if (/*IsRemote && */blockPos.Y >= 0 && blockPos.Y < 256)
+            {
+                ChunkBase chunk = ChunkPr.GetChunk(blockPos.GetPositionChunk());
+                if (chunk != null)
+                {
+                    chunk.SetEBlock(blockPos.GetPosition0(), enumBlock);
+                    MarkBlockForUpdate(blockPos);
+                }
+            }
+        }
 
         /// <summary>
         /// Отметить блок для обновления

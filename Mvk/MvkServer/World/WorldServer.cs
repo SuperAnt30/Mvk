@@ -105,8 +105,14 @@ namespace MvkServer.World
                 profiler.StartSection("GetChunk");
                 ChunkBase chunk = GetChunk(chPos);
                 //if (chunk == null) ChunkPrServ.LoadChunk(chPos);
-                profiler.StartSection("TickChunk");
-                if (chunk != null) chunk.Update();
+                
+                if (chunk != null)
+                {
+                    profiler.EndStartSection("TickChunk");
+                    chunk.Update();
+                    profiler.EndStartSection("StartRecheckGaps");
+                    chunk.Light.StartRecheckGaps();
+                }
                 profiler.EndSection();
             }
         }

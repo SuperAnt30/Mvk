@@ -776,7 +776,7 @@ namespace MvkServer.World.Chunk
         /// </summary>
         public void Update()
         {
-            Light.StartRecheckGaps();
+            //Light.StartRecheckGaps();
             // это скорее всего аналог func_150804_b
             //Light.Update();
         }
