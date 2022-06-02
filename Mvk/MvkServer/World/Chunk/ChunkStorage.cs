@@ -40,13 +40,12 @@ namespace MvkServer.World.Chunk
 
         private void Set()
         {
-            if (data == null)// IsEmpty())
+            if (data == null)
             {
                 data = new ushort[16, 16, 16];
                 light = new byte[16, 16, 16];
                 body = false;
                 countVoxel = 0;
-                //body = true;
             }
         }
 
@@ -56,21 +55,10 @@ namespace MvkServer.World.Chunk
             body = true;
         }
 
-        private bool Minus()
-        {
-            countVoxel--;
-            if (countVoxel == 0)
-            {
-                Clear();
-                return true;
-            }
-            return false;
-        }
-
         /// <summary>
         /// Пустой ли объект
         /// </summary>
-        public bool IsEmpty() => !body;// countVoxel == 0;// !body;
+        public bool IsEmpty() => !body;
 
         /// <summary>
         /// Уровень псевдочанка
@@ -78,15 +66,6 @@ namespace MvkServer.World.Chunk
         public int GetYLocation() => yBase;
 
         #region Прямой доступ к данным для бинарника
-
-        /// <summary>
-        /// Внести данные блока
-        /// </summary>
-        public void Set(int x, int y, int z, BlockState blockState)
-        {
-            SetData(x, y, z, blockState.data);
-            SetLightsFor(x, y, z, blockState.light);
-        }
 
         /// <summary>
         /// Получить данные всего блока
@@ -102,7 +81,8 @@ namespace MvkServer.World.Chunk
                 // воздух, проверка на чистку
                 if (!IsEmpty() && data[y, x, z] != 0)
                 {
-                    if (!Minus()) data[y, x, z] = value;
+                    if (countVoxel > 0) countVoxel--;
+                    data[y, x, z] = value;
                 }
             }
             else
@@ -125,6 +105,7 @@ namespace MvkServer.World.Chunk
         {
             Set();
             this.light[y, x, z] = light;
+            LightCheckBlock();
         }
 
         #endregion
@@ -143,7 +124,8 @@ namespace MvkServer.World.Chunk
             {
                 if (!IsEmpty() && data[y, x, z] != 0)
                 {
-                    if (!Minus()) data[y, x, z] = (ushort)((byte)(data[y, x, z] >> 12) << 12 | (ushort)eBlock);
+                    if (countVoxel > 0) countVoxel--;
+                    data[y, x, z] = (ushort)((byte)(data[y, x, z] >> 12) << 12 | (ushort)eBlock);
                 }
             }
             else
@@ -200,6 +182,7 @@ namespace MvkServer.World.Chunk
             }
 
             this.light[y, x, z] = (byte)(b << 4 | s);
+            LightCheckBlock();
         }
 
         /// <summary>
@@ -207,14 +190,6 @@ namespace MvkServer.World.Chunk
         /// </summary>
         public static byte GlueLightFor(byte lightSky, byte lightBlok) => (byte)(lightBlok << 4 | lightSky);
 
-        /// <summary>
-        /// Удалить данные
-        /// </summary>
-        //public void Delete()
-        //{
-        //    data = null;
-        //    light = null;
-        //}
         /// <summary>
         /// Очистить
         /// </summary>
@@ -242,6 +217,38 @@ namespace MvkServer.World.Chunk
                     }
                 }
             }
+        }
+
+        private void LightCheckBlock()
+        {
+            if (!body)
+            {
+                body = IsLightCheckBlock();
+            }
+            else if (countVoxel == 0 && data != null)
+            {
+                if (IsLightCheckBlock()) return;
+                Clear();
+            }
+        }
+
+        /// <summary>
+        /// Проверка на наличие блочного освещения в псевдо чанке
+        /// </summary>
+        /// <returns>true - имеется блочное освещение</returns>
+        private bool IsLightCheckBlock()
+        {
+            for (int x = 0; x < 16; x++)
+            {
+                for (int y = 0; y < 16; y++)
+                {
+                    for (int z = 0; z < 16; z++)
+                    {
+                        if (((light[y, x, z] & 0xF0) >> 4) > 0) return true;
+                    }
+                }
+            }
+            return false;
         }
 
         public override string ToString() => yBase + " " + countVoxel;

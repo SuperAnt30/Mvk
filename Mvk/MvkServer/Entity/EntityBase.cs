@@ -568,6 +568,18 @@ namespace MvkServer.Entity
         /// </summary>
         protected virtual void EffectsContactWithWater() { }
 
-        
+        /// <summary>
+        /// Получить яркость для рендера 0.0 - 1.0
+        /// </summary>
+        public vec2 GetBrightnessForRender()
+        {
+            BlockState blockState = World.GetBlockState(new BlockPos(Position.x, Position.y, Position.z));
+            if (blockState.IsEmpty()) return new vec2(.03125f, .96875f);
+            return new vec2(
+                ((blockState.light & 0xF0) >> 4) / 16f + .03125f, // sky
+                (blockState.light & 0xF) / 16f + .03125f // block
+                );
+        }
+
     }
 }

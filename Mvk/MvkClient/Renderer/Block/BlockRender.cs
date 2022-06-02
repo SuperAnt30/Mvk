@@ -492,7 +492,7 @@ namespace MvkClient.Renderer.Block
             ResultSide resultSide = GetResultSide(true, posChunk.x + x, posChunk.y + y, posChunk.z + z);// + new vec3i(x, y, z));
             // Параметр затемнение одного угла к блоку
             float color = (!resultSide.IsEmpty() && resultSide.BlockCache().IsNotTransparent() && resultSide.BlockCache().IsFullCube)
-                ? .2f : 0;
+                ? .1f : 0;
             return new AmbientOcclusionLight(color, resultSide.Light(), resultSide.GetColor());
         }
 
@@ -628,7 +628,7 @@ namespace MvkClient.Renderer.Block
             vec3 colorBiome = GetBiomeColor(xc << 4 | xv, zc << 4 | zv);
 
             // проверка высоты
-            if (yc < 0 || yc >= ChunkBase.COUNT_HEIGHT) return new ResultSide(255, new vec3(1f));
+            if (yc < 0 || yc >= ChunkBase.COUNT_HEIGHT) return new ResultSide(15, new vec3(1f));
 
             // Определяем рабочий чанк соседнего блока
             ChunkBase chunk = (xc == this.chunk.Position.x && zc == this.chunk.Position.y) ? this.chunk
@@ -636,7 +636,7 @@ namespace MvkClient.Renderer.Block
             //: Chunk.World.ChunkPr.GetChunk(new vec2i(xc, zc));
             
             // TODO::!!!
-            if (chunk == null || chunk.StorageArrays[yc].IsEmpty()) return new ResultSide(255, colorBiome); // 1f
+            if (chunk == null || chunk.StorageArrays[yc].IsEmpty()) return new ResultSide(15, colorBiome); // 1f
 
             EnumBlock eBlock = chunk.StorageArrays[yc].GetEBlock(xv, yv, zv);
             BlockBase block = Blocks.GetBlockCache(eBlock);

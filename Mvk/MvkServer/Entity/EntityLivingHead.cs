@@ -1,4 +1,5 @@
 ﻿using MvkServer.Glm;
+using MvkServer.Util;
 using MvkServer.World;
 
 namespace MvkServer.Entity
@@ -164,8 +165,8 @@ namespace MvkServer.Entity
             vec3 m = motionDebug;
             m.y = 0;
             vec3 my = new vec3(0, motionDebug.y, 0);
-
-            return string.Format("{15}-{16} XYZ {7} ch:{12}\r\n{0:0.000} | {13:0.000} м/c\r\nHealth: {14:0.00} Air: {17}\r\nyaw:{8:0.00} H:{9:0.00} pitch:{10:0.00} \r\n{1}{2}{6}{4} boom:{5:0.00}\r\nMotion:{3}\r\n{11}",
+            float rotationYawHead = glm.degrees(RotationYawHead);
+            return string.Format("{15}-{16} XYZ {7} ch:{12}\r\n{0:0.000} | {13:0.000} м/c\r\nHealth: {14:0.00} Air: {17}\r\nyaw:{8:0.00} H:{9:0.00} pitch:{10:0.00} {18} \r\n{1}{2}{6}{4} boom:{5:0.00}\r\nMotion:{3}\r\n{11}",
                 glm.distance(m) * 10f, // 0
                 OnGround ? "__" : "", // 1
                 IsSprinting() ? "[Sp]" : "", // 2
@@ -175,7 +176,7 @@ namespace MvkServer.Entity
                 IsSneaking() ? "[Sn]" : "", // 6
                 Position, // 7
                 glm.degrees(RotationYaw), // 8
-                glm.degrees(RotationYawHead), // 9
+                rotationYawHead, // 9
                 glm.degrees(RotationPitch), // 10
                 IsCollidedHorizontally, // 11
                 GetChunkPos(), // 12
@@ -183,7 +184,9 @@ namespace MvkServer.Entity
                 Health, // 14
                 Id, // 15
                 Type, // 16
-                GetAir() // 17
+                GetAir(), // 17
+                EnumFacing.FromAngle(rotationYawHead) // 18
+
                 );
         }
     }

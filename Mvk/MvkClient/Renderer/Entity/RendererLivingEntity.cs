@@ -39,37 +39,41 @@ namespace MvkClient.Renderer.Entity
                 float ageInTicks = renderManager.World.ClientMain.TickCounter + timeIndex;
 
                 model.SetSwingProgress(entityLiving.GetSwingProgressFrame(timeIndex));
-
+                
                 GLRender.PushMatrix();
-                {
-                    GLRender.CullDisable();
-                    vec3 color = new vec3(1);
-                    if (entityLiving.DamageTime > 0)
-                    {
-                        float dt = Mth.Sqrt((entityLiving.DamageTime + timeIndex - 1f) / 5f * 1.6f);
-                        if (dt > 1f) dt = 1f;
-                        dt *= .4f;
-                        color = new vec3(1f, 1f - dt, 1f - dt);
-                    }
-
-                    GLRender.Color(color);
-                    BindTexture();
-
-                    GLRender.Translate(offsetPos.x, offsetPos.y, offsetPos.z);
-                    RotateCorpse(entityLiving, timeIndex);
-
-                    GLRender.Scale(scale);
-                    GLRender.Translate(0, -1.508f, 0);
-
-                    GLRender.Rotate(glm.degrees(yawBody), 0, 1, 0);
-                    yawBody -= yawHead;
-
-                    RenderModel(entityLiving, limbSwing, limbSwingAmount, ageInTicks, -yawBody, headPitch, .0625f);
+                
+                GLRender.CullDisable();
+                vec3 color = new vec3(1f);
                     
-                    // доп слой
-                    LayerRenders(entityLiving, limbSwing, limbSwingAmount, timeIndex, ageInTicks, -yawBody, headPitch, .0625f);
+                if (entityLiving.DamageTime > 0)
+                {
+                    float dt = Mth.Sqrt((entityLiving.DamageTime + timeIndex - 1f) / 5f * 1.6f);
+                    if (dt > 1f) dt = 1f;
+                    dt *= .4f;
+                    color = new vec3(1f, 1f - dt, 1f - dt);
                 }
+
+                GLRender.LightmapTextureCoords(entity.GetBrightnessForRender());
+                GLRender.Color(color);
+                BindTexture();
+
+                GLRender.Translate(offsetPos.x, offsetPos.y, offsetPos.z);
+                RotateCorpse(entityLiving, timeIndex);
+
+                GLRender.Scale(scale);
+                GLRender.Translate(0, -1.508f, 0);
+
+                GLRender.Rotate(glm.degrees(yawBody), 0, 1, 0);
+                yawBody -= yawHead;
+                
+                RenderModel(entityLiving, limbSwing, limbSwingAmount, ageInTicks, -yawBody, headPitch, .0625f);
+
+                // доп слой
+                LayerRenders(entityLiving, limbSwing, limbSwingAmount, timeIndex, ageInTicks, -yawBody, headPitch, .0625f);
+
+                GLRender.TextureLightmapDisable();
                 GLRender.PopMatrix();
+                
                 base.DoRender(entity, offset, timeIndex);
             }
         }
@@ -84,6 +88,7 @@ namespace MvkClient.Renderer.Entity
 
         protected void BindTexture()
         {
+            GLRender.TextureLightmapEnable();
             GLRender.Texture2DEnable();
             TextureStruct ts = GLWindow.Texture.GetData(texture);
             GLWindow.Texture.BindTexture(ts.GetKey());

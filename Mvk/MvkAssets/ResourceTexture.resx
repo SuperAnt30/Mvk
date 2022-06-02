@@ -124,6 +124,9 @@
   <data name="Chicken" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\Chicken.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="Clouds" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\Clouds.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="Font12" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\Font12.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>

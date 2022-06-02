@@ -39,6 +39,8 @@ namespace MvkClient.Renderer.Entity
                 rand = new Random(187);
                 int count = CountItem(stack);
 
+                GLRender.LightmapTextureCoords(entity.GetBrightnessForRender());
+                GLRender.TextureLightmapEnable();
                 GLRender.Texture2DEnable();
                 TextureStruct ts = GLWindow.Texture.GetData(AssetsTexture.Atlas);
                 GLWindow.Texture.BindTexture(ts.GetKey());

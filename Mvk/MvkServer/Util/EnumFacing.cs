@@ -48,8 +48,8 @@ namespace MvkServer.Util
         public static Pole FromAngle(float angle)
         {
             if (angle >= -45f && angle <= 45f) return Pole.North;
-            else if (angle > 45f && angle < 135f) return Pole.West;
-            else if (angle < -45f && angle > -135f) return Pole.East;
+            else if (angle > 45f && angle < 135f) return Pole.East;
+            else if (angle < -45f && angle > -135f) return Pole.West;
             return Pole.South;
         }
 

@@ -21,15 +21,24 @@ layout(location = 3) in int v_anim;
 
 out vec4 a_color;
 out vec2 a_texCoord;
+out float fog_factor;
+out vec3 fog_color;
 
 uniform mat4 projection;
 uniform mat4 lookat;
-uniform vec3 pos;
 uniform float takt;
 uniform float sky;
+uniform float overview;
+uniform vec3 colorfog;
+uniform vec3 pos;
+uniform vec3 camera;
+
 
 void main()
 {
+    fog_color = colorfog;
+    float camera_distance = distance(camera, vec3(v_position));
+    fog_factor = pow(clamp(camera_distance / overview, 0.0, 1.0), 4.0);
 
     float r = (v_rgbl & 0xFF) / 255.0;
     float g = ((v_rgbl >> 8) & 0xFF) / 255.0;
@@ -38,6 +47,9 @@ void main()
     lightSky *= sky;
     float lightBlock = ((v_rgbl >> 28) & 0xF) / 15.0;
     float light = max(lightSky, lightBlock);
+
+    // чтоб не сильно темно было, минимиальная яркость 0,2
+    light = light * 0.8 + 0.2;
 
     a_texCoord = v_texCoord;
 
@@ -70,13 +82,21 @@ void main()
  
 in vec4 a_color;
 in vec2 a_texCoord;
+in float fog_factor;
+in vec3 fog_color;
+
 out vec4 f_color;
 
 uniform sampler2D u_texture0;
 
 void main()
 {
-	f_color = a_color * texture(u_texture0, a_texCoord);
+    vec4 color = a_color * texture(u_texture0, a_texCoord);
+    vec3 col3 = vec3(color);
+    //vec3 cols = vec3(0.73, 0.83, 1.0);
+    col3 = mix(col3, fog_color, fog_factor);
+    f_color = vec4(col3, color.a);
+	//f_color = a_color * texture(u_texture0, a_texCoord);
 }";
     }
 }

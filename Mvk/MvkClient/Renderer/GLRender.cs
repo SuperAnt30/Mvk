@@ -206,6 +206,39 @@ namespace MvkClient.Renderer
             gl.Fog(OpenGL.GL_FOG_DENSITY, density);
         }
 
+
+
+        
+        /// <summary>
+        /// Смещение яркости, по текстуре освещения
+        /// </summary>
+        /// <param name="u"></param>
+        /// <param name="v"></param>
+        public static void LightmapTextureCoords(vec2 uv)
+        {
+            gl.MultiTexCoord2(OpenGL.GL_TEXTURE1, uv.x, uv.y);
+        }
+
+        /// <summary>
+        /// Активировать мульти текстуру освещения
+        /// </summary>
+        public static void TextureLightmapEnable()
+        {
+            gl.ActiveTexture(OpenGL.GL_TEXTURE1);
+            Texture2DEnable();
+            gl.ActiveTexture(OpenGL.GL_TEXTURE0);
+        }
+
+        /// <summary>
+        /// Деактивировать мульти текстуру освещения
+        /// </summary>
+        public static void TextureLightmapDisable()
+        {
+            gl.ActiveTexture(OpenGL.GL_TEXTURE1);
+            Texture2DDisable();
+            gl.ActiveTexture(OpenGL.GL_TEXTURE0);
+        }
+
         /// <summary>
         /// Включить полигоновское смещение
         /// </summary>

@@ -93,6 +93,7 @@ namespace MvkClient.Renderer.Entity
                     {
                         RenderEntityBoundingBox(entity, CameraOffset, timeIndex);
                     }
+                    
                 }
             }
         }

@@ -83,6 +83,16 @@ namespace MvkAssets {
         /// <summary>
         ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap Clouds {
+            get {
+                object obj = ResourceManager.GetObject("Clouds", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap Font12 {
             get {
                 object obj = ResourceManager.GetObject("Font12", resourceCulture);

@@ -125,11 +125,18 @@ namespace MvkClient.Renderer
             //Debug.CountMeshAll = 0;
             //gl.Perspective(70.0f, (float)windowWidth / (float)windowHeight, 0.1f, 512);
 
+            gl.Viewport(0, 0, WindowWidth, WindowHeight);
+            
             // Включает Буфер глубины 
             gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);
             gl.Enable(OpenGL.GL_CULL_FACE);
             gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_FILL);
             gl.ClearColor(.5f, .7f, .99f, 1f);
+
+            // Код с фиксированной функцией может использовать альфа-тестирование
+            // Чтоб корректно прорисовывался кактус
+            gl.AlphaFunc(OpenGL.GL_GREATER, 0.1f);
+            gl.Enable(OpenGL.GL_ALPHA_TEST);
         }
 
         /// <summary>

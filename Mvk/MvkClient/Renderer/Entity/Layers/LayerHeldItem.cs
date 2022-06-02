@@ -34,7 +34,6 @@ namespace MvkClient.Renderer.Entity.Layers
 
             if (itemStack != null)
             {
-                GLRender.Texture2DEnable();
                 TextureStruct ts = GLWindow.Texture.GetData(AssetsTexture.Atlas);
                 GLWindow.Texture.BindTexture(ts.GetKey());
                 GLRender.PushMatrix();

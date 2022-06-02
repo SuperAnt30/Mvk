@@ -390,7 +390,7 @@ namespace MvkServer.World.Chunk
                     return new BlockState(chunkStorage.GetData(pos.x, by, pos.z), chunkStorage.GetLightsFor(pos.x, by, pos.z));
                 }
             }
-            return new BlockState(EnumBlock.Air);
+            return new BlockState(EnumBlock.Air).Empty();
         }
 
         /// <summary>
@@ -504,7 +504,6 @@ namespace MvkServer.World.Chunk
             //}
             //Light.CheckLightSetBlock(blockNew.Position, blockNew.LightOpacity, blockOld.LightOpacity,
             //    blockNew.LightValue != blockOld.LightValue);
-            
 
             //TileEntity var15;
 

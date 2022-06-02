@@ -57,7 +57,7 @@ namespace MvkClient.Util
         /// <summary>
         /// Конвертация из Bitmap в объект BufferedImage
         /// </summary>
-        protected static byte[] BitmapToByteArray(Bitmap bitmap)
+        public static byte[] BitmapToByteArray(Bitmap bitmap)
         {
             BitmapData bmpdata = null;
             try

@@ -62,6 +62,10 @@
         /// <summary>
         /// Яркость звёзд
         /// </summary>
-        StarBrightness
+        StarBrightness,
+        /// <summary>
+        /// Облака 256*256
+        /// </summary>
+        Clouds
     }
 }

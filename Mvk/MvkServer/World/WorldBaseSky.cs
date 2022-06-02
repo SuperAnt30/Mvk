@@ -8,47 +8,76 @@ namespace MvkServer.World
     /// </summary>
     public abstract partial class WorldBase
     {
-
+        /// <summary>
+        /// Скорость суток в тактах
+        /// </summary>
         private const int SPEED_DAY = 24000;
+        /// <summary>
+        /// Скорость облаков
+        /// </summary>
+        public const float SPEED_CLOUD = .125f;
+        /// <summary>
+        /// Размер растяжки текстуры облака. Чем крупнее тем облако больше.
+        /// </summary>
+        public const float CLOUD_SIZE_TEXTURE = 8192f; //2048f;// 8192f;
+        /// <summary>
+        /// Размер пикселя текстуры облака = 1/CLOUD_SIZE_TEXTURE
+        /// </summary>
+        //public const float CLOUD_PIXEL_TEXTURE = .0001220703125f;// .00048828125f;// .0001220703125f;
 
         /// <summary>
         /// Получить яркость неба
         /// </summary>
-        public float GetSkyLight(float timeIndex)
+        public float GetSkyLight(float angle)
         {
-            float angle = CalculateCelestialAngle(timeIndex);
             float f = glm.cos(angle * glm.pi360) * 2f + .5f;
             f = Mth.Clamp(f, 0, 1f);
             return f;
         }
 
         /// <summary>
-        /// Яркость звёзд
+        /// Получить яркость солнца
         /// </summary>
-        public float GetStarBrightness(float timeIndex)
+        public float GetSunLight(float angle)
         {
-            float angle = CalculateCelestialAngle(timeIndex);
+            float f = glm.cos(angle * glm.pi360) * 2f + .64f;
+            f = Mth.Clamp(f, 0, 1f);
+            return f;
+        }
+
+        /// <summary>
+        /// Яркость звёзд 0.0 - 0.75
+        /// </summary>
+        public float GetStarBrightness(float angle)
+        {
             float f = 1.0F - (glm.cos(angle * glm.pi360) * 2f + .25f);
             f = Mth.Clamp(f, 0, 1f);
             return f * f * .75f;
         }
 
         /// <summary>
+        /// Цвет облак
+        /// </summary>
+        public vec3 GetCloudColor(float skyLight)
+        {
+            // тут затемняем эффект дожя, грозы и прочего
+            return new vec3(.9f * skyLight + .1f, .9f * skyLight + .1f, .85f * skyLight + .15f);
+        }
+
+        /// <summary>
         /// Цвет туманаn
         /// </summary>
-        public vec3 GetFogColor(float timeIndex)
+        public vec3 GetFogColor(float skyLight)
         {
-            float f = GetSkyLight(timeIndex);
-            return new vec3(.71f * f + .06f, .8f * f + .06f, .91f * f + .09f);
+            return new vec3(.71f * skyLight + .06f, .8f * skyLight + .06f, .91f * skyLight + .09f);
         }
 
         /// <summary>
         /// Вычисляет цвет для неба
         /// </summary>
-        public vec3 GetSkyColor(float timeIndex)
+        public vec3 GetSkyColor(float skyLight)
         {
-            float f = GetSkyLight(timeIndex);
-            return new vec3(.5f * f, .7f * f, .99f * f);
+            return new vec3(.5f * skyLight, .7f * skyLight, .99f * skyLight);
         }
 
         /// <summary>
@@ -83,8 +112,7 @@ namespace MvkServer.World
         /// <summary>
         /// Возвращает массив цветов восхода/заката
         /// </summary>
-        /// <param name="timeIndex">коэффициент времени от прошлого TPS клиента в диапазоне 0 .. 1</param>
-        public float[] CalcSunriseSunsetColors(float angle, float timeIndex)
+        public float[] CalcSunriseSunsetColors(float angle)
         {
             float x = .4f;
             float y = glm.cos(angle * glm.pi360);

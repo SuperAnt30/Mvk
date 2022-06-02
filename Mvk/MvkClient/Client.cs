@@ -13,6 +13,7 @@ using MvkServer.Glm;
 using MvkServer.Network;
 using MvkServer.Network.Packets.Client;
 using MvkServer.Util;
+using MvkServer.World;
 using MvkServer.World.Block;
 using SharpGL;
 using System;
@@ -39,6 +40,10 @@ namespace MvkClient
         /// Увеличивается каждый тик 
         /// </summary>
         public uint TickCounter { get; private set; } = 0;
+        /// <summary>
+        /// Счётчик тактов для облак
+        /// </summary>
+        public uint CloudTickCounter { get; private set; } = 0;
         /// <summary>
         /// Screen Gui
         /// </summary>
@@ -582,6 +587,8 @@ namespace MvkClient
                     //Log.Log(TickCounter.ToString());
                     tickCounterClient++;
                     TickCounter++;
+                    UpdateClouds();
+
 
                     // Обновить игрока
                     Player.Update();
@@ -703,6 +710,15 @@ namespace MvkClient
         /// Получить коэффициент времени от прошлого TPS клиента в диапазоне 0 .. 1
         /// </summary>
         public float Interpolation() => ticker.Interpolation;
+
+        /// <summary>
+        /// Счётчик облаков
+        /// </summary>
+        private void UpdateClouds()
+        {
+            CloudTickCounter++;
+            if (CloudTickCounter > (WorldBase.CLOUD_SIZE_TEXTURE / WorldBase.SPEED_CLOUD)) CloudTickCounter = 0;
+        }
 
         #region Player
 

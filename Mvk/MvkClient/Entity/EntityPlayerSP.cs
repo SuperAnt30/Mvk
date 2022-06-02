@@ -125,7 +125,7 @@ namespace MvkClient.Entity
         /// <summary>
         /// Лист DisplayList матрицы 
         /// </summary>
-        private uint dListLookAt;
+        //private uint dListLookAt;
         /// <summary>
         /// массив векторов расположения камеры в пространстве для DisplayList
         /// </summary>
@@ -174,41 +174,64 @@ namespace MvkClient.Entity
         /// <summary>
         /// Обновить матрицу
         /// </summary>
-        private void UpMatrixProjection()
+        public void MatrixProjection(float distantion)
         {
+            GLWindow.gl.MatrixMode(OpenGL.GL_PROJECTION);
+            GLWindow.gl.LoadIdentity();
+            GLWindow.gl.Perspective(glm.degrees(Fov.ValueFrame),
+                (float)GLWindow.WindowWidth / (float)GLWindow.WindowHeight,
+                0.001f, distantion == 0 ? CamersDistance() : distantion);
+            GLWindow.gl.MatrixMode(OpenGL.GL_MODELVIEW);
+            GLWindow.gl.LoadIdentity();
             if (lookAtDL != null && lookAtDL.Length == 3)
             {
-                GLRender.ListDelete(dListLookAt);
-                dListLookAt = GLRender.ListBegin();
-                GLWindow.gl.Viewport(0, 0, GLWindow.WindowWidth, GLWindow.WindowHeight);
-
-                GLWindow.gl.MatrixMode(OpenGL.GL_PROJECTION);
-                GLWindow.gl.LoadIdentity();
-                GLWindow.gl.Perspective(glm.degrees(Fov.ValueFrame), (float)GLWindow.WindowWidth / (float)GLWindow.WindowHeight, 0.001f, OverviewChunk * 22.624f * 2f);
-                //GLWindow.gl.LookAt(lookAtDL[0].x, lookAtDL[0].y, lookAtDL[0].z,
-                //    lookAtDL[1].x, lookAtDL[1].y, lookAtDL[1].z,
-                //    lookAtDL[2].x, lookAtDL[2].y, lookAtDL[2].z);
-                GLWindow.gl.MatrixMode(OpenGL.GL_MODELVIEW);
-                GLWindow.gl.LoadIdentity();
-
                 GLWindow.gl.LookAt(lookAtDL[0].x, lookAtDL[0].y, lookAtDL[0].z,
-                    lookAtDL[1].x, lookAtDL[1].y, lookAtDL[1].z,
-                    lookAtDL[2].x, lookAtDL[2].y, lookAtDL[2].z);
-
-                // Код с фиксированной функцией может использовать альфа-тестирование
-                // Чтоб корректно прорисовывался кактус
-                GLWindow.gl.AlphaFunc(OpenGL.GL_GREATER, 0.1f);
-                GLWindow.gl.Enable(OpenGL.GL_ALPHA_TEST);
-                //GLWindow.gl.Enable(OpenGL.GL_TEXTURE_2D);
-                //GLWindow.gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_FILL);
-                GLRender.ListEnd();
+                lookAtDL[1].x, lookAtDL[1].y, lookAtDL[1].z,
+                lookAtDL[2].x, lookAtDL[2].y, lookAtDL[2].z);
             }
         }
 
         /// <summary>
-        /// Прорисовать матрицу для DisplayList
+        /// Обновить матрицу
         /// </summary>
-        public void CameraMatrixProjection() => GLRender.ListCall(dListLookAt);
+        //private void UpMatrixProjection()
+        //{
+        //    if (lookAtDL != null && lookAtDL.Length == 3)
+        //    {
+        //        GLRender.ListDelete(dListLookAt);
+        //        dListLookAt = GLRender.ListBegin();
+        //        GLWindow.gl.Viewport(0, 0, GLWindow.WindowWidth, GLWindow.WindowHeight);
+
+        //        GLWindow.gl.MatrixMode(OpenGL.GL_PROJECTION);
+        //        GLWindow.gl.LoadIdentity();
+        //        GLWindow.gl.Perspective(glm.degrees(Fov.ValueFrame), (float)GLWindow.WindowWidth / (float)GLWindow.WindowHeight, 0.001f, CamersDistance());
+        //        GLWindow.gl.MatrixMode(OpenGL.GL_MODELVIEW);
+        //        GLWindow.gl.LoadIdentity();
+
+        //        GLWindow.gl.LookAt(lookAtDL[0].x, lookAtDL[0].y, lookAtDL[0].z,
+        //            lookAtDL[1].x, lookAtDL[1].y, lookAtDL[1].z,
+        //            lookAtDL[2].x, lookAtDL[2].y, lookAtDL[2].z);
+
+        //        // Код с фиксированной функцией может использовать альфа-тестирование
+        //        // Чтоб корректно прорисовывался кактус
+        //        GLWindow.gl.AlphaFunc(OpenGL.GL_GREATER, 0.1f);
+        //        GLWindow.gl.Enable(OpenGL.GL_ALPHA_TEST);
+        //        //GLWindow.gl.Enable(OpenGL.GL_TEXTURE_2D);
+        //        //GLWindow.gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_FILL);
+        //        GLRender.ListEnd();
+        //    }
+        //}
+
+        /// <summary>
+        /// Получить максимальную дистанцию для прорисовки, для клиента
+        /// </summary>
+        private float CamersDistance()
+        {
+            //float dis = OverviewChunk * 22.624f * 2f;
+            float dis = OverviewChunk * 22.6275f; //16f * 1.4143f;
+            if (dis < 128f) return 128f;
+            return dis;
+        }
 
         #endregion
 
@@ -499,7 +522,7 @@ namespace MvkClient.Entity
                 LookAt = lookAt;
                 RayLook = front;
                 lookAtDL = new vec3[] { pos, pos + front, up };
-                UpMatrixProjection();
+                //UpMatrixProjection();
                 return true;
             }
             return false;
@@ -510,8 +533,8 @@ namespace MvkClient.Entity
         /// </summary>
         public override void UpProjection()
         {
-            Projection = glm.perspective(Fov.ValueFrame, (float)GLWindow.WindowWidth / (float)GLWindow.WindowHeight, 0.001f, OverviewChunk * 22.624f * 2f).to_array();
-            UpMatrixProjection();
+            Projection = glm.perspective(Fov.ValueFrame, (float)GLWindow.WindowWidth / (float)GLWindow.WindowHeight, 0.001f, CamersDistance()).to_array();
+            //UpMatrixProjection();
         }
 
         /// <summary>

@@ -146,6 +146,7 @@
     <Compile Include="Renderer\Shaders\ShaderItems.cs" />
     <Compile Include="Renderer\Shaders\ShaderVE.cs" />
     <Compile Include="Renderer\Shaders\ShaderVoxel.cs" />
+    <Compile Include="Renderer\TextureLightMap.cs" />
     <Compile Include="Renderer\TextureMap.cs" />
     <Compile Include="Renderer\TextureStruct.cs" />
     <Compile Include="Renderer\WorldRenderer.cs" />

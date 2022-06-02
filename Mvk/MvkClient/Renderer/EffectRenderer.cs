@@ -94,11 +94,13 @@ namespace MvkClient.Renderer
         /// </summary>
         public void Render(float timeIndex)
         {
+            GLRender.TextureLightmapEnable();
             for (int i = 0; i < map.Count; i++)
             {
                 EntityFX entity = (EntityFX)map.GetAt(i);
                 RenderParticles(entity, timeIndex);
             }
+            GLRender.TextureLightmapDisable();
         }
 
         protected void BindTexture(AssetsTexture texture)
@@ -113,9 +115,9 @@ namespace MvkClient.Renderer
             vec3 pos = particle.GetPositionFrame(timeIndex);
             pos.y += .2f;
             vec3 offset = renderManager.CameraOffset;
-
             GLRender.PushMatrix();
             {
+                GLRender.LightmapTextureCoords(particle.GetBrightnessForRender());
                 BindTexture(particle.Texture);
                 GLRender.Translate(pos.x - offset.x, pos.y - offset.y, pos.z - offset.z);
                 GLRender.Rotate(glm.degrees(-renderManager.CameraRotationYaw), 0, 1, 0);
