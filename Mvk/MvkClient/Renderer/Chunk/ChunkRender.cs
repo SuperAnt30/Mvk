@@ -151,8 +151,8 @@ namespace MvkClient.Renderer.Chunk
                     {
                         for (int x = 0; x < 16; x++)
                         {
-                            blockState.data = StorageArrays[chY].data[y, x, z];
-                            //blockState.data = StorageArrays[chY].GetData(x, y, z);
+                            //blockState.data = StorageArrays[chY].data[y, x, z];
+                            blockState.data = StorageArrays[chY].GetData(x, y, z);
                             int id = blockState.data & 0xFFF;// blockState.Id();
                             if (id == 0) continue;
 
@@ -161,8 +161,6 @@ namespace MvkClient.Renderer.Chunk
                             blockPos.Y = yBlock;
                             blockPos.Z = Position.y << 4 | z;
 
-                            // TODO::2022-05-09
-                            // тут 0,01
                             block = Blocks.BlocksInt[id];
                             blockRender.blockState = blockState;
                             blockRender.block = block;
@@ -173,10 +171,8 @@ namespace MvkClient.Renderer.Chunk
                                 //blockRender.Set(block, blockPos);
                                 //blockRender.Set(blockState.GetBlock(), blockPos);
                                 blockRender.DamagedBlocksValue = GetDestroyBlocksValue(x, yBlock, z);
-                            // тут 0,2
                             blockRender.RenderMesh();
-                            // тут 0,5 - 3,5
-                            //blockRender.
+
                             //BlockPos blockPos = new BlockPos(Position.x << 4 | x, yBlock, Position.y << 4 | z);
                             //blockState.data = GetBlockState(blockPos);
                             //if (StorageArrays[chY].GetEBlock(x, y, z) == EnumBlock.Air) continue;

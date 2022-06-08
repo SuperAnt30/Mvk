@@ -84,8 +84,8 @@ namespace MvkServer.Management
         /// </summary>
         public void DestroyStart(BlockPos blockPos)
         {
-            BlockBase block = world.GetBlock(blockPos);
-            if (block != null && !block.IsAir)
+            BlockBase block = world.GetBlockState(blockPos).GetBlock();
+            if (!block.IsAir)
             {
                 BlockPosDestroy = blockPos;
                 IsDestroyingBlock = true;
@@ -116,8 +116,8 @@ namespace MvkServer.Management
         /// </summary>
         public void Put(BlockPos blockPos, vec3 facing, int slot)
         {
-            BlockBase block = world.GetBlock(blockPos);
-            if (block != null && block.CanPut)
+            BlockBase block = world.GetBlockState(blockPos).GetBlock();
+            if (block.CanPut)
             {
                 IsDestroyingBlock = true;
                 BlockPosDestroy = blockPos;
@@ -163,8 +163,7 @@ namespace MvkServer.Management
 
                 if (durabilityRemainingOnBlock >= 0)
                 {
-                    BlockBase block = world.GetBlock(BlockPosDestroy);
-                    if (block == null || block.IsAir)
+                    if (world.GetBlockState(BlockPosDestroy).GetBlock().IsAir)
                     {
                         durabilityRemainingOnBlock = (int)Status.About;
                     }
@@ -182,41 +181,35 @@ namespace MvkServer.Management
                         // Уничтожение блока
                         if (!entityPlayer.IsCreativeMode)
                         {
-                            BlockBase.SpawnAsEntity(world, BlockPosDestroy, new ItemStack(world.GetBlock(BlockPosDestroy)));
+                            BlockBase.SpawnAsEntity(world, BlockPosDestroy, new ItemStack(world.GetBlockState(BlockPosDestroy).GetBlock()));
                         }
-                        //if (!world.IsRemote)
-                        {
-                            world.SetBlockState(BlockPosDestroy, new BlockState(EnumBlock.Air));
-                        }
+                        world.SetBlockState(BlockPosDestroy, new BlockState(EnumBlock.Air));
                     }
                     else if (durabilityRemainingOnBlock == (int)Status.Put)
                     {
                         // Ставим блок
-                        BlockBase blockOld = world.GetBlock(BlockPosDestroy);
-                        if (blockOld != null)
+                        BlockBase blockOld = world.GetBlockState(BlockPosDestroy).GetBlock();
+                        ItemStack itemStack = entityPlayer.Inventory.GetStackInSlot(slotPut);
+                        if (itemStack != null
+                            && itemStack.ItemUse(entityPlayer, world, BlockPosDestroy, new EnumFacing(), new vec3(0)))
                         {
-                            ItemStack itemStack = entityPlayer.Inventory.GetStackInSlot(slotPut);
-                            if (itemStack != null
-                                && itemStack.ItemUse(entityPlayer, world, BlockPosDestroy, new EnumFacing(), new vec3(0)))
+                            if (world is WorldServer && entityPlayer is EntityPlayerServer entityPlayerServer)
                             {
-                                if (world is WorldServer && entityPlayer is EntityPlayerServer entityPlayerServer)
+                                // установлен
+                                if (!entityPlayer.IsCreativeMode)
                                 {
-                                    // установлен
-                                    if (!entityPlayer.IsCreativeMode)
+                                    if (blockOld.IsSpawn)
                                     {
-                                        if (blockOld.IsSpawn)
-                                        {
-                                            // Можно ли спавнить блок при разрушении
-                                            BlockBase.SpawnAsEntity(world, BlockPosDestroy, new ItemStack(blockOld));
-                                        }
-                                        entityPlayer.Inventory.DecrStackSize(slotPut, 1);
+                                        // Можно ли спавнить блок при разрушении
+                                        BlockBase.SpawnAsEntity(world, BlockPosDestroy, new ItemStack(blockOld));
                                     }
+                                    entityPlayer.Inventory.DecrStackSize(slotPut, 1);
                                 }
-                                else
-                                {
-                                    // Для клиентской
-                                    statusUpdate = StatusAnimation.Animation;
-                                }
+                            }
+                            else
+                            {
+                                // Для клиентской
+                                statusUpdate = StatusAnimation.Animation;
                             }
                         }
                     }

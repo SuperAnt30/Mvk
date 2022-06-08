@@ -33,20 +33,19 @@ namespace MvkServer.Item.List
         /// <param name="hit"></param>
         public override bool ItemUse(ItemStack stack, EntityPlayer playerIn, WorldBase worldIn, BlockPos blockPos, EnumFacing side, vec3 hit)
         {
-            BlockBase block = worldIn.GetBlock(blockPos);
             // Проверка ставить блоки, на те которые можно, к примеру на траву
-            if (!block.CanPut) return false;
+            if (!worldIn.GetBlockState(blockPos).GetBlock().CanPut) return false;
             // Если стак пуст
             if (stack == null || stack.Amount == 0) return false;
 
-            BlockBase blockNew = Blocks.CreateBlock(Block.EBlock, blockPos);
-            if (blockNew == null) return false;
-            if (blockNew.IsAir) return false; // Проверка что блок можно ставить
+           // BlockBase blockNew = Blocks.CreateBlock(Block.EBlock, blockPos);
+           // if (blockNew == null) return false;
+            if (Block.IsAir) return false; // Проверка что блок можно ставить
 
-            bool isCheckCollision = !blockNew.IsCollidable;
+            bool isCheckCollision = !Block.IsCollidable;
             if (!isCheckCollision)
             {
-                AxisAlignedBB axisBlock = blockNew.GetCollision();
+                AxisAlignedBB axisBlock = Block.GetCollision(blockPos);
                 // Проверка коллизии игрока и блока
                 isCheckCollision = axisBlock != null && !playerIn.BoundingBox.IntersectsWith(axisBlock)
                     && worldIn.GetEntitiesWithinAABB(ChunkBase.EnumEntityClassAABB.EntityLiving, axisBlock, playerIn.Id).Count == 0;
@@ -56,7 +55,7 @@ namespace MvkServer.Item.List
             if (isCheckCollision)
             {
                 //if (worldIn.IsRemote) return true;
-                return worldIn.SetBlockState(blockPos, new BlockState(blockNew.EBlock));
+                return worldIn.SetBlockState(blockPos, new BlockState(Block.EBlock));
             }
             return false;
         }

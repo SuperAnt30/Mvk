@@ -208,9 +208,6 @@ namespace MvkServer.Network
             
             if (entityPlayer != null)
             {
-                // TODO:: временно освещение, коряво, отладка
-                //ChunkBase chunk = ServerMain.World.GetChunk(packet.GetBlockPos().GetPositionChunk());
-                //chunk.Light.StartRecheckGaps();
                 entityPlayer.TheItemInWorldManager.Put(packet.GetBlockPos(), packet.GetFacing(), entityPlayer.Inventory.CurrentItem);
                 entityPlayer.MarkPlayerActive();
             }

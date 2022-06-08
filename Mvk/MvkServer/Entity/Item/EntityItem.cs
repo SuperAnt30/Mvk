@@ -161,7 +161,8 @@ namespace MvkServer.Entity.Item
                     //move = .6f * .98f;
                     //BlockBase block = World.GetBlock(new BlockPos(Mth.Floor(Position.x), Mth.Floor(BoundingBox.Min.y) - 1, Mth.Floor(Position.z)));
                     //move = block != null ? block.Slipperiness * .98f : .588f; //(.6*.98)
-                    move = World.GetBlock(new BlockPos(Mth.Floor(Position.x), Mth.Floor(BoundingBox.Min.y) - 1, Mth.Floor(Position.z))).Slipperiness * .98f;
+                    move = World.GetBlockState(new BlockPos(Mth.Floor(Position.x), Mth.Floor(BoundingBox.Min.y) - 1, Mth.Floor(Position.z))).GetBlock().Slipperiness * .98f;
+                    //move = World.GetBlock(new BlockPos(Mth.Floor(Position.x), Mth.Floor(BoundingBox.Min.y) - 1, Mth.Floor(Position.z))).Slipperiness * .98f;
                 }
 
                 vec3 motion = Motion * new vec3(move, .98f, move);

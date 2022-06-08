@@ -77,6 +77,10 @@ namespace MvkClient.Entity
         /// </summary>
         public BlockBase SelectBlock { get; private set; } = null;
         /// <summary>
+        /// Позиция выбранного блока
+        /// </summary>
+        public BlockPos SelectBlockPos { get; private set; }
+        /// <summary>
         /// Позиция камеры в блоке для альфа, в зависимости от вида (с глаз, с зади, спереди)
         /// </summary>
         public vec3i PositionAlphaBlock { get; private set; }
@@ -440,17 +444,19 @@ namespace MvkClient.Entity
         {
             MovingObjectPosition moving = RayCast();
             SelectBlock = moving.Block;
+            SelectBlockPos = moving.BlockPosition;
             if (moving.IsBlock())
             {
-                ChunkBase chunk = World.GetChunk(moving.Block.Position.GetPositionChunk());
-                vec3i pos = moving.Block.Position.GetPosition0();
+                ChunkBase chunk = World.GetChunk(moving.BlockPosition.GetPositionChunk());
+                vec3i pos = moving.BlockPosition.GetPosition0();
                 string s1 = ToBlockDebug(chunk, new vec3i(pos.x, pos.y + 1, pos.z));
                 string s2 = ToBlockDebug(chunk, new vec3i(pos.x, pos.y + 2, pos.z));
                 Debug.BlockFocus = string.Format(
                     "Block: {0} Light: {1} {2} H:{3}|{4} #{6}\r\n",
                     moving.Block,
                     s1, s2,
-                    "*",//chunk.Light.GetHeight(moving.Block.Position.X & 15, moving.Block.Position.Z & 15),
+                    chunk.Light.GetHeight(pos.x, pos.z),
+                    //"*",//chunk.Light.GetHeight(moving.Block.Position.X & 15, moving.Block.Position.Z & 15),
                         //chunk.Light.HeightMapMax
                     chunk.GetTopFilledSegment(),
                     "",
@@ -468,14 +474,13 @@ namespace MvkClient.Entity
         private string ToBlockDebug(ChunkBase chunk, vec3i pos)
         {
             ChunkStorage chunkStorage = chunk.StorageArrays[pos.y >> 4];
-            if (!chunkStorage.IsEmpty())
+           // if (!chunkStorage.IsEmptyData())
             {
-                int ls = chunkStorage.GetLightFor(pos.x, pos.y & 15, pos.z, EnumSkyBlock.Sky);
-                int lb = chunkStorage.GetLightFor(pos.x, pos.y & 15, pos.z, EnumSkyBlock.Block);
-                int cb = chunkStorage.countVoxel;
-                return string.Format("s{0} b{1} c{2}", ls, lb, cb);
+                int ls = chunkStorage.GetLightSky(pos.x, pos.y & 15, pos.z);
+                int lb = chunkStorage.GetLightBlock(pos.x, pos.y & 15, pos.z);
+                return string.Format("s{0} b{1} {2}", ls, lb, chunkStorage.ToString());
             }
-            return "@-@";
+            //return "@-@";
         }
         /// <summary>
         /// Обновить матрицу камеры
@@ -730,7 +735,7 @@ namespace MvkClient.Entity
             if (handAction == ActionHand.Left)
             {
                 // Разрушаем блок
-                if (itemInWorldManager.IsDestroyingBlock && ((moving.IsBlock() && !itemInWorldManager.BlockPosDestroy.ToVec3i().Equals(moving.Block.Position.ToVec3i())) || !moving.IsBlock()))
+                if (itemInWorldManager.IsDestroyingBlock && ((moving.IsBlock() && !itemInWorldManager.BlockPosDestroy.ToVec3i().Equals(moving.BlockPosition.ToVec3i())) || !moving.IsBlock()))
                 {
                     // Отмена разбитие блока, сменился блок
                     ClientMain.TrancivePacket(new PacketC07PlayerDigging(itemInWorldManager.BlockPosDestroy, PacketC07PlayerDigging.EnumDigging.About));
@@ -820,8 +825,8 @@ namespace MvkClient.Entity
             if (!itemInWorldManager.IsDestroyingBlock && moving.IsBlock())
             {
                 // Начало разбитие блока
-                ClientWorld.ClientMain.TrancivePacket(new PacketC07PlayerDigging(moving.Block.Position, PacketC07PlayerDigging.EnumDigging.Start));
-                itemInWorldManager.DestroyStart(moving.Block.Position);
+                ClientWorld.ClientMain.TrancivePacket(new PacketC07PlayerDigging(moving.BlockPosition, PacketC07PlayerDigging.EnumDigging.Start));
+                itemInWorldManager.DestroyStart(moving.BlockPosition);
             }
             else if (start)
             {

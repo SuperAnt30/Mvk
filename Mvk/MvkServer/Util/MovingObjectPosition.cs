@@ -12,27 +12,31 @@ namespace MvkServer.Util
         /// <summary>
         /// Объект сущьности
         /// </summary>
-        public EntityBase Entity { get; protected set; }
+        public EntityBase Entity { get; private set; }
         /// <summary>
         /// Объект блока
         /// </summary>
-        public BlockBase Block { get; protected set; }
+        public BlockBase Block { get; private set; }
+        /// <summary>
+        /// Позиция блока
+        /// </summary>
+        public BlockPos BlockPosition { get; private set; }
         /// <summary>
         /// Координата по которому ударили
         /// </summary>
-        public vec3i Hit { get; protected set; }
+        public vec3i Hit { get; private set; }
         /// <summary>
         /// Координата на какой надо ставить
         /// </summary>
-        public vec3i Put { get; protected set; }
+        public vec3i Put { get; private set; }
         /// <summary>
         /// Нормаль попадания
         /// </summary>
-        public vec3i Norm { get; protected set; }
+        public vec3i Norm { get; private set; }
         /// <summary>
         /// Координата куда попал луч
         /// </summary>
-        public vec3 RayHit { get; protected set; }
+        public vec3 RayHit { get; private set; }
         /// <summary>
         /// Сторона куда смотрит луч
         /// </summary>
@@ -52,9 +56,10 @@ namespace MvkServer.Util
         /// <param name="hit">Координата по которому ударили</param>
         /// <param name="norm">Нормаль попадания</param>
         /// <param name="rayHit">Координата куда попал луч</param>
-        public MovingObjectPosition(BlockBase block, vec3i hit, vec3i norm, vec3 rayHit)
+        public MovingObjectPosition(BlockBase block, BlockPos pos, vec3i hit, vec3i norm, vec3 rayHit)
         {
             Block = block;
+            BlockPosition = pos;
             RayHit = rayHit;
             Hit = hit;
             Put = hit + norm;

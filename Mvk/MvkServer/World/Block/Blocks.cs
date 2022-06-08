@@ -65,24 +65,34 @@ namespace MvkServer.World.Block
         /// <summary>
         /// Создать объект блока с позицией
         /// </summary>
-        public static BlockBase CreateBlock(EnumBlock eBlock, BlockPos pos)
-        {
-            BlockBase block = ToBlock(eBlock);
-            if (block != null)
-            {
-                block.SetEnumBlock(eBlock);
-                block.SetPosition(pos);
-            }
-            return block;
-        }
+        //public static BlockBase CreateBlock(EnumBlock eBlock, BlockPos pos)
+        //{
+        //    BlockBase block = ToBlock(eBlock);
+        //    if (block != null)
+        //    {
+        //        block.SetEnumBlock(eBlock);
+        //        block.SetPosition(pos);
+        //    }
+        //    return block;
+        //}
+
+
+        /// <summary>
+        /// Получить объект блока воздуха
+        /// </summary>
+        public static BlockBase GetAir() => BlocksInt[0];
+        /// <summary>
+        /// Получить объект блока воздуха c защитой на столкновение
+        /// </summary>
+        public static BlockBase GetNone() => BlocksInt[-1];
 
         /// <summary>
         /// Создать объект блока воздуха с позицией
         /// </summary>
-        public static BlockBase CreateAir(BlockPos pos) => CreateBlock(EnumBlock.Air, pos);
+       // public static BlockBase CreateAir(BlockPos pos) => CreateBlock(EnumBlock.Air, pos);
         /// <summary>
         /// Создать объект блока воздуха с позицией
         /// </summary>
-        public static BlockBase CreateAir(vec3i pos) => CreateAir(new BlockPos(pos));
+       // public static BlockBase CreateAir(vec3i pos) => CreateAir(new BlockPos(pos));
     }
 }

@@ -212,8 +212,7 @@ namespace MvkClient.Renderer
         /// <summary>
         /// Смещение яркости, по текстуре освещения
         /// </summary>
-        /// <param name="u"></param>
-        /// <param name="v"></param>
+        /// <param name="uv">x = sky, y = block</param>
         public static void LightmapTextureCoords(vec2 uv)
         {
             gl.MultiTexCoord2(OpenGL.GL_TEXTURE1, uv.x, uv.y);

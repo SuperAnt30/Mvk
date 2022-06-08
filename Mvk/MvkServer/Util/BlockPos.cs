@@ -113,6 +113,16 @@ namespace MvkServer.Util
         public bool EqualsPosition0(int x, int y, int z) => (X & 15) == x && Y == y && (Z & 15) == z;
 
         /// <summary>
+        /// Проверьте, имеет ли данный BlockPos действительные координаты
+        /// </summary>
+        public bool IsValid() => X >= -30000000 && Z >= -30000000 && X < 30000000 && Z < 30000000 && Y >= 0 && Y < 256;
+
+        /// <summary>
+        /// Проверьте, имеет ли данный BlockPos действительные координаты только по Y
+        /// </summary>
+        public bool IsValidY() => Y >= 0 && Y < 256;
+
+        /// <summary>
         /// Получить массив всех позиция попадающих в облость
         /// </summary>
         public static BlockPos[] GetAllInBox(vec3i from, vec3i to)

@@ -672,7 +672,8 @@ namespace MvkServer.Entity
                 study = 0.91f; // для воздух
                 if (OnGround)
                 {
-                    study = World.GetBlock(new BlockPos(Mth.Floor(Position.x), Mth.Floor(BoundingBox.Min.y) - 1, Mth.Floor(Position.z))).Slipperiness * .91f;
+                    
+                    study = World.GetBlockState(new BlockPos(Mth.Floor(Position.x), Mth.Floor(BoundingBox.Min.y) - 1, Mth.Floor(Position.z))).GetBlock().Slipperiness * .91f;
                 }
                 //if (OnGround) study = 0.546f; // трение блока, определить на каком блоке стоим (.6f блок) * .91f
 
@@ -1164,7 +1165,7 @@ namespace MvkServer.Entity
         /// </summary>
         protected void ParticleBlockDown(vec3 pos, int count)
         {
-            BlockBase block = World.GetBlock(new BlockPos(pos.x, pos.y - 0.20002f, pos.z));
+            BlockBase block = World.GetBlockState(new BlockPos(pos.x, pos.y - 0.20002f, pos.z)).GetBlock();
             if (block.IsParticle)
             {
                 for (int i = 0; i < count; i++)
@@ -1207,7 +1208,7 @@ namespace MvkServer.Entity
         {
             float y = Position.y + GetEyeHeight();
             BlockPos blockPos = new BlockPos(Position.x, y, Position.z);
-            BlockBase block = World.GetBlock(blockPos);
+            BlockBase block = World.GetBlockState(blockPos).GetBlock();
 
             if (block.Material == materialIn)
             {

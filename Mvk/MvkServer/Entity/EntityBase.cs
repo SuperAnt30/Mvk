@@ -3,6 +3,7 @@ using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World;
 using MvkServer.World.Block;
+using MvkServer.World.Chunk;
 using System;
 using System.Collections.Generic;
 
@@ -573,12 +574,24 @@ namespace MvkServer.Entity
         /// </summary>
         public vec2 GetBrightnessForRender()
         {
-            BlockState blockState = World.GetBlockState(new BlockPos(Position.x, Position.y, Position.z));
-            if (blockState.IsEmpty()) return new vec2(.03125f, .96875f);
+            BlockPos blockPos = new BlockPos(Position.x, Position.y, Position.z);
+            byte light = 0x0F;
+            if (blockPos.IsValid())
+            {
+                ChunkBase chunk = World.GetChunk(blockPos.GetPositionChunk());
+                if (chunk != null)
+                {
+                    ChunkStorage chunkStorage = chunk.StorageArrays[blockPos.Y >> 4];
+                    if (chunkStorage.IsSky())
+                    {
+                        light = chunkStorage.GetLightsFor(blockPos.X & 15, blockPos.Y & 15, blockPos.Z & 15);
+                    }
+                }
+            }
             return new vec2(
-                ((blockState.light & 0xF0) >> 4) / 16f + .03125f, // sky
-                (blockState.light & 0xF) / 16f + .03125f // block
-                );
+                ((light & 0xF0) >> 4) / 16f + .03125f, // sky
+                (light & 0xF) / 16f + .03125f // block
+            );
         }
 
     }

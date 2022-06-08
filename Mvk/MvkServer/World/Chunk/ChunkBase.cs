@@ -250,7 +250,9 @@ namespace MvkServer.World.Chunk
             {
                 if ((flagsYAreas & 1 << sy) != 0)
                 {
-                    //StorageArrays[sy].Clear();
+                    //StorageArrays[sy].CheckDataEmpty();
+                    //StorageArrays[sy].countVoxel = 0;
+
                     for (int y = 0; y < 16; y++)
                     {
                         for (int x = 0; x < 16; x++)
@@ -259,9 +261,17 @@ namespace MvkServer.World.Chunk
                             {
                                 StorageArrays[sy].SetData(x, y, z, (ushort)(buffer[i++] | buffer[i++] << 8));
                                 StorageArrays[sy].SetLightsFor(x, y, z, buffer[i++]);
+
+
+                                //StorageArrays[sy].data[y, x, z] = (ushort)(buffer[i++] | buffer[i++] << 8);
+                                //if (StorageArrays[sy].data[y, x, z] != 0) StorageArrays[sy].Plus();
+                                //StorageArrays[sy].light[y, x, z] = buffer[i++];
+
+
                             }
                         }
                     }
+                    //StorageArrays[sy].LightCheckBlock();
                     ModifiedToRender(sy);
                 }
             }
@@ -305,22 +315,22 @@ namespace MvkServer.World.Chunk
         /// <summary>
         /// Задать псевдо чанк байтами
         /// </summary>
-        public void SetBinaryY(byte[] buffer, int sy)
-        {
-            int i = 0;
-            //StorageArrays[sy].Clear();
-            for (int y = 0; y < 16; y++)
-            {
-                for (int x = 0; x < 16; x++)
-                {
-                    for (int z = 0; z < 16; z++)
-                    {
-                        StorageArrays[sy].SetData(x, y, z, (ushort)(buffer[i++] | buffer[i++] << 8));
-                        StorageArrays[sy].SetLightsFor(x, y, z, buffer[i++]);
-                    }
-                }
-            }
-        }
+        //public void SetBinaryY(byte[] buffer, int sy)
+        //{
+        //    int i = 0;
+        //    //StorageArrays[sy].Clear();
+        //    for (int y = 0; y < 16; y++)
+        //    {
+        //        for (int x = 0; x < 16; x++)
+        //        {
+        //            for (int z = 0; z < 16; z++)
+        //            {
+        //                StorageArrays[sy].SetData(x, y, z, (ushort)(buffer[i++] | buffer[i++] << 8));
+        //                StorageArrays[sy].SetLightsFor(x, y, z, buffer[i++]);
+        //            }
+        //        }
+        //    }
+        //}
 
         /// <summary>
         /// Обновить время использования чанка
@@ -339,7 +349,7 @@ namespace MvkServer.World.Chunk
         {
             for (int y = StorageArrays.Length - 1; y >= 0; y--)
             {
-                if (!StorageArrays[y].IsEmpty())
+                if (!StorageArrays[y].IsEmptyData())
                 {
                     return StorageArrays[y].GetYLocation();
                 }
@@ -355,48 +365,23 @@ namespace MvkServer.World.Chunk
             string s = "";
             for (int y = 0; y < StorageArrays.Length; y++)
             {
-                s += StorageArrays[y].IsEmpty() ? "." : "*";
+                s += StorageArrays[y].IsEmptyData() ? "." : "*";
+                s += StorageArrays[y].IsSky() ? "S" : "s";
             }
             return s;
         }
 
         #region Block
 
-        /// <summary>
-        /// Получить блок по координатам чанка XZ 0..15, Y 0..255
-        /// </summary>
-        public BlockBase GetBlock0(vec3i pos) => GetBlock0(pos.x, pos.y, pos.z);
-        /// <summary>
-        /// Получить блок по координатам чанка XZ 0..15, Y 0..255
-        /// </summary>
-        public BlockBase GetBlock0(int x, int y, int z)
-        {
-            EnumBlock eblock = GetEBlock(x, y, z);
-            return Blocks.CreateBlock(eblock, new BlockPos(Position.x << 4 | x, y, Position.y << 4 | z));
-        }
-        /// <summary>
-        /// Получить блок данных
-        /// </summary>
-        public BlockState GetBlockState(BlockPos blockPos)
-        {
-            int chy = blockPos.Y >> 4;
-            if (blockPos.Y >= 0 && chy < StorageArrays.Length)
-            {
-                ChunkStorage chunkStorage = StorageArrays[chy];
-                if (!chunkStorage.IsEmpty())
-                {
-                    vec3i pos = blockPos.GetPosition0();
-                    int by = blockPos.Y & 15;
-                    return new BlockState(chunkStorage.GetData(pos.x, by, pos.z), chunkStorage.GetLightsFor(pos.x, by, pos.z));
-                }
-            }
-            return new BlockState(EnumBlock.Air).Empty();
-        }
+        ///// <summary>
+        ///// Получить блок по координатам чанка XZ 0..15, Y 0..255
+        ///// </summary>
+        //public BlockBase GetBlock0(int x, int y, int z)
+        //{
+        //    BlockState blockState = GetBlockState(x, y, z);
+        //    return blockState.GetBlock();
+        //}
 
-        /// <summary>
-        /// Получить блок данных, XZ 0..15, Y 0..255
-        /// </summary>
-        //public BlockState GetBlockState(vec3i pos) => GetBlockState(pos.x, pos.y, pos.z);
         /// <summary>
         /// Получить блок данных, XZ 0..15, Y 0..255
         /// </summary>
@@ -406,28 +391,27 @@ namespace MvkServer.World.Chunk
             {
                 int chy = y >> 4;
                 ChunkStorage chunkStorage = StorageArrays[chy];
-                if (!chunkStorage.IsEmpty())
+                if (!chunkStorage.IsEmptyData())
                 {
-                    int by = y & 15;
-                    return new BlockState(chunkStorage.GetData(x, by, z), chunkStorage.GetLightsFor(x, by, z));
+                    return chunkStorage.GetBlockState(x, y & 15, z);
                 }
             }
-            return new BlockState();
+            return new BlockState().Empty();
         }
 
         /// <summary>
         /// Получить тип блок по координатам чанка XZ 0..15, Y 0..255
         /// </summary>
-        public EnumBlock GetEBlock(vec3i pos) => GetEBlock(pos.x, pos.y, pos.z);
-        /// <summary>
-        /// Получить тип блок по координатам чанка XZ 0..15, Y 0..255
-        /// </summary>
-        public EnumBlock GetEBlock(int x, int y, int z)
-        {
-            int ys = y >> 4;
-            if (x >> 4 == 0 && z >> 4 == 0 && !StorageArrays[ys].IsEmpty()) return StorageArrays[ys].GetEBlock(x, y & 15, z);
-            return EnumBlock.Air;
-        }
+        //public EnumBlock GetEBlock(vec3i pos) => GetEBlock(pos.x, pos.y, pos.z);
+        ///// <summary>
+        ///// Получить тип блок по координатам чанка XZ 0..15, Y 0..255
+        ///// </summary>
+        //public EnumBlock GetEBlock(int x, int y, int z)
+        //{
+        //    int ys = y >> 4;
+        //    if (x >> 4 == 0 && z >> 4 == 0 && !StorageArrays[ys].IsEmpty()) return StorageArrays[ys].GetEBlock(x, y & 15, z);
+        //    return EnumBlock.Air;
+        //}
 
         /// <summary>
         /// Задать тип блок по координатам чанка XZ 0..15, Y 0..255
@@ -437,8 +421,24 @@ namespace MvkServer.World.Chunk
             int y = pos.y >> 4;
             if (pos.x >> 4 == 0 && pos.z >> 4 == 0 && pos.y >= 0 && y < COUNT_HEIGHT)
             {
-                StorageArrays[y].SetEBlock(pos.x, pos.y & 15, pos.z, eBlock);
+                StorageArrays[y].SetData(pos.x, pos.y & 15, pos.z, (ushort)eBlock);
+                //StorageArrays[y].SetEBlock(pos.x, pos.y & 15, pos.z, eBlock);
             }
+        }
+
+        public void SetBlockStateClient(BlockPos blockPos, BlockState blockState)
+        {
+            int bx = blockPos.X & 15;
+            int by = blockPos.Y & 15;
+            int bz = blockPos.Z & 15;
+            int chy = blockPos.Y >> 4;
+            //if (StorageArrays[chy].IsEmptyData())// && StorageArrays[chy].IsEmptyLight())
+            //{
+            //    // Если вверхняя часть впервые создаётся, заполняем небесный свет все блоки
+            //    StorageArrays[chy].LightSky();
+            //}
+            StorageArrays[chy].SetData(bx, by, bz, blockState.data);
+            StorageArrays[chy].SetLightsFor(bx, by, bz, blockState.light);
         }
 
         /// <summary>
@@ -446,7 +446,7 @@ namespace MvkServer.World.Chunk
         /// </summary>
         /// <param name="blockPos">позиция блока</param>
         /// <param name="blockState">данные нового блока</param>
-        public BlockState SetBlockState(BlockPos blockPos, BlockState blockState)
+        public BlockState SetBlockState(BlockPos blockPos, BlockState blockState, bool isCheckLight)
         {
             int bx = blockPos.X & 15;
             int by = blockPos.Y;
@@ -454,7 +454,7 @@ namespace MvkServer.World.Chunk
 
            // Light.CheckPrecipitationHeightMap(blockPos);
 
-            BlockState blockStateOld = GetBlockState(blockPos);
+            BlockState blockStateOld = GetBlockState(bx, by, bz);
 
             if (blockState.Equals(blockStateOld)) return new BlockState().Empty();
 
@@ -465,34 +465,26 @@ namespace MvkServer.World.Chunk
             int chy = blockPos.Y >> 4;
             // bool heightMapUp = false;
 
-            if (StorageArrays[chy].IsEmpty())
+            if (StorageArrays[chy].IsEmptyData())
             {
                 if (block.EBlock == EnumBlock.Air) return new BlockState().Empty();
                 //heightMapUp = by >= height;
 
                 // Если вверхняя часть впервые создаётся, заполняем небесный свет все блоки
-                StorageArrays[chy].LightSky();
+                //StorageArrays[chy].LightSky();
             }
 
             StorageArrays[chy].SetData(bx, by & 15, bz, blockState.data);
             //StorageArrays[chy].Set(bx, by & 15, bz, blockState);
 
-            if (blockOld != block)
+            if (isCheckLight && blockOld != block)
             {
-                
-                if (!World.IsRemote)
-                {
-                    Light.CheckLightSetBlock(blockPos, block.LightOpacity, blockOld.LightOpacity, block.LightValue != blockOld.LightValue);
-
-                    //blockOld.breakBlock(this.worldObj, blockPos, blockStateOld);
-                }
-                //else if (blockOld is ITileEntityProvider)
-                //{
-                //    this.worldObj.removeTileEntity(blockPos);
-                //}
+                // проверка света
+                //if (World.IsRemote)
+                Light.CheckLightSetBlock(blockPos, block.LightOpacity, blockOld.LightOpacity, block.LightValue != blockOld.LightValue);
             }
 
-            if (StorageArrays[chy].IsEmpty() || StorageArrays[chy].GetEBlock(bx, by & 15, bz) != block.EBlock) return new BlockState();
+            if (StorageArrays[chy].IsEmptyData() || StorageArrays[chy].GetData(bx, by & 15, bz) != (ushort)block.EBlock) return new BlockState();
 
             //if (heightMapUp)
             //{
@@ -541,67 +533,6 @@ namespace MvkServer.World.Chunk
             Modified();
             return blockStateOld;
         }
-
-        /// <summary>
-        /// Задать блок данных по координатам чанка XZ 0..15, Y 0..255
-        /// </summary>
-        //public bool SetBlockState(vec3i pos, BlockState blockState)
-        //{
-        //    if (pos.x >> 4 == 0 && pos.z >> 4 == 0 && pos.y >= 0 && pos.y < COUNT_HEIGHT << 4)
-        //    {
-        //        int chy = pos.y >> 4;
-        //        int by = pos.y & 15;
-        //        //if (true)//!World.IsRemote)
-        //        if (!World.IsRemote)
-        //        {
-        //            // сервер
-        //            // BlockState blockStateOld = GetBlockState(pos);
-        //            //int height = Light.GetHeight(pos.x, pos.z);
-        //            //// блок выше высотной высоты
-        //            //bool isHeight = pos.y > height;
-
-        //            BlockBase blockNew = Blocks.CreateBlock(blockState.GetEBlock(),
-        //                    new BlockPos(Position.x << 4 | pos.x, pos.y, Position.y << 4 | pos.z));
-        //            BlockBase blockOld = World.GetBlock(blockNew.Position);
-
-        //            //breakBlock()
-        //            StorageArrays[chy].SetData(pos.x, by, pos.z, blockState.GetData());
-        //           // StorageArrays[chy].SetLightsFor(pos.x, by, pos.z, blockState.GetLightsFor());
-
-        //            //if (isHeight)
-        //            //{
-        //            //    Light.GenerateHeightMapSky();
-        //            //}
-        //            //else
-        //            {
-
-        //                // TODO::Light
-        //                //Light.CheckLightSetBlock(blockNew.Position, blockNew.LightOpacity, blockOld.LightOpacity,
-        //                //    blockNew.LightValue != blockOld.LightValue);
-
-        //                //int loNew = blockNew.LightOpacity;
-        //                //int loOld = blockOld.LightOpacity;
-        //                //if (loOld > 0)
-        //                //{
-        //                //    if ()
-        //                //}
-        //            }
-
-        //        }
-        //        else
-        //        {
-        //            StorageArrays[chy].SetData(pos.x, by, pos.z, blockState.GetData());
-        //            //StorageArrays[chy].SetLightsFor(pos.x, by, pos.z, 255);
-        //            //ModifiedToRender(chy);
-        //            // TODO::2022-04-20 сделать свет ближайший, временно
-        //           // StorageArrays[chy].SetLightsFor(pos.x, by, pos.z, blockState.GetLightsFor());
-        //        }
-
-        //        Modified();
-        //        return true;
-        //    }
-        //    return false;
-        //}
 
         #endregion
 
@@ -775,9 +706,7 @@ namespace MvkServer.World.Chunk
         /// </summary>
         public void Update()
         {
-            //Light.StartRecheckGaps();
-            // это скорее всего аналог func_150804_b
-            //Light.Update();
+
         }
 
         /// <summary>

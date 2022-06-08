@@ -142,7 +142,6 @@
     <Compile Include="World\Block\List\BlockTurf.cs" />
     <Compile Include="World\Block\List\BlockStone.cs" />
     <Compile Include="World\Block\MaterialBase.cs" />
-    <Compile Include="World\Chunk\ChunkCoordPlayers.cs" />
     <Compile Include="Management\PlayerManager.cs" />
     <Compile Include="Network\IPacket.cs" />
     <Compile Include="Network\ITransfer.cs" />
@@ -181,10 +180,6 @@
     <Compile Include="World\Chunk\Light\MapLight.cs" />
     <Compile Include="World\Chunk\Light\WorkingLight.cs" />
     <Compile Include="World\CollisionBase.cs" />
-    <Compile Include="World\Light\ChunkLight.cs" />
-    <Compile Include="World\Light\LightChunk.cs" />
-    <Compile Include="World\Light\LightWorld.cs" />
-    <Compile Include="World\Light\WorldLight.cs" />
     <Compile Include="World\RangeModified.cs" />
     <Compile Include="World\WorldBase.cs" />
     <Compile Include="World\WorldBaseSky.cs" />

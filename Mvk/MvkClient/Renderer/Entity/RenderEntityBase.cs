@@ -126,8 +126,8 @@ namespace MvkClient.Renderer.Entity
 
                 for (int i = 0; i < blocks.Length; i++)
                 {
-                    BlockBase block = world.GetBlock(blocks[i]);
-                    BlockBase blockUp = world.GetBlock(block.Position.OffsetUp());
+                    BlockBase block = world.GetBlockState(blocks[i]).GetBlock();
+                    BlockBase blockUp = world.GetBlockState(blocks[i].OffsetUp()).GetBlock();
                     if (blockUp.IsAir && block.IsFullCube)
                     {
                         GLRender.PushMatrix();

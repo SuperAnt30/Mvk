@@ -234,15 +234,8 @@ namespace MvkServer.World.Chunk
 
                 }
 
-                // TODO::2022-04-18 !!!
                 chunkMapping.Set(chunk);
-                //chunk.Light.Debug();
-                //chunk.Light.GenerateHeightMap();
                 chunk.Light.GenerateHeightMapSky();
-                // TODO::Light
-                //chunk.Light.GenerateSkylightMap();
-
-                //chunk.Light.ResetRelightChecks();
                 chunk.OnChunkLoad();
             }
             
@@ -256,10 +249,8 @@ namespace MvkServer.World.Chunk
         {
             int count = 0;
             float[] noise = new float[4096];
-            //TODO::шум 3д для пещер сильно тормазит, надо оптимизировать как-то
             for (int y0 = 0; y0 <= yMax; y0++)
             {
-                //int y0 = 3;
                 worldServer.Noise.Cave.GenerateNoise3d(noise, chunk.Position.x * 16, y0 * 16, chunk.Position.y * 16, 16, 16, 16, .05f, .05f, .05f);
                 count = 0;
                 for (int x = 0; x < 16; x++)
@@ -271,7 +262,8 @@ namespace MvkServer.World.Chunk
                             if (noise[count] < -1f)
                             {
                                 vec3i pos = new vec3i(x, y0 << 4 | y, z);
-                                Block.EnumBlock enumBlock = chunk.GetEBlock(pos);
+                                int y2 = y0 << 4 | y;
+                                Block.EnumBlock enumBlock = chunk.GetBlockState(x, y2, z).GetBlock().EBlock;
                                 if (enumBlock != Block.EnumBlock.Air && enumBlock != Block.EnumBlock.Stone
                                     && enumBlock != Block.EnumBlock.Water)
                                 {

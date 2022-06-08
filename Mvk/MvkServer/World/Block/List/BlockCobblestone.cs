@@ -97,9 +97,9 @@ namespace MvkServer.World.Block.List
         /// <summary>
         /// Передать список ограничительных рамок блока
         /// </summary>
-        public override AxisAlignedBB[] GetCollisionBoxesToList()
+        public override AxisAlignedBB[] GetCollisionBoxesToList(BlockPos blockPos)
         {
-            vec3 pos = Position.ToVec3();
+            vec3 pos = blockPos.ToVec3();
             vec3 min, max;
 
             //AxisAlignedBB[] aabbs = new AxisAlignedBB[1];

@@ -376,10 +376,7 @@ namespace MvkClient.Network
 
         private void Handle23BlockChange(PacketS23BlockChange packet)
         {
-            //ClientMain.World.SetBlockState(packet.GetBlockPos(), packet.GetDigging());
-            //ushort data = packet.GetBlockState().GetData();
-            //EnumBlock eb = (EnumBlock)(data & 0xFFF);
-            ClientMain.World.SetBlockState(packet.GetBlockPos(), packet.GetBlockState());
+            ClientMain.World.SetBlockStateClient(packet.GetBlockPos(), packet.GetBlockState());
         }
 
         private void Handle25BlockBreakAnim(PacketS25BlockBreakAnim packet)

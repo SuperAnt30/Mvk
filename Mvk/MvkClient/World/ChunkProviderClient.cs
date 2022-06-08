@@ -93,6 +93,8 @@ namespace MvkClient.World
             }
             else
             {
+                //if (Debug.DStart && !packet.GetPos().Equals(new vec2i(-1, -1))) return;
+
                 ChunkRender chunk = GetChunkRender(packet.GetPos());
                 bool isNew = chunk == null;
                 if (isNew)
@@ -113,6 +115,8 @@ namespace MvkClient.World
                     // Пометка для рендера
                     //ModifiedAreaOne(chunk.Position, packet.GetFlagsYAreas());
                 }
+                //chunk.Light.GenerateHeightMapSky();
+                chunk.Light.GenerateHeightMap();
                 //chunk.Light.ResetRelightChecks();
             }
         }

@@ -22,13 +22,13 @@ namespace MvkServer.Util
         /// <summary>
         /// Создать объект луча задав положение луча и вектор направление
         /// </summary>
-        /// <param name="pos">начальная точка</param>
+        /// <param name="a">начальная точка</param>
         /// <param name="dir">вектор луча</param>
         /// <param name="maxDist">максимальная дистания</param>
-        public RayCross(vec3 pos, vec3 dir, float maxDist)
+        public RayCross(vec3 a, vec3 dir, float maxDist)
         {
-            pos1 = pos;
-            pos2 = pos + dir * maxDist;
+            pos1 = a;
+            pos2 = a + dir * maxDist;
         }
 
         /// <summary>

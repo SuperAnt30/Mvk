@@ -14,6 +14,7 @@ namespace MvkClient.Renderer
         /// </summary>
         private Client clientMain;
         private BlockBase selectBlock;
+        private BlockPos selectBlockPos;
         private vec3 pos;
 
         public RenderBlockCursor(Client client)
@@ -21,7 +22,7 @@ namespace MvkClient.Renderer
             clientMain = client;
         }
 
-        public void Render(BlockBase selectBlock)
+        public void Render(BlockBase selectBlock, BlockPos selectBlockPos)
         {
             IsHidden = selectBlock == null;
 
@@ -34,10 +35,11 @@ namespace MvkClient.Renderer
                     compiled = false;
                     this.pos = pos;
                 }
-                if (this.selectBlock == null || !this.selectBlock.Equals(selectBlock))
+                if (this.selectBlock == null || !this.selectBlockPos.Equals(selectBlockPos))
                 {
                     compiled = false;
                     this.selectBlock = selectBlock;
+                    this.selectBlockPos = selectBlockPos;
                 }
                 Render();
             }
@@ -53,8 +55,8 @@ namespace MvkClient.Renderer
                 GLRender.Texture2DDisable();
                 GLRender.LineWidth(2f);
 
-                AxisAlignedBB[] axes = clientMain.Player.SelectBlock.GetCollisionBoxesToList();
-                float dis = glm.distance(pos, clientMain.Player.SelectBlock.Position.ToVec3()) * .01f;
+                AxisAlignedBB[] axes = clientMain.Player.SelectBlock.GetCollisionBoxesToList(selectBlockPos);
+                float dis = glm.distance(pos, selectBlockPos.ToVec3()) * .01f;
                 dis *= dis;
                 dis += 0.001f;
                 GLRender.DepthDisable();

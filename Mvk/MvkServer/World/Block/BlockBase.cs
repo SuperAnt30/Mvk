@@ -30,7 +30,7 @@ namespace MvkServer.World.Block
         /// <summary>
         /// Позиция блока в мире
         /// </summary>
-        public BlockPos Position { get; protected set; }// = new BlockPos();
+       // public BlockPos Position { get; protected set; }// = new BlockPos();
         /// <summary>
         /// Явлыется ли блок небом
         /// </summary>
@@ -102,7 +102,7 @@ namespace MvkServer.World.Block
         /// <summary>
         /// Задать позицию блока
         /// </summary>
-        public void SetPosition(BlockPos pos) => Position = pos;
+       // public void SetPosition(BlockPos pos) => Position = pos;
         /// <summary>
         /// Задать тип блока
         /// </summary>
@@ -113,19 +113,19 @@ namespace MvkServer.World.Block
         /// <summary>
         /// Передать список  ограничительных рамок блока
         /// </summary>
-        public virtual AxisAlignedBB[] GetCollisionBoxesToList()
+        public virtual AxisAlignedBB[] GetCollisionBoxesToList(BlockPos pos)
         {
-            vec3 min = Position.ToVec3();
+            vec3 min = pos.ToVec3();
             return new AxisAlignedBB[] { new AxisAlignedBB(min, min + 1f) };
         }
 
         /// <summary>
         /// Получить одну большую рамку блока, если их несколько они объеденяться
         /// </summary>
-        public AxisAlignedBB GetCollision()
+        public AxisAlignedBB GetCollision(BlockPos pos)
         {
             if (!IsCollidable) return null;
-            AxisAlignedBB[] axes = GetCollisionBoxesToList();
+            AxisAlignedBB[] axes = GetCollisionBoxesToList(pos);
             if (axes.Length > 0)
             {
                 AxisAlignedBB aabb = axes[0];
@@ -135,25 +135,26 @@ namespace MvkServer.World.Block
                 }
                 return aabb;
             }
-            vec3 min = Position.ToVec3();
+            vec3 min = pos.ToVec3();
             return new AxisAlignedBB(min, min + 1f);
         }
 
         /// <summary>
         /// Проверить колизию блока на пересечение луча
         /// </summary>
-        /// <param name="pos">точка от куда идёт лучь</param>
+        /// <param name="pos">позиция блока</param>
+        /// <param name="a">точка от куда идёт лучь</param>
         /// <param name="dir">вектор луча</param>
         /// <param name="maxDist">максимальная дистания</param>
-        public bool CollisionRayTrace(vec3 pos, vec3 dir, float maxDist)
+        public bool CollisionRayTrace(BlockPos pos, vec3 a, vec3 dir, float maxDist)
         {
             if (IsAction)
             {
                 if (IsBoundingBoxAll) return true;
 
                 // Если блок не полный, обрабатываем хитбокс блока
-                RayCross ray = new RayCross(pos, dir, maxDist);
-                return ray.IsCrossAABBs(GetCollisionBoxesToList());
+                RayCross ray = new RayCross(a, dir, maxDist);
+                return ray.IsCrossAABBs(GetCollisionBoxesToList(pos));
             }
             return false;
         }
@@ -214,14 +215,14 @@ namespace MvkServer.World.Block
         /// <summary>
         /// Проверка равенства блока по координатам и типу
         /// </summary>
-        public bool Equals(BlockBase block)
-        {
-            return block.Position.X == Position.X && block.Position.Y == Position.Y && block.Position.Z == Position.Z
-                && block.EBlock == EBlock;
-        }
+        //public bool Equals(BlockBase block)
+        //{
+        //    return block.Position.X == Position.X && block.Position.Y == Position.Y && block.Position.Z == Position.Z
+        //        && block.EBlock == EBlock;
+        //}
         /// <summary>
         /// Строка
         /// </summary>
-        public override string ToString() => EBlock.ToString() + " " + Position.ToString();
+        public override string ToString() => EBlock.ToString();
     }
 }

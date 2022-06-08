@@ -69,10 +69,6 @@ namespace MvkClient.Renderer.Block
         /// </summary>
         private Pole cSide;
         private int cSideInt;
-        /// <summary>
-        /// Объект создан для генерации блока в мире, не GUI
-        /// </summary>
-       // private readonly bool isWorld = false;
 
         /// <summary>
         /// Видим только лицевую сторону полигона
@@ -82,7 +78,7 @@ namespace MvkClient.Renderer.Block
         /// Тень на углах
         /// </summary>
         private readonly bool ambientOcclusion = false;
-        private readonly int[] resultSide2 = new int[] { -1, -1, -1, -1, -1, -1 };
+        private readonly int[] resultSide = new int[] { -1, -1, -1, -1, -1, -1 };
 
         /// <summary>
         /// Создание блока генерации для мира
@@ -90,21 +86,8 @@ namespace MvkClient.Renderer.Block
         public BlockRender(ChunkRender chunkRender)
         {
             ambientOcclusion = Setting.SmoothLighting;
-            //isWorld = true;
             chunk = chunkRender;
         }
-
-        /// <summary>
-        /// Создание блока генерации для мира
-        /// </summary>
-        //public BlockRender(ChunkRender chunkRender, BlockState blockState, BlockPos blockPos) : this(blockState.GetBlock(), blockPos)
-        //{
-        //    ambientOcclusion = Setting.SmoothLighting;
-        //    //isWorld = true;
-        //    chunk = chunkRender;
-        //    // позиция блока в чанке
-        //    posChunk = new vec3i(blockPos.X & 15, blockPos.Y, blockPos.Z & 15);
-        //}
 
         /// <summary>
         /// Создание блока генерации для GUI
@@ -122,8 +105,6 @@ namespace MvkClient.Renderer.Block
             posChunk = new vec3i(blockPos.X & 15, blockPos.Y, blockPos.Z & 15);
         }
 
-        
-
         /// <summary>
         /// Получть Сетку блока с возможностью двух сторон
         /// </summary>
@@ -132,25 +113,15 @@ namespace MvkClient.Renderer.Block
         {
             posChunk = new vec3i(blockPos.X & 15, blockPos.Y, blockPos.Z & 15);
 
-            resultSide2[0] = GetResultSide2(posChunk.x, posChunk.y + 1, posChunk.z);
-            resultSide2[1] = GetResultSide2(posChunk.x, posChunk.y - 1, posChunk.z);
-            resultSide2[2] = GetResultSide2(posChunk.x + 1, posChunk.y, posChunk.z);
-            resultSide2[3] = GetResultSide2(posChunk.x - 1, posChunk.y, posChunk.z);
-            resultSide2[4] = GetResultSide2(posChunk.x, posChunk.y, posChunk.z - 1);
-            resultSide2[5] = GetResultSide2(posChunk.x, posChunk.y, posChunk.z + 1);
+            resultSide[0] = GetResultSide(posChunk.x, posChunk.y + 1, posChunk.z);
+            resultSide[1] = GetResultSide(posChunk.x, posChunk.y - 1, posChunk.z);
+            resultSide[2] = GetResultSide(posChunk.x + 1, posChunk.y, posChunk.z);
+            resultSide[3] = GetResultSide(posChunk.x - 1, posChunk.y, posChunk.z);
+            resultSide[4] = GetResultSide(posChunk.x, posChunk.y, posChunk.z - 1);
+            resultSide[5] = GetResultSide(posChunk.x, posChunk.y, posChunk.z + 1);
 
-            //ResultSide[] resultSide = new ResultSide[]
-            //{
-            //    GetResultSide(check, posChunk.x, posChunk.y + 1, posChunk.z),
-            //    //GetResultSide(check, posChunk.x, posChunk.y - 1, posChunk.z),
-            //    //GetResultSide(check, posChunk.x + 1, posChunk.y, posChunk.z),
-            //    //GetResultSide(check, posChunk.x - 1, posChunk.y, posChunk.z),
-            //    //GetResultSide(check, posChunk.x, posChunk.y, posChunk.z - 1),
-            //    //GetResultSide(check, posChunk.x, posChunk.y, posChunk.z + 1)
-            //};
-
-            if (resultSide2[0] != -1 || resultSide2[1] != -1 || resultSide2[2] != -1
-                || resultSide2[3] != -1 || resultSide2[4] != -1 || resultSide2[5] != -1)
+            if (resultSide[0] != -1 || resultSide[1] != -1 || resultSide[2] != -1
+                || resultSide[3] != -1 || resultSide[4] != -1 || resultSide[5] != -1)
             {
                 if (block.Material == EnumMaterial.Water)
                 {
@@ -233,28 +204,19 @@ namespace MvkClient.Renderer.Block
         /// </summary>
         private void RenderMeshSideCheck()
         {
-            //if (isWorld)
+            if (resultSide[cSideInt] != -1)
             {
-                //ResultSide resultSide = GetResultSide(posChunk + EnumFacing.DirectionVec(cSide));
-                // TODO::2022-05-05 боковые от чанка
-                if (/*resultSide.IsEmpty() || resultSide[cSideInt].IsDraw()*/ resultSide2[cSideInt] != -1)
+                byte light = (byte)resultSide[cSideInt];
+                RenderMeshFace(light);
+                if (DamagedBlocksValue != -1)
                 {
-                    byte light = (byte)resultSide2[cSideInt];
+                    Face face = cFace;
+                    cFace = new Face(cSide, 4032 + DamagedBlocksValue, true, cFace.GetColor());
                     RenderMeshFace(light);
-                    if (DamagedBlocksValue != -1)
-                    {
-                        Face face = cFace;
-                        cFace = new Face(cSide, 4032 + DamagedBlocksValue, true, cFace.GetColor());
-                        RenderMeshFace(light);
-                        cFace = face;
-                    }
-
+                    cFace = face;
                 }
+
             }
-            //else
-            //{
-            //    buffer.AddRange(RenderMeshFace(255));
-            //}
         }
 
 
@@ -345,7 +307,7 @@ namespace MvkClient.Renderer.Block
                 //}
                 //else
                 //{
-                    // TODO:: ao работает чисто от яркости света, тёмный блок уже даёт темноту!!!
+                    // ao работает чисто от яркости света, тёмный блок уже даёт темноту!!!
                     //colorAO = new vec3[] { color * ao.x, color * ao.y, color * ao.z, color * ao.w };
                     //colorAO = new vec3[] { color, color, color, color };
                     //colorAO = new vec3[] { ambient.GetColor(0, color), ambient.GetColor(1, color),
@@ -476,7 +438,7 @@ namespace MvkClient.Renderer.Block
                     f = GetAmbientOcclusionLight(-1, 1, -1);
                     break;
                 default:
-                    a = b = c = d = e = f = g = h = new AmbientOcclusionLight(0, 255, new vec3(1));
+                    a = b = c = d = e = f = g = h = new AmbientOcclusionLight(255, new vec3(1));
                     break;
             }
             return new AmbientOcclusionLights(new AmbientOcclusionLight[] { a, b, c, d, e, f, g, h });
@@ -488,12 +450,11 @@ namespace MvkClient.Renderer.Block
         /// </summary>
         private AmbientOcclusionLight GetAmbientOcclusionLight(int x, int y, int z)
         {
-            // ResultSide resultSide = GetResultSide(posChunk + new vec3i(x, y, z));
-            ResultSide resultSide = GetResultSide(true, posChunk.x + x, posChunk.y + y, posChunk.z + z);// + new vec3i(x, y, z));
+            ResultSide resultSide = GetResultSideAO(true, posChunk.x + x, posChunk.y + y, posChunk.z + z);
             // Параметр затемнение одного угла к блоку
-            float color = (!resultSide.IsEmpty() && resultSide.BlockCache().IsNotTransparent() && resultSide.BlockCache().IsFullCube)
-                ? .1f : 0;
-            return new AmbientOcclusionLight(color, resultSide.Light(), resultSide.GetColor());
+            //float color = (!resultSide.IsEmpty() && resultSide.BlockCache().IsNotTransparent() && resultSide.BlockCache().IsFullCube)
+            //    ? .1f : 0;
+            return new AmbientOcclusionLight(resultSide.Light(), resultSide.GetColor());
         }
 
         /// <summary>
@@ -545,20 +506,24 @@ namespace MvkClient.Renderer.Block
             GLRender.PopMatrix();
         }
 
-
-
         /// <summary>
-        /// Получить результат стороны с соседним блоком
+        /// Получить яркость (блока + неба) стороны с соседним блоком
         /// </summary>
-        private int GetResultSide2(int x, int y, int z)
+        private int GetResultSide(int x, int y, int z)
         {
-            if (!check) return 255;
+            if (!check)
+            {
+                // Яркость неба и блока Макс
+                return 0xFF;
+            }
 
-            //return 255;
-            //vec3i pos = posChunk + EnumFacing.DirectionVec(side);
             int yc = y >> 4;
             // проверка высоты
-            if (yc < 0 || yc >= ChunkBase.COUNT_HEIGHT) return 15;
+            if (yc < 0 || yc >= ChunkBase.COUNT_HEIGHT)
+            {
+                // Только яркость неба макс
+                return 0x0F;
+            }
 
             int xc = chunk.Position.x + (x >> 4);
             int zc = chunk.Position.y + (z >> 4);
@@ -566,21 +531,24 @@ namespace MvkClient.Renderer.Block
             int yv = y & 15;
             int zv = z & 15;
 
-            //chunkCheck = chunk;
             // Определяем рабочий чанк соседнего блока
             chunkCheck = (xc == chunk.Position.x && zc == chunk.Position.y) ? chunk : chunk.Chunk(new vec2i(xc, zc));
-            //: Chunk.World.ChunkPr.GetChunk(new vec2i(xc, zc));
 
-            // TODO::!!!
-            if (chunkCheck == null || chunkCheck.StorageArrays[yc].IsEmpty()) return 15; // 1f
+            //TODO::2022-06-06 IsEmptyData
+            // Тут нужна проверка на ещё не созданный псевдо чанк
+            
+            if (chunkCheck == null || !chunkCheck.StorageArrays[yc].IsSky())// || chunkCheck.StorageArrays[yc].IsEmptyData())
+            {
+                // Только яркость неба макс
+                return 0x0F;
+            }
 
-            ChunkStorage chunkStorage = chunkCheck.StorageArrays[yc];
-            ushort data = chunkStorage.data[yv, xv, zv];
-            int id = data & 0xFFF;
-            //return id == 0 ? 255 : -1;
+            int id = 0;
+            if (!chunkCheck.StorageArrays[yc].IsEmptyData())
+            {
+                id = chunkCheck.StorageArrays[yc].GetData(xv, yv, zv) & 0xFFF;
+            }
             blockCheck = Blocks.BlocksInt[id];
-            //EnumBlock eBlock = chunk.StorageArrays[yc].GetEBlock(xv, yv, zv);
-            //BlockBase block = Blocks.GetBlockCache(eBlock);
 
             // TODO:: material IsTransparent
             bool isDraw = id == 0 || !blockCheck.IsNotTransparent();
@@ -600,21 +568,17 @@ namespace MvkClient.Renderer.Block
             if (isDraw)
             {
                 //return 136;
-                return chunkStorage.light[yv, xv, zv];
+                // Яркость берётся из данных блока
+                return chunkCheck.StorageArrays[yc].GetLightsFor(xv, yv, zv);
             }
+            // Блок без яркости, к примеру сплошной блок
             return -1;
-
-            //byte light = chunk.StorageArrays[yc].GetLightsFor(xv, yv, zv);
-            //// TODO::Light
-            //light = (byte)(isDraw ? 255 : 0);
-
-            //return isDraw ? light : -1;
         }
 
         /// <summary>
-        /// Получить результат стороны с соседним блоком
+        /// Получить результат стороны с соседним блоком для AmbientOcclusion
         /// </summary>
-        private ResultSide GetResultSide(bool check, int x, int y, int z)
+        private ResultSide GetResultSideAO(bool check, int x, int y, int z)
         {
             if (!check) return new ResultSide(true);
 
@@ -628,42 +592,47 @@ namespace MvkClient.Renderer.Block
             vec3 colorBiome = GetBiomeColor(xc << 4 | xv, zc << 4 | zv);
 
             // проверка высоты
-            if (yc < 0 || yc >= ChunkBase.COUNT_HEIGHT) return new ResultSide(15, new vec3(1f));
+            if (yc < 0 || yc >= ChunkBase.COUNT_HEIGHT) return new ResultSide(0x0F, new vec3(1f));
 
             // Определяем рабочий чанк соседнего блока
             ChunkBase chunk = (xc == this.chunk.Position.x && zc == this.chunk.Position.y) ? this.chunk
                 : this.chunk.Chunk(new vec2i(xc, zc));
-            //: Chunk.World.ChunkPr.GetChunk(new vec2i(xc, zc));
-            
-            // TODO::!!!
-            if (chunk == null || chunk.StorageArrays[yc].IsEmpty()) return new ResultSide(15, colorBiome); // 1f
 
-            EnumBlock eBlock = chunk.StorageArrays[yc].GetEBlock(xv, yv, zv);
-            BlockBase block = Blocks.GetBlockCache(eBlock);
+            //TODO::2022-06-06 IsEmptyData
+            if (chunk == null || !chunk.StorageArrays[yc].IsSky())// || chunk.StorageArrays[yc].IsEmptyData())
+            {
+                return new ResultSide(0x0F, colorBiome); // 1f
+            }
+
+            int id = 0;
+            if (!chunk.StorageArrays[yc].IsEmptyData())
+            {
+                id = chunk.StorageArrays[yc].GetData(xv, yv, zv) & 0xFFF;
+            }
+            blockCheck = Blocks.BlocksInt[id];
+
+            //BlockBase block = chunk.GetBlockState(xv, y, zv).GetBlock();
 
             // TODO:: material IsTransparent
-            bool isDraw = eBlock == EnumBlock.Air || !block.IsNotTransparent();
+            bool isDraw = id == 0 || !blockCheck.IsNotTransparent();
+            //bool isDraw = block.IsAir || !block.IsNotTransparent();
 
             // Для слияния однотипных блоков
-            if (isDraw && (eBlock == this.block.EBlock || this.block.Material == block.Material)) 
+            if (isDraw && (blockCheck.EBlock == block.EBlock || blockCheck.Material == block.Material)) 
                 //|| (Block.Material == EnumMaterial.Water && block.IsAlpha)))
                 // TODO::2022-04-20 нужен новый слой на воде между альфой, он просто цвет
             {
                 isDraw = false;
             }
 
-            if (!isDraw && this.block.AllDrawing) isDraw = true;
+            if (!isDraw && block.AllDrawing) isDraw = true;
 
             byte light = chunk.StorageArrays[yc].GetLightsFor(xv, yv, zv);
-            // TODO::Light
-            //light = (byte)(isDraw ? 255 : 0);
 
             return new ResultSide(
                 isDraw,
-                //chunk.StorageArrays[yc].GetLightFor(xv, yv, zv, EnumSkyBlock.Sky),
-                //chunk.StorageArrays[yc].GetLightFor(xv, yv, zv, EnumSkyBlock.Block),
-                light,
-                block,
+                light,//(byte)(id == 0 ? light : 0x00),//light,
+                blockCheck,
                 colorBiome
             );
         }
@@ -674,8 +643,6 @@ namespace MvkClient.Renderer.Block
         private struct ResultSide
         {
             private readonly bool isDraw;
-            //private readonly byte lightSky;
-            //private readonly byte lightBlock;
             private readonly byte light;
             private readonly BlockBase block;
             private readonly bool body;
@@ -685,15 +652,11 @@ namespace MvkClient.Renderer.Block
             /// Результат стороны блока
             /// </summary>
             /// <param name="isDraw">Прорисовывать ли сторону</param>
-            /// <param name="lightSky">Яркость света от блока</param>
-            /// <param name="lightBlock">Яркость света от блока</param>
             /// <param name="light">Общаяя яркость света неба и блока в одном байте</param>
             /// <param name="blockCache">блок кэша для параметров</param>
-            public ResultSide(bool isDraw, /*byte lightSky, byte lightBlock,*/ byte light, BlockBase blockCache, vec3 color)
+            public ResultSide(bool isDraw, byte light, BlockBase blockCache, vec3 color)
             {
                 this.isDraw = isDraw;
-                //this.lightSky = lightSky;
-                //this.lightBlock = lightBlock;
                 this.light = light;
                 this.color = color;
                 block = blockCache;
@@ -723,14 +686,6 @@ namespace MvkClient.Renderer.Block
             /// Прорисовывать ли сторону
             /// </summary>
             public bool IsDraw() => isDraw;
-            /// <summary>
-            /// Яркость света неба
-            /// </summary>
-            //public byte LightSky() => lightSky;
-            ///// <summary>
-            ///// Яркость света от блока
-            ///// </summary>
-            //public byte LightBlock() => lightBlock;
             /// <summary>
             /// Общаяя яркость света неба и блока в одном байте
             /// </summary>
@@ -776,7 +731,7 @@ namespace MvkClient.Renderer.Block
         /// </summary>
         private struct AmbientOcclusionLights
         {
-            private readonly float[] ao;
+            //private readonly float[] ao;
             private readonly int[] lightBlock;
             private readonly int[] lightSky;
             private readonly vec3[] colors;
@@ -786,12 +741,12 @@ namespace MvkClient.Renderer.Block
                 // a, b, c, d, e, f, g, h
                 // 0, 1, 2, 3, 4, 5, 6, 7
 
-                ao = new float[] {
-                    aos[2].GetAO() + aos[3].GetAO() + aos[4].GetAO(),
-                    aos[1].GetAO() + aos[2].GetAO() + aos[5].GetAO(),
-                    aos[0].GetAO() + aos[1].GetAO() + aos[6].GetAO(),
-                    aos[0].GetAO() + aos[3].GetAO() + aos[7].GetAO()
-                };
+                //ao = new float[] {
+                //    aos[2].GetAO() + aos[3].GetAO() + aos[4].GetAO(),
+                //    aos[1].GetAO() + aos[2].GetAO() + aos[5].GetAO(),
+                //    aos[0].GetAO() + aos[1].GetAO() + aos[6].GetAO(),
+                //    aos[0].GetAO() + aos[3].GetAO() + aos[7].GetAO()
+                //};
                 lightBlock = new int[] {
                     aos[2].GetLBlock() + aos[3].GetLBlock() + aos[4].GetLBlock(),
                     aos[1].GetLBlock() + aos[2].GetLBlock() + aos[5].GetLBlock(),
@@ -813,16 +768,19 @@ namespace MvkClient.Renderer.Block
                 };
             }
             
-            public vec4 GetAO() => new vec4(ao[0], ao[1], ao[2], ao[3]);
+            //public vec4 GetAO() => new vec4(ao[0], ao[1], ao[2], ao[3]);
             public byte GetLight(int index, byte light)
             {
-                byte lb = ChunkStorage.GetLightFor(light, EnumSkyBlock.Block);
-                byte ls = ChunkStorage.GetLightFor(light, EnumSkyBlock.Sky);
+                byte lb = (byte)((light & 0xF0) >> 4);
+                byte ls = (byte)(light & 0xF);
+
+                //byte lb = ChunkStorage.GetLightFor(light, EnumSkyBlock.Block);
+                //byte ls = ChunkStorage.GetLightFor(light, EnumSkyBlock.Sky);
 
                 lb = (byte)((lightBlock[index] + lb) / 4);
                 ls = (byte)((lightSky[index] + ls) / 4);
 
-                return ChunkStorage.GlueLightFor(ls, lb);
+                return (byte)(lb << 4 | ls);
             }
             public vec3 GetColor(int index, vec3 color) => (colors[index] + color) / 4f;
         }
@@ -831,20 +789,20 @@ namespace MvkClient.Renderer.Block
         /// </summary>
         private struct AmbientOcclusionLight
         {
-            private readonly float ao;
+            //private readonly float ao;
             private readonly byte lightBlock;
             private readonly byte lightSky;
             private readonly vec3 color;
 
-            public AmbientOcclusionLight(float ao, byte light, vec3 color)
+            public AmbientOcclusionLight(/*float ao, */byte light, vec3 color)
             {
-                this.ao = ao;
-                lightBlock = ChunkStorage.GetLightFor(light, EnumSkyBlock.Block);
-                lightSky = ChunkStorage.GetLightFor(light, EnumSkyBlock.Sky);
+               // this.ao = ao;
+                lightBlock = (byte)((light & 0xF0) >> 4);
+                lightSky = (byte)(light & 0xF);
                 this.color = color;
             }
 
-            public float GetAO() => ao;
+           // public float GetAO() => ao;
             public byte GetLBlock() => lightBlock;
             public byte GetLSky() => lightSky;
             public vec3 GetColor() => color;

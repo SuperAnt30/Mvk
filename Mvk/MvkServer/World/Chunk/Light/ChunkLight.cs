@@ -14,6 +14,11 @@ namespace MvkServer.World.Chunk.Light
         /// </summary>
         public int HeightMapMax { get; private set; } = 0;
         /// <summary>
+        /// Максимальный псевдо чанк осветленный небом
+        /// </summary>
+        public int MaxSkyChunk { get; set; } = 0;
+
+        /// <summary>
         /// Карта высот по чанку, XZ
         /// </summary>
         private int[,] heightMap = new int[16, 16];
@@ -27,11 +32,13 @@ namespace MvkServer.World.Chunk.Light
 
         /// <summary>
         /// Сколько света вычитается для прохождения этого блока Air = 0
+        /// XZ 0..15, Y 0..255
         /// </summary>
         public byte GetBlockLightOpacity(int x, int y, int z)
         {
-            EnumBlock eblock = Chunk.GetEBlock(x, y, z);
-            return Blocks.GetBlockCache(eblock).LightOpacity;
+            return Chunk.GetBlockState(x, y, z).GetBlock().LightOpacity;
+            //EnumBlock eblock = Chunk.GetEBlock(x, y, z);
+            //return Blocks.GetBlockCache(eblock).LightOpacity;
         }
 
         #region Modify Block
@@ -123,8 +130,6 @@ namespace MvkServer.World.Chunk.Light
                 // закрыли небо, надо затемнять
                 int yDown = yh + 1;
                 int yUp = yh0 - 1;
-                //UpdateHeight(bx, yUp + 1, bz);// это была бага по 2 блока сверху надо при прозрачном блоке
-                //UpdateHeight(bx, y0, bz);
                 light.CheckDarkenLightFor(x, yDown, yUp, z);
             }
             else
@@ -134,9 +139,8 @@ namespace MvkServer.World.Chunk.Light
                 int yUp = yh;
                 // пометка что убераем вверхний блок
                 bool hMax = yh == HeightMapMax;
-                //UpdateHeight(bx, yDown - 1, bz);
-                //UpdateHeight(bx, yDown, bz);
-                light.CheckLightFor(x, yDown, yUp + 1, z);
+                //TODO::2022-06-08 потестировать освещение в осветлении столба, было yUp + 1
+                light.CheckLightFor(x, yDown, yUp, z); 
                 // обновляем максимальные высоты
                 if (hMax) GenerateHeightMap();
             }
@@ -168,20 +172,27 @@ namespace MvkServer.World.Chunk.Light
         {
             HeightMapMax = 0;
             heightMap = new int[16, 16];
-            int yb = Chunk.GetTopFilledSegment() + 15;
+            int yb = Chunk.GetTopFilledSegment() + 16;
+
+            // Осветления псевдо чанков, которые имеются данные и вниз
+            MaxSkyChunk = (yb >> 4) - 1;
+            for (int y = MaxSkyChunk; y >= 0; y--)
+            {
+                Chunk.StorageArrays[y].Sky();
+            }
+
             for (int x = 0; x < 16; x++)
             {
                 for (int z = 0; z < 16; z++)
                 {
                     for (int y = yb; y > 0; y--)
                     {
-                        //int opacity = GetBlockLightOpacity(x, y - 1, z);
-                        BlockBase block = Chunk.GetBlock0(new vec3i(x, y - 1, z));
-                        int opacity = block.LightOpacity;
+                        BlockState blockState = Chunk.GetBlockState(x, y - 1, z);
+                        int opacity = blockState.GetBlock().LightOpacity;
                         if (opacity == 0)
                         {
                             // Небо, осветляем
-                            if (isSky) Chunk.StorageArrays[y >> 4].SetLightFor(x, y & 15, z, EnumSkyBlock.Sky, 15);
+                            if (isSky) Chunk.StorageArrays[y >> 4].SetLightSky(x, y & 15, z, 15);
                         }
                         else
                         {
@@ -194,7 +205,7 @@ namespace MvkServer.World.Chunk.Light
                                 int light = 15;
                                 int y2 = y;
 
-                                Chunk.StorageArrays[y2 >> 4].SetLightFor(x, y2 & 15, z, EnumSkyBlock.Sky, 15);
+                                Chunk.StorageArrays[y2 >> 4].SetLightSky(x, y2 & 15, z, 15);
                                 y2--;
                                 //BlockBase block = Chunk.GetBlock0(new vec3i(x, y, z));
                                 //bool isWater = block.Material == EnumMaterial.Water;
@@ -211,7 +222,7 @@ namespace MvkServer.World.Chunk.Light
                                     }
                                     light = light - opacity - 1;
                                     if (light < 0) light = 0;
-                                    Chunk.StorageArrays[y2 >> 4].SetLightFor(x, y2 & 15, z, EnumSkyBlock.Sky, (byte)light);
+                                    Chunk.StorageArrays[y2 >> 4].SetLightSky(x, y2 & 15, z, (byte)light);
                                     opacity = 0;
                                     y2--;
                                 }
@@ -285,7 +296,6 @@ namespace MvkServer.World.Chunk.Light
                         vec3i pos0 = new vec3i(pos.x & 15, 0, pos.z & 15);
                         ChunkBase chunk = World.GetChunk(new vec2i(pos.x >> 4, pos.z >> 4));
                         // Определяем наивысшый непрозрачный блок
-                        // TODO::Light
                         int yh2 = chunk.Light.GetHeight(pos0.x, pos0.z);
                         // Если соседний блок выше, начинаем обработку
                         if (yh < yh2)
@@ -300,8 +310,8 @@ namespace MvkServer.World.Chunk.Light
                                 for (int y = yDown; y <= yUp; y++) // цикл высоты
                                 {
                                     pos0.y = y;
-                                    BlockBase block = chunk.GetBlock0(pos0);
-                                    if (!block.IsNotTransparent())
+                                    BlockState blockState = chunk.GetBlockState(pos0.x, pos0.y, pos0.z);
+                                    if (!blockState.GetBlock().IsNotTransparent())
                                     {
                                         // Если блок прозрачный меняем высоты
                                         if (yMin[i] > y) yMin[i] = y;

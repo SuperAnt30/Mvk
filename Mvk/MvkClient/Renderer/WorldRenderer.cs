@@ -146,7 +146,7 @@ namespace MvkClient.Renderer
             DrawEntities(chunks, timeIndex);
 
             // Рендер и прорисовка курсора выбранного блока по AABB
-            renderBlockCursor.Render(ClientMain.Player.SelectBlock);
+            renderBlockCursor.Render(ClientMain.Player.SelectBlock, ClientMain.Player.SelectBlockPos);
             
             // Курсор чанка
             renderChunkCursor.Render(ClientMain.World.RenderEntityManager.CameraOffset);
@@ -183,7 +183,7 @@ namespace MvkClient.Renderer
         {
             // вода
             vec3 pos = ClientMain.Player.Position + ClientMain.Player.PositionCamera;
-            BlockBase block = World.GetBlock(new BlockPos(pos));
+            BlockBase block = World.GetBlockState(new BlockPos(pos)).GetBlock();
 
             if (block.Material == EnumMaterial.Water)
             {
@@ -246,7 +246,8 @@ namespace MvkClient.Renderer
                     foreach(int y in vs)
                     {
                         bool isDense = chunk.IsModifiedRender(y);
-                        if (chunk.StorageArrays[y].IsEmpty())
+                        //if (chunk.StorageArrays[y].IsEmpty())
+                        if (chunk.StorageArrays[y].IsEmptyData())
                         {
                             // Удаление
                             if (isDense) chunk.BindDelete(y);
@@ -370,15 +371,22 @@ namespace MvkClient.Renderer
         /// <returns></returns>
         private ShaderVoxel VoxelsBegin(float timeIndex)
         {
-            GLWindow.Texture.BindTexture(AssetsTexture.Atlas);
             ShaderVoxel shader = GLWindow.Shaders.ShVoxel;
             shader.Bind(GLWindow.gl);
             shader.SetUniformMatrix4(GLWindow.gl, "projection", ClientMain.Player.Projection);
             shader.SetUniformMatrix4(GLWindow.gl, "lookat", ClientMain.Player.LookAt);
             shader.SetUniform1(GLWindow.gl, "takt", ClientMain.TickCounter); // & 31
-            shader.SetUniform1(GLWindow.gl, "sky", skyLight);
             shader.SetUniform1(GLWindow.gl, "overview", ClientMain.Player.OverviewChunk * 16f);
             shader.SetUniform3(GLWindow.gl, "colorfog", colorFog.x, colorFog.y, colorFog.z);
+
+            int atlas = shader.GetUniformLocation(GLWindow.gl, "atlas");
+            int lightMap = shader.GetUniformLocation(GLWindow.gl, "light_map");
+            GLWindow.Texture.BindTexture(AssetsTexture.Atlas);
+            GLWindow.gl.Uniform1(atlas, 0);
+            GLRender.TextureLightmapEnable();
+            GLWindow.gl.Uniform1(lightMap, 1);
+            GLRender.TextureLightmapDisable();
+
             return shader;
         }
 
@@ -759,7 +767,7 @@ namespace MvkClient.Renderer
 
             GLRender.CullDisable();
             GLRender.BlendEnable();
-            // TODO:: 2022-05-27 туман облаков, в зависимости от уровня ландшафта, примерно прикинул на 96
+            // TODO::2022-05-27 туман облаков, в зависимости от уровня ландшафта, примерно прикинул на 96
             GLWindow.gl.Fog(OpenGL.GL_FOG_START, 386f);
             GLWindow.gl.Fog(OpenGL.GL_FOG_END, 512f);
             GLRender.FogEnable();

@@ -77,8 +77,13 @@ namespace MvkServer.World.Chunk.Light
             if (pos.Y < 0) pos = new BlockPos(pos.X, 0, pos.Z);
             ChunkBase chunk = World.GetChunk(pos.GetPositionChunk());
             int sy = pos.GetPositionChunkY();
-            if (chunk == null || chunk.StorageArrays[sy].IsEmpty()) return (byte)type;
-            return chunk.StorageArrays[sy].GetLightFor(pos.X & 15, pos.Y & 15, pos.Z & 15, type);
+            //TODO::2022-06-06 IsEmptyData
+            if (chunk == null || !chunk.StorageArrays[sy].IsSky())// || chunk.StorageArrays[sy].IsEmptyData())
+                return (byte)type;
+
+            if (type == EnumSkyBlock.Sky)
+                return (byte)chunk.StorageArrays[sy].GetLightSky(pos.X & 15, pos.Y & 15, pos.Z & 15);
+            return (byte)chunk.StorageArrays[sy].GetLightBlock(pos.X & 15, pos.Y & 15, pos.Z & 15);
         }
         /// <summary>
         /// Задать уровень яркости тикущего блока
@@ -102,11 +107,34 @@ namespace MvkServer.World.Chunk.Light
         /// <param name="lightValue">яркость 0-15</param>
         public void SetLight0(BlockPos pos, EnumSkyBlock type, int lightValue)
         {
-            if (pos.Y < 0) pos = new BlockPos(pos.X, 0, pos.Z);
+            if (!pos.IsValidY()) return;
+            
             ChunkBase chunk = World.GetChunk(pos.GetPositionChunk());
             if (chunk != null)
             {
-                chunk.StorageArrays[pos.GetPositionChunkY()].SetLightFor(pos.X & 15, pos.Y & 15, pos.Z & 15, type, (byte)lightValue);
+                int yc = pos.GetPositionChunkY();
+
+                // Нужна проверка, по созданию новых псевдо чанков освещения
+                // Причём нужна проверка по всей высоте, чтоб не было промежутков
+                if (yc > chunk.Light.MaxSkyChunk)
+                {
+                    int yc0 = chunk.Light.MaxSkyChunk + 1;
+                    for (int i = yc0; i <= yc; i++)
+                    {
+                        chunk.StorageArrays[i].CheckBrightenBlockSky();
+                    }
+                    chunk.Light.MaxSkyChunk = yc;
+                }
+
+                if (type == EnumSkyBlock.Sky)
+                {
+                    chunk.StorageArrays[yc].SetLightSky(pos.X & 15, pos.Y & 15, pos.Z & 15, (byte)lightValue);
+                }
+                else
+                {
+                    chunk.StorageArrays[yc].SetLightBlock(pos.X & 15, pos.Y & 15, pos.Z & 15, (byte)lightValue);
+                }
+                //chunk.StorageArrays[pos.GetPositionChunkY()].SetLightFor(pos.X & 15, pos.Y & 15, pos.Z & 15, type, (byte)lightValue);
             }
             // зафиксировать диапазон
             if (!modifiedBlocks.Contains(pos.ToVec3i())) modifiedBlocks.Add(pos.ToVec3i());
@@ -140,7 +168,7 @@ namespace MvkServer.World.Chunk.Light
                 // Если небо, и видим небо, яркость максимальная
                 return 15;
             }
-            BlockBase block = World.GetBlock(pos);
+            BlockBase block = World.GetBlockState(pos).GetBlock();
             // Количество излучаемого света
             int light = type == EnumSkyBlock.Sky ? 0 : block.LightValue;
 
@@ -177,7 +205,6 @@ namespace MvkServer.World.Chunk.Light
         {
             ChunkBase chunk = World.GetChunk(pos.GetPositionChunk());
             if (chunk == null) return false;
-            // TODO::Light
             return chunk.Light.IsAgainstSky(pos);
         }
 
@@ -369,12 +396,11 @@ namespace MvkServer.World.Chunk.Light
         /// <returns>true было изменение, false нет изменения</returns>
         protected bool RefreshBrighterLight(BlockPos pos, int light, EnumSkyBlock type, out int lightNew)
         {
-            //BlockBase block = World.GetBlock(pos);
             // Определяем тикущую яркость блока
             lightNew = GetLight(pos, type);
-
+            if (!pos.IsValidY()) return false;
             BlockState blockState = World.GetBlockState(pos);
-            if (blockState.IsEmpty()) return false;
+            //if (blockState.IsEmpty()) return false; // TODO:: из-за этого не корректно работал null псевдо чанк света
             // Определяем яркость, какая должна
             light = light - (blockState.GetBlock().LightOpacity + 1);
             if (light < 0) light = 0;
@@ -490,8 +516,8 @@ namespace MvkServer.World.Chunk.Light
         {
             lightNew = 0;
             // Если блок уже равна темноте, останавливаем проход
-            if (light == 0) return 0;
-            BlockBase block = World.GetBlock(pos);
+            if (light == 0 || !pos.IsValidY()) return 0;
+            BlockBase block = World.GetBlockState(pos).GetBlock();
             // Определяем тикущую яркость блока
             lightNew = GetLight(pos, type);
             // Если фактическая яркость больше уровня прохода,

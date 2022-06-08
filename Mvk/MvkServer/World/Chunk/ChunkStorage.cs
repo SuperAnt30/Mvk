@@ -16,179 +16,34 @@ namespace MvkServer.World.Chunk
         /// Данные блока
         /// 12 bit Id блока и 4 bit параметр блока
         /// </summary>
-        public ushort[,,] data;
+        private ushort[,,] data;
         /// <summary>
         /// Освещение блока
         /// 4 bit свет блока и 4 bit свет от неба
         /// </summary>
-        public byte[,,] light;
+        private byte[,,] light;
         /// <summary>
-        /// Есть ли тело
+        /// Количество блоков не воздуха
         /// </summary>
-        private bool body;
-
-        public int countVoxel;
+        private int countData;
+        /// <summary>
+        /// было ли заполнения неба
+        /// </summary>
+        private bool sky;
 
         public ChunkStorage(int y)
         {
             yBase = y;
             data = null;
-            light = null;
-            body = false;
-            countVoxel = 0;
-        }
-
-        private void Set()
-        {
-            if (data == null)
-            {
-                data = new ushort[16, 16, 16];
-                light = new byte[16, 16, 16];
-                body = false;
-                countVoxel = 0;
-            }
-        }
-
-        private void Plus()
-        {
-            countVoxel++;
-            body = true;
+            countData = 0;
+            light = new byte[16, 16, 16];
+            sky = false;
         }
 
         /// <summary>
-        /// Пустой ли объект
+        /// Пустой, все блоки воздуха
         /// </summary>
-        public bool IsEmpty() => !body;
-
-        /// <summary>
-        /// Уровень псевдочанка
-        /// </summary>
-        public int GetYLocation() => yBase;
-
-        #region Прямой доступ к данным для бинарника
-
-        /// <summary>
-        /// Получить данные всего блока
-        /// </summary>
-        public ushort GetData(int x, int y, int z) => data[y, x, z];
-        /// <summary>
-        /// Задать данные блока
-        /// </summary>
-        public void SetData(int x, int y, int z, ushort value)
-        {
-            if (value == 0)
-            {
-                // воздух, проверка на чистку
-                if (!IsEmpty() && data[y, x, z] != 0)
-                {
-                    if (countVoxel > 0) countVoxel--;
-                    data[y, x, z] = value;
-                }
-            }
-            else
-            {
-                Set();
-                if (data[y, x, z] == 0) Plus();
-                data[y, x, z] = value;
-            }
-        }
-
-        /// <summary>
-        /// Получить байт освещения неба и блока
-        /// </summary>
-        public byte GetLightsFor(int x, int y, int z) => light[y, x, z];
-
-        /// <summary>
-        /// Задать байт  освещения неба и блока
-        /// </summary>
-        public void SetLightsFor(int x, int y, int z, byte light)
-        {
-            Set();
-            this.light[y, x, z] = light;
-            LightCheckBlock();
-        }
-
-        #endregion
-
-        /// <summary>
-        /// Получить тип блок по координатам XYZ 0..15 
-        /// </summary>
-        public EnumBlock GetEBlock(int x, int y, int z) => (EnumBlock)(data[y, x, z] & 0xFFF);
-
-        /// <summary>
-        /// Задать тип блок
-        /// </summary>
-        public void SetEBlock(int x, int y, int z, EnumBlock eBlock)
-        {
-            if (eBlock == EnumBlock.Air)
-            {
-                if (!IsEmpty() && data[y, x, z] != 0)
-                {
-                    if (countVoxel > 0) countVoxel--;
-                    data[y, x, z] = (ushort)((byte)(data[y, x, z] >> 12) << 12 | (ushort)eBlock);
-                }
-            }
-            else
-            {
-                Set();
-                if (data[y, x, z] == 0) Plus();
-                data[y, x, z] = (ushort)((byte)(data[y, x, z] >> 12) << 12 | (ushort)eBlock);
-            }
-        }
-
-        /// <summary>
-        /// Получить дополнительный параметр блока в 4 бита
-        /// </summary>
-        public byte GetMetadata(int x, int y, int z) => (byte)(data[y, x, z] >> 12);
-
-        /// <summary>
-        /// Задать дополнительный параметр блока в 4 бита
-        /// </summary>
-        public void SetMetadata(int x, int y, int z, byte value)
-        {
-            Set();
-            data[y, x, z] = (ushort)((byte)(value & 0xF) << 12 | (ushort)(data[y, x, z] & 0xFFF));
-        }
-
-        /// <summary>
-        /// Получить яркость блока
-        /// </summary>
-        public byte GetLightFor(int x, int y, int z, EnumSkyBlock type) => GetLightFor(light[y, x, z], type);
-
-        /// <summary>
-        /// Получить из байта конкретное освещение
-        /// </summary>
-        /// <param name="light">байт освещения неба и блока</param>
-        public static byte GetLightFor(byte light, EnumSkyBlock type)
-            => type == EnumSkyBlock.Sky ? (byte)(light & 0xF) : (byte)((light & 0xF0) >> 4);
-
-        /// <summary>
-        /// Задать яркость блока
-        /// </summary>
-        public void SetLightFor(int x, int y, int z, EnumSkyBlock type, byte light)
-        {
-            Set();
-            byte s, b;
-
-            if (type == EnumSkyBlock.Sky)
-            {
-                s = light;
-                b = (byte)((this.light[y, x, z] & 0xF0) >> 4);
-            }
-            else
-            {
-                s = (byte)(this.light[y, x, z] & 0xF);
-                b = light;
-            }
-
-            this.light[y, x, z] = (byte)(b << 4 | s);
-            LightCheckBlock();
-        }
-
-        /// <summary>
-        /// Склеить яркость блока
-        /// </summary>
-        public static byte GlueLightFor(byte lightSky, byte lightBlok) => (byte)(lightBlok << 4 | lightSky);
+        public bool IsEmptyData() => countData == 0;
 
         /// <summary>
         /// Очистить
@@ -196,61 +51,125 @@ namespace MvkServer.World.Chunk
         public void Clear()
         {
             data = null;
-            light = null;
-            countVoxel = 0;
-            body = false;
+            light = new byte[16, 16, 16];
+            countData = 0;
+        }
+
+        #region Get
+
+        /// <summary>
+        /// Уровень псевдочанка
+        /// </summary>
+        public int GetYLocation() => yBase;
+
+        /// <summary>
+        /// Получить данные всего блока, XYZ 0..15 
+        /// </summary>
+        public ushort GetData(int x, int y, int z) => data[y, x, z];
+
+        /// <summary>
+        /// Получить тип блок по координатам XYZ 0..15 
+        /// </summary>
+        public int GetEBlock(int x, int y, int z) => data[y, x, z] & 0xFFF;
+
+        /// <summary>
+        /// Получить дополнительный параметр блока в 4 бита, XYZ 0..15 
+        /// </summary>
+        public int GetMetadata(int x, int y, int z) => data[y, x, z] >> 12;
+
+        /// <summary>
+        /// Получить блок данных, XYZ 0..15 
+        /// </summary>
+        public BlockState GetBlockState(int x, int y, int z) 
+            => new BlockState(data[y, x, z], light[y, x, z]);
+
+        /// <summary>
+        /// Получить байт освещения неба и блока, XYZ 0..15 
+        /// </summary>
+        public byte GetLightsFor(int x, int y, int z) => light[y, x, z];
+
+        /// <summary>
+        /// Получить яркость блока от неба, XYZ 0..15 
+        /// </summary>
+        public int GetLightSky(int x, int y, int z) => light[y, x, z] & 0xF;
+        /// <summary>
+        /// Получить яркость блока от блочного освещения, XYZ 0..15 
+        /// </summary>
+        public int GetLightBlock(int x, int y, int z) => (light[y, x, z] & 0xF0) >> 4;
+
+        #endregion
+
+        #region Set
+
+        /// <summary>
+        /// Задать данные блока, XYZ 0..15 
+        /// </summary>
+        public void SetData(int x, int y, int z, ushort value)
+        {
+            if ((value & 0xFFF) == 0)
+            {
+                // воздух, проверка на чистку
+                if (countData > 0 && (data[y, x, z] & 0xFFF) != 0)
+                {
+                    countData--;
+                    if (countData == 0) data = null;
+                    else data[y, x, z] = value;
+                }
+            }
+            else
+            {
+                //CheckEmpty();
+                if (countData == 0) data = new ushort[16, 16, 16];
+                if ((data[y, x, z] & 0xFFF) == 0) countData++;
+                data[y, x, z] = value;
+            }
         }
 
         /// <summary>
-        /// Заполнить весь чанк блоками неба
+        /// Задать байт освещения неба и блока
         /// </summary>
-        public void LightSky()
+        public void SetLightsFor(int x, int y, int z, byte value) => light[y, x, z] = value;
+        /// <summary>
+        /// Задать яркость неба
+        /// </summary>
+        public void SetLightSky(int x, int y, int z, byte value) => light[y, x, z] = (byte)(light[y, x, z] & 0xF0 | value);
+        /// <summary>
+        /// Задать яркость блока
+        /// </summary>
+        public void SetLightBlock(int x, int y, int z, byte value) => light[y, x, z] = (byte)(value << 4 | light[y, x, z] & 0xF);
+
+        #endregion
+
+        /// <summary>
+        /// Пометка обработанного псевдо чанка на небесное освещение
+        /// </summary>
+        public void Sky() => sky = true;
+        /// <summary>
+        /// Была ли обработка небесного освещения
+        /// </summary>
+        public bool IsSky() => sky;
+
+        /// <summary>
+        /// Проверка на осветление блоков неба
+        /// </summary>
+        public void CheckBrightenBlockSky()
         {
-            Set();
-            for (int x = 0; x < 16; x++)
+            if (!sky)
             {
-                for (int y = 0; y < 16; y++)
+                sky = true;
+                for (int x = 0; x < 16; x++)
                 {
-                    for (int z = 0; z < 16; z++)
+                    for (int y = 0; y < 16; y++)
                     {
-                        light[y, x, z] = 15;
+                        for (int z = 0; z < 16; z++)
+                        {
+                            light[y, x, z] = 0xF;
+                        }
                     }
                 }
             }
         }
 
-        private void LightCheckBlock()
-        {
-            if (!body)
-            {
-                body = IsLightCheckBlock();
-            }
-            else if (countVoxel == 0 && data != null)
-            {
-                if (IsLightCheckBlock()) return;
-                Clear();
-            }
-        }
-
-        /// <summary>
-        /// Проверка на наличие блочного освещения в псевдо чанке
-        /// </summary>
-        /// <returns>true - имеется блочное освещение</returns>
-        private bool IsLightCheckBlock()
-        {
-            for (int x = 0; x < 16; x++)
-            {
-                for (int y = 0; y < 16; y++)
-                {
-                    for (int z = 0; z < 16; z++)
-                    {
-                        if (((light[y, x, z] & 0xF0) >> 4) > 0) return true;
-                    }
-                }
-            }
-            return false;
-        }
-
-        public override string ToString() => yBase + " " + countVoxel;
+        public override string ToString() => yBase + " " + countData + " ";
     }
 }

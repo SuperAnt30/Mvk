@@ -244,6 +244,31 @@ namespace MvkClient.World
         }
 
         /// <summary>
+        /// Сменить блок, без проверок, прямой доступ с сервера
+        /// </summary>
+        public void SetBlockStateClient(BlockPos blockPos, BlockState blockState)
+        {
+            if (blockPos.IsValid())
+            {
+                ChunkBase chunk = ChunkPr.GetChunk(blockPos.GetPositionChunk());
+
+                chunk.SetBlockStateClient(blockPos, blockState);
+                //if (!blockStateTrue.IsEmpty())
+                //{
+                //    // Для рендера, проверка соседнего чанка, если блок крайний,
+                // то будет доп рендер чанков рядом
+                vec3i min = blockPos.ToVec3i() - 1;
+                vec3i max = blockPos.ToVec3i() + 1;
+
+                vec3i c0 = new vec3i(min.x >> 4, min.y >> 4, min.z >> 4);
+                vec3i c1 = new vec3i(max.x >> 4, max.y >> 4, max.z >> 4);
+
+                AreaModifiedToRender(c0, c1);
+                //}
+            }
+        }
+
+        /// <summary>
         /// Сменить блок
         /// </summary>
         /// <param name="blockPos">позици блока</param>
@@ -251,6 +276,7 @@ namespace MvkClient.World
         /// <returns>true смена была</returns>
         public override bool SetBlockState(BlockPos blockPos, BlockState blockState)
         {
+            Debug.DStart = true;
             //ChunkBase chunk = ChunkPr.GetChunk(blockPos.GetPositionChunk());
             //if (chunk != null)
             //{
@@ -263,22 +289,24 @@ namespace MvkClient.World
             //    MarkBlockForUpdate(blockPos);
             //}
 
+
+            bool result = base.SetBlockState(blockPos, blockState);
+
             // Это если обновлять сразу!
-            base.SetBlockState(blockPos, blockState);
+            if (result)
+            {
+                // Для рендера, проверка соседнего чанка, если блок крайний,
+                // то будет доп рендер чанков рядом
+                vec3i min = blockPos.ToVec3i() - 1;
+                vec3i max = blockPos.ToVec3i() + 1;
 
-            //if (base.SetBlockState(blockPos, blockState))
-            //{
-            //    // Для рендера, проверка соседнего чанка, если блок крайний,
-            //    //// то будет доп рендер чанков рядом
-            //    //vec3i min = blockPos.Position - 1;
-            //    //vec3i max = blockPos.Position + 1;
+                vec3i c0 = new vec3i(min.x >> 4, min.y >> 4, min.z >> 4);
+                vec3i c1 = new vec3i(max.x >> 4, max.y >> 4, max.z >> 4);
 
-            //    //vec3i c0 = new vec3i(min.x >> 4, min.y >> 4, min.z >> 4);
-            //    //vec3i c1 = new vec3i(max.x >> 4, max.y >> 4, max.z >> 4);
+                AreaModifiedToRender(c0, c1);
+            }
 
-            //    //AreaModifiedToRender(c0, c1);
             return true;
-            //}
             //return false;
         }
 
@@ -405,7 +433,7 @@ namespace MvkClient.World
         /// <param name="count">количество частичек</param>
         public void ParticleDiggingBlock(BlockPos blockPos, int count)
         {
-            BlockBase block = GetBlock(blockPos);
+            BlockBase block = GetBlockState(blockPos).GetBlock();
             if (block != null && block.IsParticle)
             {
                 vec3 pos = blockPos.ToVec3() + new vec3(.5f);
@@ -414,7 +442,7 @@ namespace MvkClient.World
                     SpawnParticle(EnumParticle.Digging,
                         pos + new vec3((Rand.Next(16) - 8) / 16f, (Rand.Next(12) - 6) / 16f, (Rand.Next(16) - 8) / 16f),
                         new vec3(0),
-                        (int)GetEBlock(blockPos));
+                        (int)block.EBlock);
                 }
             }
         }
@@ -435,7 +463,8 @@ namespace MvkClient.World
                     {
                         for (int y = 0; y < chunk.StorageArrays.Length; y++)
                         {
-                            if (!chunk.StorageArrays[y].IsEmpty())
+                            //TODO::2022-06-06 IsEmptyData
+                            //if (!chunk.StorageArrays[y].IsEmptyData())
                             {
                                 chunk.ModifiedToRender(y);
                             }

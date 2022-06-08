@@ -161,7 +161,7 @@ namespace MvkServer.Management
                 bool b = true;
                 for (int y = 255; y > 0; y--)
                 {
-                    if (chunk.GetEBlock(x, y, z) != MvkServer.World.Block.EnumBlock.Air)
+                    if (!chunk.GetBlockState(x, y, z).GetBlock().IsAir)
                     {
                         y0 = y + 1;
                         b = false;

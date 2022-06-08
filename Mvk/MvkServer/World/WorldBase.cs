@@ -336,12 +336,6 @@ namespace MvkServer.World
         public ChunkBase GetChunk(BlockPos pos) => ChunkPr.GetChunk(new vec2i(pos.X >> 4, pos.Z >> 4));
 
         /// <summary>
-        /// Проверьте, имеет ли данный BlockPos действительные координаты
-        /// </summary>
-        public bool IsValid(BlockPos pos) => pos.X >= -30000000 && pos.Z >= -30000000 
-            && pos.X < 30000000 && pos.Z < 30000000 && pos.Y >= 0 && pos.Y < 256;
-
-        /// <summary>
         /// Проверить наличие чанка
         /// </summary>
         //public bool IsChunk(vec2i pos) => ChunkPr.IsChunk(pos);
@@ -350,70 +344,70 @@ namespace MvkServer.World
         /// Получить блок
         /// </summary>
         /// <param name="bpos">глобальная позиция блока</param>
-        public BlockBase GetBlock(BlockPos bpos) => GetBlock(bpos.X, bpos.Y, bpos.Z);
+       // public BlockBase GetBlock(BlockPos bpos) => GetBlock(bpos.X, bpos.Y, bpos.Z);
         /// <summary>
         /// Получить блок
         /// </summary>
         /// <param name="pos">глобальная позиция блока</param>
-        public BlockBase GetBlock(int x, int y, int z)
-        {
-            if (y >= 0 && y <= 255)
-            {
-                ChunkBase chunk = GetChunk(new vec2i(x >> 4, z >> 4));
-                if (chunk != null)
-                {
-                    return chunk.GetBlock0(new vec3i(x & 15, y, z & 15));
-                }
-            }
-            return Blocks.CreateAir(new vec3i(x, y, z));
-        }
+        //public BlockBase GetBlock(int x, int y, int z)
+        //{
+        //    if (y >= 0 && y <= 255)
+        //    {
+        //        ChunkBase chunk = GetChunk(new vec2i(x >> 4, z >> 4));
+        //        if (chunk != null)
+        //        {
+        //            return chunk.GetBlock0(new vec3i(x & 15, y, z & 15));
+        //        }
+        //    }
+        //    return Blocks.CreateAir(new vec3i(x, y, z));
+        //}
 
         /// <summary>
         /// Получить блок данных
         /// </summary>
         public BlockState GetBlockState(BlockPos blockPos)
         {
-            if (IsValid(blockPos))
+            if (blockPos.IsValid())
             {
                 ChunkBase chunk = GetChunk(blockPos.GetPositionChunk());
                 if (chunk != null)
                 {
-                    return chunk.GetBlockState(blockPos);
+                    return chunk.GetBlockState(blockPos.X & 15, blockPos.Y, blockPos.Z & 15);
                 }
             }
-            return new BlockState(EnumBlock.Air).Empty();
+            return new BlockState().Empty();
         }
 
         /// <summary>
         /// Получить кэшовый блок
         /// </summary>
-        public BlockBase GetBlockCache(BlockPos bpos)
-        {
-            EnumBlock enumBlock = GetEBlock(bpos);
-            return Blocks.GetBlockCache(enumBlock);
-        }
+        //public BlockBase GetBlockCache(BlockPos bpos)
+        //{
+        //    EnumBlock enumBlock = GetEBlock(bpos);
+        //    return Blocks.GetBlockCache(enumBlock);
+        //}
 
         /// <summary>
         /// Получить тип блока
         /// </summary>
         /// <param name="bpos">глобальная позиция блока</param>
-        public EnumBlock GetEBlock(BlockPos bpos) => GetEBlock(bpos.X, bpos.Y, bpos.Z);
-        /// <summary>
-        /// Получить тип блока
-        /// </summary>
-        /// <param name="pos">глобальная позиция блока</param>
-        public EnumBlock GetEBlock(int x, int y, int z)
-        {
-            if (y >= 0 && y <= 255)
-            {
-                ChunkBase chunk = GetChunk(new vec2i(x >> 4, z >> 4));
-                if (chunk != null)
-                {
-                    return chunk.GetEBlock(new vec3i(x & 15, y, z & 15));
-                }
-            }
-            return EnumBlock.Air;
-        }
+        //public EnumBlock GetEBlock(BlockPos bpos) => GetEBlock(bpos.X, bpos.Y, bpos.Z);
+        ///// <summary>
+        ///// Получить тип блока
+        ///// </summary>
+        ///// <param name="pos">глобальная позиция блока</param>
+        //public EnumBlock GetEBlock(int x, int y, int z)
+        //{
+        //    if (y >= 0 && y <= 255)
+        //    {
+        //        ChunkBase chunk = GetChunk(new vec2i(x >> 4, z >> 4));
+        //        if (chunk != null)
+        //        {
+        //            return chunk.GetEBlock(new vec3i(x & 15, y, z & 15));
+        //        }
+        //    }
+        //    return EnumBlock.Air;
+        //}
 
         /// <summary>
         /// Пересечения лучей с визуализируемой поверхностью для блока
@@ -456,10 +450,16 @@ namespace MvkServer.World
 
             int steppedIndex = -1;
 
+            BlockPos blockPos = new BlockPos();
+
             while (t <= maxDist)
             {
-                BlockBase block = GetBlock(ix, iy, iz);
-                if (block.CollisionRayTrace(a, dir, maxDist))
+                blockPos.X = ix;
+                blockPos.Y = iy;
+                blockPos.Z = iz;
+                BlockBase block = GetBlockState(blockPos).GetBlock();
+
+                if (block.CollisionRayTrace(blockPos, a, dir, maxDist))
                 {
                     vec3 end;
                     vec3i norm;
@@ -478,7 +478,7 @@ namespace MvkServer.World
                     if (steppedIndex == 1) norm.y = -stepy;
                     if (steppedIndex == 2) norm.z = -stepz;
 
-                    return new MovingObjectPosition(block, iend, norm, end);
+                    return new MovingObjectPosition(block, blockPos, iend, norm, end);
                 }
                 if (txMax < tyMax)
                 {
@@ -526,11 +526,11 @@ namespace MvkServer.World
         /// <returns>true смена была</returns>
         public virtual bool SetBlockState(BlockPos blockPos, BlockState blockState)
         {
-            if (!IsValid(blockPos)) return false;
+            if (!blockPos.IsValid()) return false;
 
             ChunkBase chunk = ChunkPr.GetChunk(blockPos.GetPositionChunk());
             //return;
-            BlockState blockStateTrue = chunk.SetBlockState(blockPos, blockState);
+            BlockState blockStateTrue = chunk.SetBlockState(blockPos, blockState, true);
             if (blockStateTrue.IsEmpty()) return false;
 
             BlockBase block = blockState.GetBlock();
@@ -545,7 +545,7 @@ namespace MvkServer.World
             //    if (block.LightValue != blockNew.LightValue)
             //    {
             //        // TODO::2022-04-26 СВЕТ блока удаление!!! Надо как-то это сделать!
-            //        //Light.CheclLightBlock(blockPos);
+            //        Light.CheclLightBlock(blockPos);
             //    }
             //    TheProfiler().EndSection();
             //    //chunk.Light.ResetRelightChecks();
@@ -659,8 +659,9 @@ namespace MvkServer.World
                     {
                         for (int y = minY - 1; y < maxY; y++)
                         {
-                            BlockBase block = GetBlock(new BlockPos(x, y, z));
-                            AxisAlignedBB mask = block.GetCollision();
+                            BlockPos blockPos = new BlockPos(x, y, z);
+                            BlockBase block = GetBlockState(blockPos).GetBlock();
+                            AxisAlignedBB mask = block.GetCollision(blockPos);
                             if (mask != null && mask.IntersectsWith(aabb))
                             {
                                 blocks.Add(block);
@@ -678,9 +679,8 @@ namespace MvkServer.World
         /// </summary>
         public bool GetAverageEdgeLengthBlock(BlockPos blockPos)
         {
-            BlockBase block = GetBlock(blockPos);
-            if (block == null) return false;
-            AxisAlignedBB axis = block.GetCollision();
+            BlockBase block = GetBlockState(blockPos).GetBlock();
+            AxisAlignedBB axis = block.GetCollision(blockPos);
             return axis != null && axis.GetAverageEdgeLength() >= 1f;
         }
 
@@ -756,11 +756,8 @@ namespace MvkServer.World
                 {
                     for (int z = min.z; z <= max.z; z++)
                     {
-                        BlockBase block = GetBlock(new BlockPos(x, y, z));
-                        // TODO::2022-04-12 добавть материал, и заменить на воду
-                        // Кажется этот раздел не работает, надо проверить!!!
+                        BlockBase block = GetBlockState(new BlockPos(x, y, z)).GetBlock();
                         if (block.Material == EnumMaterial.Water) return true;
-                        //if (block.EBlock == EnumBlock.Water) return true;
                     }
                 }
             }
@@ -841,7 +838,7 @@ namespace MvkServer.World
                         for (int z = minZ; z < maxZ; z++)
                         {
                             BlockPos blockPos = new BlockPos(x, y, z);
-                            BlockBase block = GetBlock(blockPos);
+                            BlockBase block = GetBlockState(blockPos).GetBlock();
 
                             if (block.Material == material)
                             {

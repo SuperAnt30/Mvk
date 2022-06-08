@@ -67,6 +67,8 @@ namespace MvkClient
         public static float DFloat = 0;
         public static string DStr = "";
 
+        public static bool DStart = false;
+
         protected static string strTpsFps = "";
         public static void SetTpsFps(int fps, float speedFrame, int tps, float speedTick, int countUpdateChunk) 
             => strTpsFps = string.Format("Speed: {0} fps {1:0.00} ms {2} tps {3:0.00} ms ({4})", fps, speedFrame, tps, speedTick, countUpdateChunk);

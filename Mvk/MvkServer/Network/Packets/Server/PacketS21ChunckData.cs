@@ -48,7 +48,7 @@ namespace MvkServer.Network.Packets.Server
 
                 for (int y = 0; y < ChunkBase.COUNT_HEIGHT; y++)
                 {
-                    if ((!biom || !chunk.StorageArrays[y].IsEmpty()) && (flagsYAreas & 1 << y) != 0)
+                    if ((!biom || !chunk.StorageArrays[y].IsEmptyData()) && (flagsYAreas & 1 << y) != 0)
                     {
                         this.flagsYAreas |= 1 << y;
                         storages.Add(chunk.StorageArrays[y]);
@@ -58,26 +58,28 @@ namespace MvkServer.Network.Packets.Server
                 int count = 0;
                 while (storages.Count > 0)
                 {
-                    bool empty = storages[0].IsEmpty();
+                    bool emptyData = storages[0].IsEmptyData();
+                   // bool emptyLight = storages[0].IsEmptyLight();
                     for (int y = 0; y < 16; y++)
                     {
                         for (int x = 0; x < 16; x++)
                         {
                             for (int z = 0; z < 16; z++)
                             {
-                                if (empty)
+                                if (emptyData)
                                 {
                                     buffer[count++] = 0;
                                     buffer[count++] = 0;
-                                    buffer[count++] = 0;
+                                   // buffer[count++] = 0;
                                 }
                                 else
                                 {
                                     ushort data = storages[0].GetData(x, y, z);
                                     buffer[count++] = (byte)(data & 0xFF);
                                     buffer[count++] = (byte)(data >> 8);
-                                    buffer[count++] = storages[0].GetLightsFor(x, y, z);
+                                   // buffer[count++] = storages[0].GetLightsFor(x, y, z);
                                 }
+                                buffer[count++] = storages[0].GetLightsFor(x, y, z);
                             }
                         }
                     }

@@ -29,11 +29,11 @@ namespace MvkServer.World
                 ChunkBase chunk = World.GetChunk(new vec2i(x >> 4, z >> 4));
                 if (chunk != null)
                 {
-                    return chunk.GetBlock0(new vec3i(x & 15, y, z & 15));
+                    return chunk.GetBlockState(x & 15, y, z & 15).GetBlock();
                 }
             }
             // Для колизи важно, если чанк не загружен, то блоки все с колизией, так-как начнём падать
-            return Blocks.CreateBlock(EnumBlock.None, new BlockPos(x, y, z));
+            return Blocks.GetNone();
         }
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace MvkServer.World
                             BlockBase block = GetBlockBase(x, y, z);
                             if (block.IsCollidable)
                             {
-                                list.AddRange(block.GetCollisionBoxesToList());
+                                list.AddRange(block.GetCollisionBoxesToList(new BlockPos(x, y, z)));
                             }
                         }
                     }
@@ -81,7 +81,7 @@ namespace MvkServer.World
                 // Цельный блок на коллизию
                 if (block.IsBoundingBoxAll) return true;
                 // Выбираем часть блока
-                foreach(AxisAlignedBB aabbBlock in block.GetCollisionBoxesToList())
+                foreach(AxisAlignedBB aabbBlock in block.GetCollisionBoxesToList(new BlockPos(x, y, z)))
                 {
                     if (aabbBlock.IntersectsWith(aabb)) return true;
                 }
