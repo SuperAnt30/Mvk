@@ -34,7 +34,7 @@ namespace MvkClient.Gui
             {
                 int w2 = Width / 2;
                 int h2 = Height / 2;
-                GLRender.Translate(Position.x + w2, Position.y + h2, 0);
+                GLRender.Translate(w2, h2, 0);
                 GLRender.Scale(Scale);
                 GLRender.Translate(-w2, -h2, 0);
 
@@ -69,7 +69,7 @@ namespace MvkClient.Gui
             string text = "";
             foreach (string symbol in symbols)
             {
-                int ws = FontRenderer.WidthString(symbol, size);
+                int ws = FontRenderer.WidthString(symbol, size) * sizeInterface;
                 if (w + wspase + ws > Width)
                 {
                     w = ws;

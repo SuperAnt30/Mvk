@@ -36,10 +36,10 @@ namespace MvkClient.Gui
         /// </summary>
         protected override void ResizedScreen()
         {
-            label.Position = new vec2i(Width / 2 - 200, 120);
-            labelText.Position = new vec2i(Width / 2 - 200, 200);
-            buttonRespawn.Position = new vec2i(Width / 2 - 200, Height / 4 + 148);
-            buttonExit.Position = new vec2i(Width / 2 - 200, Height / 4 + 192);
+            label.Position = new vec2i(Width / 2 - 200 * sizeInterface, 120 * sizeInterface);
+            labelText.Position = new vec2i(Width / 2 - 200 * sizeInterface, 200 * sizeInterface);
+            buttonRespawn.Position = new vec2i(Width / 2 - 200 * sizeInterface, Height / 4 + 148 * sizeInterface);
+            buttonExit.Position = new vec2i(Width / 2 - 200 * sizeInterface, Height / 4 + 192 * sizeInterface);
         }
     }
 }

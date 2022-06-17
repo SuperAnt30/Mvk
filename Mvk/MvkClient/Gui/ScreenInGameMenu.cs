@@ -34,9 +34,9 @@ namespace MvkClient.Gui
         /// </summary>
         protected override void ResizedScreen()
         {
-            buttonBack.Position = new vec2i(Width / 2 - 200, Height / 4 + 48);
-            buttonOptions.Position = new vec2i(Width / 2 - 200, Height / 4 + 92);
-            buttonExit.Position = new vec2i(Width / 2 - 200, Height / 4 + 192);
+            buttonBack.Position = new vec2i(Width / 2 - 200 * sizeInterface, Height / 4 + 48 * sizeInterface);
+            buttonOptions.Position = new vec2i(Width / 2 - 200 * sizeInterface, Height / 4 + 92 * sizeInterface);
+            buttonExit.Position = new vec2i(Width / 2 - 200 * sizeInterface, Height / 4 + 192 * sizeInterface);
         }
     }
 }

@@ -27,6 +27,6 @@ namespace MvkClient.Gui
         /// <summary>
         /// Изменён размер окна
         /// </summary>
-        protected override void ResizedScreen() => label.Position = new vec2i(Width / 2 - 200, Height / 2);
+        protected override void ResizedScreen() => label.Position = new vec2i(Width / 2 - 200 * sizeInterface, Height / 2);
     }
 }

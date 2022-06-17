@@ -2,6 +2,7 @@
 using MvkClient.Actions;
 using MvkClient.Renderer;
 using MvkClient.Renderer.Font;
+using MvkClient.Setitings;
 using MvkServer.Glm;
 using SharpGL;
 using System;
@@ -58,12 +59,16 @@ namespace MvkClient.Gui
         /// Размер шрифта
         /// </summary>
         protected FontSize size = FontSize.Font12;
+        /// <summary>
+        /// Размер интерфеса
+        /// </summary>
+        protected int sizeInterface;
 
         protected Screen screen;
         protected static OpenGL gl;
 
-        protected Control() { }
-        public Control(string text)
+        protected Control() => sizeInterface = Setting.SizeInterface;
+        public Control(string text) : this()
         {
             Width = 400;
             Height = 40;
@@ -98,8 +103,11 @@ namespace MvkClient.Gui
         /// <summary>
         /// В облости ли мышь курсора
         /// </summary>
-        protected bool IsRectangleMouse(int x, int y) 
-            => Enabled && x >= Position.x && y >= Position.y && x < Position.x + Width && y < Position.y + Height;
+        protected bool IsRectangleMouse(int x, int y)
+        {
+            return Enabled && x >= Position.x && y >= Position.y 
+                && x < Position.x + Width * sizeInterface && y < Position.y + Height * sizeInterface;
+        }
 
         /// <summary>
         /// Перемещение мышки

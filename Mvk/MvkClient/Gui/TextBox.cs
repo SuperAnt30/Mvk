@@ -39,22 +39,22 @@ namespace MvkClient.Gui
             float v2 = 0.15625f;
             int wh = Width / 2;
             float wh2 = Width / 256f;
-            GLRender.Rectangle(Position.x, Position.y, Position.x + wh, Position.y + Height, 0, v1, 0.5f * wh2, v2);
-            GLRender.Rectangle(Position.x + wh, Position.y, Position.x + Width, Position.y + Height, 1f - 0.5f * wh2, v1, 1f, v2);
+            GLRender.Rectangle(0, 0, wh, Height, 0, v1, 0.5f * wh2, v2);
+            GLRender.Rectangle(wh, 0, Width, Height, 1f - 0.5f * wh2, v1, 1f, v2);
 
             GLWindow.Texture.BindTexture(Assets.ConvertFontToTexture(size));
 
             vec4 color0 = new vec4(.3f, .3f, .3f, 1f);
-            if (Focus) FontRenderer.RenderString(Position.x + 13, Position.y + 15, color0, Text, size);
+            if (Focus) FontRenderer.RenderString(13, 15, color0, Text, size);
             vec4 color = Enabled ? enter ? new vec4(1f, 1f, .5f, 1f) : new vec4(1f) : new vec4(.5f, .5f, .5f, 1f);
-            FontRenderer.RenderString(Position.x + 12, Position.y + 14, color, Text, size);
+            FontRenderer.RenderString(12, 14, color, Text, size);
 
             if (isVisibleCursor)
             {
                 int ws = FontRenderer.WidthString(Text, size);
                 color = new vec4(1f);
-                FontRenderer.RenderString(Position.x + ws + 13, Position.y + 15, color0, "_", size);
-                FontRenderer.RenderString(Position.x + ws + 12, Position.y + 14, color, "_", size);
+                FontRenderer.RenderString(ws + 13, 15, color0, "_", size);
+                FontRenderer.RenderString(ws + 12, 14, color, "_", size);
             }
         }
 

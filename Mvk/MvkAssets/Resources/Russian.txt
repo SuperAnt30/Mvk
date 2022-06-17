@@ -12,6 +12,7 @@ gui.volume.music:Громкость музыки
 gui.volume.off:Выключен звук
 gui.smooth.lighting.on:Плавное освещение включено
 gui.smooth.lighting.off:Плавное освещение выключено
+gui.size.interface:Интерфейс
 gui.apply:Применить
 gui.cancel:Отмена
 gui.no:Нет

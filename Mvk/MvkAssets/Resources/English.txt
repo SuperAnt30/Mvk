@@ -11,6 +11,7 @@ gui.volume.music:Music volume
 gui.volume.off:Sound off
 gui.smooth.lighting.on:Smooth lighting on
 gui.smooth.lighting.off:Smooth lighting off
+gui.size.interface:Interface
 gui.apply:Apply
 gui.cancel:Cancel
 gui.no:No

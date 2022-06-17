@@ -2,6 +2,7 @@
 using MvkClient.Actions;
 using MvkClient.Renderer;
 using MvkClient.Renderer.Font;
+using MvkClient.Setitings;
 using MvkServer.Glm;
 using SharpGL;
 using System;
@@ -36,8 +37,14 @@ namespace MvkClient.Gui
         /// Откуда зашёл
         /// </summary>
         protected EnumScreenKey where;
+        /// <summary>
+        /// Объект OpenGL
+        /// </summary>
         protected static OpenGL gl;
-
+        /// <summary>
+        /// Размер интерфеса
+        /// </summary>
+        protected int sizeInterface;
         /// <summary>
         /// Тип фона
         /// </summary>
@@ -47,8 +54,8 @@ namespace MvkClient.Gui
         /// </summary>
         protected uint dList;
 
-        protected Screen() { }
-        public Screen(Client client) => ClientMain = client;
+        protected Screen() => sizeInterface = Setting.SizeInterface;
+        public Screen(Client client) : this() => ClientMain = client;
 
         public void Initialize()
         {
@@ -138,7 +145,11 @@ namespace MvkClient.Gui
         {
             foreach(Control control in Controls)
             {
+                GLRender.PushMatrix();
+                GLRender.Translate(control.Position.x, control.Position.y, 0);
+                GLRender.Scale(sizeInterface, sizeInterface, 1);
                 control.Draw();
+                GLRender.PopMatrix();
             }
         }
         /// <summary>
@@ -180,12 +191,15 @@ namespace MvkClient.Gui
                 string text = ClientMain.NameVersion;
                 vec4 colorB = new vec4(0.2f, 0.2f, 0.2f, 1f);
                 vec4 color = new vec4(1.0f, 1.0f, 1.0f, 1f);
-                FontRenderer.RenderString(11, Height - 19, colorB, text, FontSize.Font8);
-                FontRenderer.RenderString(10, Height - 20, color, text, FontSize.Font8);
+                GLRender.PushMatrix();
+                GLRender.Scale(sizeInterface, sizeInterface, 1);
+                FontRenderer.RenderString(11, Height / sizeInterface - 19, colorB, text, FontSize.Font8);
+                FontRenderer.RenderString(10, Height / sizeInterface - 20, color, text, FontSize.Font8);
                 text = "SuperAnt";
                 int ws = FontRenderer.WidthString(text, FontSize.Font8) + 10;
-                FontRenderer.RenderString(Width - ws + 1, Height - 19, colorB, text, FontSize.Font8);
-                FontRenderer.RenderString(Width - ws, Height - 20, color, text, FontSize.Font8);
+                FontRenderer.RenderString(Width / sizeInterface - ws + 1, Height / sizeInterface - 19, colorB, text, FontSize.Font8);
+                FontRenderer.RenderString(Width / sizeInterface - ws, Height / sizeInterface - 20, color, text, FontSize.Font8);
+                GLRender.PopMatrix();
             }
             else
             {

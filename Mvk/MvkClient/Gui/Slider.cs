@@ -3,7 +3,9 @@ using MvkClient.Actions;
 using MvkClient.Renderer;
 using MvkClient.Renderer.Font;
 using MvkServer.Glm;
+using MvkServer.Util;
 using SharpGL;
+using System;
 using System.Collections;
 
 namespace MvkClient.Gui
@@ -68,9 +70,8 @@ namespace MvkClient.Gui
             int w = Width;
             int wh = Width / 2;
             float wh2 = Width / 256f;
-            int x = Position.x;
-            GLRender.Rectangle(x, Position.y, x + wh, Position.y + Height, 0, v1, 0.5f * wh2, v2);
-            GLRender.Rectangle(x + wh, Position.y, x + w, Position.y + Height, 1f - 0.5f * wh2, v1, 1f, v2);
+            GLRender.Rectangle(0, 0, wh, Height, 0, v1, 0.5f * wh2, v2);
+            GLRender.Rectangle(wh, 0, w, Height, 1f - 0.5f * wh2, v1, 1f, v2);
 
             if (Enabled)
             {
@@ -81,16 +82,15 @@ namespace MvkClient.Gui
                 w = 16;
                 wh = 8;
                 wh2 = w / 256f;
-                x = Position.x + px;
-                GLRender.Rectangle(x, Position.y, x + wh, Position.y + Height, 0, v1, 0.5f * wh2, v2);
-                GLRender.Rectangle(x + wh, Position.y, x + w, Position.y + Height, 1f - 0.5f * wh2, v1, 1f, v2);
+                GLRender.Rectangle(px, 0, px + wh, Height, 0, v1, 0.5f * wh2, v2);
+                GLRender.Rectangle(px + wh, 0, px + w, Height, 1f - 0.5f * wh2, v1, 1f, v2);
             }
             GLWindow.Texture.BindTexture(Assets.ConvertFontToTexture(size));
             
             string s = items.ContainsKey(Value) ? items[Value].ToString() : Text + " " + Value;
 
             vec4 color = Enabled ? enter ? new vec4(.8f, .8f, .4f, 1f) : new vec4(.7f, .7f, .7f, 1f) : new vec4(.5f, .5f, .5f, 1f);
-            FontRenderer.RenderString(Position.x + GetXAlight(s, 12), Position.y + 14, color, s, size);
+            FontRenderer.RenderString(GetXAlight(s, 12), 14, color, s, size);
         }
 
         /// <summary>
@@ -134,14 +134,15 @@ namespace MvkClient.Gui
         /// <param name="x">координата мыши по X</param>
         protected void CheckMouse(int x)
         {
-            float xm = (float)(x - Position.x - 4) / (float)(Width - 8);
+            float xm = (float)(x - Position.x - 4 * sizeInterface) / (float)(Width * sizeInterface - 8 * sizeInterface);
             if (xm < 0) xm = 0f;
             if (xm > 1f) xm = 1f;
 
-            Value = (int)((Max - Min) * xm + Min) / Step;
+            Value = Mth.Round(((Max - Min) * xm + Min) / Step);
             Value *= Step;
 
             IsRender = true;
         }
+
     }
 }

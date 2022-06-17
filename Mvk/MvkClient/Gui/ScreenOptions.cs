@@ -21,6 +21,7 @@ namespace MvkClient.Gui
         protected Slider sliderChunk;
         protected Slider sliderSoundVolume;
         protected Slider sliderMusicVolume;
+        protected Slider sliderSizeInterface;
         protected TextBox textBoxNickname;
 
         private int cacheLanguage;
@@ -63,6 +64,11 @@ namespace MvkClient.Gui
                 Value = Setting.MusicVolume,
                 Enabled = false
             };
+            sliderSizeInterface = new Slider(1, 2, 1, Language.T("gui.size.interface"))
+            {
+                Width = 192,
+                Value = Setting.SizeInterface
+            };
             labelLanguage = new Label(Language.T("gui.language"), FontSize.Font12)
             {
                 Width = 160,
@@ -96,6 +102,7 @@ namespace MvkClient.Gui
             AddControls(sliderChunk);
             AddControls(sliderSoundVolume);
             AddControls(sliderMusicVolume);
+            AddControls(sliderSizeInterface);
             AddControls(buttonSmoothLighting);
             AddControls(buttonDone);
             AddControls(buttonCancel);
@@ -116,19 +123,20 @@ namespace MvkClient.Gui
         /// </summary>
         protected override void ResizedScreen()
         {
-            label.Position = new vec2i(Width / 2 - 200, 72);
-            labelNickname.Position = new vec2i(Width / 2 - 162, 120);
-            textBoxNickname.Position = new vec2i(Width / 2 + 2, 120);
-            sliderSoundVolume.Position = new vec2i(Width / 2 - 258, 164);
-            sliderMusicVolume.Position = new vec2i(Width / 2 + 2, 164);
-            sliderFps.Position = new vec2i(Width / 2 - 258, 208);
-            sliderChunk.Position = new vec2i(Width / 2 + 2, 208);
-            buttonSmoothLighting.Position = new vec2i(Width / 2 - 158, 252);
-            labelLanguage.Position = new vec2i(Width / 2 - 162, 296);
-            buttonLanguage.Position = new vec2i(Width / 2 + 2, 296);
-            buttonNet.Position = new vec2i(Width / 2 + 2, 340);
-            buttonDone.Position = new vec2i(Width / 2 - 258, 400);
-            buttonCancel.Position = new vec2i(Width / 2 + 2, 400);
+            label.Position = new vec2i(Width / 2 - 200 * sizeInterface, 72 * sizeInterface);
+            labelNickname.Position = new vec2i(Width / 2 - 162 * sizeInterface, 120 * sizeInterface);
+            textBoxNickname.Position = new vec2i(Width / 2 + 2 * sizeInterface, 120 * sizeInterface);
+            sliderSoundVolume.Position = new vec2i(Width / 2 - 258 * sizeInterface, 164 * sizeInterface);
+            sliderMusicVolume.Position = new vec2i(Width / 2 + 2 * sizeInterface, 164 * sizeInterface);
+            sliderFps.Position = new vec2i(Width / 2 - 258 * sizeInterface, 208 * sizeInterface);
+            sliderChunk.Position = new vec2i(Width / 2 + 2 * sizeInterface, 208 * sizeInterface);
+            sliderSizeInterface.Position = new vec2i(Width / 2 - 258 * sizeInterface, 252 * sizeInterface);
+            buttonSmoothLighting.Position = new vec2i(Width / 2 - 62 * sizeInterface, 252 * sizeInterface);
+            labelLanguage.Position = new vec2i(Width / 2 - 162 * sizeInterface, 296 * sizeInterface);
+            buttonLanguage.Position = new vec2i(Width / 2 + 2 * sizeInterface, 296 * sizeInterface);
+            buttonNet.Position = new vec2i(Width / 2 + 2 * sizeInterface, 340 * sizeInterface);
+            buttonDone.Position = new vec2i(Width / 2 - 258 * sizeInterface, 400 * sizeInterface);
+            buttonCancel.Position = new vec2i(Width / 2 + 2 * sizeInterface, 400 * sizeInterface);
         }
 
         private void ButtonLanguage_Click(object sender, EventArgs e)
@@ -178,6 +186,7 @@ namespace MvkClient.Gui
             Setting.Nickname = textBoxNickname.Text;
             Setting.Language = cacheLanguage;
             Setting.SmoothLighting = cacheSmoothLighting;
+            Setting.SizeInterface = sliderSizeInterface.Value;
             Setting.Save();
             Language.SetLanguage((AssetsLanguage)cacheLanguage);
 

@@ -42,7 +42,10 @@ namespace MvkClient.Setitings
         /// Плавное освещение
         /// </summary>
         public static bool SmoothLighting { get; set; } = true;
-
+        /// <summary>
+        /// Размер интерфеса
+        /// </summary>
+        public static int SizeInterface { get; set; } = 1;
 
         public static float ToFloatSoundVolume() => SoundVolume / 100f;
         public static float ToFloatMusicVolume() => MusicVolume / 100f;
@@ -78,6 +81,7 @@ namespace MvkClient.Setitings
                         else if (Check(vs, "Language")) Language = int.Parse(vs[1]);
                         else if (Check(vs, "IpAddress")) IpAddress = vs[1].ToString();
                         else if (Check(vs, "SmoothLighting")) SmoothLighting = int.Parse(vs[1]) == 1;
+                        else if (Check(vs, "SizeInterface")) SizeInterface = int.Parse(vs[1]);
                     }
                 }
             }
@@ -107,6 +111,7 @@ namespace MvkClient.Setitings
                 file.WriteLine("Language: " + Language.ToString());
                 file.WriteLine("IpAddress: " + IpAddress.ToString());
                 file.WriteLine("SmoothLighting: " + (SmoothLighting ? "1" : "0"));
+                file.WriteLine("SizeInterface: " + SizeInterface.ToString());
                 file.Close();
             }
         }

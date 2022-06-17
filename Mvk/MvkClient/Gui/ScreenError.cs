@@ -31,11 +31,11 @@ namespace MvkClient.Gui
         /// </summary>
         protected override void ResizedScreen()
         {
-            labelTitle.Position = new vec2i(Width / 2 - 200, Height / 4);
+            labelTitle.Position = new vec2i(Width / 2 - 200 * sizeInterface, Height / 4);
             label.Width = Width - 200;
             label.TransferText();
-            label.Position = new vec2i(Width / 2 - label.Width / 2, Height / 4 + 44);
-            buttonCancel.Position = new vec2i(Width / 2 - 100, Height / 4 + 192);
+            label.Position = new vec2i(Width / 2 - (label.Width / 2) * sizeInterface, Height / 4 + 44 * sizeInterface);
+            buttonCancel.Position = new vec2i(Width / 2 - 100 * sizeInterface, Height / 4 + 192 * sizeInterface);
         }
     }
 }

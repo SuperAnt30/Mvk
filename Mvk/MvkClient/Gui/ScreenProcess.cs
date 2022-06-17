@@ -22,7 +22,7 @@ namespace MvkClient.Gui
         /// </summary>
         protected override void ResizedScreen()
         {
-            label.Position = new vec2i(Width / 2 - 200, Height / 4 + 44);
+            label.Position = new vec2i(Width / 2 - 200 * sizeInterface, Height / 4 + 44 * sizeInterface);
         }
     }
 }
