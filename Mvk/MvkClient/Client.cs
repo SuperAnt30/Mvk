@@ -215,7 +215,11 @@ namespace MvkClient
         {
             GLWindow.Resized(width, height);
             Screen.Resized();
-            if (IsGamePlay && Player != null) Player.UpProjection();
+            if (IsGamePlay && Player != null)
+            {
+                Player.UpProjection();
+                if (World != null) World.WorldRender.ScreenGame.Resized();
+            }
         }
 
         /// <summary>

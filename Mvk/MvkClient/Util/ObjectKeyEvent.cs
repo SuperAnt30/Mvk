@@ -56,6 +56,10 @@
         /// <summary>
         /// Режим GUI, конец игры
         /// </summary>
-        GameOver
+        GameOver,
+        /// <summary>
+        /// В игре
+        /// </summary>
+        InGame
     }
 }

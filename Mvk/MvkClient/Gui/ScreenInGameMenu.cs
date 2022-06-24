@@ -11,7 +11,7 @@ namespace MvkClient.Gui
 
         public ScreenInGameMenu(Client client) : base(client)
         {
-            background = EnumBackground.Game;
+            background = EnumBackground.GameWindow;
 
             buttonBack = new Button(EnumScreenKey.World, Language.T("gui.back.game"));
             InitButtonClick(buttonBack);
@@ -34,9 +34,13 @@ namespace MvkClient.Gui
         /// </summary>
         protected override void ResizedScreen()
         {
-            buttonBack.Position = new vec2i(Width / 2 - 200 * sizeInterface, Height / 4 + 48 * sizeInterface);
-            buttonOptions.Position = new vec2i(Width / 2 - 200 * sizeInterface, Height / 4 + 92 * sizeInterface);
-            buttonExit.Position = new vec2i(Width / 2 - 200 * sizeInterface, Height / 4 + 192 * sizeInterface);
+            int h = Height / 4 + 48 * sizeInterface;
+            int hMax = h + 248 * sizeInterface;
+            if (hMax > Height) h -= hMax - Height;
+
+            buttonBack.Position = new vec2i(Width / 2 - 200 * sizeInterface, h);
+            buttonOptions.Position = new vec2i(Width / 2 - 200 * sizeInterface, h + 44 * sizeInterface);
+            buttonExit.Position = new vec2i(Width / 2 - 200 * sizeInterface, h + 144 * sizeInterface);
         }
     }
 }

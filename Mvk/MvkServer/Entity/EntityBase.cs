@@ -574,7 +574,7 @@ namespace MvkServer.Entity
         /// </summary>
         public vec2 GetBrightnessForRender()
         {
-            BlockPos blockPos = new BlockPos(Position.x, Position.y, Position.z);
+            BlockPos blockPos = new BlockPos(Position.x, Position.y + Height * .85f, Position.z);
             byte light = 0x0F;
             if (blockPos.IsValid())
             {

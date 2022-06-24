@@ -42,11 +42,15 @@ namespace MvkClient.Gui
         /// </summary>
         protected override void ResizedScreen()
         {
-            label.Position = new vec2i(Width / 2 - 200 * sizeInterface, Height / 4);
-            labelAddress.Position = new vec2i(Width / 2 - 162 * sizeInterface, Height / 4 + 92 * sizeInterface);
-            textBoxAddress.Position = new vec2i(Width / 2 + 2 * sizeInterface, Height / 4 + 92 * sizeInterface);
-            buttonConnect.Position = new vec2i(Width / 2 - 258 * sizeInterface, Height / 4 + 192 * sizeInterface);
-            buttonCancel.Position = new vec2i(Width / 2 + 2 * sizeInterface, Height / 4 + 192 * sizeInterface);
+            int h = Height / 2 - 108 * sizeInterface;
+            int hMax = h + 252 * sizeInterface;
+            if (hMax > Height) h -= hMax - Height;
+
+            label.Position = new vec2i(Width / 2 - 200 * sizeInterface, h);
+            labelAddress.Position = new vec2i(Width / 2 - 162 * sizeInterface, h + 92 * sizeInterface);
+            textBoxAddress.Position = new vec2i(Width / 2 + 2 * sizeInterface, h + 92 * sizeInterface);
+            buttonConnect.Position = new vec2i(Width / 2 - 258 * sizeInterface, h + 192 * sizeInterface);
+            buttonCancel.Position = new vec2i(Width / 2 + 2 * sizeInterface, h + 192 * sizeInterface);
         }
 
         private void ButtonConnect_Click(object sender, EventArgs e)

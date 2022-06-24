@@ -1,5 +1,6 @@
 ﻿using MvkAssets;
 using MvkClient.Entity;
+using MvkClient.Gui;
 using MvkClient.Renderer.Chunk;
 using MvkClient.Renderer.Shaders;
 using MvkClient.Util;
@@ -28,11 +29,15 @@ namespace MvkClient.Renderer
         /// <summary>
         /// Основной клиент
         /// </summary>
-        public Client ClientMain { get; protected set; }
+        public Client ClientMain { get; private set; }
         /// <summary>
         /// Клиентский объект мира
         /// </summary>
-        public WorldClient World { get; protected set; }
+        public WorldClient World { get; private set; }
+        /// <summary>
+        /// Объект основного игрового скрина
+        /// </summary>
+        public ScreenInGame ScreenGame { get; private set; }
 
         /// <summary>
         /// Дополнительный счётчик, для повторной проверки, если камера не двигается, а чанки догружаются
@@ -42,7 +47,7 @@ namespace MvkClient.Renderer
         /// <summary>
         /// DL курсора прицела
         /// </summary>
-        private RenderAim renderAim;
+        //private RenderAim renderAim;
         /// <summary>
         /// DL курсора блока
         /// </summary>
@@ -64,7 +69,11 @@ namespace MvkClient.Renderer
         /// <summary>
         /// Массив всех блоков для GUI
         /// </summary>
-        private readonly RenderBlockGui[] listBlocksGui = new RenderBlockGui[BlocksCount.COUNT + 1];
+        //private readonly RenderBlockGui[] listBlocksGui = new RenderBlockGui[BlocksCount.COUNT + 1];
+        /// <summary>
+        /// Карта всех блоков для GUI
+        /// </summary>
+        private readonly Dictionary<EnumBlock, RenderBlockGui> mapBlocksGui = new Dictionary<EnumBlock, RenderBlockGui>();
 
         /// <summary>
         /// Угол солнца
@@ -91,13 +100,16 @@ namespace MvkClient.Renderer
             //stopwatch5.Start();
             World = world;
             ClientMain = world.ClientMain;
-            renderAim = new RenderAim();
+            ScreenGame = new ScreenInGame(ClientMain);
+            //renderAim = new RenderAim();
             renderBlockCursor = new RenderBlockCursor(ClientMain);
             renderChunkCursor = new RenderChunkCursor { IsHidden = true };
 
             for (int i = 0; i <= BlocksCount.COUNT; i++)
             {
-                listBlocksGui[i] = new RenderBlockGui((EnumBlock)i, 64f);
+                EnumBlock enumBlock = (EnumBlock)i;
+                mapBlocksGui.Add(enumBlock, new RenderBlockGui(enumBlock));//, 32f));
+                //listBlocksGui[i] = new RenderBlockGui((EnumBlock)i, 64f);
             }
 
             // создаём DL звёзд
@@ -164,9 +176,6 @@ namespace MvkClient.Renderer
             // Воксели альфа VBO
             DrawVoxelAlpha(timeIndex);
 
-            // Эффект 2д
-            DrawEff2d(timeIndex);
-
             // Прорисовка руки
             if (ClientMain.Player.ViewCamera == EnumViewCamera.Eye)
             {
@@ -175,36 +184,19 @@ namespace MvkClient.Renderer
                 World.RenderEntityManager.RenderEntity(ClientMain.Player, timeIndex);
             }
 
+            // GUI во время игры без доп окон, так же эффекты
+            ScreenGame.Draw(timeIndex);
+
+            
+
             // Чистка сетки чанков при необходимости
             World.ChunkPrClient.RemoteMeshChunks();
         }
-
-        private void DrawEff2d(float timeIndex)
-        {
-            // вода
-            vec3 pos = ClientMain.Player.Position + ClientMain.Player.PositionCamera;
-            BlockBase block = World.GetBlockState(new BlockPos(pos)).GetBlock();
-
-            if (block.Material == EnumMaterial.Water)
-            {
-                DrawEffWater(timeIndex);
-            }
-
-            // урон
-            if (ClientMain.Player.DamageTime > 0 && ClientMain.Player.ViewCamera == EnumViewCamera.Eye)
-            {
-                DrawEffDamage(ClientMain.Player.DamageTime, timeIndex);
-            }
-
-            ClientMain.World.WorldRender.Draw2D();
-        }
-
 
         /// <summary>
         /// Смена видимости курсора чанка
         /// </summary>
         public void ChunkCursorHiddenShow() => renderChunkCursor.IsHidden = !renderChunkCursor.IsHidden;
-
 
         /// <summary>
         /// Прорисовка вокселей VBO
@@ -449,97 +441,6 @@ namespace MvkClient.Renderer
             //{
             //    World.RenderEntityManager.RenderEntity(ClientMain.Player, timeIndex);
             //}
-        }
-
-        private void DrawEffWater(float timeIndex)
-        {
-            int w = GLWindow.WindowWidth;
-            int h = GLWindow.WindowHeight;
-            // Эффект
-            GLWindow.gl.MatrixMode(OpenGL.GL_PROJECTION);
-            GLWindow.gl.LoadIdentity();
-            GLWindow.gl.Ortho2D(0, w, h, 0);
-            GLWindow.gl.MatrixMode(OpenGL.GL_MODELVIEW);
-            GLWindow.gl.LoadIdentity();
-
-            GLRender.PushMatrix();
-            GLRender.Texture2DDisable();
-            GLRender.Rectangle(0, 0, w, h, new vec4(0.0f, 0.1f, 0.4f, 0.7f));
-            GLRender.PopMatrix();
-        }
-
-        private void DrawEffDamage(float damageTime, float timeIndex)
-        {
-            float dt = Mth.Sqrt((damageTime + timeIndex - 1f) / 5f * 1.6f);
-            if (dt > 1f) dt = 1f;
-
-            int w = GLWindow.WindowWidth;
-            int h = GLWindow.WindowHeight;
-            // Эффект
-            GLWindow.gl.MatrixMode(OpenGL.GL_PROJECTION);
-            GLWindow.gl.LoadIdentity();
-            GLWindow.gl.Ortho2D(0, w, h, 0);
-            GLWindow.gl.MatrixMode(OpenGL.GL_MODELVIEW);
-            GLWindow.gl.LoadIdentity();
-
-            GLRender.PushMatrix();
-            GLRender.Texture2DDisable();
-            GLRender.Rectangle(0, 0, w, h, new vec4(0.7f, 0.4f, 0.3f, 0.7f * dt));
-            GLRender.PopMatrix();
-        }
-
-        //RenderBlockGui blockGui = new RenderBlockGui(EnumBlock.Cobblestone, 64f);
-        /// <summary>
-        /// Прорисовать 2д
-        /// </summary>
-        private void Draw2D()
-        {
-            int w = GLWindow.WindowWidth;
-            int h = GLWindow.WindowHeight;
-
-            renderAim.MatrixOrtho2d(w, h);
-
-            // Прицел
-            renderAim.IsHidden = ClientMain.Player.ViewCamera != EnumViewCamera.Eye;
-            renderAim.Render(w, h);
-
-            ItemStack itemStack = ClientMain.Player.Inventory.GetCurrentItem();
-            if (itemStack != null && itemStack.Item is ItemBlock itemBlock)
-            {
-                listBlocksGui[(int)itemBlock.Block.EBlock].Render(64, 64);
-            }
-                
-            //listBlocksGui[2].Render(w / 4 + 50, 16);
-            //listBlocksGui[3].Render(w / 4 + 100, 16);
-            //listBlocksGui[4].Render(w / 4 + 150, 16);
-
-            //blockGui.Render2(100, 100);
-
-            // ХП
-            GLRender.PushMatrix();
-            GLRender.Texture2DDisable();
-            GLRender.LineWidth(1f);
-            GLRender.Color(new vec3(0));
-            for (int i = 0; i < 20; i++)
-            {
-                GLRender.Begin(OpenGL.GL_LINE_STRIP);
-                GLRender.Vertex(30, h - 46 - i * 20, 0);
-                GLRender.Vertex(46, h - 46 - i * 20, 0);
-                GLRender.Vertex(46, h - 30 - i * 20, 0);
-                GLRender.Vertex(30, h - 30 - i * 20, 0);
-                GLRender.Vertex(30, h - 46 - i * 20, 0);
-                GLRender.End();
-            }
-
-            int count = Mth.Floor(ClientMain.Player.Health);
-
-            for (int i = 0; i < count; i++)
-            {
-                GLRender.Rectangle(31, h - 45 - i * 20, 45, h - 31 - i * 20, new vec4(.9f, .4f, .4f, .7f));
-            }
-
-
-            GLRender.PopMatrix();
         }
 
         /// <summary>
@@ -808,6 +709,11 @@ namespace MvkClient.Renderer
             GLRender.FogDisable();
             GLRender.CullEnable();
         }
+
+        /// <summary>
+        /// Получить рендовый объект блока для GUI
+        /// </summary>
+        public RenderBlockGui GetBlockGui(EnumBlock enumBlock) => mapBlocksGui[enumBlock];
 
         /// <summary>
         /// Рендер и прорисовка курсора выбранного блока по AABB

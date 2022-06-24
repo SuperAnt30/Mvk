@@ -87,7 +87,7 @@ namespace MvkClient.Gui
 
             if (where == EnumScreenKey.InGameMenu)
             {
-                background = EnumBackground.Game;
+                background = EnumBackground.GameWindow;
                 textBoxNickname.Enabled = false;
             }
         }
@@ -123,20 +123,24 @@ namespace MvkClient.Gui
         /// </summary>
         protected override void ResizedScreen()
         {
-            label.Position = new vec2i(Width / 2 - 200 * sizeInterface, 72 * sizeInterface);
-            labelNickname.Position = new vec2i(Width / 2 - 162 * sizeInterface, 120 * sizeInterface);
-            textBoxNickname.Position = new vec2i(Width / 2 + 2 * sizeInterface, 120 * sizeInterface);
-            sliderSoundVolume.Position = new vec2i(Width / 2 - 258 * sizeInterface, 164 * sizeInterface);
-            sliderMusicVolume.Position = new vec2i(Width / 2 + 2 * sizeInterface, 164 * sizeInterface);
-            sliderFps.Position = new vec2i(Width / 2 - 258 * sizeInterface, 208 * sizeInterface);
-            sliderChunk.Position = new vec2i(Width / 2 + 2 * sizeInterface, 208 * sizeInterface);
-            sliderSizeInterface.Position = new vec2i(Width / 2 - 258 * sizeInterface, 252 * sizeInterface);
-            buttonSmoothLighting.Position = new vec2i(Width / 2 - 62 * sizeInterface, 252 * sizeInterface);
-            labelLanguage.Position = new vec2i(Width / 2 - 162 * sizeInterface, 296 * sizeInterface);
-            buttonLanguage.Position = new vec2i(Width / 2 + 2 * sizeInterface, 296 * sizeInterface);
-            buttonNet.Position = new vec2i(Width / 2 + 2 * sizeInterface, 340 * sizeInterface);
-            buttonDone.Position = new vec2i(Width / 2 - 258 * sizeInterface, 400 * sizeInterface);
-            buttonCancel.Position = new vec2i(Width / 2 + 2 * sizeInterface, 400 * sizeInterface);
+            int h = 72 * sizeInterface;
+            int hMax = h + 360 * sizeInterface;
+            if (hMax > Height) h -= hMax - Height;
+
+            label.Position = new vec2i(Width / 2 - 200 * sizeInterface, h);
+            labelNickname.Position = new vec2i(Width / 2 - 162 * sizeInterface, h + 44 * sizeInterface);
+            textBoxNickname.Position = new vec2i(Width / 2 + 2 * sizeInterface, h + 44 * sizeInterface);
+            sliderSoundVolume.Position = new vec2i(Width / 2 - 258 * sizeInterface, h + 88 * sizeInterface);
+            sliderMusicVolume.Position = new vec2i(Width / 2 + 2 * sizeInterface, h + 88 * sizeInterface);
+            sliderFps.Position = new vec2i(Width / 2 - 258 * sizeInterface, h + 132 * sizeInterface);
+            sliderChunk.Position = new vec2i(Width / 2 + 2 * sizeInterface, h + 132 * sizeInterface);
+            sliderSizeInterface.Position = new vec2i(Width / 2 - 258 * sizeInterface, h + 176 * sizeInterface);
+            buttonSmoothLighting.Position = new vec2i(Width / 2 - 62 * sizeInterface, h + 176 * sizeInterface);
+            labelLanguage.Position = new vec2i(Width / 2 - 162 * sizeInterface, h + 220 * sizeInterface);
+            buttonLanguage.Position = new vec2i(Width / 2 + 2 * sizeInterface, h + 220 * sizeInterface);
+            buttonNet.Position = new vec2i(Width / 2 + 2 * sizeInterface, h + 264 * sizeInterface);
+            buttonDone.Position = new vec2i(Width / 2 - 258 * sizeInterface, h + 308 * sizeInterface);
+            buttonCancel.Position = new vec2i(Width / 2 + 2 * sizeInterface, h + 308 * sizeInterface);
         }
 
         private void ButtonLanguage_Click(object sender, EventArgs e)

@@ -127,7 +127,8 @@ namespace MvkClient.Gui
 
             gl.MatrixMode(OpenGL.GL_PROJECTION);
             gl.LoadIdentity();
-            gl.Ortho2D(0, Width, Height, 0);
+            //gl.Ortho2D(0, Width, Height, 0);
+            gl.Ortho(0, Width, Height, 0, -100, 100);
             gl.MatrixMode(OpenGL.GL_MODELVIEW);
             gl.LoadIdentity();
 
@@ -200,6 +201,10 @@ namespace MvkClient.Gui
                 FontRenderer.RenderString(Width / sizeInterface - ws + 1, Height / sizeInterface - 19, colorB, text, FontSize.Font8);
                 FontRenderer.RenderString(Width / sizeInterface - ws, Height / sizeInterface - 20, color, text, FontSize.Font8);
                 GLRender.PopMatrix();
+            }
+            else if (background == EnumBackground.Game)
+            {
+                return;
             }
             else
             {
@@ -290,5 +295,12 @@ namespace MvkClient.Gui
         public event ScreenEventHandler Finished;
         protected virtual void OnFinished(EnumScreenKey key) => OnFinished(new ScreenEventArgs(key));
         protected virtual void OnFinished(ScreenEventArgs e) => Finished?.Invoke(this, e);
+
+        /// <summary>
+        /// Прорисовать прямоугольник с текстурой, где расчёт текстуры через пиксели, где текстура 512*512
+        /// </summary>
+        protected void DrawTexturedModalRect(int x, int y, int textureX, int textureY, int width, int height)
+            => GLRender.Rectangle(x, y, x + width, y + height, textureX * .001953125f, textureY * .001953125f,
+                (textureX + width) * .001953125f, (textureY + height) * .001953125f);
     }
 }

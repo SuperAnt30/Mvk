@@ -90,16 +90,16 @@ namespace MvkClient.Renderer
             RotationPointZ = z;
         }
 
-        public void MatrixOrtho2d(int width, int height)
-        {
-            GLWindow.gl.MatrixMode(OpenGL.GL_PROJECTION);
-            GLWindow.gl.LoadIdentity();
-            //GLWindow.gl.Ortho2D(0, width, height, 0);
-            GLWindow.gl.Ortho(0, width, height, 0, -100, 100);
-            GLWindow.gl.MatrixMode(OpenGL.GL_MODELVIEW);
-            GLWindow.gl.LoadIdentity();
-            GLRender.CullEnable();
-        }
+        //public void MatrixOrtho2d(int width, int height)
+        //{
+        //    GLWindow.gl.MatrixMode(OpenGL.GL_PROJECTION);
+        //    GLWindow.gl.LoadIdentity();
+        //    //GLWindow.gl.Ortho2D(0, width, height, 0);
+        //    GLWindow.gl.Ortho(0, width, height, 0, -100, 100);
+        //    GLWindow.gl.MatrixMode(OpenGL.GL_MODELVIEW);
+        //    GLWindow.gl.LoadIdentity();
+        //    GLRender.CullEnable();
+        //}
 
     }
 }

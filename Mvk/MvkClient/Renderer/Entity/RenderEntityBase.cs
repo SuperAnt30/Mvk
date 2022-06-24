@@ -107,14 +107,15 @@ namespace MvkClient.Renderer.Entity
                 vec3 offsetPos = pos - offset;
                 WorldClient world = renderManager.World;
                 float shadowSize = this.shadowSize * 2f;
-
+                float shadowSizeY = shadowSize * 3f;
+                if (shadowSizeY < 1.1f) shadowSizeY = 1.1f;
                 if (dis > 16)
                 {
                     float adis = (32 - dis) / 16f;
                     shadowAlpha *= adis;
                 }
 
-                vec3i pos0 = new vec3i(Mth.Floor(pos.x - shadowSize), Mth.Floor(pos.y - 2.1f), Mth.Floor(pos.z - shadowSize));
+                vec3i pos0 = new vec3i(Mth.Floor(pos.x - shadowSize), Mth.Floor(pos.y - shadowSizeY), Mth.Floor(pos.z - shadowSize));
                 vec3i pos1 = new vec3i(Mth.Floor(pos.x + shadowSize), Mth.Floor(pos.y - .1f), Mth.Floor(pos.z + shadowSize));
 
                 BlockPos[] blocks = BlockPos.GetAllInBox(pos0, pos1);
@@ -152,7 +153,7 @@ namespace MvkClient.Renderer.Entity
                             float v1 = -z1 / 2.0f / shadowSize + 0.5f;
                             float v2 = -z2 / 2.0f / shadowSize + 0.5f;
 
-                            float height = 1f - (pos.y - (float)blocks[i].Y - 1f) / 3f;
+                            float height = 1f - (pos.y - (float)blocks[i].Y - 1f) / (shadowSizeY + .5f);
                             if (height > 1) height = 1;
                             float alpha = shadowAlpha * height;
 

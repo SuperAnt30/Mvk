@@ -66,6 +66,10 @@
         /// <summary>
         /// Облака 256*256
         /// </summary>
-        Clouds
+        Clouds,
+        /// <summary>
+        /// Иконка для InGame 512*512
+        /// </summary>
+        Icons
     }
 }
