@@ -40,6 +40,19 @@ namespace MvkServer.Entity.Player
         /// </summary>
         public bool IsCreativeMode { get; protected set; } = false;
 
+        /// <summary>
+        /// Тикущий уровень игрока
+        /// </summary>
+        public int ExperienceLevel { get; protected set; } = 0;
+        /// <summary>
+        /// Общее количество опыта игрока. Это также включает в себя количество опыта в их полосе опыта.
+        /// </summary>
+        public int ExperienceTotal { get; protected set; } = 0;
+        /// <summary>
+        /// Текущее количество опыта, которое игрок имеет на своей полосе опыта.
+        /// </summary>
+        public float Experience { get; protected set; } = 0;
+
         protected EntityPlayer(WorldBase world) : base(world)
         {
             Type = EnumEntities.Player;
@@ -63,7 +76,7 @@ namespace MvkServer.Entity.Player
         /// <summary>
         /// Максимальное значение здоровья сущности
         /// </summary>
-        protected override float GetHelathMax() => 20;
+        protected override float GetHelathMax() => 16;
 
         //public override void Update()
         //{
@@ -125,5 +138,67 @@ namespace MvkServer.Entity.Player
             }
         }
 
+        /// <summary>
+        /// Добавить очки опыта игроку
+        /// </summary>
+        public void AddExperience(int experience)
+        {
+            //this.addScore(experience);
+            int i = int.MaxValue - ExperienceTotal;
+            if (experience > i) experience = i;
+
+            Experience += (float)experience / (float)XpBarCap();
+
+            for (ExperienceTotal += experience; Experience >= 1f; Experience /= (float)XpBarCap())
+            {
+                Experience = (Experience - 1.0F) * (float)XpBarCap();
+                AddExperienceLevel(1);
+            }
+        }
+
+        /// <summary>
+        /// Использование уровня игрока
+        /// </summary>
+        public void UseExperienceLevel(int experienceLevel)
+        {
+            ExperienceLevel -= experienceLevel;
+
+            if (ExperienceLevel < 0)
+            {
+                ExperienceLevel = 0;
+                Experience = 0f;
+                ExperienceTotal = 0;
+            }
+        }
+
+        /// <summary>
+        /// Добавить уровень игроку
+        /// </summary>
+        public void AddExperienceLevel(int experienceLevel)
+        {
+            ExperienceLevel += experienceLevel;
+
+            if (ExperienceLevel < 0)
+            {
+                ExperienceLevel = 0;
+                Experience = 0f;
+                ExperienceTotal = 0;
+            }
+
+            //if (experienceLevel > 0 && ExperienceLevel % 5 == 0 && (float)this.field_82249_h < (float)this.ticksExisted - 100.0F)
+            //{
+            //    // Звуковой эффект каждый 5 уровень с интервалом 100 тактов
+            //    float var2 = ExperienceLevel > 30 ? 1.0F : (float)ExperienceLevel / 30.0F;
+            //    this.worldObj.playSoundAtEntity(this, "random.levelup", var2 * 0.75F, 1.0F);
+            //    this.field_82249_h = this.ticksExisted;
+            //}
+        }
+
+        /// <summary>
+        /// Этот метод возвращает максимальное количество опыта, которое может содержать полоса опыта.
+        /// С каждым уровнем предел опыта на шкале опыта игрока увеличивается на 10.
+        /// </summary>
+        public int XpBarCap() 
+            => ExperienceLevel >= 30 ? 112 + (ExperienceLevel - 30) * 9 : (ExperienceLevel >= 15 ? 37 + (ExperienceLevel - 15) * 5 : 7 + ExperienceLevel * 2);
     }
 }

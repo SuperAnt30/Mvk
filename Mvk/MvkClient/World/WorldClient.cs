@@ -463,11 +463,7 @@ namespace MvkClient.World
                     {
                         for (int y = 0; y < chunk.StorageArrays.Length; y++)
                         {
-                            //TODO::2022-06-06 IsEmptyData
-                            //if (!chunk.StorageArrays[y].IsEmptyData())
-                            {
-                                chunk.ModifiedToRender(y);
-                            }
+                            chunk.ModifiedToRender(y);
                         }
                     }
                 }

@@ -168,6 +168,8 @@ namespace MvkServer.World.Chunk
                             chunk.SetEBlock(new vec3i(7, y + stolb, 9), Block.EnumBlock.GlassRed);
                             chunk.SetEBlock(new vec3i(11, y + stolb, 7), Block.EnumBlock.Water);
                         }
+                        chunk.SetEBlock(new vec3i(5, 2 + stolb, 5), Block.EnumBlock.Brol);
+                        // TODO::2022-06-30 надо уметь осветить блоки при генерации
                     }
 
                     if (pos.x == -3 && pos.y == 0)

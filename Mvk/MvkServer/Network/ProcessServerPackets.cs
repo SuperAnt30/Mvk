@@ -257,11 +257,10 @@ namespace MvkServer.Network
             if (entityPlayer != null && packet.GetAction() == PacketC0CPlayerAction.EnumAction.Fall)
             {
                 // Падение с высоты
-                if (packet.GetParam() >= 5)
+                if (packet.GetParam() > 5)
                 {
                     float damage = packet.GetParam() - 5;
                     entityPlayer.AttackEntityFrom(damage);
-                    //entityPlayer.SetHealth(entityPlayer.Health - damage);
                     ServerMain.World.ResponseHealth(entityPlayer);
                     ServerMain.World.Tracker.SendToAllTrackingEntity(entityPlayer, new PacketS0BAnimation(entityPlayer.Id, PacketS0BAnimation.EnumAnimation.Fall));
                 }

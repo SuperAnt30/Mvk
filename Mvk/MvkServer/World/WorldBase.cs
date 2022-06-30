@@ -544,7 +544,6 @@ namespace MvkServer.World
             //    //Light.CheckLight(blockPos);
             //    if (block.LightValue != blockNew.LightValue)
             //    {
-            //        // TODO::2022-04-26 СВЕТ блока удаление!!! Надо как-то это сделать!
             //        Light.CheclLightBlock(blockPos);
             //    }
             //    TheProfiler().EndSection();

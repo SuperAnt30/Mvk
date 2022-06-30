@@ -103,12 +103,19 @@ namespace MvkClient.Renderer.Chunk
         {
             meshDense[y].StatusRendering();
             meshAlpha[y].StatusRendering();
-            chunks.Clear();
             foreach (vec2i pos in MvkStatic.AreaOne8)
             {
                 vec2i pos2 = Position + pos;
-                chunks.Add(pos2, World.ChunkPr.GetChunk(pos2));
+                if (chunks.ContainsKey(pos2))
+                {
+                    if (chunks[pos2] == null) chunks[pos2] = World.ChunkPr.GetChunk(pos2);
+                }
+                else
+                {
+                    chunks.Add(pos2, World.ChunkPr.GetChunk(pos2));
+                }
             }
+            return;
         }
 
         public ChunkBase Chunk(vec2i pos)
@@ -117,8 +124,6 @@ namespace MvkClient.Renderer.Chunk
             return null;
         }
 
-        Stopwatch stopwatch = new Stopwatch();
-        
         /// <summary>
         /// Рендер псевдо чанка, сплошных и альфа блоков
         /// </summary>
@@ -127,13 +132,6 @@ namespace MvkClient.Renderer.Chunk
             try
             {
                 long timeBegin = GLWindow.stopwatch.ElapsedTicks;
-
-                //chunks.Clear();
-                //foreach(vec2i pos in MvkStatic.AreaOne8)
-                //{
-                //    vec2i pos2 = Position + pos;
-                //    chunks.Add(pos2, World.ChunkPr.GetChunk(pos2));
-                //}
 
                 // буфер блоков
                 List<byte> bufferCache = new List<byte>();

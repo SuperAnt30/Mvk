@@ -1,4 +1,5 @@
 ﻿using MvkClient.World;
+using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World.Chunk;
 using System.Diagnostics;
@@ -73,7 +74,14 @@ namespace MvkClient.Actions
             }
             else if (key == 119) Debug.IsDrawVoxelLine = !Debug.IsDrawVoxelLine; // F8
             else if (key == 75) ClientMain.Player.Kill(); // K
-            else if (key == 82) World.GetChunk(ClientMain.Player.GetChunkPos()).ModifiedToRender(ClientMain.Player.GetChunkY()); // R
+            else if (key == 82)
+            {
+                ChunkBase chunk = World.GetChunk(ClientMain.Player.GetChunkPos());
+                for (int y = 0; y < ChunkBase.COUNT_HEIGHT; y++)
+                {
+                    chunk.ModifiedToRender(y); // R
+                }
+            }
             //else if (key == 117) // F6
             else ClientMain.Player.InputAdd(KeyActionToInput(key));
         }

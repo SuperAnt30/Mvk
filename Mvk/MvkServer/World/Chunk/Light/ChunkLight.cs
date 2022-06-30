@@ -139,7 +139,8 @@ namespace MvkServer.World.Chunk.Light
                 int yUp = yh;
                 // пометка что убераем вверхний блок
                 bool hMax = yh == HeightMapMax;
-                //TODO::2022-06-08 потестировать освещение в осветлении столба, было yUp + 1
+                //2022-06-08 потестировать освещение в осветлении столба, было yUp + 1
+                //2022-06-29 вроде всё норм
                 light.CheckLightFor(x, yDown, yUp, z); 
                 // обновляем максимальные высоты
                 if (hMax) GenerateHeightMap();

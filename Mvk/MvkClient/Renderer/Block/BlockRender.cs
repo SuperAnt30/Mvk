@@ -534,10 +534,7 @@ namespace MvkClient.Renderer.Block
             // Определяем рабочий чанк соседнего блока
             chunkCheck = (xc == chunk.Position.x && zc == chunk.Position.y) ? chunk : chunk.Chunk(new vec2i(xc, zc));
 
-            //TODO::2022-06-06 IsEmptyData
-            // Тут нужна проверка на ещё не созданный псевдо чанк
-            
-            if (chunkCheck == null || !chunkCheck.StorageArrays[yc].IsSky())// || chunkCheck.StorageArrays[yc].IsEmptyData())
+            if (chunkCheck == null || !chunkCheck.StorageArrays[yc].IsSky())
             {
                 // Только яркость неба макс
                 return 0x0F;
@@ -598,8 +595,7 @@ namespace MvkClient.Renderer.Block
             ChunkBase chunk = (xc == this.chunk.Position.x && zc == this.chunk.Position.y) ? this.chunk
                 : this.chunk.Chunk(new vec2i(xc, zc));
 
-            //TODO::2022-06-06 IsEmptyData
-            if (chunk == null || !chunk.StorageArrays[yc].IsSky())// || chunk.StorageArrays[yc].IsEmptyData())
+            if (chunk == null || !chunk.StorageArrays[yc].IsSky())
             {
                 return new ResultSide(0x0F, colorBiome); // 1f
             }

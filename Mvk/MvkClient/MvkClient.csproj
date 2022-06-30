@@ -105,9 +105,7 @@
     <Compile Include="Renderer\Block\BlockRender.cs" />
     <Compile Include="Renderer\Block\BlockBuffer.cs" />
     <Compile Include="Renderer\Block\BlockVertex.cs" />
-    <Compile Include="Renderer\Chunk\ChunkBuffer.cs" />
     <Compile Include="Renderer\Chunk\ChunkMesh.cs" />
-    <Compile Include="Renderer\Chunk\ChunkMesh2.cs" />
     <Compile Include="Renderer\Chunk\ChunkRender.cs" />
     <Compile Include="Renderer\EffectRenderer.cs" />
     <Compile Include="Renderer\Entity\Layers\ILayerRenderer.cs" />
@@ -129,7 +127,6 @@
     <Compile Include="Renderer\Model\ModelRender.cs" />
     <Compile Include="Renderer\Model\TexturedQuad.cs" />
     <Compile Include="Renderer\Model\TextureVertex.cs" />
-    <Compile Include="Renderer\RenderAim.cs" />
     <Compile Include="Renderer\RenderBlockGui.cs" />
     <Compile Include="Renderer\RenderChunkCursor.cs" />
     <Compile Include="Renderer\RenderDL.cs" />
@@ -137,12 +134,8 @@
     <Compile Include="Renderer\Font\FontRenderer.cs" />
     <Compile Include="Renderer\Font\Symbol.cs" />
     <Compile Include="Renderer\GLRender.cs" />
-    <Compile Include="Renderer\GLTest.cs" />
     <Compile Include="Renderer\GLWindow.cs" />
     <Compile Include="Gui\ScreenBeginLoading.cs" />
-    <Compile Include="Renderer\LineMesh.cs" />
-    <Compile Include="Renderer\Mesh.cs" />
-    <Compile Include="Renderer\MeshBuffer.cs" />
     <Compile Include="Renderer\RenderBlockCursor.cs" />
     <Compile Include="Renderer\Shaders\ShaderItems.cs" />
     <Compile Include="Renderer\Shaders\ShaderVE.cs" />

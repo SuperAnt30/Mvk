@@ -162,7 +162,6 @@
     <Compile Include="Network\StreamBase.cs" />
     <Compile Include="Server.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ServerHeir.cs" />
     <Compile Include="Util\Logger.cs" />
     <Compile Include="Util\IntEvent.cs" />
     <Compile Include="Util\StringEvent.cs" />
@@ -180,7 +179,6 @@
     <Compile Include="World\Chunk\Light\MapLight.cs" />
     <Compile Include="World\Chunk\Light\WorkingLight.cs" />
     <Compile Include="World\CollisionBase.cs" />
-    <Compile Include="World\RangeModified.cs" />
     <Compile Include="World\WorldBase.cs" />
     <Compile Include="World\WorldBaseSky.cs" />
     <Compile Include="World\WorldServer.cs" />

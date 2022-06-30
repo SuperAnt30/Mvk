@@ -48,8 +48,6 @@ namespace MvkClient.Gui
             buttonSingle.Position = new vec2i(100 * sizeInterface, h);
         }
 
-        float ppp = 0;
-
         /// <summary>
         /// Прорисовка
         /// </summary>
@@ -91,101 +89,132 @@ namespace MvkClient.Gui
 
             // Инвенатрь
             DrawInventory();
-            // Уровень
-            DrawLevel();
+            // Статусы
+            DrawStat();
 
             GLRender.PopMatrix();
-
-            // ХП
-          //  DrawHealth(timeIndex);
-
         }
 
         /// <summary>
-        /// Прорисовка уровня
+        /// Прорисовка статусов
         /// </summary>
-        private void DrawLevel()
+        private void DrawStat()
         {
-            ppp += .01f;
-            if (ppp > 1f) ppp = 0;
-            // Уровень интерполяции, 0 .. 1
-            float level = ppp;
+            int armor = 9; // параметр брони 0 - 16
+            int health = Mth.Ceiling(ClientMain.Player.Health); // хп 0 - 16
+            int endurance = 16; // выносливось 0 - 16
+            int food = 16; // параметр голода 0 - 16
+            int air = ClientMain.Player.GetAir();
+            int air0 = 0;
+            int uH = 0;
+            int uA = 0;
 
-            GLWindow.Texture.BindTexture(AssetsTexture.Icons);
+            // Level
+            if (ClientMain.Player.XpBarCap() > 0)
+            {
+                GLRender.Color(1f);
+                GLWindow.Texture.BindTexture(AssetsTexture.Icons);
+                int levelBar = (int)(ClientMain.Player.Experience * 398f);
+                DrawTexturedModalRect(-199, -67, 0, 496, 398, 8); // Фон
+                if (levelBar > 0) DrawTexturedModalRect(-199, -67, 0, 504, levelBar, 8); // Значение
+            }
+
+            // Level Text
+            if (ClientMain.Player.ExperienceLevel > 0)
+            {
+                string str = ClientMain.Player.ExperienceLevel.ToString();
+                FontSize fontSize = FontSize.Font12;
+                GLWindow.Texture.BindTexture(Assets.ConvertFontToTexture(fontSize));
+                int x = FontRenderer.WidthString(str, fontSize) / -2;
+                int y = -73;
+                FontRenderer.RenderString(x + 1, y, new vec4(0, 0, 0, 1), str, fontSize);
+                FontRenderer.RenderString(x - 1, y, new vec4(0, 0, 0, 1), str, fontSize);
+                FontRenderer.RenderString(x, y + 1, new vec4(0, 0, 0, 1), str, fontSize);
+                FontRenderer.RenderString(x, y - 1, new vec4(0, 0, 0, 1), str, fontSize);
+                FontRenderer.RenderString(x, y, new vec4(.52f, .9f, .2f, 1f), str, fontSize);//.5f, 1f, .125f
+            }
+
             GLRender.Color(1f);
-            // Фон
-            GLRender.Rectangle(-199, -68, 199, -60, 0, .96875f, 0.78125f, .984375f);
-            // Актив левел
-            if (level > 0) GLRender.Rectangle(-199, -68, (398 * level - 199), -60, 0, .984375f, 0.78125f * level, 1.0f);
+            GLWindow.Texture.BindTexture(AssetsTexture.Icons);
 
-
-            //int xWL = -199;
-            //int xWR = 198;
-            //int yH1 = -88;
-            //int yH2 = -107;
-            int xWL = -384;
-            int xWR = 384;
-            int yH1 = -32;
-            int yH2 = -54;
-
-            // Armor
-            int armor = 11; // параметр брони 0 - 20
+            // Armor static
             if (armor > 0)
-            { 
-                for (int i = 0; i < 10; i++)
-                {
-                    int x = xWL + i * 18;
+            {
+                DrawTexturedModalRect(-256, -78, 0, 19, 19, 19);
+                DrawTexturedModalRect(-256, -78, 76, 19, 19, 19);
+            }
 
-                    // Целая
-                    if (i * 2 + 1 < armor) DrawTexturedModalRect(x, yH2, 38, 19, 19, 19);
-                    // Половина
-                    else if (i * 2 + 1 == armor) DrawTexturedModalRect(x, yH2, 19, 19, 19, 19);
-                    // Нет
-                    else if (i * 2 + 1 > armor) DrawTexturedModalRect(x, yH2, 0, 19, 19, 19);
+            // Health static
+            if (ClientMain.Player.DamageTime > 0)
+            {
+                if (ClientMain.Player.DamageTime == 1 || ClientMain.Player.DamageTime == 5) uH = 19;
+                else if (ClientMain.Player.DamageTime == 2 || ClientMain.Player.DamageTime == 4) uH = 38;
+                else if (ClientMain.Player.DamageTime == 3) uH = 57;
+            }
+            DrawTexturedModalRect(-228, -78, uH, 0, 19, 19);
+            DrawTexturedModalRect(-228, -78, 76, 0, 19, 19);
+
+            // Endurance static
+            DrawTexturedModalRect(209, -78, 0, 76, 19, 19);
+            DrawTexturedModalRect(209, -78, 76, 76, 19, 19);
+
+            // Food static
+            DrawTexturedModalRect(237, -78, 0, 57, 19, 19);
+            DrawTexturedModalRect(237, -78, 76, 57, 19, 19);
+
+            // Air static
+            if (air < 300)
+            {
+                air0 = Mth.Ceiling((air - 2f) * 16f / 300f);
+                int air1 = Mth.Ceiling(air * 16f / 300f) - air0;
+
+                if (air1 == 0)
+                {
+                    uA = 0;
+                    DrawTexturedModalRect(265, -78, 0, 38, 19, 19);
+                }
+                else
+                {
+                    uA = 19;
+                    DrawTexturedModalRect(265, -78, 19, 38, 19, 19);
                 }
             }
 
-            // Health
-            int health = Mth.Floor(ClientMain.Player.Health);
-            for (int i = 0; i < 10; i++)
+            // Динамик
+            for (int i = 0; i < 8; i++)
             {
-                int x = xWL + i * 18;
+                int y = -16 - i * 6;
+                int i16 = i * 2 + 1;
 
-                // Фон
-                DrawTexturedModalRect(x, yH1, 0, 0, 19, 19);
-                // Целая
-                if (i * 2 + 1 < health) DrawTexturedModalRect(x, yH1, 76, 0, 19, 19);
-                // Половина
-                else if (i * 2 + 1 == health) DrawTexturedModalRect(x, yH1, 95, 0, 19, 19);
-            }
-
-            // Food
-            int food = 15; // параметр голода 0 - 20
-            for (int i = 0; i < 10; i++)
-            {
-                int x = xWR - i * 18 - 19;
-
-                // Фон
-                DrawTexturedModalRect(x, yH1, 0, 57, 19, 19);
-                // Целая
-                if (i * 2 + 1 < food) DrawTexturedModalRect(x, yH1, 76, 57, 19, 19);
-                // Половина
-                else if (i * 2 + 1 == food) DrawTexturedModalRect(x, yH1, 95, 57, 19, 19);
-            }
-
-            // Air
-            int air = ClientMain.Player.GetAir();
-            if (air < 300)
-            {
-                int air0 = Mth.Ceiling((air - 2f) * 10f / 300f);
-                int air1 = Mth.Ceiling(air * 10f / 300f) - air0;
-
-                for (int i = 0; i < air0 + air1; i++)
+                // Armor dinamic
+                if (armor > 0)
                 {
-                    // Пузырь
-                    if (i < air0) DrawTexturedModalRect(xWR - i * 18 - 19, yH2, 0, 38, 19, 19);
-                    // Лопает
-                    else DrawTexturedModalRect(xWR - i * 18 - 19, yH2, 19, 38, 19, 19);
+                    DrawTexturedModalRect(-256, y, 0, 473, 19, 7); // Фон
+                    if (i16 < armor) DrawTexturedModalRect(-256, y, 95, 473, 19, 7); // Целая и половина
+                    else if (i16 == armor) DrawTexturedModalRect(-256, y, 95, 473, 9, 7); // Целая и половина
+                }
+
+                // Health dinamic
+                DrawTexturedModalRect(-228, y, uH, 473, 19, 7); // Фон
+                if (i16 < health) DrawTexturedModalRect(-228, y, 76, 473, 19, 7); // Целая и половина
+                else if (i16 == health) DrawTexturedModalRect(-228, y, 76, 473, 9, 7); // Целая и половина
+
+                // Endurance dinamic
+                DrawTexturedModalRect(209, y, 0, 473, 19, 7); // Фон
+                if (i16 < endurance) DrawTexturedModalRect(209, y, 152, 473, 19, 7); // Целая и половина
+                else if (i16 == endurance) DrawTexturedModalRect(209, y, 152, 473, 9, 7); // Целая и половина
+
+                // Food dinamic
+                DrawTexturedModalRect(237, y, 0, 473, 19, 7); // Фон
+                if (i16 < food) DrawTexturedModalRect(237, y, 133, 473, 19, 7); // Целая и половина
+                if (i16 == food) DrawTexturedModalRect(237, y, 133, 473, 9, 7); // Целая и половина
+
+                // Air dinamic
+                if (air < 300)
+                {
+                    DrawTexturedModalRect(265, y, uA, 473, 19, 7); // Фон
+                    if (i16 < air0) DrawTexturedModalRect(265, y, 114, 473, 19, 7); // Целая и половина
+                    else if (i16 == air0) DrawTexturedModalRect(265, y, 114, 473, 9, 7); // Целая и половина
                 }
             }
         }
@@ -267,41 +296,5 @@ namespace MvkClient.Gui
                 GLRender.Rectangle(0, 0, Width, Height, new vec4(0.7f, 0.4f, 0.3f, 0.7f * dt));
             }
         }
-
-        /// <summary>
-        /// Жизнь
-        /// </summary>
-        //private void DrawHealth(float timeIndex)
-        //{
-        //    int w = Width;
-        //    int h = Height;
-
-        //    GLRender.PushMatrix();
-        //    GLRender.Texture2DDisable();
-        //    GLRender.LineWidth(1f);
-        //    GLRender.Color(new vec3(0));
-        //    for (int i = 0; i < 20; i++)
-        //    {
-        //        GLRender.Begin(OpenGL.GL_LINE_STRIP);
-        //        GLRender.Vertex(30, h - 46 - i * 20, 0);
-        //        GLRender.Vertex(46, h - 46 - i * 20, 0);
-        //        GLRender.Vertex(46, h - 30 - i * 20, 0);
-        //        GLRender.Vertex(30, h - 30 - i * 20, 0);
-        //        GLRender.Vertex(30, h - 46 - i * 20, 0);
-        //        GLRender.End();
-        //    }
-
-        //    int count = Mth.Floor(ClientMain.Player.Health);
-
-        //    for (int i = 0; i < count; i++)
-        //    {
-        //        GLRender.Rectangle(31, h - 45 - i * 20, 45, h - 31 - i * 20, new vec4(.9f, .4f, .4f, .7f));
-        //    }
-
-
-        //    GLRender.PopMatrix();
-        //}
-
-        
     }
 }

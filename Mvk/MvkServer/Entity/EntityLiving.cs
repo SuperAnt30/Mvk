@@ -515,7 +515,7 @@ namespace MvkServer.Entity
             {
                 // Проверка коллизии вверхней части при положении стоя
                 Standing();
-                // UNDONE:: хочется как-то ловить колизию положение встать в MoveCheckCollision
+                // Хочется как-то ловить колизию положение встать в MoveCheckCollision
                 if (NoClip || !World.Collision.IsCollisionBody(this, new vec3(Position)))
                 {
                     SetSneaking(false);
