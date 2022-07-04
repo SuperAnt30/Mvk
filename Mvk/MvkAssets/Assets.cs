@@ -43,11 +43,17 @@ namespace MvkAssets
         /// <summary>
         /// Получить текстовый файл языков
         /// </summary>
-        public static string GetLanguage(AssetsLanguage key)
+        public static string GetLangFile(ushort lang)
+            => GetLangFile(Language.Get(lang));
+
+        /// <summary>
+        /// Получить текстовый файл языков
+        /// </summary>
+        public static string GetLangFile(Language lang)
         {
-            object obj = ResourceLanguage.ResourceManager.GetObject(key.ToString(), ResourceLanguage.Culture);
-            if (obj != null && obj.GetType() == typeof(string)) return obj.ToString();
-            return "";
+            string text = ResourceLanguage.ResourceManager.GetString(lang.Code, ResourceLanguage.Culture);
+
+            return text ?? "";
         }
 
         /// <summary>

@@ -40,7 +40,7 @@ namespace MvkClient
             {
                 // Опции
                 Setting.Load();
-                Language.SetLanguage((AssetsLanguage)Setting.Language);
+                Language.Select(Setting.Language);
                 OnTick(new ObjectKeyEventArgs(ObjectKey.LoadStep));
 
                 // Загрузка семплов

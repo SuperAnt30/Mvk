@@ -13,12 +13,12 @@ namespace MvkClient.Gui
         {
             background = EnumBackground.GameWindow;
 
-            buttonBack = new Button(EnumScreenKey.World, Language.T("gui.back.game"));
+            buttonBack = new Button(EnumScreenKey.World, Language.Current.Translate("gui.back.game"));
             InitButtonClick(buttonBack);
-            buttonOptions = new Button(EnumScreenKey.Options, Language.T("gui.options"));
+            buttonOptions = new Button(EnumScreenKey.Options, Language.Current.Translate("gui.options"));
             buttonOptions.Click += (sender, e) 
                 => OnFinished(new ScreenEventArgs(EnumScreenKey.Options, EnumScreenKey.InGameMenu));
-            buttonExit = new Button(Language.T("gui.exit.world"));
+            buttonExit = new Button(Language.Current.Translate("gui.exit.world"));
             buttonExit.Click += (sender, e) => ClientMain.ExitingWorld("");
         }
 

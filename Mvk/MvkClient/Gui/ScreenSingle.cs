@@ -16,18 +16,18 @@ namespace MvkClient.Gui
 
             if (slotDel > 0) DelSlot(slotDel);
 
-            label = new Label(Language.T("gui.singleplayer"), FontSize.Font16);
+            label = new Label(Language.Current.Translate("gui.singleplayer"), FontSize.Font16);
 
             for (int i = 0; i < buttonSlots.Length; i++)
             {
-                buttonSlots[i] = new Button(Language.T("gui.world.empty")) { Width = 356 };
+                buttonSlots[i] = new Button(Language.Current.Translate("gui.world.empty")) { Width = 356 };
                 buttonSlots[i].Tag = i + 1; // Номер слота
                 buttonSlots[i].Click += ButtonSlots_Click;
                 buttonSlotsDel[i] = new Button("X") { Width = 40 };
                 buttonSlotsDel[i].Tag = i + 1; // Номер слота
                 buttonSlotsDel[i].Click += ButtonSlotsDel_Click;
             }
-            buttonCancel = new Button(EnumScreenKey.Main, Language.T("gui.cancel"));
+            buttonCancel = new Button(EnumScreenKey.Main, Language.Current.Translate("gui.cancel"));
             InitButtonClick(buttonCancel);
         }
 
@@ -72,7 +72,7 @@ namespace MvkClient.Gui
             Button button = sender as Button;
             int slot = (int)button.Tag;
             OnFinished(new ScreenEventArgs(EnumScreenKey.YesNo, EnumScreenKey.SinglePlayer, slot,
-               Language.T("gui.world.delete")));
+               Language.Current.Translate("gui.world.delete")));
         }
 
         /// <summary>

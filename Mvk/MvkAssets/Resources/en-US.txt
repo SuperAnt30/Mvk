@@ -1,3 +1,5 @@
+lang.name:English
+
 gui.singleplayer:Singleplayer
 gui.multiplayer:Multiplayer
 gui.options:Options

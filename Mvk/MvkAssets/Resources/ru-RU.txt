@@ -1,3 +1,6 @@
+lang.name:Russian
+lang.original.name:Русский
+
 gui.singleplayer:Одиночная игра
 gui.multiplayer:Сетевая игра
 gui.options:Настройки

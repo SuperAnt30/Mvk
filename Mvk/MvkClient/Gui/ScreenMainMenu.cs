@@ -16,14 +16,14 @@ namespace MvkClient.Gui
         {
             background = EnumBackground.TitleMain;
 
-            buttonSingle = new Button(EnumScreenKey.SinglePlayer, Language.T("gui.singleplayer")) { Width = 300 };
+            buttonSingle = new Button(EnumScreenKey.SinglePlayer, Language.Current.Translate("gui.singleplayer")) { Width = 300 };
             InitButtonClick(buttonSingle);
-            buttonMultiplayer = new Button(EnumScreenKey.Multiplayer, Language.T("gui.multiplayer")) { Width = 300 };
+            buttonMultiplayer = new Button(EnumScreenKey.Multiplayer, Language.Current.Translate("gui.multiplayer")) { Width = 300 };
             InitButtonClick(buttonMultiplayer);
-            buttonOptions = new Button(EnumScreenKey.Options, Language.T("gui.options")) { Width = 300 };
+            buttonOptions = new Button(EnumScreenKey.Options, Language.Current.Translate("gui.options")) { Width = 300 };
             buttonOptions.Click += (sender, e)
                 => OnFinished(new ScreenEventArgs(EnumScreenKey.Options, EnumScreenKey.Main));
-            buttonExit = new Button(Language.T("gui.exit")) { Width = 300 };
+            buttonExit = new Button(Language.Current.Translate("gui.exit")) { Width = 300 };
             buttonExit.Click += ButtonExit_Click;
 
         }

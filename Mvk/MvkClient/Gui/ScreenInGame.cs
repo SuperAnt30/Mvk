@@ -23,7 +23,7 @@ namespace MvkClient.Gui
         {
             background = EnumBackground.Game;
 
-            buttonSingle = new Button(EnumScreenKey.SinglePlayer, Language.T("gui.singleplayer")) { Width = 300 };
+            buttonSingle = new Button(EnumScreenKey.SinglePlayer, Language.Current.Translate("gui.singleplayer")) { Width = 300 };
             InitButtonClick(buttonSingle);
 
 

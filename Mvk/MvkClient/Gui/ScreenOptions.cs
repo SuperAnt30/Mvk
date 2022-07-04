@@ -24,7 +24,7 @@ namespace MvkClient.Gui
         protected Slider sliderSizeInterface;
         protected TextBox textBoxNickname;
 
-        private int cacheLanguage;
+        private ushort cacheLanguage;
         private bool cacheSmoothLighting;
 
         public ScreenOptions(Client client, EnumScreenKey where) : base(client)
@@ -33,56 +33,56 @@ namespace MvkClient.Gui
             cacheSmoothLighting = Setting.SmoothLighting;
             this.where = where;
 
-            label = new Label(Language.T("gui.options"), FontSize.Font16);
-            labelNickname = new Label(Language.T("gui.nikname"), FontSize.Font12)
+            label = new Label(Language.Current.Translate("gui.options"), FontSize.Font16);
+            labelNickname = new Label(Language.Current.Translate("gui.nikname"), FontSize.Font12)
             {
                 Width = 160,
                 Alight = EnumAlight.Right
             };
             textBoxNickname = new TextBox(Setting.Nickname) { Width = 160 };
             
-            sliderFps = new Slider(10, 260, 10, Language.T("gui.fps"))
+            sliderFps = new Slider(10, 260, 10, Language.Current.Translate("gui.fps"))
             {
                 Width = 256,
                 Value = Setting.Fps
             };
-            sliderFps.AddParam(260, Language.T("gui.maxfps"));
-            sliderChunk = new Slider(2, 32, 1, Language.T("gui.overview.chunks"))
+            sliderFps.AddParam(260, Language.Current.Translate("gui.maxfps"));
+            sliderChunk = new Slider(2, 32, 1, Language.Current.Translate("gui.overview.chunks"))
             {
                 Width = 256,
                 Value = Setting.OverviewChunk
             };
-            sliderSoundVolume = new Slider(0, 100, 1, Language.T("gui.volume.sound"))
+            sliderSoundVolume = new Slider(0, 100, 1, Language.Current.Translate("gui.volume.sound"))
             {
                 Width = 256,
                 Value = Setting.SoundVolume
             };
-            sliderSoundVolume.AddParam(0, Language.T("gui.volume.off"));
-            sliderMusicVolume = new Slider(0, 100, 1, Language.T("gui.volume.music"))
+            sliderSoundVolume.AddParam(0, Language.Current.Translate("gui.volume.off"));
+            sliderMusicVolume = new Slider(0, 100, 1, Language.Current.Translate("gui.volume.music"))
             {
                 Width = 256,
                 Value = Setting.MusicVolume,
                 Enabled = false
             };
-            sliderSizeInterface = new Slider(1, 2, 1, Language.T("gui.size.interface"))
+            sliderSizeInterface = new Slider(1, 2, 1, Language.Current.Translate("gui.size.interface"))
             {
                 Width = 192,
                 Value = Setting.SizeInterface
             };
-            labelLanguage = new Label(Language.T("gui.language"), FontSize.Font12)
+            labelLanguage = new Label(Language.Current.Translate("gui.language"), FontSize.Font12)
             {
                 Width = 160,
                 Alight = EnumAlight.Right
             };
-            buttonLanguage = new Button(Language.GetName(cacheLanguage)) { Width = 160 };
+            buttonLanguage = new Button(Language.Get(cacheLanguage).TranslatedName) { Width = 160 };
             buttonLanguage.Click += ButtonLanguage_Click;
-            buttonNet = new Button(Language.T("gui.net")) { Width = 160 };
+            buttonNet = new Button(Language.Current.Translate("gui.net")) { Width = 160 };
             buttonNet.Click += ButtonNet_Click;
             buttonSmoothLighting = new Button(ButtonSmoothLightingName()) { Width = 320 };
             buttonSmoothLighting.Click += ButtonSmoothLighting_Click;
-            buttonDone = new Button(Language.T("gui.apply")) { Width = 256 };
+            buttonDone = new Button(Language.Current.Translate("gui.apply")) { Width = 256 };
             buttonDone.Click += ButtonDone_Click;
-            buttonCancel = new Button(where, Language.T("gui.cancel")) { Width = 256 };
+            buttonCancel = new Button(where, Language.Current.Translate("gui.cancel")) { Width = 256 };
             InitButtonClick(buttonCancel);
 
             if (where == EnumScreenKey.InGameMenu)
@@ -112,7 +112,7 @@ namespace MvkClient.Gui
                 if (ClientMain.IsOpenNet())
                 {
                     buttonNet.Enabled = false;
-                    buttonNet.SetText(Language.T("gui.net.on"));
+                    buttonNet.SetText(Language.Current.Translate("gui.net.on"));
                 }
                 AddControls(buttonNet);
             }
@@ -145,11 +145,11 @@ namespace MvkClient.Gui
 
         private void ButtonLanguage_Click(object sender, EventArgs e)
         {
-            cacheLanguage = Language.Next(cacheLanguage);
-            buttonLanguage.SetText(Language.GetName(cacheLanguage));
+            cacheLanguage = Language.Get(cacheLanguage).Next().ID;
+            buttonLanguage.SetText(Language.Get(cacheLanguage).TranslatedName);
         }
 
-        private string ButtonSmoothLightingName() => Language.T("gui.smooth.lighting." + (cacheSmoothLighting ? "on" : "off"));
+        private string ButtonSmoothLightingName() => Language.Current.Translate("gui.smooth.lighting." + (cacheSmoothLighting ? "on" : "off"));
 
         private void ButtonSmoothLighting_Click(object sender, EventArgs e)
         {
@@ -162,7 +162,7 @@ namespace MvkClient.Gui
             if (where == EnumScreenKey.InGameMenu)
             {
                 buttonNet.Enabled = false;
-                buttonNet.SetText(Language.T("gui.net.on"));
+                buttonNet.SetText(Language.Current.Translate("gui.net.on"));
                 ClientMain.OpenNet();
             }
         }
@@ -192,7 +192,7 @@ namespace MvkClient.Gui
             Setting.SmoothLighting = cacheSmoothLighting;
             Setting.SizeInterface = sliderSizeInterface.Value;
             Setting.Save();
-            Language.SetLanguage((AssetsLanguage)cacheLanguage);
+            Language.Select(cacheLanguage);
 
             OnFinished(where);
         }

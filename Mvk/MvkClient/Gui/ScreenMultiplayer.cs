@@ -15,16 +15,16 @@ namespace MvkClient.Gui
 
         public ScreenMultiplayer(Client client) : base(client)
         {
-            label = new Label(Language.T("gui.multiplayer"), FontSize.Font16);
-            labelAddress = new Label(Language.T("gui.ip"), FontSize.Font12)
+            label = new Label(Language.Current.Translate("gui.multiplayer"), FontSize.Font16);
+            labelAddress = new Label(Language.Current.Translate("gui.ip"), FontSize.Font12)
             {
                 Width = 160,
                 Alight = EnumAlight.Right
             };
             textBoxAddress = new TextBox(Setting.IpAddress) { Width = 160 };
-            buttonConnect = new Button(Language.T("gui.connect")) { Width = 256 };
+            buttonConnect = new Button(Language.Current.Translate("gui.connect")) { Width = 256 };
             buttonConnect.Click += ButtonConnect_Click;
-            buttonCancel = new Button(EnumScreenKey.Main, Language.T("gui.cancel")) { Width = 256 };
+            buttonCancel = new Button(EnumScreenKey.Main, Language.Current.Translate("gui.cancel")) { Width = 256 };
             InitButtonClick(buttonCancel);
         }
 

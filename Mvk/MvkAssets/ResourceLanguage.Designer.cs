@@ -61,27 +61,59 @@ namespace MvkAssets {
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на gui.singleplayer:Singleplayer
-        ///gui.multiplayere:Multiplayere
+        ///   Ищет локализованную строку, похожую на lang.name:English
+        ///
+        ///gui.singleplayer:Singleplayer
+        ///gui.multiplayer:Multiplayer
         ///gui.options:Options
-        ///gui.exit:Exit
-        ///.
+        ///gui.exit:Quit
+        ///gui.nikname:Player name
+        ///gui.fps:FPS
+        ///gui.maxfps:Maximum FPS
+        ///gui.overview.chunks:Chunks overview
+        ///gui.volume.sound:Overall volume
+        ///gui.volume.music:Music volume
+        ///gui.volume.off:Sound off
+        ///gui.smooth.lighting.on:Smooth lighting on
+        ///gui.smooth.lighting.off:Smooth lighting off
+        ///gui.size.interface:Interface
+        ///gui.apply:Apply
+        ///gui.cancel:Cancel
+        ///gui.no:No
+        ///gui.yes:Yes
+        ///gui.connect:Connect
+        ///gui.wor [остаток строки не уместился]&quot;;.
         /// </summary>
-        internal static string English {
+        internal static string en_US {
             get {
-                return ResourceManager.GetString("English", resourceCulture);
+                return ResourceManager.GetString("en-US", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на gui.singleplayer:Одиночная игра
-        ///#gui.multiplayere:Сетевая игра
-        ///gui.options:Настройки...
-        ///gui.exit:Выход.
+        ///   Ищет локализованную строку, похожую на lang.name:Russian
+        ///lang.original.name:Русский
+        ///
+        ///gui.singleplayer:Одиночная игра
+        ///gui.multiplayer:Сетевая игра
+        ///gui.options:Настройки
+        ///gui.exit:Выход
+        ///gui.exit.world:Выход из мира
+        ///gui.nikname:Имя игрока
+        ///gui.fps:FPS
+        ///gui.maxfps:Максимум FPS
+        ///gui.overview.chunks:Обзор чанков
+        ///gui.volume.sound:Общая громкость
+        ///gui.volume.music:Громкость музыки
+        ///gui.volume.off:Выключен звук
+        ///gui.smooth.lighting.on:Плавное освещение включено
+        ///gui.smooth.lighting.off:Плавное освещение выключено
+        ///gui.size.interface:Интерфейс
+        ///gu [остаток строки не уместился]&quot;;.
         /// </summary>
-        internal static string Russian {
+        internal static string ru_RU {
             get {
-                return ResourceManager.GetString("Russian", resourceCulture);
+                return ResourceManager.GetString("ru-RU", resourceCulture);
             }
         }
     }
