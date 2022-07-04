@@ -12,10 +12,10 @@ namespace MvkClient.Gui
 
         public ScreenError(Client client, string text) : base(client)
         {
-            labelTitle = new Label(Language.T("gui.error"), FontSize.Font16);
-            label = new Label(Language.T(text), FontSize.Font12);
+            labelTitle = new Label(Language.Current.Translate("gui.error"), FontSize.Font16);
+            label = new Label(Language.Current.Translate(text), FontSize.Font12);
             
-            buttonCancel = new Button(EnumScreenKey.Main, Language.T("gui.menu")) { Width = 200 };
+            buttonCancel = new Button(EnumScreenKey.Main, Language.Current.Translate("gui.menu")) { Width = 200 };
             buttonCancel.Click += (sender, e) => OnFinished(new ScreenEventArgs(EnumScreenKey.Main));
         }
 

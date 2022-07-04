@@ -61,7 +61,6 @@
     <Compile Include="Assets.cs" />
     <Compile Include="AssetsTexture.cs" />
     <Compile Include="AssetsSample.cs" />
-    <Compile Include="AssetsLanguage.cs" />
     <Compile Include="FontSize.cs" />
     <Compile Include="Language.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -110,10 +109,10 @@
     <None Include="Resources\Font16.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\Russian.txt" />
+    <Content Include="Resources\ru-RU.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\English.txt" />
+    <Content Include="Resources\en-US.txt" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\Atlas.png" />

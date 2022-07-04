@@ -73,7 +73,7 @@ namespace MvkClient
             if (e.Packet.Status == StatusNet.Disconnect)
             {
                 //Logger.Log("gui.error.clint.disconnect player={0}", server.PlayersManager.GetPlayer(e.Packet.WorkSocket).Name);
-                OnObjectKeyTick(new ObjectKeyEventArgs(ObjectKey.Error, Language.T("gui.error.server.disconnect")));
+                OnObjectKeyTick(new ObjectKeyEventArgs(ObjectKey.Error, Language.Current.Translate("gui.error.server.disconnect")));
             }
         }
 

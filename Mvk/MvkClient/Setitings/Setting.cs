@@ -33,7 +33,7 @@ namespace MvkClient.Setitings
         /// <summary>
         /// Язык
         /// </summary>
-        public static int Language { get; set; } = 1;
+        public static ushort Language { get; set; } = 1;
         /// <summary>
         /// IP адрес сервера
         /// </summary>
@@ -78,7 +78,7 @@ namespace MvkClient.Setitings
                         else if (Check(vs, "Fps")) Fps = int.Parse(vs[1]);
                         else if (Check(vs, "OverviewChunk")) OverviewChunk = int.Parse(vs[1]);
                         else if (Check(vs, "Nickname")) Nickname = vs[1].ToString();
-                        else if (Check(vs, "Language")) Language = int.Parse(vs[1]);
+                        else if (Check(vs, "Language")) Language = ushort.Parse(vs[1]);
                         else if (Check(vs, "IpAddress")) IpAddress = vs[1].ToString();
                         else if (Check(vs, "SmoothLighting")) SmoothLighting = int.Parse(vs[1]) == 1;
                         else if (Check(vs, "SizeInterface")) SizeInterface = int.Parse(vs[1]);

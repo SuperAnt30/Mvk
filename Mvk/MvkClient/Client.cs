@@ -396,7 +396,7 @@ namespace MvkClient
         {
             try
             {
-                Screen.ScreenProcess(Language.T("gui.process"));
+                Screen.ScreenProcess(Language.Current.Translate("gui.process"));
                 locServer.StartServerNet(ip);
                 BeginWorld();
             }
@@ -462,7 +462,7 @@ namespace MvkClient
         public void LoadedWorld()
         {
             // ставим экран загрузки
-            Screen.ScreenProcess(Language.T("gui.process"));
+            Screen.ScreenProcess(Language.Current.Translate("gui.process"));
         }
 
         /// <summary>
@@ -473,7 +473,7 @@ namespace MvkClient
         {
             StringDebugTps();
             // ставим экран сохранения
-            Screen.ScreenProcess(Language.T("gui.saving"));
+            Screen.ScreenProcess(Language.Current.Translate("gui.saving"));
             // отправялем на сервер, выход мира, с возможной ошибкой
             locServer.ExitingWorld(error);
             IsGamePlay = false;
