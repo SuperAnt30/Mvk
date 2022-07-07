@@ -1,6 +1,7 @@
 ﻿using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World.Block;
+using SharpGL;
 
 namespace MvkClient.Renderer
 {
@@ -13,18 +14,21 @@ namespace MvkClient.Renderer
         /// Основной клиент
         /// </summary>
         private Client clientMain;
-        private BlockBase selectBlock;
-        private BlockPos selectBlockPos;
+        /// <summary>
+        /// Позиция глаз
+        /// </summary>
         private vec3 pos;
+        private MovingObjectPosition movingObject;
 
         public RenderBlockCursor(Client client)
         {
             clientMain = client;
         }
 
-        public void Render(BlockBase selectBlock, BlockPos selectBlockPos)
+        public void Render(MovingObjectPosition moving)
         {
-            IsHidden = selectBlock == null;
+           
+            IsHidden = !moving.IsBlock();
 
             if (!IsHidden)
             {
@@ -35,11 +39,10 @@ namespace MvkClient.Renderer
                     compiled = false;
                     this.pos = pos;
                 }
-                if (this.selectBlock == null || !this.selectBlockPos.Equals(selectBlockPos))
+                if (!moving.Equals(movingObject))
                 {
                     compiled = false;
-                    this.selectBlock = selectBlock;
-                    this.selectBlockPos = selectBlockPos;
+                    movingObject = moving;
                 }
                 Render();
             }
@@ -48,40 +51,94 @@ namespace MvkClient.Renderer
 
         protected override void DoRender()
         {
-            // Рамка хитбокса
-            GLRender.PushMatrix();
-            {
-                vec3 offset = clientMain.World.RenderEntityManager.CameraOffset;
-                GLRender.Texture2DDisable();
-                GLRender.LineWidth(2f);
+            vec3 offset = clientMain.World.RenderEntityManager.CameraOffset * -1f; ;
+            GLRender.Texture2DDisable();
+            GLRender.LineWidth(2f);
 
-                AxisAlignedBB[] axes = clientMain.Player.SelectBlock.GetCollisionBoxesToList(selectBlockPos);
-                float dis = glm.distance(pos, selectBlockPos.ToVec3()) * .01f;
-                dis *= dis;
-                dis += 0.001f;
-                GLRender.DepthDisable();
-                GLRender.PushMatrix();
-                {
-                    GLRender.Color(new vec4(1, 1, .5f, .2f));
-                    foreach (AxisAlignedBB aabb in axes)
-                    {
-                        GLRender.DrawOutlinedBoundingBox(aabb.Offset(offset * -1f).Expand(new vec3(dis)));
-                    }
-                }
-                GLRender.PopMatrix();
-                GLRender.DepthEnable();
-                GLRender.PushMatrix();
-                {
-                    GLRender.Color(new vec4(1, 1, .5f, .7f));
-                    foreach (AxisAlignedBB aabb in axes)
-                    {
-                        GLRender.DrawOutlinedBoundingBox(aabb.Offset(offset * -1f).Expand(new vec3(dis)));
-                    }
-                }
-                GLRender.PopMatrix();
+            AxisAlignedBB[] axes = movingObject.Block.GetBlock().GetCollisionBoxesToList(
+                movingObject.BlockPosition, movingObject.Block.Met());
+            float dis = glm.distance(pos, movingObject.BlockPosition.ToVec3()) * .01f;
+            dis *= dis;
+            dis += 0.001f;
+            //GLRender.DepthDisable();
+            //GLRender.PushMatrix();
+            //GLRender.Color(new vec4(1, 1, .5f, .2f));
+            //foreach (AxisAlignedBB aabb in axes)
+            //{
+            //    GLRender.DrawOutlinedBoundingBox(aabb.Offset(offset).Expand(new vec3(dis)));
+            //}
+            //GLRender.PopMatrix();
+            //GLRender.DepthEnable();
+            GLRender.PushMatrix();
+            GLRender.Color(new vec4(1, 1, .5f, .7f));
+            foreach (AxisAlignedBB aabb in axes)
+            {
+                GLRender.DrawOutlinedBoundingBox(aabb.Offset(offset).Expand(new vec3(dis)));
             }
             GLRender.PopMatrix();
 
+            //RenderSide(offset);
+
+        }
+
+        /// <summary>
+        /// Рендер стороны
+        /// </summary>
+        private void RenderSide(vec3 offset)
+        {
+            Pole selectSide = movingObject.Side;
+            GLRender.PushMatrix();
+            GLRender.Translate(movingObject.BlockPosition.ToVec3() + offset);
+            GLRender.LineWidth(4f);
+            GLRender.Color(new vec4(1, .25f, .25f, 1));
+            GLRender.Begin(OpenGL.GL_LINES);
+            float min = -.01f;
+            float max = 1.01f;
+            if (selectSide == Pole.Up)
+            {
+                GLRender.Vertex(0, max, 0);
+                GLRender.Vertex(1, max, 1);
+                GLRender.Vertex(0, max, 1);
+                GLRender.Vertex(1, max, 0);
+            }
+            else if (selectSide == Pole.Down)
+            {
+                GLRender.Vertex(0, min, 0);
+                GLRender.Vertex(1, min, 1);
+                GLRender.Vertex(0, min, 1);
+                GLRender.Vertex(1, min, 0);
+            }
+            else if (selectSide == Pole.East)
+            {
+                GLRender.Vertex(max, 0, 0);
+                GLRender.Vertex(max, 1, 1);
+                GLRender.Vertex(max, 0, 1);
+                GLRender.Vertex(max, 1, 0);
+            }
+            else if (selectSide == Pole.West)
+            {
+                GLRender.Vertex(min, 0, 0);
+                GLRender.Vertex(min, 1, 1);
+                GLRender.Vertex(min, 0, 1);
+                GLRender.Vertex(min, 1, 0);
+            }
+            else if (selectSide == Pole.South)
+            {
+                GLRender.Vertex(0, 0, max);
+                GLRender.Vertex(1, 1, max);
+                GLRender.Vertex(0, 1, max);
+                GLRender.Vertex(1, 0, max);
+            }
+            else if (selectSide == Pole.North)
+            {
+                GLRender.Vertex(0, 0, min);
+                GLRender.Vertex(1, 1, min);
+                GLRender.Vertex(0, 1, min);
+                GLRender.Vertex(1, 0, min);
+            }
+
+            GLRender.End();
+            GLRender.PopMatrix();
         }
     }
 }

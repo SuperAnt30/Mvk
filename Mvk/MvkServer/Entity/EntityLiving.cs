@@ -4,9 +4,11 @@ using MvkServer.Entity.Player;
 using MvkServer.Glm;
 using MvkServer.Item;
 using MvkServer.Network.Packets.Server;
+using MvkServer.Sound;
 using MvkServer.Util;
 using MvkServer.World;
 using MvkServer.World.Block;
+using System.Collections.Generic;
 
 namespace MvkServer.Entity
 {
@@ -118,6 +120,19 @@ namespace MvkServer.Entity
         /// Возраст этой сущности (используется для определения, когда она умирает)
         /// </summary>
         protected int entityAge;
+
+        /// <summary>
+        /// Расстояние, которое необходимо преодолеть, чтобы вызвать новый звук шага
+        /// </summary>
+        private int nextStepDistance = 1;
+        /// <summary>
+        /// Пройденное расстояние умножается на 0,3, для звукового эффекта
+        /// </summary>
+        private float distanceWalkedOnStepModified = 0;
+        /// <summary>
+        /// Семплы хотьбы
+        /// </summary>
+        protected AssetsSample[] samplesStep = new AssetsSample[0];
 
         public EntityLiving(WorldBase world) : base(world)
         {
@@ -306,10 +321,13 @@ namespace MvkServer.Entity
 
                 // Расчёт амплитуды движения 
                 UpLimbSwing();
+
                 // Просчёт взмаха руки
                 UpdateArmSwingProgress();
             }
         }
+
+        
 
         /// <summary>
         /// Обновление сущности на сервер
@@ -838,11 +856,59 @@ namespace MvkServer.Entity
             float xx = Position.x - PositionPrev.x;
             float zz = Position.z - PositionPrev.z;
             float xxzz = xx * xx + zz * zz;
-            float xz = Mth.Sqrt(xxzz) * 1.4f;
+            float qxxzz = Mth.Sqrt(xxzz);
+            float xz = qxxzz * 1.4f;
             if (xz > 1.0f) xz = 1.0f;
             LimbSwingAmount += (xz - LimbSwingAmount) * 0.4f;
             LimbSwing += LimbSwingAmount;
+
+            distanceWalkedOnStepModified += qxxzz * .3f;
+            if (distanceWalkedOnStepModified > nextStepDistance)
+            {
+                BlockBase blockDown = World.GetBlockState(new BlockPos(Position.x, Position.y - 0.20002f, Position.z)).GetBlock();
+                if (!blockDown.IsAir)
+                {
+                    nextStepDistance = (int)distanceWalkedOnStepModified + 1;
+                    SoundStep(blockDown);
+                }
+            }
         }
+
+        /// <summary>
+        /// Звуковой эффект шага
+        /// </summary>
+        protected void SoundStep(BlockBase blockDown)
+        {
+            if (IsInWater())
+            {
+                // Звук в воде
+                float xx = Position.x - PositionPrev.x;
+                float yy = Position.y - PositionPrev.y;
+                float zz = Position.z - PositionPrev.z;
+                // В зависимости от скорости перемещения вводе меняем звук
+                float volume = Mth.Sqrt(xx * xx * .2f + yy * yy + zz * zz * .2f) * .35f;
+                // 0.03 - 0.2 когда плыву, 0.4 - 0.7 когда ныряю
+                if (volume > 1f) volume = 1f;
+
+                World.PlaySound(this, Blocks.GetBlockCache(EnumBlock.Water).SampleStep(World), Position, volume,
+                    1f + (float)(rand.NextDouble() - rand.NextDouble()) * .4f);
+            }
+            else if (!IsSneaking() && blockDown.Material != EnumMaterial.Water && IsSampleStep())
+            {
+                // Звук шага
+                World.PlaySound(this, SampleStep(World, blockDown), Position, .25f, 1f);
+            }
+        }
+
+        /// <summary>
+        /// Есть ли звуковой эффект шага
+        /// </summary>
+        public virtual bool IsSampleStep() => samplesStep.Length > 0;
+
+        /// <summary>
+        /// Семпл хотьбы
+        /// </summary>
+        public virtual AssetsSample SampleStep(WorldBase worldIn, BlockBase blockDown) => samplesStep[worldIn.Rand.Next(samplesStep.Length)];
 
         /// <summary>
         /// Скакой скоростью анимируется удар рукой, в тактах, менять можно от инструмента, чар и навыков
@@ -1145,6 +1211,7 @@ namespace MvkServer.Entity
             if (IsSprinting() && !IsInWater())
             {
                 ParticleBlockDown(Position, 1);
+                // TODO::звук при беге
             }
         }
         /// <summary>
@@ -1157,13 +1224,14 @@ namespace MvkServer.Entity
                 int count = (int)distance + 2;
                 if (count > 20) count = 20;
                 ParticleBlockDown(Position, count);
+                // TODO::звук при падении
             }
         }
 
         /// <summary>
         /// Частички под ногами, бег или падение
         /// </summary>
-        protected void ParticleBlockDown(vec3 pos, int count)
+        private void ParticleBlockDown(vec3 pos, int count)
         {
             BlockBase block = World.GetBlockState(new BlockPos(pos.x, pos.y - 0.20002f, pos.z)).GetBlock();
             if (block.IsParticle)
@@ -1181,13 +1249,35 @@ namespace MvkServer.Entity
         }
 
         /// <summary>
-        /// Воздействия при попадании воду
+        /// Воздействия при нахождении в воде
         /// </summary>
         protected override void EffectsContactWithWater()
         {
             fallDistance = 0f;
             //fire = 0;
         }
+
+        /// <summary>
+        /// Эффект попадания в воду
+        /// </summary>
+        //protected override void EffectsFallingIntoWater()
+        //{
+
+        //    //BlockBase blockDown = World.GetBlockState(new BlockPos(Position.x, Position.y - 0.20002f, Position.z)).GetBlock();
+        //    //if (blockDown.Material == EnumMaterial.Water)
+        //    //World.PlaySound(this, Blocks.GetBlockCache(EnumBlock.Water).SampleBreak(World), Position, .25f, 1f);
+        //}
+
+        /// <summary>
+        /// Эффект выхода из воды
+        /// </summary>
+        //protected override void EffectsGettingOutWater()
+        //{
+        //    //BlockBase blockDown = World.GetBlockState(new BlockPos(Position.x, Position.y - 0.20002f, Position.z)).GetBlock();
+        //    //if (blockDown.Material == EnumMaterial.Water)
+
+        //        //World.PlaySound(this, Blocks.GetBlockCache(EnumBlock.Water).SampleStep(World), Position, .25f, 1f);
+        //}
 
         /// <summary>
         /// Проверяет, находится ли смещенная позиция от текущей позиции объекта внутри жидкости

@@ -1,5 +1,6 @@
 ﻿
 using MvkServer.Glm;
+using MvkServer.Sound;
 using MvkServer.World;
 using MvkServer.World.Chunk;
 
@@ -14,6 +15,7 @@ namespace MvkServer.Entity.Mob
         {
             Type = EnumEntities.Chicken;
             StepHeight = 1.01f;
+            samplesStep = new AssetsSample[] { AssetsSample.MobChickenStep1, AssetsSample.MobChickenStep2 };
         }
 
         /// <summary>
@@ -45,7 +47,7 @@ namespace MvkServer.Entity.Mob
         public override void Update()
         {
             base.Update();
-
+            PositionPrev = Position;
             if (!OnGround)
             {
                 // При падении лапки двигаются в разы медленее

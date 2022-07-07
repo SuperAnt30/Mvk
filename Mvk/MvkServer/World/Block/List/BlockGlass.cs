@@ -1,4 +1,7 @@
-﻿using MvkServer.Glm;
+﻿using MvkServer.Item;
+using MvkServer.Item.List;
+using MvkServer.Sound;
+using System;
 
 namespace MvkServer.World.Block.List
 {
@@ -12,12 +15,19 @@ namespace MvkServer.World.Block.List
         /// </summary>
         public BlockGlass()
         {
-            Boxes = new Box[] { new Box(5) };//, false, new vec3(1f, .53f, .99f)) };
-            IsAlpha = true;
+            Translucent = true;
             Particle = 5;
             Hardness = 10;
             LightOpacity = 2;
             Material = EnumMaterial.Glass;
+            samplesBreak = new AssetsSample[] { AssetsSample.DigGlass1, AssetsSample.DigGlass2, AssetsSample.DigGlass3 };
+            InitBoxs(5);
         }
+
+        /// <summary>
+        /// Получите предмет, который должен выпасть из этого блока при сборе.
+        /// </summary>
+        public override ItemBase GetItemDropped(BlockState state, Random rand, int fortune) 
+            => new ItemBlock(Blocks.GetBlockCache(EnumBlock.GlassRed));
     }
 }

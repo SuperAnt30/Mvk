@@ -553,11 +553,13 @@ namespace MvkServer.Entity
                 //{
                 //    this.resetHeight();
                 //}
+                if (!inWater) EffectsFallingIntoWater();
                 inWater = true;
                 EffectsContactWithWater();
             }
             else 
             {
+                if (inWater) EffectsGettingOutWater();
                 inWater = false;
             }
 
@@ -565,10 +567,18 @@ namespace MvkServer.Entity
         }
 
         /// <summary>
-        /// Воздействия при попадании воду
+        /// Воздействия при нахождении в воде
         /// </summary>
         protected virtual void EffectsContactWithWater() { }
-
+        /// <summary>
+        /// Эффект попадания в воду
+        /// </summary>
+        protected virtual void EffectsFallingIntoWater() { }
+        /// <summary>
+        /// Эффект выхода из воды
+        /// </summary>
+        protected virtual void EffectsGettingOutWater() { }
+            
         /// <summary>
         /// Получить яркость для рендера 0.0 - 1.0
         /// </summary>

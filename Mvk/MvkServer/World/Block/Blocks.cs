@@ -31,6 +31,8 @@ namespace MvkServer.World.Block
                 case EnumBlock.Glass: return new BlockGlass();
                 case EnumBlock.GlassRed: return new BlockGlassRed();
                 case EnumBlock.Brol: return new BlockBrol();
+                case EnumBlock.Log: return new BlockLog();
+                case EnumBlock.TallGrass: return new BlockTallGrass();
             }
 
             return null;

@@ -1,4 +1,6 @@
-﻿namespace MvkServer.World.Block.List
+﻿using MvkServer.Util;
+
+namespace MvkServer.World.Block.List
 {
     /// <summary>
     /// Блок воздуха, пустота
@@ -15,14 +17,19 @@
             IsAction = false;
             IsCollidable = collidable;
             IsParticle = false;
-            IsFullCube = false;
-            IsSpawn = false;
-            CanPut = true;
+            RenderType ^= EnumRenderType.АmbientOcclusion;
+            RenderType ^= EnumRenderType.Shadow;
+            IsReplaceable = true;
             LightOpacity = 0;
         }
         /// <summary>
         /// Блок воздуха, пустота, не сталкивается
         /// </summary>
         public BlockAir() : this(false) { }
+
+        /// <summary>
+        /// Спавн предмета при разрушении этого блока
+        /// </summary>
+        public override void DropBlockAsItemWithChance(WorldBase worldIn, BlockPos blockPos, BlockState state, float chance, int fortune) { }
     }
 }

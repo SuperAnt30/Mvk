@@ -77,7 +77,7 @@ namespace MvkServer.Item
         /// <param name="worldIn"></param>
         /// <param name="pos">Блок, по которому щелкают правой кнопкой мыши</param>
         /// <param name="side">Сторона, по которой щелкнули правой кнопкой мыши</param>
-        /// <param name="hit"></param>
-        public virtual bool ItemUse(ItemStack stack, EntityPlayer playerIn, WorldBase worldIn, BlockPos blockPos, EnumFacing side, vec3 hit) => false;
+        /// <param name="facing"></param>
+        public virtual bool ItemUse(ItemStack stack, EntityPlayer playerIn, WorldBase worldIn, BlockPos blockPos, Pole side, vec3 facing) => false;
     }
 }

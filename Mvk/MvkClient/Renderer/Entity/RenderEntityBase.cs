@@ -124,49 +124,44 @@ namespace MvkClient.Renderer.Entity
                 GLRender.DepthMask(false);
                 GLRender.PolygonOffsetEnable();
                 GLRender.CullDisable();
+                GLRender.Texture2DEnable();
+                GLWindow.Texture.BindTexture(AssetsTexture.Shadow);
+                GLWindow.gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_WRAP_S, OpenGL.GL_CLAMP_TO_BORDER);
+                GLWindow.gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_WRAP_T, OpenGL.GL_CLAMP_TO_BORDER);
 
+                BlockBase block;
+                BlockBase blockUp;
                 for (int i = 0; i < blocks.Length; i++)
                 {
-                    BlockBase block = world.GetBlockState(blocks[i]).GetBlock();
-                    BlockBase blockUp = world.GetBlockState(blocks[i].OffsetUp()).GetBlock();
-                    if (blockUp.IsAir && block.IsFullCube)
+                    block = world.GetBlockState(blocks[i]).GetBlock();
+                    blockUp = world.GetBlockState(blocks[i].OffsetUp()).GetBlock();
+                    if (!blockUp.IsCollidable && block.RenderType.HasFlag(BlockBase.EnumRenderType.Shadow))
                     {
+                        float x1 = blocks[i].X - pos.x;
+                        float x2 = blocks[i].X + 1f - pos.x;
+                        float y = blocks[i].Y + 1f - pos.y;
+                        float z1 = blocks[i].Z - pos.z;
+                        float z2 = blocks[i].Z + 1f - pos.z;
+
+                        float u1 = -x1 / 2.0f / shadowSize + 0.5f;
+                        float u2 = -x2 / 2.0f / shadowSize + 0.5f;
+                        float v1 = -z1 / 2.0f / shadowSize + 0.5f;
+                        float v2 = -z2 / 2.0f / shadowSize + 0.5f;
+
+                        float height = 1f - (pos.y - (float)blocks[i].Y - 1f) / (shadowSizeY + .5f);
+                        if (height > 1) height = 1;
+                        float alpha = shadowAlpha * height;
+
                         GLRender.PushMatrix();
-                        {
-                            GLRender.Translate(offsetPos.x, offsetPos.y, offsetPos.z);
-                            GLRender.Scale(1, 1, 1);
-                            GLRender.Texture2DEnable();
-                            //GLWindow.gl.BlendFunc(OpenGL.GL_SRC_ALPHA, OpenGL.GL_ONE_MINUS_SRC_ALPHA);
-
-                            GLWindow.Texture.BindTexture(AssetsTexture.Shadow);
-                            GLWindow.gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_WRAP_S, OpenGL.GL_CLAMP_TO_BORDER);
-                            GLWindow.gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_WRAP_T, OpenGL.GL_CLAMP_TO_BORDER);
-                           
-                            float x1 = blocks[i].X - pos.x;
-                            float x2 = blocks[i].X + 1f - pos.x;
-                            float y = blocks[i].Y + 1f - pos.y;
-                            float z1 = blocks[i].Z - pos.z;
-                            float z2 = blocks[i].Z + 1f - pos.z;
-
-                            float u1 = -x1 / 2.0f / shadowSize + 0.5f;
-                            float u2 = -x2 / 2.0f / shadowSize + 0.5f;
-                            float v1 = -z1 / 2.0f / shadowSize + 0.5f;
-                            float v2 = -z2 / 2.0f / shadowSize + 0.5f;
-
-                            float height = 1f - (pos.y - (float)blocks[i].Y - 1f) / (shadowSizeY + .5f);
-                            if (height > 1) height = 1;
-                            float alpha = shadowAlpha * height;
-
-                            GLRender.Color(1, 1, 1, alpha);
-                            GLRender.Begin(OpenGL.GL_TRIANGLE_STRIP);
-                            GLRender.VertexWithUV(x1, y, z1, u1, v1);
-                            GLRender.VertexWithUV(x2, y, z1, u2, v1);
-                            GLRender.VertexWithUV(x1, y, z2, u1, v2);
-                            GLRender.VertexWithUV(x2, y, z2, u2, v2);
-                            GLRender.End();
-
-                            GLRender.Texture2DEnable();
-                        }
+                        GLRender.Translate(offsetPos.x, offsetPos.y, offsetPos.z);
+                        GLRender.Scale(1, 1, 1);
+                        GLRender.Color(1, 1, 1, alpha);
+                        GLRender.Begin(OpenGL.GL_TRIANGLE_STRIP);
+                        GLRender.VertexWithUV(x1, y, z1, u1, v1);
+                        GLRender.VertexWithUV(x2, y, z1, u2, v1);
+                        GLRender.VertexWithUV(x1, y, z2, u1, v2);
+                        GLRender.VertexWithUV(x2, y, z2, u2, v2);
+                        GLRender.End();
                         GLRender.PopMatrix();
                     }
                 }

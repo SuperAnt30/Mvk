@@ -208,7 +208,7 @@ namespace MvkServer.Network
             
             if (entityPlayer != null)
             {
-                entityPlayer.TheItemInWorldManager.Put(packet.GetBlockPos(), packet.GetFacing(), entityPlayer.Inventory.CurrentItem);
+                entityPlayer.TheItemInWorldManager.Put(packet.GetBlockPos(), packet.GetSide(), packet.GetFacing(), entityPlayer.Inventory.CurrentItem);
                 entityPlayer.MarkPlayerActive();
             }
         }

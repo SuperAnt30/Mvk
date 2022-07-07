@@ -74,6 +74,7 @@
     <Compile Include="Network\Packets\Client\PacketC00Ping.cs" />
     <Compile Include="Network\Packets\Client\PacketC16ClientStatus.cs" />
     <Compile Include="Network\Packets\Server\PacketS1CEntityMetadata.cs" />
+    <Compile Include="Network\Packets\Server\PacketS29SoundEffect.cs" />
     <Compile Include="Network\Packets\Server\PacketS2FSetSlot.cs" />
     <Compile Include="Network\Packets\Server\PacketS04EntityEquipment.cs" />
     <Compile Include="Network\Packets\Server\PacketS07Respawn.cs" />
@@ -92,6 +93,7 @@
     <Compile Include="Network\Packets\Server\PacketS0CSpawnPlayer.cs" />
     <Compile Include="Network\Packets\Server\PacketS25BlockBreakAnim.cs" />
     <Compile Include="Network\Packets\Server\PacketS23BlockChange.cs" />
+    <Compile Include="Sound\AssetsSample.cs" />
     <Compile Include="Util\EnumInput.cs" />
     <Compile Include="Entity\EntitySpeed.cs" />
     <Compile Include="MvkGlobal.cs" />
@@ -135,6 +137,8 @@
     <Compile Include="World\Block\List\BlockAir.cs" />
     <Compile Include="World\Block\List\BlockCobblestone.cs" />
     <Compile Include="World\Block\List\BlockBrol.cs" />
+    <Compile Include="World\Block\List\BlockLog.cs" />
+    <Compile Include="World\Block\List\BlockTallGrass.cs" />
     <Compile Include="World\Block\List\BlockWater.cs" />
     <Compile Include="World\Block\List\BlockGlassRed.cs" />
     <Compile Include="World\Block\List\BlockGlass.cs" />

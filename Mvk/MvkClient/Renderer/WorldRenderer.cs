@@ -158,7 +158,7 @@ namespace MvkClient.Renderer
             DrawEntities(chunks, timeIndex);
 
             // Рендер и прорисовка курсора выбранного блока по AABB
-            renderBlockCursor.Render(ClientMain.Player.SelectBlock, ClientMain.Player.SelectBlockPos);
+            renderBlockCursor.Render(ClientMain.Player.MovingObject);
             
             // Курсор чанка
             renderChunkCursor.Render(ClientMain.World.RenderEntityManager.CameraOffset);

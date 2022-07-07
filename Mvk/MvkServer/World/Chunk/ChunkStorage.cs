@@ -170,6 +170,6 @@ namespace MvkServer.World.Chunk
             }
         }
 
-        public override string ToString() => yBase + " " + countData + " ";
+        public override string ToString() => "yB:" + yBase + " body:" + countData + " ";
     }
 }

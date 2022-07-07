@@ -4,6 +4,7 @@ using MvkServer.Gen;
 using MvkServer.Glm;
 using MvkServer.Management;
 using MvkServer.Network.Packets.Server;
+using MvkServer.Sound;
 using MvkServer.Util;
 using MvkServer.World.Chunk;
 using System;
@@ -241,6 +242,14 @@ namespace MvkServer.World
                 Tracker.SendToAllTrackingEntity(entity, new PacketS19EntityStatus(entity.Id,
                     PacketS19EntityStatus.EnumStatus.Die));
             }
+        }
+
+        /// <summary>
+        /// Проиграть звуковой эффект, глобальная координата
+        /// </summary>
+        public override void PlaySound(EntityLiving entity, AssetsSample key, vec3 pos, float volume, float pitch)
+        {
+            Tracker.SendToAllTrackingEntity(entity, new PacketS29SoundEffect(key, pos, 1f));
         }
 
         /// <summary>

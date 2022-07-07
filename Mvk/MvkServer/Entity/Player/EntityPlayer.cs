@@ -1,6 +1,8 @@
 ﻿using MvkServer.Glm;
 using MvkServer.Inventory;
 using MvkServer.Item;
+using MvkServer.Sound;
+using MvkServer.Util;
 using MvkServer.World;
 using MvkServer.World.Block;
 
@@ -64,9 +66,9 @@ namespace MvkServer.Entity.Player
             if (!world.IsRemote)
             {
                 Inventory.SetInventorySlotContents(1, new MvkServer.Item.ItemStack(Blocks.GetBlockCache(EnumBlock.Dirt), 64));
-                Inventory.SetInventorySlotContents(2, new MvkServer.Item.ItemStack(Blocks.GetBlockCache(EnumBlock.Water), 64));
+                Inventory.SetInventorySlotContents(2, new MvkServer.Item.ItemStack(Blocks.GetBlockCache(EnumBlock.Log), 64));
                 Inventory.SetInventorySlotContents(3, new MvkServer.Item.ItemStack(Blocks.GetBlockCache(EnumBlock.Cobblestone), 16));
-                Inventory.SetInventorySlotContents(4, new MvkServer.Item.ItemStack(Blocks.GetBlockCache(EnumBlock.GlassRed), 64));
+                Inventory.SetInventorySlotContents(4, new MvkServer.Item.ItemStack(Blocks.GetBlockCache(EnumBlock.TallGrass), 64));
                 Inventory.SetInventorySlotContents(5, new MvkServer.Item.ItemStack(Blocks.GetBlockCache(EnumBlock.Glass), 64));
                 Inventory.SetInventorySlotContents(6, new MvkServer.Item.ItemStack(Blocks.GetBlockCache(EnumBlock.Brol), 64));
             }
@@ -200,5 +202,15 @@ namespace MvkServer.Entity.Player
         /// </summary>
         public int XpBarCap() 
             => ExperienceLevel >= 30 ? 112 + (ExperienceLevel - 30) * 9 : (ExperienceLevel >= 15 ? 37 + (ExperienceLevel - 15) * 5 : 7 + ExperienceLevel * 2);
+
+        /// <summary>
+        /// Есть ли звуковой эффект шага
+        /// </summary>
+        public override bool IsSampleStep() => true;
+
+        /// <summary>
+        /// Семпл хотьбы
+        /// </summary>
+        public override AssetsSample SampleStep(WorldBase worldIn, BlockBase blockDown) => blockDown.SampleStep(worldIn);
     }
 }

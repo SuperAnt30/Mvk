@@ -131,7 +131,7 @@ namespace MvkClient.Renderer.Chunk
         {
             try
             {
-                long timeBegin = GLWindow.stopwatch.ElapsedTicks;
+               // long timeBegin = GLWindow.stopwatch.ElapsedTicks;
 
                 // буфер блоков
                 List<byte> bufferCache = new List<byte>();
@@ -165,7 +165,7 @@ namespace MvkClient.Renderer.Chunk
                             blockRender.blockPos = blockPos;
                             blockRender.buffer = bufferCache;
 
-                            if (block.IsAlpha) blockRender.bufferAlpha = new List<byte>();
+                            if (block.Translucent) blockRender.bufferAlpha = new List<byte>();
                                 //blockRender.Set(block, blockPos);
                                 //blockRender.Set(blockState.GetBlock(), blockPos);
                                 blockRender.DamagedBlocksValue = GetDestroyBlocksValue(x, yBlock, z);
@@ -192,7 +192,7 @@ namespace MvkClient.Renderer.Chunk
                             //if (buffer.Length > 0)
                             //{
                             //    BlockBase block = blockState.GetBlock();
-                                if (block.IsAlpha)
+                                if (block.Translucent)
                                 {
                                     alphas.Add(new BlockBuffer(block.EBlock, new vec3i(x, y, z), blockRender.bufferAlpha.ToArray(),
                                         glm.distance(posPlayer, new vec3i(Position.x << 4 | x, yBlock, Position.y << 4 | z))
@@ -210,10 +210,10 @@ namespace MvkClient.Renderer.Chunk
                 meshAlpha[chY].SetBuffer(ToBufferAlphaY(alphas));
                 meshDense[chY].SetBuffer(bufferCache.ToArray());
                 bufferCache.Clear();
-                long timeEnd = GLWindow.stopwatch.ElapsedTicks;
-                float time = (timeEnd - timeBegin) / (float)MvkStatic.TimerFrequency;
-                Debug.RenderChunckTime8 = (Debug.RenderChunckTime8 * 3f + time) / 4f;
-                Debug.RenderChunckTime = time;
+                //long timeEnd = GLWindow.stopwatch.ElapsedTicks;
+                //float time = (timeEnd - timeBegin) / (float)MvkStatic.TimerFrequency;
+                //Debug.RenderChunckTime8 = (Debug.RenderChunckTime8 * 3f + time) / 4f;
+                //Debug.RenderChunckTime = time;
             }
             catch (Exception ex)
             {

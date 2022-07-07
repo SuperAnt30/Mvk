@@ -1,5 +1,6 @@
 ﻿using MvkServer.Entity;
 using MvkServer.Glm;
+using MvkServer.World;
 using MvkServer.World.Block;
 
 namespace MvkServer.Util
@@ -14,55 +15,54 @@ namespace MvkServer.Util
         /// </summary>
         public EntityBase Entity { get; private set; }
         /// <summary>
-        /// Объект блока
+        /// Объект данных блока
         /// </summary>
-        public BlockBase Block { get; private set; }
+        public BlockState Block { get; private set; }
         /// <summary>
         /// Позиция блока
         /// </summary>
         public BlockPos BlockPosition { get; private set; }
         /// <summary>
-        /// Координата по которому ударили
-        /// </summary>
-        public vec3i Hit { get; private set; }
-        /// <summary>
-        /// Координата на какой надо ставить
-        /// </summary>
-        public vec3i Put { get; private set; }
-        /// <summary>
-        /// Нормаль попадания
+        /// Нормаль попадания по блоку
         /// </summary>
         public vec3i Norm { get; private set; }
         /// <summary>
-        /// Координата куда попал луч
+        /// Координата куда попал луч в глобальных координатах по блоку
         /// </summary>
         public vec3 RayHit { get; private set; }
         /// <summary>
-        /// Сторона куда смотрит луч
+        /// Точка куда устанавливаем блок (параметр с RayCast)
+        /// значение в пределах 0..1, образно фиксируем пиксел клика на стороне
         /// </summary>
-        //public Pole Side { get; protected set; } = Pole.All;
+        public vec3 Facing { get; private set; }
+        /// <summary>
+        /// Сторона блока куда смотрит луч
+        /// </summary>
+        public Pole Side { get; protected set; } = Pole.All;
 
         protected MovingObjectType type = MovingObjectType.None;
 
         /// <summary>
         /// Нет попадания
         /// </summary>
-        public MovingObjectPosition() { }
+        public MovingObjectPosition() => Block = new BlockState().Empty();
 
         /// <summary>
         /// Попадаем в блок
         /// </summary>
-        /// <param name="block">блок</param>
-        /// <param name="hit">Координата по которому ударили</param>
+        /// <param name="blockState">блок</param>
+        /// <param name="pos">позиция блока</param>
+        /// <param name="side">Сторона блока куда смотрит луч</param>
+        /// <param name="facing">Значение в пределах 0..1, образно фиксируем пиксел клика на стороне</param>
         /// <param name="norm">Нормаль попадания</param>
         /// <param name="rayHit">Координата куда попал луч</param>
-        public MovingObjectPosition(BlockBase block, BlockPos pos, vec3i hit, vec3i norm, vec3 rayHit)
+        public MovingObjectPosition(BlockState blockState, BlockPos pos, Pole side, vec3 facing, vec3i norm, vec3 rayHit)
         {
-            Block = block;
+            Block = blockState;
             BlockPosition = pos;
+            Facing = facing;
+            Side = side;
             RayHit = rayHit;
-            Hit = hit;
-            Put = hit + norm;
             Norm = norm;
             type = MovingObjectType.Block;
         }
@@ -71,9 +71,9 @@ namespace MvkServer.Util
         /// Попадаем в сущность
         /// </summary>
         /// <param name="entity">сущьность</param>
-        /// <param name="hit">Координата по которому ударили</param>
         public MovingObjectPosition(EntityBase entity)
         {
+            Block = new BlockState().Empty();
             Entity = entity;
             type = MovingObjectType.Entity;
         }
@@ -81,6 +81,19 @@ namespace MvkServer.Util
         public bool IsBlock() => type == MovingObjectType.Block;
 
         public bool IsEntity() => type == MovingObjectType.Entity;
+
+        /// <summary>
+        /// Координата на какой надо ставить блок
+        /// </summary>
+        public vec3i GetPut(BlockBase blockNew)
+        {
+            BlockBase blockOld = Block.GetBlock();
+            if (blockOld.IsReplaceable && blockOld.EBlock != blockNew.EBlock)
+            { 
+                return BlockPosition.ToVec3i();
+            }
+            return BlockPosition.ToVec3i() + Norm;
+        }
 
         /// <summary>
         /// Тип объекта
@@ -99,11 +112,8 @@ namespace MvkServer.Util
             {
                 float h = Entity is EntityLiving ? ((EntityLiving)Entity).Health : 0; 
                 str = Entity.GetName() + " " + h + " " + Entity.Position;
-            //} else if (type == MovingObjectType.Block)
-            //{
-            //    str = Block.W
             }
-            return string.Format("{0} {3} {1} {2}", type, Hit, RayHit, str);
+            return string.Format("{0} {3} {1} {2}", type, Side, Facing, str);
         }
     }
 }

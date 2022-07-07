@@ -6,8 +6,10 @@ using MvkClient.Renderer.Entity;
 using MvkClient.Setitings;
 using MvkClient.Util;
 using MvkServer.Entity;
+using MvkServer.Entity.Player;
 using MvkServer.Glm;
 using MvkServer.Network.Packets.Client;
+using MvkServer.Sound;
 using MvkServer.Util;
 using MvkServer.World;
 using MvkServer.World.Block;
@@ -100,6 +102,9 @@ namespace MvkClient.World
             {
                // interpolation.Restart();
                 uint time = ClientMain.TickCounter;
+
+                ClientMain.Sample.Tick();
+                Debug.strSound = ClientMain.Sample.StrDebug;
 
                 base.Tick();
                 // Добавляем спавн новых сущностей
@@ -295,6 +300,7 @@ namespace MvkClient.World
             // Это если обновлять сразу!
             if (result)
             {
+                //blockState.GetBlock().PlayPut(this, blockPos);
                 // Для рендера, проверка соседнего чанка, если блок крайний,
                 // то будет доп рендер чанков рядом
                 vec3i min = blockPos.ToVec3i() - 1;
@@ -582,19 +588,35 @@ namespace MvkClient.World
         #endregion
 
         /// <summary>
+        /// Проиграть звуковой эффект, глобальная координата
+        /// </summary>
+        public override void PlaySound(EntityLiving entity, AssetsSample key, vec3 pos, float volume, float pitch)
+        {
+            entity = ClientMain.Player;
+
+            if (entity is EntityPlayer entityPlayer)
+            {
+                pos -= entityPlayer.Position;
+                pos = pos.rotateYaw(entityPlayer.RotationYawHead);
+                ClientMain.Sample.PlaySound(key, pos, volume, pitch);
+            }
+        }
+            
+
+        /// <summary>
         /// Строка для дебага
         /// </summary>
         public override string ToStringDebug()
         {
-            return string.Format("t {2} {0} E:{4}/{5}\r\n{1}\r\n@!{6}/{7}\r\nParticles: {8}\r\n{3}",
+            return string.Format("t {2} {0} E:{4}/{5} P:{8}\r\n{1}",
                 ChunkPrClient.ToString(), // 0
                 ClientMain.Player,  // 1
                 ClientMain.TickCounter / 20,  // 2
-                ClientMain.Player.Inventory, // 3
+                "",//ClientMain.Player.Inventory, // 3
                 PlayerEntities.Count + 1, // 4
                 entitiesCountShow, // 5
-                EntityList.Count, // 6
-                base.ToStringDebug(), // 7
+                "",//EntityList.Count, // 6
+                "",//base.ToStringDebug(), // 7
                 ClientMain.EffectRender.CountParticles() // 8
             );
         }

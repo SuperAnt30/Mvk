@@ -2,6 +2,7 @@
 using MvkServer.Util;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace MvkServer.World.Chunk
 {
@@ -117,9 +118,12 @@ namespace MvkServer.World.Chunk
 
                     float[] heightNoise = new float[256];
                     float[] wetnessNoise = new float[256];
+                    float[] grassNoise = new float[256];
                     float scale = 0.2f;
                     worldServer.Noise.HeightBiome.GenerateNoise2d(heightNoise, chunk.Position.x * 16, chunk.Position.y * 16, 16, 16, scale, scale);
                     worldServer.Noise.WetnessBiome.GenerateNoise2d(wetnessNoise, chunk.Position.x * 16, chunk.Position.y * 16, 16, 16, scale, scale);
+                    scale = .5f;
+                    worldServer.Noise.Down.GenerateNoise2d(grassNoise, chunk.Position.x * 16, chunk.Position.y * 16, 16, 16, scale, scale);
 
                     int count = 0;
                     int stolb = 0;
@@ -145,7 +149,18 @@ namespace MvkServer.World.Chunk
                                     {
                                         stop = true;
                                         if (y <= 16) chunk.SetEBlock(new vec3i(x, y, z), Block.EnumBlock.Water);
-                                        else chunk.SetEBlock(new vec3i(x, y, z), Block.EnumBlock.Turf);
+                                        else
+                                        {
+                                            chunk.SetEBlock(new vec3i(x, y, z), Block.EnumBlock.Turf, chunk.World.Rand.Next(0, 4));
+                                            if (grassNoise[count] > .71f)
+                                            {
+                                              //  chunk.SetEBlock(new vec3i(x, y + 1, z), Block.EnumBlock.Brol);
+                                            }
+                                            else if (grassNoise[count] > .1f)
+                                            {
+                                                chunk.SetEBlock(new vec3i(x, y + 1, z), Block.EnumBlock.TallGrass, chunk.World.Rand.Next(0, 5));
+                                            }
+                                        }
                                         if (y > yMax) yMax = y;
                                         //break;
                                     }
@@ -235,6 +250,24 @@ namespace MvkServer.World.Chunk
                     Cave(chunk, yMax >> 4);
 
                 }
+
+                List<vec3i> list = new List<vec3i>();
+
+                for (int x = 0; x < 16; x++)
+                {
+                    for (int z = 0; z < 16; z++)
+                    {
+                        for (int y = 0; y <= ChunkBase.COUNT_HEIGHT_BLOCK; y++)
+                        {
+                            if (chunk.GetBlockState(x, y, z).GetBlock().LightValue > 0)
+                            {
+                                list.Add(new vec3i(x, y, z));
+                            }
+                        }
+                    }
+                }
+
+                chunk.Light.SetLightBlocks(list.ToArray());
 
                 chunkMapping.Set(chunk);
                 chunk.Light.GenerateHeightMapSky();

@@ -44,7 +44,16 @@
         /// <summary>
         /// Брол
         /// </summary>
-        Brol = 8
+        Brol = 8,
+        /// <summary>
+        /// Бревно
+        /// </summary>
+        Log = 9,
+        /// <summary>
+        /// Блок высокой травы
+        /// </summary>
+        TallGrass = 10
+
     }
 
     /// <summary>
@@ -52,6 +61,6 @@
     /// </summary>
     public class BlocksCount
     {
-        public const int COUNT = 8;
+        public const int COUNT = 10;
     }
 }

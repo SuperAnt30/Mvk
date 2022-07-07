@@ -10,10 +10,10 @@
         /// </summary>
         public BlockStone()
         {
-            Boxes = new Box[] { new Box(0) };
             Particle = 0;
             Hardness = 25;
             Material = EnumMaterial.Stone;
+            InitBoxs(0);
         }
     }
 }

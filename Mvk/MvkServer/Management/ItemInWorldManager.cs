@@ -22,9 +22,13 @@ namespace MvkServer.Management
         /// </summary>
         public bool IsDestroyingBlock { get; private set; } = false;
         /// <summary>
-        /// Направление установки блока
+        /// Значение в пределах 0..1, образно фиксируем пиксел клика на стороне
         /// </summary>
         private vec3 facing;
+        /// <summary>
+        /// Направление установки блока
+        /// </summary>
+        private Pole side;
         /// <summary>
         /// Тип блока для установки
         /// </summary>
@@ -114,14 +118,15 @@ namespace MvkServer.Management
         /// <summary>
         /// Установить блок
         /// </summary>
-        public void Put(BlockPos blockPos, vec3 facing, int slot)
+        public void Put(BlockPos blockPos, Pole side, vec3 facing, int slot)
         {
             BlockBase block = world.GetBlockState(blockPos).GetBlock();
-            if (block.CanPut)
+            if (block.IsReplaceable)
             {
                 IsDestroyingBlock = true;
                 BlockPosDestroy = blockPos;
                 this.facing = facing;
+                this.side = side;
                 slotPut = slot;
                 status = Status.Put;
             }
@@ -179,30 +184,34 @@ namespace MvkServer.Management
                     else if (durabilityRemainingOnBlock == (int)Status.Stop)
                     {
                         // Уничтожение блока
-                        if (!entityPlayer.IsCreativeMode)
-                        {
-                            BlockBase.SpawnAsEntity(world, BlockPosDestroy, new ItemStack(world.GetBlockState(BlockPosDestroy).GetBlock()));
+                        if (world is WorldServer worldServer)
+                        { 
+                            BlockState blockState = world.GetBlockState(BlockPosDestroy);
+                            BlockBase block = blockState.GetBlock();
+                            if (!entityPlayer.IsCreativeMode)
+                            {
+                                block.DropBlockAsItemWithChance(world, BlockPosDestroy, blockState, 1.0f, 0);
+                            }
+                            world.SetBlockState(BlockPosDestroy, new BlockState(EnumBlock.Air));
+                            worldServer.Tracker.SendToAllTrackingEntityCurrent(entityPlayer,
+                                new PacketS29SoundEffect(block.SampleBreak(worldServer), BlockPosDestroy.ToVec3(), 1f));
                         }
-                        world.SetBlockState(BlockPosDestroy, new BlockState(EnumBlock.Air));
                     }
                     else if (durabilityRemainingOnBlock == (int)Status.Put)
                     {
                         // Ставим блок
-                        BlockBase blockOld = world.GetBlockState(BlockPosDestroy).GetBlock();
+                        BlockState blockState = world.GetBlockState(BlockPosDestroy);
                         ItemStack itemStack = entityPlayer.Inventory.GetStackInSlot(slotPut);
                         if (itemStack != null
-                            && itemStack.ItemUse(entityPlayer, world, BlockPosDestroy, new EnumFacing(), new vec3(0)))
+                            && itemStack.ItemUse(entityPlayer, world, BlockPosDestroy, side, facing))
                         {
-                            if (world is WorldServer && entityPlayer is EntityPlayerServer entityPlayerServer)
+                            if (world is WorldServer worldServer && entityPlayer is EntityPlayerServer entityPlayerServer)
                             {
+                                BlockBase block = blockState.GetBlock();
                                 // установлен
                                 if (!entityPlayer.IsCreativeMode)
                                 {
-                                    if (blockOld.IsSpawn)
-                                    {
-                                        // Можно ли спавнить блок при разрушении
-                                        BlockBase.SpawnAsEntity(world, BlockPosDestroy, new ItemStack(blockOld));
-                                    }
+                                    block.DropBlockAsItem(world, BlockPosDestroy, blockState, 0);
                                     entityPlayer.Inventory.DecrStackSize(slotPut, 1);
                                 }
                             }

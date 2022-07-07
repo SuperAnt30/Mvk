@@ -38,6 +38,10 @@ namespace MvkServer.World.Block
         public Face[] Faces { get; set; } = new Face[] { new Face(0) };
 
         /// <summary>
+        /// Повернуть текстуру кратно 90 гр. 0 - 3 => 0 - 270
+        /// </summary>
+        public int RotateYawUV { get; set; } = 0;
+        /// <summary>
         /// Указываем вращение блока по оси Y в радианах
         /// </summary>
         public float RotateYaw { get; set; } = 0;
@@ -45,6 +49,10 @@ namespace MvkServer.World.Block
         /// Указываем вращение блока по оси X в радианах
         /// </summary>
         public float RotatePitch { get; set; } = 0;
+        /// <summary>
+        /// Смещение коробки
+        /// </summary>
+        public vec3 Translate { get; set; } = new vec3(0);
 
         public Box() { }
 

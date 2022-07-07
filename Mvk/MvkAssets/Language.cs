@@ -45,7 +45,7 @@ namespace MvkAssets
         /// </summary>
         public static int Next(int value)
         {
-            int count = Enum.GetValues(typeof(AssetsSample)).Length - 1;
+            int count = Enum.GetValues(typeof(AssetsLanguage)).Length - 1;
             value++;
             return value > count ? 0 : value;
         }

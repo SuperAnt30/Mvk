@@ -1,4 +1,5 @@
 ﻿using MvkServer.Glm;
+using MvkServer.Sound;
 using MvkServer.Util;
 
 namespace MvkServer.World.Block.List
@@ -13,9 +14,33 @@ namespace MvkServer.World.Block.List
         /// </summary>
         public BlockWater()
         {
+            Translucent = true;
+            IsAction = false;
+            IsCollidable = false;
+            RenderType = EnumRenderType.BackSide;
+            IsReplaceable = true;
+            Hardness = 2;
+            LightOpacity = 2;
+            IsParticle = false;
+            Material = EnumMaterial.Water;
+            samplesBreak = new AssetsSample[] { AssetsSample.LiquidSplash1, AssetsSample.LiquidSplash2 };
+            samplesStep = new AssetsSample[] { AssetsSample.LiquidSwim1, AssetsSample.LiquidSwim2, AssetsSample.LiquidSwim3, AssetsSample.LiquidSwim4 };
+            InitBoxs();
+        }
+
+        /// <summary>
+        /// Спавн предмета при разрушении этого блока
+        /// </summary>
+        public override void DropBlockAsItemWithChance(WorldBase worldIn, BlockPos blockPos, BlockState state, float chance, int fortune) { }
+
+        /// <summary>
+        /// Инициализация коробок
+        /// </summary>
+        protected void InitBoxs()
+        {
             vec3 color = new vec3(0.24f, 0.45f, 0.88f);
-            //Boxes = new Box[] { new Box(63, true, new vec3(0.24f, 0.45f, 0.88f)) };
-            Boxes = new Box[] {
+
+            boxes = new Box[][] { new Box[] {
                 new Box()
                 {
                     Faces = new Face[]
@@ -28,20 +53,7 @@ namespace MvkServer.World.Block.List
                         new Face(Pole.West, 62, true, color).SetAnimation(64, 1)
                     }
                 }
-            };
-
-            IsAlpha = true;
-            IsAction = false;
-            //IsWater = true;
-            IsCollidable = false;
-            IsFullCube = false;
-            CanPut = true;
-            IsSpawn = false;
-            Particle = 63;
-            Hardness = 2;
-            LightOpacity = 2;
-            IsParticle = false;
-            Material = EnumMaterial.Water;
+            }};
         }
     }
 }

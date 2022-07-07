@@ -73,13 +73,9 @@ namespace MvkClient.Entity
         /// </summary>
         public float RotationPitchLast { get; private set; }
         /// <summary>
-        /// Выбранный блок
+        /// Выбранный объект
         /// </summary>
-        public BlockBase SelectBlock { get; private set; } = null;
-        /// <summary>
-        /// Позиция выбранного блока
-        /// </summary>
-        public BlockPos SelectBlockPos { get; private set; }
+        public MovingObjectPosition MovingObject { get; private set; }
         /// <summary>
         /// Позиция камеры в блоке для альфа, в зависимости от вида (с глаз, с зади, спереди)
         /// </summary>
@@ -166,6 +162,7 @@ namespace MvkClient.Entity
             Fov = new SmoothFrame(1.43f);
             Eye = new SmoothFrame(GetEyeHeight());
             itemInWorldManager = new ItemInWorldManager(world, this);
+            MovingObject = new MovingObjectPosition();
         }
 
         /// <summary>
@@ -442,25 +439,23 @@ namespace MvkClient.Entity
         /// </summary>
         private void UpCursor()
         {
-            MovingObjectPosition moving = RayCast();
-            SelectBlock = moving.Block;
-            SelectBlockPos = moving.BlockPosition;
-            if (moving.IsBlock())
+            MovingObject = RayCast();
+            if (MovingObject.IsBlock())
             {
-                ChunkBase chunk = World.GetChunk(moving.BlockPosition.GetPositionChunk());
-                vec3i pos = moving.BlockPosition.GetPosition0();
-                string s1 = ToBlockDebug(chunk, new vec3i(pos.x, pos.y + 1, pos.z));
-                string s2 = ToBlockDebug(chunk, new vec3i(pos.x, pos.y + 2, pos.z));
+                ChunkBase chunk = World.GetChunk(MovingObject.BlockPosition.GetPositionChunk());
+                vec3i pos = MovingObject.BlockPosition.GetPosition0();
+                string s1 = ToBlockDebug(chunk, new vec3i(pos.x, pos.y, pos.z));
+                string s2 = ToBlockDebug(chunk, new vec3i(pos.x, pos.y + 1, pos.z));
                 Debug.BlockFocus = string.Format(
-                    "Block: {0} Light: {1} {2} H:{3}|{4} #{6}\r\n",
-                    moving.Block,
-                    s1, s2,
-                    chunk.Light.GetHeight(pos.x, pos.z),
-                    //"*",//chunk.Light.GetHeight(moving.Block.Position.X & 15, moving.Block.Position.Z & 15),
-                        //chunk.Light.HeightMapMax
-                    chunk.GetTopFilledSegment(),
-                    "",
-                    chunk.GetDebugAllSegment()
+                    "Block: {0} L:{1} L+1:{2}\r\n",// H:{3}|{4} #{6}\r\n",
+                    MovingObject.Block,
+                    s1, s2//,
+                    //chunk.Light.GetHeight(pos.x, pos.z),
+                    ////"*",//chunk.Light.GetHeight(moving.Block.Position.X & 15, moving.Block.Position.Z & 15),
+                    //    //chunk.Light.HeightMapMax
+                    //chunk.GetTopFilledSegment(),
+                    //"",
+                    //chunk.GetDebugAllSegment()
                 );
                 //Debug.DStr = "";
             } else
@@ -478,7 +473,7 @@ namespace MvkClient.Entity
             {
                 int ls = chunkStorage.GetLightSky(pos.x, pos.y & 15, pos.z);
                 int lb = chunkStorage.GetLightBlock(pos.x, pos.y & 15, pos.z);
-                return string.Format("s{0} b{1} {2}", ls, lb, chunkStorage.ToString());
+                return string.Format("s{0} b{1}", ls, lb); //, chunkStorage.ToString());
             }
             //return "@-@";
         }
@@ -799,12 +794,11 @@ namespace MvkClient.Entity
                 if (itemStack.Item is ItemBlock itemBlock && moving.IsBlock())
                 {
                     // В стаке блок, и по лучу можем устанавливать блок
-                    BlockPos blockPos = new BlockPos(moving.Put);
-                    vec3 facing = moving.RayHit - new vec3(moving.Put);
-                    if (itemBlock.ItemUse(itemStack, this, World, blockPos, new EnumFacing(), facing))
+                    BlockPos blockPos = new BlockPos(moving.GetPut(itemBlock.Block));
+                    if (itemBlock.ItemUse(itemStack, this, World, blockPos, moving.Side, moving.Facing))
                     {
-                        ClientMain.TrancivePacket(new PacketC08PlayerBlockPlacement(blockPos, facing));
-                        itemInWorldManager.Put(blockPos, facing, Inventory.CurrentItem);
+                        ClientMain.TrancivePacket(new PacketC08PlayerBlockPlacement(blockPos, moving.Side, moving.Facing));
+                        itemInWorldManager.Put(blockPos, moving.Side, moving.Facing, Inventory.CurrentItem);
                         itemInWorldManager.PutPause(start);
                     }
                     else

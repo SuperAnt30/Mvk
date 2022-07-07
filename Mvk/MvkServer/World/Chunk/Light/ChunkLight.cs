@@ -27,8 +27,17 @@ namespace MvkServer.World.Chunk.Light
         /// Была ли боковая генерация чанка
         /// </summary>
         private bool isChunkLight = false;
+        /// <summary>
+        /// Список блоков которые светятся
+        /// </summary>
+        private vec3i[] lightBlocks = new vec3i[0];
 
         public ChunkLight(ChunkBase chunk) : base(chunk) { }
+
+        /// <summary>
+        /// Задать список блоков которые светятся
+        /// </summary>
+        public void SetLightBlocks(vec3i[] lightBlocks) => this.lightBlocks = lightBlocks;
 
         /// <summary>
         /// Сколько света вычитается для прохождения этого блока Air = 0
@@ -265,8 +274,30 @@ namespace MvkServer.World.Chunk.Light
                 WorkingLight light = new WorkingLight(Chunk);
                 RecheckGaps(light);
                 light.ModifiedRender();
+
+                if (lightBlocks.Length > 0)
+                {
+                    light = new WorkingLight(Chunk);
+                    RecheckGapsBlock(light);
+                    light.ModifiedRender();
+                }
                 isChunkLight = true;
             }
+        }
+
+        /// <summary>
+        /// Осветление блоков при старте
+        /// </summary>
+        private void RecheckGapsBlock(WorkingLight light)
+        {
+            int posX = Chunk.Position.x << 4;
+            int posZ = Chunk.Position.y << 4;
+            // Проверка блочного освещения
+            foreach (vec3i pos in lightBlocks)
+            {
+                light.CheckLightBlock(new BlockPos(posX | pos.x, pos.y, posZ | pos.z));
+            }
+            lightBlocks = new vec3i[0];
         }
 
         /// <summary>
@@ -276,6 +307,7 @@ namespace MvkServer.World.Chunk.Light
         {
             int posX = Chunk.Position.x << 4;
             int posZ = Chunk.Position.y << 4;
+
             for (int x = 0; x < 16; x++)
             {
                 for (int z = 0; z < 16; z++)

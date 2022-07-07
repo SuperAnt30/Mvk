@@ -115,10 +115,10 @@ namespace MvkServer.Item
         /// <param name="worldIn"></param>
         /// <param name="pos"></param>
         /// <param name="side"></param>
-        /// <param name="hit"></param>
-        public bool ItemUse(EntityPlayer playerIn, WorldBase worldIn, BlockPos pos, EnumFacing side, vec3 hit)
+        /// <param name="facing"></param>
+        public bool ItemUse(EntityPlayer playerIn, WorldBase worldIn, BlockPos pos, Pole side, vec3 facing)
         {
-            bool b = Item.ItemUse(this, playerIn, worldIn, pos, side, hit);
+            bool b = Item.ItemUse(this, playerIn, worldIn, pos, side, facing);
             if (b)
             {
                 // статистика

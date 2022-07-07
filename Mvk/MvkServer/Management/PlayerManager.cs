@@ -133,7 +133,7 @@ namespace MvkServer.Management
             World.SpawnEntityInWorld(entityPlayer);
             // entityPlayer.FlagSpawn = false;
 
-            // отладка 5 кур
+            // TODO::отладка 5 кур
             for (int i = 0; i < 3; i++)
             {
                 EntityChicken entityChicken = new EntityChicken(World);

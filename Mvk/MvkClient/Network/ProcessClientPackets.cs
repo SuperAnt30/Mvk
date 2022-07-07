@@ -11,6 +11,7 @@ using MvkServer.Network;
 using MvkServer.Network.Packets;
 using MvkServer.Network.Packets.Client;
 using MvkServer.Network.Packets.Server;
+using MvkServer.Sound;
 using MvkServer.World.Block;
 using System.Collections;
 using System.Threading.Tasks;
@@ -68,6 +69,7 @@ namespace MvkClient.Network
                         case 0x21: Handle21ChunkData((PacketS21ChunkData)packet); break;
                         case 0x23: Handle23BlockChange((PacketS23BlockChange)packet); break;
                         case 0x25: Handle25BlockBreakAnim((PacketS25BlockBreakAnim)packet); break;
+                        case 0x29: Handle29SoundEffect((PacketS29SoundEffect)packet); break;
                         case 0x2F: Handle2FSetSlot((PacketS2FSetSlot)packet); break;
                         case 0x30: Handle30WindowItems((PacketS30WindowItems)packet); break;
 
@@ -206,7 +208,7 @@ namespace MvkClient.Network
                 EntityLiving entity = ClientMain.World.GetEntityLivingByID(packet.GetEntityId());
                 if (entity == null) entity = ClientMain.Player;
 
-                ClientMain.Sample.PlaySound(AssetsSample.Click, .2f);
+                ClientMain.Sample.PlaySound(AssetsSample.MobChickenPlop, .2f);
                 // HACK::2022-04-04 надо как-то вынести в игровой поток, а то ошибка вылетает
                 ClientMain.World.RemoveEntityFromWorld(packet.GetItemId());
             }
@@ -382,6 +384,11 @@ namespace MvkClient.Network
         private void Handle25BlockBreakAnim(PacketS25BlockBreakAnim packet)
         {
             ClientMain.World.SendBlockBreakProgress(packet.GetBreakerId(), packet.GetBlockPos(), packet.GetProgress());
+        }
+
+        private void Handle29SoundEffect(PacketS29SoundEffect packet)
+        {
+            ClientMain.World.PlaySound(ClientMain.Player, packet.GetAssetsSample(), packet.GetPosition(), packet.GetVolume(), 1);
         }
 
         /// <summary>

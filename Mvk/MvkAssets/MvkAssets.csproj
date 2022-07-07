@@ -60,7 +60,6 @@
   <ItemGroup>
     <Compile Include="Assets.cs" />
     <Compile Include="AssetsTexture.cs" />
-    <Compile Include="AssetsSample.cs" />
     <Compile Include="AssetsLanguage.cs" />
     <Compile Include="FontSize.cs" />
     <Compile Include="Language.cs" />
@@ -89,6 +88,49 @@
     <Reference Include="System.Drawing" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\DigGlass1.ogg" />
+    <None Include="Resources\DigGlass2.ogg" />
+    <None Include="Resources\DigGlass3.ogg" />
+    <None Include="Resources\DigGrass1.ogg" />
+    <None Include="Resources\DigGrass2.ogg" />
+    <None Include="Resources\DigGrass3.ogg" />
+    <None Include="Resources\DigGrass4.ogg" />
+    <None Include="Resources\DigSand1.ogg" />
+    <None Include="Resources\DigSand2.ogg" />
+    <None Include="Resources\DigSand3.ogg" />
+    <None Include="Resources\DigSand4.ogg" />
+    <None Include="Resources\DigStone1.ogg" />
+    <None Include="Resources\DigStone2.ogg" />
+    <None Include="Resources\DigStone3.ogg" />
+    <None Include="Resources\DigStone4.ogg" />
+    <None Include="Resources\DigWood1.ogg" />
+    <None Include="Resources\DigWood2.ogg" />
+    <None Include="Resources\DigWood3.ogg" />
+    <None Include="Resources\DigWood4.ogg" />
+    <None Include="Resources\LiquidSplash1.ogg" />
+    <None Include="Resources\LiquidSplash2.ogg" />
+    <None Include="Resources\LiquidSwim1.ogg" />
+    <None Include="Resources\LiquidSwim2.ogg" />
+    <None Include="Resources\LiquidSwim3.ogg" />
+    <None Include="Resources\LiquidSwim4.ogg" />
+    <None Include="Resources\MobChickenStep1.ogg" />
+    <None Include="Resources\MobChickenStep2.ogg" />
+    <None Include="Resources\StepGrass1.ogg" />
+    <None Include="Resources\StepGrass2.ogg" />
+    <None Include="Resources\StepGrass3.ogg" />
+    <None Include="Resources\StepGrass4.ogg" />
+    <None Include="Resources\StepSand1.ogg" />
+    <None Include="Resources\StepSand2.ogg" />
+    <None Include="Resources\StepSand3.ogg" />
+    <None Include="Resources\StepSand4.ogg" />
+    <None Include="Resources\StepStone1.ogg" />
+    <None Include="Resources\StepStone2.ogg" />
+    <None Include="Resources\StepStone3.ogg" />
+    <None Include="Resources\StepStone4.ogg" />
+    <None Include="Resources\StepWood1.ogg" />
+    <None Include="Resources\StepWood2.ogg" />
+    <None Include="Resources\StepWood3.ogg" />
+    <None Include="Resources\StepWood4.ogg" />
     <None Include="Resources\Title.png" />
   </ItemGroup>
   <ItemGroup>

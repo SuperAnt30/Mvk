@@ -110,7 +110,6 @@ namespace MvkServer.World.Chunk
         //public void ChunkLoadGen()
         //{
         //    StorageArraysClear();
-        //    //TODO:: Тест генерации
 
         //    //Random random = new Random();
 
@@ -416,13 +415,14 @@ namespace MvkServer.World.Chunk
         /// <summary>
         /// Задать тип блок по координатам чанка XZ 0..15, Y 0..255
         /// </summary>
-        public void SetEBlock(vec3i pos, EnumBlock eBlock)
+        public void SetEBlock(vec3i pos, EnumBlock eBlock) => SetEBlock(pos, eBlock, 0);
+
+        public void SetEBlock(vec3i pos, EnumBlock eBlock, int met)
         {
             int y = pos.y >> 4;
             if (pos.x >> 4 == 0 && pos.z >> 4 == 0 && pos.y >= 0 && y < COUNT_HEIGHT)
             {
-                StorageArrays[y].SetData(pos.x, pos.y & 15, pos.z, (ushort)eBlock);
-                //StorageArrays[y].SetEBlock(pos.x, pos.y & 15, pos.z, eBlock);
+                StorageArrays[y].SetData(pos.x, pos.y & 15, pos.z, (ushort)((ushort)eBlock & 0xFFF | met << 12));
             }
         }
 

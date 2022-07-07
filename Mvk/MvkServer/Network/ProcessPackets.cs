@@ -73,6 +73,7 @@ namespace MvkServer.Network
                     case 0x21: return new PacketS21ChunkData();
                     case 0x23: return new PacketS23BlockChange();
                     case 0x25: return new PacketS25BlockBreakAnim();
+                    case 0x29: return new PacketS29SoundEffect();
                     case 0x2F: return new PacketS2FSetSlot();
                     case 0x30: return new PacketS30WindowItems();
                         

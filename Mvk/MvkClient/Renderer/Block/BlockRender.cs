@@ -113,17 +113,24 @@ namespace MvkClient.Renderer.Block
         {
             posChunk = new vec3i(blockPos.X & 15, blockPos.Y, blockPos.Z & 15);
 
-            resultSide[0] = GetResultSide(posChunk.x, posChunk.y + 1, posChunk.z);
-            resultSide[1] = GetResultSide(posChunk.x, posChunk.y - 1, posChunk.z);
-            resultSide[2] = GetResultSide(posChunk.x + 1, posChunk.y, posChunk.z);
-            resultSide[3] = GetResultSide(posChunk.x - 1, posChunk.y, posChunk.z);
-            resultSide[4] = GetResultSide(posChunk.x, posChunk.y, posChunk.z - 1);
-            resultSide[5] = GetResultSide(posChunk.x, posChunk.y, posChunk.z + 1);
+            if (block.UseNeighborBrightness)
+            {
+                resultSide[0] = GetResultSide(posChunk.x, posChunk.y, posChunk.z);
+            }
+            else
+            {
+                resultSide[0] = GetResultSide(posChunk.x, posChunk.y + 1, posChunk.z);
+                resultSide[1] = GetResultSide(posChunk.x, posChunk.y - 1, posChunk.z);
+                resultSide[2] = GetResultSide(posChunk.x + 1, posChunk.y, posChunk.z);
+                resultSide[3] = GetResultSide(posChunk.x - 1, posChunk.y, posChunk.z);
+                resultSide[4] = GetResultSide(posChunk.x, posChunk.y, posChunk.z - 1);
+                resultSide[5] = GetResultSide(posChunk.x, posChunk.y, posChunk.z + 1);
+            }
 
             if (resultSide[0] != -1 || resultSide[1] != -1 || resultSide[2] != -1
                 || resultSide[3] != -1 || resultSide[4] != -1 || resultSide[5] != -1)
             {
-                if (block.Material == EnumMaterial.Water)
+                if (block.RenderType.HasFlag(BlockBase.EnumRenderType.BackSide))
                 {
                     cullFace = false;
                     RenderMeshBlock();
@@ -140,11 +147,12 @@ namespace MvkClient.Renderer.Block
         {
             int idB = 0;
             int idF = 0;
-            int countB = block.Boxes.Length;
+            Box[] boxes = block.GetBoxes(blockState.Met());
+            int countB = boxes.Length;
             int countF = 0;
             while (idB < countB)
             {
-                cBox = block.Boxes[idB];
+                cBox = boxes[idB];
                 countF = cBox.Faces.Length;
                 idF = 0;
                 while (idF < countF)
@@ -156,14 +164,14 @@ namespace MvkClient.Renderer.Block
                         for (int i = 0; i < 6; i++)
                         {
                             cSide = (Pole)i;
-                            cSideInt = i;
+                            cSideInt = block.UseNeighborBrightness ? 0 : i;
                             if (check) RenderMeshSideCheck();
                             else RenderMeshFace(255);
                         }
                     }
                     else
                     {
-                        cSideInt = (int)cSide;
+                        cSideInt = block.UseNeighborBrightness ? 0 : (int)cSide;
                         if (check) RenderMeshSideCheck();
                         else RenderMeshFace(255);
                     }
@@ -228,6 +236,7 @@ namespace MvkClient.Renderer.Block
         {
             float u1 = (cFace.GetNumberTexture() % 64) * 0.015625f;// 0.015625f;
             float v2 = cFace.GetNumberTexture() / 64 * 0.015625f;
+
             return new vec4(
                 u1 + cBox.UVFrom.x, v2 + cBox.UVTo.y,
                 u1 + cBox.UVTo.x, v2 + cBox.UVFrom.y
@@ -240,7 +249,10 @@ namespace MvkClient.Renderer.Block
         private void RenderMeshFace(byte light)
         {
             vec4 uv = GetUV();
-           // vec4 color = cFace.GetIsColor() ? new vec4(cFace.GetColor(), 1f) : new vec4(1f);
+
+            
+
+            // vec4 color = cFace.GetIsColor() ? new vec4(cFace.GetColor(), 1f) : new vec4(1f);
             // подготовка для теста плавности цвета
             //if (Block.EBlock == EnumBlock.Turf && cFace.GetIsColor() && Chunk.Position.x == -1 && Chunk.Position.y == -1)
             //{
@@ -248,7 +260,7 @@ namespace MvkClient.Renderer.Block
             //}
 
             //bool isWater = Block.EBlock == EnumBlock.Water;
-            
+
             vec3 pos = new vec3(posChunk.x, posChunk.y & 15, posChunk.z);
 
             ColorsLights colorLight = GenColors(light);
@@ -264,12 +276,20 @@ namespace MvkClient.Renderer.Block
                 cFace.AnimationPause()
             );
 
+            blockUV.SetYawUV(cBox.RotateYawUV);
+            blockUV.Translate(cBox.Translate);
             if (cBox.RotateYaw != 0 || cBox.RotatePitch != 0)
             {
                 blockUV.Rotate(pos + .5f, cBox.RotateYaw, cBox.RotatePitch);
             }
 
-            blockUV.BufferByte.buffer = block.IsAlpha ? bufferAlpha : buffer;
+            //vec2 rot = block.GetRotateMetdata(blockState.Met());
+            //if (rot.x != 0 || rot.y != 0)
+            //{
+            //    blockUV.Rotate(pos + .5f, rot.x, rot.y);
+            //}
+
+            blockUV.BufferByte.buffer = block.Translucent ? bufferAlpha : buffer;
             //if (block.IsAlpha) bufferAlpha.AddRange(blockUV.BufferByte.ToArray());
             //else buffer.AddRange(blockUV.BufferByte.ToArray());
 
@@ -280,19 +300,22 @@ namespace MvkClient.Renderer.Block
             //else buffer.AddRange(blockUV.BufferByte.ToArray());
         }
 
+
+        byte l;
         /// <summary>
         /// Сгенерировать цвета на каждый угол, если надо то AmbientOcclusion
         /// </summary>
         private ColorsLights GenColors(byte light)
         {
-            
+            l = light;
             vec3 color = cFace.GetIsColor() ? GetBiomeColor(blockPos.X, blockPos.Z) : new vec3(1f);
-            float lightPole = 1f - LightPole();
+            float lightPole = block.RenderType.HasFlag(BlockBase.EnumRenderType.NoSideDimming) ? 0f : 1f - LightPole();
+
             color.x -= lightPole; if (color.x < 0) color.x = 0;
             color.y -= lightPole; if (color.y < 0) color.y = 0;
             color.z -= lightPole; if (color.z < 0) color.z = 0;
 
-            if (ambientOcclusion && block.IsFullCube && block.IsNotTransparent())
+            if (ambientOcclusion && block.RenderType.HasFlag(BlockBase.EnumRenderType.АmbientOcclusion) && block.IsNotTransparent())
             {
                 // AmbientOcclusion условие, что блок целый кубический, и не является альфой
                 //vec3[] colorAO;
@@ -333,7 +356,7 @@ namespace MvkClient.Renderer.Block
             // подготовка для теста плавности цвета
             if (cFace.GetIsColor())
             {
-                if (block.EBlock == EnumBlock.Turf)
+                if (block.EBlock == EnumBlock.Turf || block.EBlock == EnumBlock.TallGrass)
                 {
                     if (posX >> 4 == -1 && posZ >> 4 == -1)
                     {
@@ -478,11 +501,11 @@ namespace MvkClient.Renderer.Block
         /// </summary>
         public void RenderVBOtoDL()
         {
-            if (block.IsAlpha) bufferAlpha = new List<byte>();
+            if (block.Translucent) bufferAlpha = new List<byte>();
             else buffer = new List<byte>();
             check = false;
-            RenderMesh();
-            byte[] buffer2 = block.IsAlpha ? bufferAlpha.ToArray() : buffer.ToArray();
+            RenderMeshBlock();
+            byte[] buffer2 = block.Translucent ? bufferAlpha.ToArray() : buffer.ToArray();
 
             GLRender.PushMatrix();
             {
@@ -552,13 +575,13 @@ namespace MvkClient.Renderer.Block
 
             // Для слияния однотипных блоков
             //if (isDraw && id == blockState.Id())
-            if (isDraw && (blockCheck.EBlock == block.EBlock || blockCheck.Material == block.Material))
+            if (isDraw && block.Translucent && (blockCheck.EBlock == block.EBlock || blockCheck.Material == block.Material))
             //|| (Block.Material == EnumMaterial.Water && block.IsAlpha)))
             // TODO::2022-04-20 нужен новый слой на воде между альфой, он просто цвет
             {
                 isDraw = false;
             }
-            if (!isDraw && block.AllDrawing)
+            if (!isDraw && block.RenderType.HasFlag(BlockBase.EnumRenderType.AllSide))
             {
                 isDraw = true;
             }
@@ -621,9 +644,11 @@ namespace MvkClient.Renderer.Block
                 isDraw = false;
             }
 
-            if (!isDraw && block.AllDrawing) isDraw = true;
+            if (!isDraw && block.RenderType.HasFlag(BlockBase.EnumRenderType.AllSide)) isDraw = true;
 
             byte light = chunk.StorageArrays[yc].GetLightsFor(xv, yv, zv);
+
+            if (id == 9) light = l;
 
             return new ResultSide(
                 isDraw,

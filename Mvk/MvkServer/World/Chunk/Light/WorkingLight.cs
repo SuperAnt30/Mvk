@@ -232,6 +232,13 @@ namespace MvkServer.World.Chunk.Light
             CheckLightFor(pos.X, pos.Y, -1, pos.Z);
         }
 
+        public void CheckLightBlock(BlockPos pos)
+        {
+            // Планируемая световая яркость
+            int light = LevelBright(pos, EnumSkyBlock.Block);
+            BrighterLightFor(pos, EnumSkyBlock.Block, (byte)light, -1);
+        }
+
         /// <summary>
         /// Осветляем за счёт блока или неба при старте
         /// </summary>

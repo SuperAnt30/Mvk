@@ -121,7 +121,136 @@
   <data name="Click" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\Click.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="DigGlass1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DigGlass1.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DigGlass2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DigGlass2.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DigGlass3" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DigGlass3.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DigGrass1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DigGrass1.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DigGrass2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DigGrass2.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DigGrass3" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DigGrass3.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DigGrass4" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DigGrass4.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DigSand1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DigSand1.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DigSand2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DigSand2.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DigSand3" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DigSand3.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DigSand4" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DigSand4.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DigStone1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DigStone1.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DigStone2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DigStone2.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DigStone3" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DigStone3.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DigStone4" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DigStone4.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DigWood1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DigWood1.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DigWood2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DigWood2.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DigWood3" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DigWood3.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DigWood4" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DigWood4.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="LiquidSplash1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\LiquidSplash1.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="LiquidSplash2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\LiquidSplash2.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="LiquidSwim1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\LiquidSwim1.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="LiquidSwim2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\LiquidSwim2.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="LiquidSwim3" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\LiquidSwim3.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="LiquidSwim4" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\LiquidSwim4.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="MobChickenPlop" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\MobChickenPlop.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="MobChickenStep1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\MobChickenStep1.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="MobChickenStep2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\MobChickenStep2.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="StepGrass1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\StepGrass1.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="StepGrass2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\StepGrass2.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="StepGrass3" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\StepGrass3.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="StepGrass4" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\StepGrass4.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="StepSand1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\StepSand1.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="StepSand2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\StepSand2.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="StepSand3" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\StepSand3.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="StepSand4" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\StepSand4.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="StepStone1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\StepStone1.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="StepStone2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\StepStone2.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="StepStone3" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\StepStone3.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="StepStone4" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\StepStone4.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="StepWood1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\StepWood1.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="StepWood2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\StepWood2.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="StepWood3" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\StepWood3.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="StepWood4" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\StepWood4.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
 </root>

@@ -1,6 +1,7 @@
 ﻿using MvkServer.Entity;
 using MvkServer.Entity.Player;
 using MvkServer.Glm;
+using MvkServer.Sound;
 using MvkServer.Util;
 using MvkServer.World.Block;
 using MvkServer.World.Chunk;
@@ -429,10 +430,12 @@ namespace MvkServer.World
             int ix = Mth.Floor(px);
             int iy = Mth.Floor(py);
             int iz = Mth.Floor(pz);
-
             int stepx = (dx > 0.0f) ? 1 : -1;
             int stepy = (dy > 0.0f) ? 1 : -1;
             int stepz = (dz > 0.0f) ? 1 : -1;
+            Pole sidex = (dx > 0.0f) ? Pole.West : Pole.East;
+            Pole sidey = (dy > 0.0f) ? Pole.Down : Pole.Up;
+            Pole sidez = (dz > 0.0f) ? Pole.North : Pole.South;
 
             float infinity = float.MaxValue;
 
@@ -451,34 +454,44 @@ namespace MvkServer.World
             int steppedIndex = -1;
 
             BlockPos blockPos = new BlockPos();
+            BlockState blockState;
+            BlockBase block;
+            Pole side = Pole.All;
+            vec3i norm;
+            vec3 end;
 
             while (t <= maxDist)
             {
                 blockPos.X = ix;
                 blockPos.Y = iy;
                 blockPos.Z = iz;
-                BlockBase block = GetBlockState(blockPos).GetBlock();
+                blockState = GetBlockState(blockPos);
+                block = blockState.GetBlock();
 
-                if (block.CollisionRayTrace(blockPos, a, dir, maxDist))
+                if (block.CollisionRayTrace(blockPos, blockState.Met(), a, dir, maxDist))
                 {
-                    vec3 end;
-                    vec3i norm;
-                    vec3i iend;
-
                     end.x = px + t * dx;
                     end.y = py + t * dy;
                     end.z = pz + t * dz;
-
-                    iend.x = ix;
-                    iend.y = iy;
-                    iend.z = iz;
-
+                    
                     norm.x = norm.y = norm.z = 0;
-                    if (steppedIndex == 0) norm.x = -stepx;
-                    if (steppedIndex == 1) norm.y = -stepy;
-                    if (steppedIndex == 2) norm.z = -stepz;
+                    if (steppedIndex == 0)
+                    {
+                        side = sidex;
+                        norm.x = -stepx;
+                    }
+                    else if (steppedIndex == 1)
+                    {
+                        side = sidey;
+                        norm.y = -stepy;
+                    }
+                    else if (steppedIndex == 2)
+                    {
+                        side = sidez;
+                        norm.z = -stepz;
+                    }
 
-                    return new MovingObjectPosition(block, blockPos, iend, norm, end);
+                    return new MovingObjectPosition(blockState, blockPos, side, blockPos.ToVec3() - end, norm, end);
                 }
                 if (txMax < tyMax)
                 {
@@ -659,8 +672,9 @@ namespace MvkServer.World
                         for (int y = minY - 1; y < maxY; y++)
                         {
                             BlockPos blockPos = new BlockPos(x, y, z);
-                            BlockBase block = GetBlockState(blockPos).GetBlock();
-                            AxisAlignedBB mask = block.GetCollision(blockPos);
+                            BlockState blockState = GetBlockState(blockPos);
+                            BlockBase block = blockState.GetBlock();
+                            AxisAlignedBB mask = block.GetCollision(blockPos, blockState.Met());
                             if (mask != null && mask.IntersectsWith(aabb))
                             {
                                 blocks.Add(block);
@@ -678,8 +692,9 @@ namespace MvkServer.World
         /// </summary>
         public bool GetAverageEdgeLengthBlock(BlockPos blockPos)
         {
-            BlockBase block = GetBlockState(blockPos).GetBlock();
-            AxisAlignedBB axis = block.GetCollision(blockPos);
+            BlockState blockState = GetBlockState(blockPos);
+            BlockBase block = blockState.GetBlock();
+            AxisAlignedBB axis = block.GetCollision(blockPos, blockState.Met());
             return axis != null && axis.GetAverageEdgeLength() >= 1f;
         }
 
@@ -903,5 +918,10 @@ namespace MvkServer.World
 
             TheProfiler().EndSection();
         }
+
+        /// <summary>
+        /// Проиграть звуковой эффект
+        /// </summary>
+        public virtual void PlaySound(EntityLiving entity, AssetsSample key, vec3 pos, float volume, float pitch) { }
     }
 }

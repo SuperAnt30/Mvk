@@ -1,6 +1,7 @@
 ﻿using MvkAssets;
 using MvkClient.Setitings;
 using MvkServer.Glm;
+using MvkServer.Sound;
 using System;
 using System.Collections;
 
@@ -40,7 +41,7 @@ namespace MvkClient.Audio
         /// </summary>
         public void InitializeSample(AssetsSample key)
         {
-            byte[] vs = Assets.GetSample(key);
+            byte[] vs = Assets.GetSample(key.ToString());
             AudioSample sample = new AudioSample();
             sample.LoadOgg(vs);
             Set(key, sample);

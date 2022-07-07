@@ -71,6 +71,7 @@ namespace MvkClient.Audio
             Al.alSourcef(sourceId, Al.AL_PITCH, Pitch);
             Al.alSourcef(sourceId, Al.AL_GAIN, Volume);
             Al.alSource3f(sourceId, Al.AL_POSITION, Position.x, Position.y, Position.z);
+            Al.alSource3f(sourceId, Al.AL_ORIENTATION, 0, 0, -1);
             Al.alSourcePlay(sourceId);
         }
 

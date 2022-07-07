@@ -23,6 +23,11 @@ namespace MvkServer.World.Block
             this.data = data;
             this.light = light;
         }
+        public BlockState(int id, int met, byte light)
+        {
+            data = (ushort)(id & 0xFFF | met << 12);
+            this.light = light;
+        }
         public BlockState(EnumBlock eBlock)
         {
             data = (ushort)eBlock;
@@ -47,6 +52,10 @@ namespace MvkServer.World.Block
         /// Получить id
         /// </summary>
         public int Id() => data & 0xFFF;
+        /// <summary>
+        /// Получить метданные
+        /// </summary>
+        public int Met() => data >> 12;
 
         /// <summary>
         /// Получить тип блок
@@ -87,5 +96,10 @@ namespace MvkServer.World.Block
         }
 
         public override int GetHashCode() => data ^ light;
+
+        public override string ToString()
+        {
+            return string.Format("#{0} M:{1}", Id(), Met());
+        }
     }
 }

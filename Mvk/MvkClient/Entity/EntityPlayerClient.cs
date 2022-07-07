@@ -54,7 +54,7 @@ namespace MvkClient.Entity
 
         public override string ToString()
         {
-            return name + "\r\n" + base.ToString();
+            return name + " " + base.ToString();
         }
     }
 }

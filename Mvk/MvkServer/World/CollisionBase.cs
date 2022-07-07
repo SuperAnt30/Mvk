@@ -22,18 +22,21 @@ namespace MvkServer.World
         /// <summary>
         /// Получить блок в глобальной координате
         /// </summary>
-        protected BlockBase GetBlockBase(int x, int y, int z)
+        protected BlockState GetBlockState(int x, int y, int z)
         {
             if (y >= 0 && y <= 255)
             {
                 ChunkBase chunk = World.GetChunk(new vec2i(x >> 4, z >> 4));
                 if (chunk != null)
                 {
-                    return chunk.GetBlockState(x & 15, y, z & 15).GetBlock();
+                    BlockState blockState = chunk.GetBlockState(x & 15, y, z & 15);
+                    // делаем без колизии если чанк загружен, чтоб можно было в пустых псевдо чанках двигаться
+                    if (blockState.IsEmpty()) return new BlockState();
+                    return chunk.GetBlockState(x & 15, y, z & 15);
                 }
             }
             // Для колизи важно, если чанк не загружен, то блоки все с колизией, так-как начнём падать
-            return Blocks.GetNone();
+            return new BlockState().Empty();
         }
 
         /// <summary>
@@ -55,10 +58,11 @@ namespace MvkServer.World
                     {
                         if (y >= 0 && y <= 255)
                         {
-                            BlockBase block = GetBlockBase(x, y, z);
+                            BlockState blockState = GetBlockState(x, y, z);
+                            BlockBase block = blockState.IsEmpty() ? Blocks.GetNone() : blockState.GetBlock(); 
                             if (block.IsCollidable)
                             {
-                                list.AddRange(block.GetCollisionBoxesToList(new BlockPos(x, y, z)));
+                                list.AddRange(block.GetCollisionBoxesToList(new BlockPos(x, y, z), blockState.Met()));
                             }
                         }
                     }
@@ -75,13 +79,14 @@ namespace MvkServer.World
         /// <returns>true - пересечение имеется</returns>
         protected bool BlockCollision(int x, int y, int z, AxisAlignedBB aabb)
         {
-            BlockBase block = GetBlockBase(x, y, z);
+            BlockState blockState = GetBlockState(x, y, z);
+            BlockBase block = blockState.IsEmpty() ? Blocks.GetNone() : blockState.GetBlock();
             if (block.IsCollidable)
             {
                 // Цельный блок на коллизию
-                if (block.IsBoundingBoxAll) return true;
+                if (block.FullBlock) return true;
                 // Выбираем часть блока
-                foreach(AxisAlignedBB aabbBlock in block.GetCollisionBoxesToList(new BlockPos(x, y, z)))
+                foreach(AxisAlignedBB aabbBlock in block.GetCollisionBoxesToList(new BlockPos(x, y, z), blockState.Met()))
                 {
                     if (aabbBlock.IntersectsWith(aabb)) return true;
                 }

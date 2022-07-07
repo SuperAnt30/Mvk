@@ -20,9 +20,9 @@ namespace MvkAssets
         /// <summary>
         /// Получить семпл 
         /// </summary>
-        public static byte[] GetSample(AssetsSample key)
+        public static byte[] GetSample(string key)
         {
-            object obj = ResourceSound.ResourceManager.GetObject(key.ToString(), ResourceSound.Culture);
+            object obj = ResourceSound.ResourceManager.GetObject(key, ResourceSound.Culture);
             if (obj.GetType() == typeof(byte[])) return obj as byte[];
             return new byte[0];
         }
