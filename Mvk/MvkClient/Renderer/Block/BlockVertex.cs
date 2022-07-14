@@ -1,57 +1,44 @@
-﻿using MvkServer.Glm;
-
-namespace MvkClient.Renderer.Block
+﻿namespace MvkClient.Renderer.Block
 {
     /// <summary>
     /// Вершина блока
     /// </summary>
     public struct BlockVertex
     {
-        private readonly vec3 pos;
-        private readonly vec2 uv;
-        private readonly byte light;
-        private readonly vec3 color;
-
-        private readonly byte r;
-        private readonly byte g;
-        private readonly byte b;
-
-        public BlockVertex(vec3 pos, vec2 uv, vec3 color, byte light)
-        {
-            this.pos = pos;
-            this.uv = uv;
-            this.color = color;
-            this.light = light;
-            r = (byte)(color.x * 255);
-            g = (byte)(color.y * 255);
-            b = (byte)(color.z * 255);
-        }
-
         /// <summary>
         /// Координата вершины
         /// </summary>
-        public vec3 GetPosition() => pos;
+        private readonly float x, y, z;
         /// <summary>
         /// Смещение текстуры
         /// </summary>
-        public vec2 GetUV() => uv;
-        /// <summary>
-        /// Цвет
-        /// </summary>
-        public vec3 GetColor() => color;
+        private readonly float u, v;
         /// <summary>
         /// Освещение от блока и неба
         /// </summary>
-        public byte GetLight() => light;
+        private readonly byte light;
         /// <summary>
-        /// Тень для ambient occlusion
+        /// Цвет
         /// </summary>
-       // public float GetShadow() => shadow;
+        private readonly byte r, g, b;
+
+        public BlockVertex(float x, float y, float z, float u, float v, float r, float g, float b, byte light)
+        {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.u = u;
+            this.v = v;
+            this.light = light;
+            this.r = (byte)(r * 255);
+            this.g = (byte)(g * 255);
+            this.b = (byte)(b * 255);
+        }
 
         /// <summary>
         /// Вернуть массив позиции и смещения текстуры
         /// </summary>
-        public float[] GetArrayPosUV() => new float[] { pos.x, pos.y, pos.z, uv.x, uv.y };
+        public float[] GetArrayPosUV() => new float[] { x, y, z, u, v };
         /// <summary>
         /// Вернуть массив цвета и освещения
         /// </summary>

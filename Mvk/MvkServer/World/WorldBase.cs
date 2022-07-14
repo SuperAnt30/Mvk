@@ -819,13 +819,11 @@ namespace MvkServer.World
         //}
 
         /// <summary>
-        /// Проверка нахождения сущности в воде
+        /// Проверка нахождения материала в рамке AABB
         /// </summary>
         /// <param name="aabb"></param>
-        /// <param name="enumBlock"></param>
-        /// <param name="entity"></param>
-        /// <returns></returns>
-        public bool HandleMaterialAcceleration(AxisAlignedBB aabb, EnumMaterial material, EntityBase entity)
+        /// <param name="material"></param>
+        public bool HandleMaterialAcceleration(AxisAlignedBB aabb, EnumMaterial material)//, EntityBase entity)
         {
             vec3i min = aabb.MinInt();
             vec3i max = aabb.MaxInt();
@@ -836,39 +834,22 @@ namespace MvkServer.World
             int minZ = min.z;
             int maxZ = max.z + 1;
 
-            if (!IsAreaLoaded(minX, minY, minZ, maxX, maxY, maxZ))
+            if (!IsAreaLoaded(minX, minY, minZ, maxX, maxY, maxZ)) return false;
+            BlockPos blockPos = new BlockPos();
+            for (int x = minX; x < maxX; x++)
             {
-                return false;
-            }
-            else
-            {
-                bool result = false;
-                vec3 var11 = new vec3(0f);
-
-                for (int x = minX; x < maxX; x++)
+                for (int y = minY; y < maxY; y++)
                 {
-                    for (int y = minY; y < maxY; y++)
+                    for (int z = minZ; z < maxZ; z++)
                     {
-                        for (int z = minZ; z < maxZ; z++)
-                        {
-                            BlockPos blockPos = new BlockPos(x, y, z);
-                            BlockBase block = GetBlockState(blockPos).GetBlock();
-
-                            if (block.Material == material)
-                            {
-                                //double var18 = (double)((float)(y + 1) - BlockLiquid.getLiquidHeightPercent(((Integer)var16.getValue(BlockLiquid.LEVEL)).intValue()));
-
-                                //if ((double)maxY >= var18)
-                                {
-                                    result = true;
-                                    return result;
-                                    // Толчки воды
-                                    //var11 = block.modifyAcceleration(this, blockPos, entity, var11);
-                                }
-                            }
-                        }
+                        blockPos.X = x;
+                        blockPos.Y = y;
+                        blockPos.Z = z;
+                        if (GetBlockState(blockPos).GetBlock().Material == material) return true;
                     }
                 }
+            }
+            return false;
 
                 // Толчки воды
                 //if (var11.lengthVector() > 0.0D && entity.isPushedByWater())
@@ -880,8 +861,8 @@ namespace MvkServer.World
                 //    entity.motionZ += var11.zCoord * var20;
                 //}
 
-                return result;
-            }
+                
+            
         }
 
         /// <summary>
@@ -923,5 +904,10 @@ namespace MvkServer.World
         /// Проиграть звуковой эффект
         /// </summary>
         public virtual void PlaySound(EntityLiving entity, AssetsSample key, vec3 pos, float volume, float pitch) { }
+
+        /// <summary>
+        /// Проиграть звуковой эффект только для клиента
+        /// </summary>
+        public virtual void PlaySound(AssetsSample key, vec3 pos, float volume, float pitch) { }
     }
 }

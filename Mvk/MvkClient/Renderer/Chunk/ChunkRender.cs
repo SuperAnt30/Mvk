@@ -131,89 +131,69 @@ namespace MvkClient.Renderer.Chunk
         {
             try
             {
-               // long timeBegin = GLWindow.stopwatch.ElapsedTicks;
+                long timeBegin = GLWindow.stopwatch.ElapsedTicks;
 
-                // буфер блоков
-                List<byte> bufferCache = new List<byte>();
+                ChunkStorage chunkStorage = StorageArrays[chY];
                 // буфер альфа блоков
                 List<BlockBuffer> alphas = new List<BlockBuffer>();
                 vec3i posPlayer = ClientWorld.ClientMain.Player.PositionAlphaBlock;
                 BlockState blockState = new BlockState().Empty();
-                BlockPos blockPos = new BlockPos();
                 BlockRender blockRender = new BlockRender(this);
                 BlockBase block;
+                ushort id;
+                int cbX = Position.x << 4;
+                int cbY = chY << 4;
+                int cbZ = Position.y << 4;
+                blockRender.cbX = cbX;
+                blockRender.cbY = cbY;
+                blockRender.cbZ = cbZ;
+                int realY;
+                int realZ;
+
                 byte[] buffer = new byte[0];
                 for (int y = 0; y < 16; y++)
                 {
+                    realY = cbY | y;
+                    blockRender.posChunkY0 = y;
+                    blockRender.posChunkY = realY;
                     for (int z = 0; z < 16; z++)
                     {
+                        blockRender.posChunkZ = z;
+                        realZ = cbZ | z;
                         for (int x = 0; x < 16; x++)
                         {
-                            //blockState.data = StorageArrays[chY].data[y, x, z];
-                            blockState.data = StorageArrays[chY].GetData(x, y, z);
-                            int id = blockState.data & 0xFFF;// blockState.Id();
-                            if (id == 0) continue;
-
-                            int yBlock = chY << 4 | y;
-                            blockPos.X = Position.x << 4 | x;
-                            blockPos.Y = yBlock;
-                            blockPos.Z = Position.y << 4 | z;
-
-                            block = Blocks.BlocksInt[id];
+                            id = chunkStorage.data[y, x, z];
+                            if (id == 0 || id == 4096) continue;
+                            blockState.data = id;
+                            blockState.light = chunkStorage.light[y, x, z];
+                            blockRender.posChunkX = x;
+                            block = Blocks.BlocksInt[id & 0xFFF];
                             blockRender.blockState = blockState;
                             blockRender.block = block;
-                            blockRender.blockPos = blockPos;
-                            blockRender.buffer = bufferCache;
 
-                            if (block.Translucent) blockRender.bufferAlpha = new List<byte>();
-                                //blockRender.Set(block, blockPos);
-                                //blockRender.Set(blockState.GetBlock(), blockPos);
-                                blockRender.DamagedBlocksValue = GetDestroyBlocksValue(x, yBlock, z);
+                            blockRender.DamagedBlocksValue = GetDestroyBlocksValue(x, realY, z);
+
                             blockRender.RenderMesh();
 
-                            //BlockPos blockPos = new BlockPos(Position.x << 4 | x, yBlock, Position.y << 4 | z);
-                            //blockState.data = GetBlockState(blockPos);
-                            //if (StorageArrays[chY].GetEBlock(x, y, z) == EnumBlock.Air) continue;
-
-                            //BlockPos blockPos = new BlockPos(Position.x << 4 | x, yBlock, Position.y << 4 | z);
-                            //BlockState blockState = GetBlockState(blockPos);
-                            //if (blockState.IsEmpty()) continue;
-
-                            //BlockBase block = GetBlock0(new vec3i(x, yBlock, z));
-                            //if (block == null) continue;
-
-                            //BlockRender blockRender = new BlockRender(this, blockState, blockPos)
-                            //{
-                            //    DamagedBlocksValue = GetDestroyBlocksValue(x, yBlock, z)
-                            //};
-
-                            //byte[] buffer = new byte[0];
-                            //buffer = blockRender.RenderMesh(true);
-                            //if (buffer.Length > 0)
-                            //{
-                            //    BlockBase block = blockState.GetBlock();
-                                if (block.Translucent)
+                            if (block.Translucent && blockRender.bufferAlpha.Count > 0)
+                            {
+                                alphas.Add(new BlockBuffer()
                                 {
-                                    alphas.Add(new BlockBuffer(block.EBlock, new vec3i(x, y, z), blockRender.bufferAlpha.ToArray(),
-                                        glm.distance(posPlayer, new vec3i(Position.x << 4 | x, yBlock, Position.y << 4 | z))
-                                    ));
-                                }
-                            //    else
-                            //    {
-                            //        bufferCache.AddRange(buffer);
-                            //    }
-                            //}
+                                    buffer = blockRender.bufferAlpha.ToArray(),
+                                    distance = glm.distance(posPlayer, new vec3i(cbX | x, realY, realZ))
+                                });
+                                blockRender.bufferAlpha.Clear();
+                            }
                         }
                     }
                 }
+                
                 countAlpha[chY] = alphas.Count;
                 meshAlpha[chY].SetBuffer(ToBufferAlphaY(alphas));
-                meshDense[chY].SetBuffer(bufferCache.ToArray());
-                bufferCache.Clear();
-                //long timeEnd = GLWindow.stopwatch.ElapsedTicks;
-                //float time = (timeEnd - timeBegin) / (float)MvkStatic.TimerFrequency;
-                //Debug.RenderChunckTime8 = (Debug.RenderChunckTime8 * 3f + time) / 4f;
-                //Debug.RenderChunckTime = time;
+                meshDense[chY].SetBuffer(blockRender.buffer);
+                long timeEnd = GLWindow.stopwatch.ElapsedTicks;
+                float time = (timeEnd - timeBegin) / (float)MvkStatic.TimerFrequency;
+                Debug.RenderChunckTime8 = (Debug.RenderChunckTime8 * 15f + time) / 16f;
             }
             catch (Exception ex)
             {
@@ -224,7 +204,7 @@ namespace MvkClient.Renderer.Chunk
         /// <summary>
         /// Вернуть массив буфера альфа
         /// </summary>
-        public byte[] ToBufferAlphaY(List<BlockBuffer> alphas)
+        public List<byte> ToBufferAlphaY(List<BlockBuffer> alphas)
         { 
             int count = alphas.Count;
             if (count > 0)
@@ -233,11 +213,11 @@ namespace MvkClient.Renderer.Chunk
                 List<byte> buffer = new List<byte>();
                 for (int i = count - 1; i >= 0; i--)
                 {
-                    buffer.AddRange(alphas[i].Buffer());
+                    buffer.AddRange(alphas[i].buffer);
                 }
-                return buffer.ToArray();
+                return buffer;
             }
-            return new byte[0];
+            return new List<byte>();
         }
 
         /// <summary>

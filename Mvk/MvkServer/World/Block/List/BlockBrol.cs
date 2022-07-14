@@ -1,5 +1,7 @@
-﻿using MvkServer.Sound;
+﻿using MvkServer.Glm;
+using MvkServer.Sound;
 using MvkServer.Util;
+using System;
 
 namespace MvkServer.World.Block.List
 {
@@ -15,6 +17,7 @@ namespace MvkServer.World.Block.List
         {
             LightValue = 15;
             Particle = 8;
+            RenderType ^= EnumRenderType.АmbientOcclusion;
             Hardness = 5;
             Material = EnumMaterial.Brol;
             samplesBreak = new AssetsSample[] { AssetsSample.DigGlass1, AssetsSample.DigGlass2, AssetsSample.DigGlass3 };
@@ -40,6 +43,24 @@ namespace MvkServer.World.Block.List
                     }
                 }
             }};
+        }
+
+        /// <summary>
+        /// Случайный эффект частички и/или звука на блоке только для клиента
+        /// </summary>
+        public override void RandomDisplayTick(WorldBase world, BlockPos blockPos, BlockState blockState, Random random)
+        {
+            //if (random.Next(10) == 0)
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    world.SpawnParticle(Entity.EnumParticle.Digging,
+                        new vec3(blockPos.X + (float)random.NextDouble(), blockPos.Y + 1f, blockPos.Z + (float)random.NextDouble()),
+                        new vec3(0),
+                        (int)EBlock);
+                }
+              //  world.PlaySound(AssetsSample.DigGlass1, blockPos.ToVec3() + .5f, (float)random.NextDouble() * .25f + .75f, 1f);
+            }
         }
     }
 }

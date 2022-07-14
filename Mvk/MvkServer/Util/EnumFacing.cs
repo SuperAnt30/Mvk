@@ -42,6 +42,95 @@ namespace MvkServer.Util
         }
 
         /// <summary>
+        /// Нормализованный вектор, указывающий соседний блок для AmbientOcclusion
+        /// </summary>
+        //public static vec3i DirectionVecAO(int pole)
+        //{
+        //    switch (pole)
+        //    {
+        //        case 0: return new vec3i(0, 1, 0);
+        //        case 1: return new vec3i(0, -1, 0);
+        //        case 2: return new vec3i(1, 0, 0);
+        //        case 3: return new vec3i(-1, 0, 0);
+        //        case 4: return new vec3i(0, 0, -1);
+        //        case 5: return new vec3i(0, 0, 1);
+
+        //        case 6: return new vec3i(1, 1, 0);
+        //        case 7: return new vec3i(-1, 1, 0);
+        //        case 8: return new vec3i(0, 1, 1);
+        //        case 9: return new vec3i(0, 1, -1);
+        //        case 10: return new vec3i(1, 1, 1);
+        //        case 11: return new vec3i(-1, 1, -1);
+        //        case 12: return new vec3i(-1, 1, 1);
+        //        case 13: return new vec3i(1, 1, -1);
+
+        //        case 14: return new vec3i(1, -1, 0);
+        //        case 15: return new vec3i(-1, -1, 0);
+        //        case 16: return new vec3i(0, -1, 1);
+        //        case 17: return new vec3i(0, -1, -1);
+        //        case 18: return new vec3i(1, -1, 1);
+        //        case 19: return new vec3i(-1, -1, -1);
+        //        case 20: return new vec3i(-1, -1, 1);
+        //        case 21: return new vec3i(1, -1, -1);
+
+        //        case 22: return new vec3i(1, 0, 1);
+        //        case 23: return new vec3i(-1, 0, -1);
+        //        case 24: return new vec3i(-1, 0, 1);
+        //        case 25: return new vec3i(1, 0, -1);
+
+        //        default: throw new ArgumentNullException("Не существует такой стороны");
+        //    }
+        //}
+
+        /// <summary>
+        /// Нормализованный вектор, указывающий соседний блок для AmbientOcclusion
+        /// </summary>
+        //public static int DirectionVecAO(int x, int y, int z)
+        //{
+        //    if (x == 0 && y == 1 && z == 0) return 0;
+        //    if (x == 0 && y == -1 && z == 0) return 1;
+        //    if (x == 0 && y == -1 && z == 0) return 1;
+        //    if (x == 0 && y == -1 && z == 0) return 1;
+        //    if (x == 0 && y == -1 && z == 0) return 1;
+        //    switch (pole)
+        //    {
+        //        case 0: return new vec3i(0, 1, 0);
+        //        case 1: return new vec3i(0, -1, 0);
+        //        case 2: return new vec3i(1, 0, 0);
+        //        case 3: return new vec3i(-1, 0, 0);
+        //        case 4: return new vec3i(0, 0, -1);
+        //        case 5: return new vec3i(0, 0, 1);
+
+        //        case 6: return new vec3i(1, 1, 0);
+        //        case 7: return new vec3i(-1, 1, 0);
+        //        case 8: return new vec3i(0, 1, 1);
+        //        case 9: return new vec3i(0, 1, -1);
+        //        case 10: return new vec3i(1, 1, 1);
+        //        case 11: return new vec3i(-1, 1, -1);
+        //        case 12: return new vec3i(-1, 1, 1);
+        //        case 13: return new vec3i(1, 1, -1);
+
+        //        case 14: return new vec3i(1, -1, 0);
+        //        case 15: return new vec3i(-1, -1, 0);
+        //        case 16: return new vec3i(0, -1, 1);
+        //        case 17: return new vec3i(0, -1, -1);
+        //        case 18: return new vec3i(1, -1, 1);
+        //        case 19: return new vec3i(-1, -1, -1);
+        //        case 20: return new vec3i(-1, -1, 1);
+        //        case 21: return new vec3i(1, -1, -1);
+
+        //        case 22: return new vec3i(1, 0, 1);
+        //        case 23: return new vec3i(-1, 0, -1);
+        //        case 24: return new vec3i(-1, 0, 1);
+        //        case 25: return new vec3i(1, 0, -1);
+
+        //        default: throw new ArgumentNullException("Не существует такой стороны");
+        //    }
+        //}
+
+
+
+        /// <summary>
         /// Получите облицовку, соответствующую заданному углу (0-360). Угол 0 - SOUTH, угол 90 - WEST.
         /// </summary>
         /// <param name="angle">угол в градусах</param>

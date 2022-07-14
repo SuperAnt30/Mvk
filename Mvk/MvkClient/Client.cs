@@ -642,6 +642,14 @@ namespace MvkClient
 
                     try
                     {
+
+                        // Запуск анимации и звуков, от блоков
+                        if (!isGamePaused && World != null)
+                        {
+                            // В холостую в дебаге 1.0 мс добавил у клиента, в релизе 0.6 мс
+                            World.DoVoidFogParticles(new vec3i(Player.Position));
+                        }
+
                         // Обновляем эффекты
                         if (EffectRender != null)
                         {

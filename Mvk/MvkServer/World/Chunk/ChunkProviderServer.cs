@@ -180,10 +180,15 @@ namespace MvkServer.World.Chunk
                         {
                             chunk.SetEBlock(new vec3i(3, y + stolb, 7), Block.EnumBlock.Dirt);
                             chunk.SetEBlock(new vec3i(7, y + stolb, 5), Block.EnumBlock.Glass);
-                            chunk.SetEBlock(new vec3i(7, y + stolb, 9), Block.EnumBlock.GlassRed);
-                            chunk.SetEBlock(new vec3i(11, y + stolb, 7), Block.EnumBlock.Water);
+                           // chunk.SetEBlock(new vec3i(7, y + stolb, 9), Block.EnumBlock.GlassWhite);
+                            chunk.SetEBlock(new vec3i(11, y + stolb, 7), Block.EnumBlock.Lava);
+                            chunk.SetEBlock(new vec3i(12, y + stolb, 7), Block.EnumBlock.LogOak);
                         }
-                        chunk.SetEBlock(new vec3i(5, 2 + stolb, 5), Block.EnumBlock.Brol);
+                        for (int y = 16; y <= 216; y++) // 196 еррор на 5 мире
+                        {
+                            chunk.SetEBlock(new vec3i(3, y + stolb, 7), Block.EnumBlock.Dirt);
+                        }
+                        //chunk.SetEBlock(new vec3i(5, 2 + stolb, 5), Block.EnumBlock.Brol);
                         // TODO::2022-06-30 надо уметь осветить блоки при генерации
                     }
 

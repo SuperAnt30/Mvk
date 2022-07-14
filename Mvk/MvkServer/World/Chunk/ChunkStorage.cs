@@ -16,16 +16,16 @@ namespace MvkServer.World.Chunk
         /// Данные блока
         /// 12 bit Id блока и 4 bit параметр блока
         /// </summary>
-        private ushort[,,] data;
+        public ushort[,,] data;
         /// <summary>
         /// Освещение блока
         /// 4 bit свет блока и 4 bit свет от неба
         /// </summary>
-        private byte[,,] light;
+        public byte[,,] light;
         /// <summary>
         /// Количество блоков не воздуха
         /// </summary>
-        private int countData;
+        public int countData;
         /// <summary>
         /// было ли заполнения неба
         /// </summary>

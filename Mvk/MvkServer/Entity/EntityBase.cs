@@ -119,11 +119,15 @@ namespace MvkServer.Entity
         /// <summary>
         /// Находится ли этот объект в настоящее время в воде
         /// </summary>
-        protected bool inWater;
+        private bool inWater;
         /// <summary>
-        /// Происходит ли сейчас движение
+        /// Находится ли этот объект в настоящее время в лаве
         /// </summary>
-        //private bool isMotionMoving = false;
+        private bool inLava;
+        /// <summary>
+        /// Находится ли этот объект в настоящее время в нефте
+        /// </summary>
+        private bool inOil;
 
         public EntityBase(WorldBase world)
         {
@@ -537,17 +541,29 @@ namespace MvkServer.Entity
 
         /// <summary>
         /// Проверяет, находится ли этот объект внутри воды (если поле inWater имеет значение 
-        /// true в результате того, что handleWaterMovement() возвращает значение true)
+        /// true в результате HandleLiquidMovement()
         /// </summary>
         public virtual bool IsInWater() => inWater;
+        /// <summary>
+        /// Проверяет, находится ли этот объект внутри лавы (если поле inLava имеет значение 
+        /// true в результате HandleLiquidMovement()
+        /// </summary>
+        public virtual bool IsInLava() => inLava;
+        /// <summary>
+        /// Проверяет, находится ли этот объект внутри воды (если поле inOil имеет значение 
+        /// true в результате HandleLiquidMovement()
+        /// </summary>
+        public virtual bool IsInOil() => inOil;
 
         /// <summary>
         /// Возвращает, если этот объект находится в воде, и в конечном итоге 
         /// добавляет скорость воды к объекту.
         /// </summary>
-        protected bool HandleWaterMovement()
+        protected void HandleLiquidMovement()
         {
-            if (World.HandleMaterialAcceleration(BoundingBox.Expand(new vec3(0f, -0.40001f, 0f)).Contract(new vec3(0.001f)), EnumMaterial.Water, this))
+            AxisAlignedBB axis = BoundingBox.Expand(new vec3(-.10001f, -.40001f, -.10001f));
+            // Проверка в воде
+            if (World.HandleMaterialAcceleration(axis, EnumMaterial.Water))
             {
                 //if (!inWater && !this.firstUpdate)
                 //{
@@ -563,7 +579,24 @@ namespace MvkServer.Entity
                 inWater = false;
             }
 
-            return inWater;
+            // Проверка в лаве
+            if (World.HandleMaterialAcceleration(axis, EnumMaterial.Lava))
+            {
+                inLava = true;
+            }
+            else
+            {
+                inLava = false;
+            }
+            // Проверка в нефте
+            if (World.HandleMaterialAcceleration(axis, EnumMaterial.Oil))
+            {
+                inOil = true;
+            }
+            else
+            {
+                inOil = false;
+            }
         }
 
         /// <summary>

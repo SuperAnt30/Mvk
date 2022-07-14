@@ -19,12 +19,12 @@ namespace MvkServer.World.Block.List
             Particle = 11;
             FullBlock = false;
             Color = new vec3(.56f, .73f, .35f);
-            RenderType = EnumRenderType.AllSide | EnumRenderType.NoSideDimming;
+            RenderType = EnumRenderType.AllSideForcibly | EnumRenderType.NoSideDimming | EnumRenderType.BlocksNotSame;
             IsReplaceable = true;
             LightOpacity = 0;
             IsCollidable = false;
             UseNeighborBrightness = true;
-            Material = EnumMaterial.Turf;
+            Material = EnumMaterial.Grass;
             samplesPut = samplesBreak = new AssetsSample[] { AssetsSample.DigGrass1, AssetsSample.DigGrass2, AssetsSample.DigGrass3, AssetsSample.DigGrass4 };
             offsetMet = new vec3[]
             {

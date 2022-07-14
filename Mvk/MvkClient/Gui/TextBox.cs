@@ -44,8 +44,8 @@ namespace MvkClient.Gui
 
             GLWindow.Texture.BindTexture(Assets.ConvertFontToTexture(size));
 
-            vec4 color0 = new vec4(.3f, .3f, .3f, 1f);
-            if (Focus) FontRenderer.RenderString(13, 15, color0, Text, size);
+            vec4 color0 = new vec4(.1f, .1f, .1f, 1f);
+            if (Enabled) FontRenderer.RenderString(14, 15, color0, Text, size);
             vec4 color = Enabled ? enter ? new vec4(1f, 1f, .5f, 1f) : new vec4(1f) : new vec4(.5f, .5f, .5f, 1f);
             FontRenderer.RenderString(12, 14, color, Text, size);
 
@@ -53,7 +53,7 @@ namespace MvkClient.Gui
             {
                 int ws = FontRenderer.WidthString(Text, size);
                 color = new vec4(1f);
-                FontRenderer.RenderString(ws + 13, 15, color0, "_", size);
+                FontRenderer.RenderString(ws + 14, 15, color0, "_", size);
                 FontRenderer.RenderString(ws + 12, 14, color, "_", size);
             }
         }

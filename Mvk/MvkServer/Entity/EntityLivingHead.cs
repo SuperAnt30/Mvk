@@ -166,7 +166,7 @@ namespace MvkServer.Entity
             m.y = 0;
             vec3 my = new vec3(0, motionDebug.y, 0);
             float rotationYawHead = glm.degrees(RotationYawHead);
-            return string.Format("{15}-{16} XYZ {7} ch:{12}\r\n{0:0.000} | {13:0.000} м/c\r\nHealth: {14:0.00} Air: {17}\r\nyaw:{8:0.00} H:{9:0.00} pitch:{10:0.00} {18} \r\n{1}{2}{6}{4}{19} boom:{5:0.00}\r\nMotion:{3}\r\n{11}",
+            return string.Format("{15}-{16} XYZ {7} ch:{12}\r\n{0:0.000} | {13:0.000} м/c\r\nHealth: {14:0.00} Air: {17}\r\nyaw:{8:0.00} H:{9:0.00} pitch:{10:0.00} {18} \r\n{1}{2}{6}{4}{19}{20}{21} boom:{5:0.00}\r\nMotion:{3}\r\n{11}",
                 glm.distance(m) * 10f, // 0
                 OnGround ? "__" : "", // 1
                 IsSprinting() ? "[Sp]" : "", // 2
@@ -186,7 +186,9 @@ namespace MvkServer.Entity
                 Type, // 16
                 GetAir(), // 17
                 EnumFacing.FromAngle(rotationYawHead), // 18
-                IsInWater() ? "[W]" : "" // 19
+                IsInWater() ? "[W]" : "", // 19
+                IsInLava() ? "[L]" : "", // 20
+                IsInOil() ? "[O]" : "" // 21
                 );
         }
     }

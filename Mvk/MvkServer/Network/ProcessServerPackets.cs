@@ -117,7 +117,7 @@ namespace MvkServer.Network
                 if (packet.GetAction() == PacketC03UseEntity.EnumAction.Attack)
                 {
                     float damage = 1f;
-                    entity.AttackEntityFrom(damage);
+                    entity.AttackEntityFrom(EnumDamageSource.Player, damage, "");
                     //entity.SetHealth(entity.Health - damage);
                     vec3 vec = packet.GetVec() * .5f;
                     vec.y = .84f;
@@ -260,7 +260,7 @@ namespace MvkServer.Network
                 if (packet.GetParam() > 5)
                 {
                     float damage = packet.GetParam() - 5;
-                    entityPlayer.AttackEntityFrom(damage);
+                    entityPlayer.AttackEntityFrom(EnumDamageSource.Fall, damage);
                     ServerMain.World.ResponseHealth(entityPlayer);
                     ServerMain.World.Tracker.SendToAllTrackingEntity(entityPlayer, new PacketS0BAnimation(entityPlayer.Id, PacketS0BAnimation.EnumAnimation.Fall));
                 }

@@ -77,7 +77,7 @@ namespace MvkServer.World.Chunk.Light
             if (pos.Y < 0) pos = new BlockPos(pos.X, 0, pos.Z);
             ChunkBase chunk = World.GetChunk(pos.GetPositionChunk());
             int sy = pos.GetPositionChunkY();
-            if (chunk == null || !chunk.StorageArrays[sy].IsSky())
+            if (chunk == null || sy < 0 || sy > ChunkBase.COUNT_HEIGHT15 || !chunk.StorageArrays[sy].IsSky())
                 return (byte)type;
 
             if (type == EnumSkyBlock.Sky)

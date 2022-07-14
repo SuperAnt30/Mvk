@@ -89,8 +89,10 @@ namespace MvkClient.Gui
             
             string s = items.ContainsKey(Value) ? items[Value].ToString() : Text + " " + Value;
 
+            int x = GetXAlight(s, 12);
+            if (Enabled) FontRenderer.RenderString(x + 2, 15, new vec4(.1f, .1f, .1f, 1f), s, size);
             vec4 color = Enabled ? enter ? new vec4(.8f, .8f, .4f, 1f) : new vec4(.7f, .7f, .7f, 1f) : new vec4(.5f, .5f, .5f, 1f);
-            FontRenderer.RenderString(GetXAlight(s, 12), 14, color, s, size);
+            FontRenderer.RenderString(x, 14, color, s, size);
         }
 
         /// <summary>

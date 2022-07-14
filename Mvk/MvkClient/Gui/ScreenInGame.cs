@@ -17,6 +17,21 @@ namespace MvkClient.Gui
     /// </summary>
     public class ScreenInGame : Screen
     {
+
+        /// <summary>
+        /// Цвет воды для эффектов
+        /// </summary>
+        public static vec3 colorWaterEff = new vec3(0f, .1f, .4f);
+        /// <summary>
+        /// Цвет лавы для эффектов
+        /// </summary>
+        public static vec3 colorLavaEff = new vec3(.8f, .27f, .04f);
+        /// <summary>
+        /// Цвет нефти для эффектов
+        /// </summary>
+        public static vec3 colorOilEff = new vec3(0f, 0f, .1f);
+
+
         protected Button buttonSingle;
 
         public ScreenInGame(Client client) : base(client)
@@ -78,7 +93,7 @@ namespace MvkClient.Gui
             // Эффект урона
             DrawEffDamage(ClientMain.Player.DamageTime, timeIndex);
             // Эффект воды если надо
-            DrawEffWater(timeIndex);
+            DrawEffEyes(timeIndex);
 
 
 
@@ -268,18 +283,38 @@ namespace MvkClient.Gui
         }
 
         /// <summary>
-        /// Эффект вводе
+        /// Эффект глазз, вводе, лаве и тп
         /// </summary>
-        private void DrawEffWater(float timeIndex)
+        private void DrawEffEyes(float timeIndex)
         {
-            // Позиция камеры
-            vec3 posCam = ClientMain.Player.Position + ClientMain.Player.PositionCamera;
-            BlockBase block = ClientMain.World.GetBlockState(new BlockPos(posCam)).GetBlock();
+            bool enable;
+            vec4 color;
 
-            if (block.Material == EnumMaterial.Water)
+            if (ClientMain.Player.WhereEyesEff == EntityPlayerSP.WhereEyes.Air)
+            {
+                enable = false;
+                color = new vec4();
+            }
+            else if (ClientMain.Player.WhereEyesEff == EntityPlayerSP.WhereEyes.Water)
+            {
+                enable = true;
+                color = new vec4(colorWaterEff, .7f);
+            }
+            else if (ClientMain.Player.WhereEyesEff == EntityPlayerSP.WhereEyes.Lava)
+            {
+                enable = true;
+                color = new vec4(colorLavaEff, .85f);
+            }
+            else
+            {
+                enable = true;
+                color = new vec4(colorOilEff, .9f);
+            }
+
+            if (enable)
             {
                 GLRender.Texture2DDisable();
-                GLRender.Rectangle(0, 0, Width, Height, new vec4(0.0f, 0.1f, 0.4f, 0.7f));
+                GLRender.Rectangle(0, 0, Width, Height, color);
             }
         }
 
@@ -291,7 +326,7 @@ namespace MvkClient.Gui
             if (ClientMain.Player.DamageTime > 0 && ClientMain.Player.ViewCamera == EnumViewCamera.Eye)
             {
                 float dt = Mth.Sqrt((damageTime + timeIndex - 1f) / 5f * 1.6f);
-                if (dt > 1f) dt = 1f;
+                if (dt > 1f) dt = 1f; 
                 GLRender.Texture2DDisable();
                 GLRender.Rectangle(0, 0, Width, Height, new vec4(0.7f, 0.4f, 0.3f, 0.7f * dt));
             }

@@ -59,8 +59,8 @@ namespace MvkServer.World
                         if (y >= 0 && y <= 255)
                         {
                             BlockState blockState = GetBlockState(x, y, z);
-                            BlockBase block = blockState.IsEmpty() ? Blocks.GetNone() : blockState.GetBlock(); 
-                            if (block.IsCollidable)
+                            BlockBase block = blockState.GetBlock();
+                            if (block.IsCollidable || blockState.IsEmpty())
                             {
                                 list.AddRange(block.GetCollisionBoxesToList(new BlockPos(x, y, z), blockState.Met()));
                             }
@@ -80,8 +80,8 @@ namespace MvkServer.World
         protected bool BlockCollision(int x, int y, int z, AxisAlignedBB aabb)
         {
             BlockState blockState = GetBlockState(x, y, z);
-            BlockBase block = blockState.IsEmpty() ? Blocks.GetNone() : blockState.GetBlock();
-            if (block.IsCollidable)
+            BlockBase block = blockState.GetBlock();
+            if (block.IsCollidable || blockState.IsEmpty())
             {
                 // Цельный блок на коллизию
                 if (block.FullBlock) return true;

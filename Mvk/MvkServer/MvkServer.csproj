@@ -94,6 +94,7 @@
     <Compile Include="Network\Packets\Server\PacketS25BlockBreakAnim.cs" />
     <Compile Include="Network\Packets\Server\PacketS23BlockChange.cs" />
     <Compile Include="Sound\AssetsSample.cs" />
+    <Compile Include="Util\EnumDamageSource.cs" />
     <Compile Include="Util\EnumInput.cs" />
     <Compile Include="Entity\EntitySpeed.cs" />
     <Compile Include="MvkGlobal.cs" />
@@ -132,13 +133,17 @@
     <Compile Include="World\Block\Blocks.cs" />
     <Compile Include="World\Block\BlockState.cs" />
     <Compile Include="World\Block\Box.cs" />
+    <Compile Include="World\Block\EnumBlock.cs" />
     <Compile Include="World\Block\EnumMaterial.cs" />
     <Compile Include="World\Block\Face.cs" />
     <Compile Include="World\Block\List\BlockAir.cs" />
+    <Compile Include="World\Block\List\BlockDebug.cs" />
     <Compile Include="World\Block\List\BlockCobblestone.cs" />
     <Compile Include="World\Block\List\BlockBrol.cs" />
-    <Compile Include="World\Block\List\BlockLog.cs" />
+    <Compile Include="World\Block\List\BlockOil.cs" />
+    <Compile Include="World\Block\List\BlockLogOak.cs" />
     <Compile Include="World\Block\List\BlockTallGrass.cs" />
+    <Compile Include="World\Block\List\BlockLava.cs" />
     <Compile Include="World\Block\List\BlockWater.cs" />
     <Compile Include="World\Block\List\BlockGlassRed.cs" />
     <Compile Include="World\Block\List\BlockGlass.cs" />
@@ -170,7 +175,6 @@
     <Compile Include="Util\IntEvent.cs" />
     <Compile Include="Util\StringEvent.cs" />
     <Compile Include="Util\Mth.cs" />
-    <Compile Include="World\Block\EnumBlock.cs" />
     <Compile Include="World\Block\EnumSkyBlock.cs" />
     <Compile Include="World\Chunk\ChunkBase.cs" />
     <Compile Include="World\Chunk\ChunkHeir.cs" />

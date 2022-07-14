@@ -16,6 +16,7 @@ namespace MvkServer.World.Block.List
         public BlockGlass()
         {
             Translucent = true;
+            RenderType = EnumRenderType.AllSideForcibly;
             Particle = 5;
             Hardness = 10;
             LightOpacity = 2;
@@ -28,6 +29,6 @@ namespace MvkServer.World.Block.List
         /// Получите предмет, который должен выпасть из этого блока при сборе.
         /// </summary>
         public override ItemBase GetItemDropped(BlockState state, Random rand, int fortune) 
-            => new ItemBlock(Blocks.GetBlockCache(EnumBlock.GlassRed));
+            => new ItemBlock(Blocks.GetBlockCache(EnumBlock.Glass));
     }
 }

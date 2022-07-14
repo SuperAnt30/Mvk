@@ -17,6 +17,7 @@ using SharpGL;
 using SharpGL.Enumerations;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MvkClient.Renderer
@@ -91,13 +92,19 @@ namespace MvkClient.Renderer
         /// Текстурная карта освещения
         /// </summary>
         private TextureLightMap textureLightMap = new TextureLightMap();
-
-        
-
+        /// <summary>
+        /// Массив потоков для рендера
+        /// </summary>
+        private Task[] tasksRender = new Task[6];
 
         public WorldRenderer(WorldClient world)
         {
-            //stopwatch5.Start();
+            for (int i = 0; i < tasksRender.Length; i++)
+            {
+                tasksRender[i] = new Task(() => { });
+                tasksRender[i].Start();
+            }
+            
             World = world;
             ClientMain = world.ClientMain;
             ScreenGame = new ScreenInGame(ClientMain);
@@ -111,6 +118,8 @@ namespace MvkClient.Renderer
                 mapBlocksGui.Add(enumBlock, new RenderBlockGui(enumBlock));//, 32f));
                 //listBlocksGui[i] = new RenderBlockGui((EnumBlock)i, 64f);
             }
+            // Отладочный блок
+          //  mapBlocksGui.Add(EnumBlock.Debug, new RenderBlockGui(EnumBlock.Debug));
 
             // создаём DL звёзд
             RenderStar();
@@ -151,6 +160,7 @@ namespace MvkClient.Renderer
             DrawSky(timeIndex);
 
             // Воксели VBO
+            
             List<ChunkRender> chunks = DrawVoxel(timeIndex);
 
             GLRender.BlendEnable();
@@ -259,14 +269,25 @@ namespace MvkClient.Renderer
                                 else
                                 {
                                     // Обновление рендера псевдочанка
-                                    Debug.CountUpdateChunck++;
-                                    chunk.StartRendering(y);
-                                    countRender--;
-                                    int chY = y;
+                                    for (int j = 0; j < tasksRender.Length; j++)
+                                    {
+                                        if (tasksRender[j].IsCompleted)
+                                        {
+                                            Debug.CountUpdateChunck++;
+                                            chunk.StartRendering(y);
+                                            countRender--;
+                                            int chY = y;
+
+                                            tasksRender[j] = new Task(() => { chunk.Render(chY); });
+                                            tasksRender[j].Start();
+                                            break;
+                                        }
+                                    }
+
                                     // в отдельном потоке рендер
-                                    Task.Factory.StartNew(() => {
-                                        chunk.Render(chY);
-                                    });
+                                    //Task.Factory.StartNew(() => {
+                                    //chunk.Render(chY);
+                                    //});
                                 }
                             }
                         }
@@ -311,7 +332,6 @@ namespace MvkClient.Renderer
                 GLRender.CullEnable();
                 GLWindow.gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_FILL);
             }
-
             return chunks;
         }
 
@@ -368,8 +388,34 @@ namespace MvkClient.Renderer
             shader.SetUniformMatrix4(GLWindow.gl, "projection", ClientMain.Player.Projection);
             shader.SetUniformMatrix4(GLWindow.gl, "lookat", ClientMain.Player.LookAt);
             shader.SetUniform1(GLWindow.gl, "takt", ClientMain.TickCounter); // & 31
-            shader.SetUniform1(GLWindow.gl, "overview", ClientMain.Player.OverviewChunk * 16f);
-            shader.SetUniform3(GLWindow.gl, "colorfog", colorFog.x, colorFog.y, colorFog.z);
+
+            
+            float overview;
+            vec3 cfog;
+
+            if (ClientMain.Player.WhereEyesEff == EntityPlayerSP.WhereEyes.Air)
+            {
+                overview = ClientMain.Player.OverviewChunk * 16f;
+                cfog = colorFog;
+            }
+            else if (ClientMain.Player.WhereEyesEff == EntityPlayerSP.WhereEyes.Water)
+            {
+                overview = 16f;
+                cfog = ScreenInGame.colorWaterEff;
+            }
+            else if (ClientMain.Player.WhereEyesEff == EntityPlayerSP.WhereEyes.Lava)
+            {
+                overview = 4f;
+                cfog = ScreenInGame.colorLavaEff;
+            }
+            else
+            {
+                overview = 4f;
+                cfog = ScreenInGame.colorOilEff;
+            }
+
+            shader.SetUniform1(GLWindow.gl, "overview", overview);
+            shader.SetUniform3(GLWindow.gl, "colorfog", cfog.x, cfog.y, cfog.z);
 
             int atlas = shader.GetUniformLocation(GLWindow.gl, "atlas");
             int lightMap = shader.GetUniformLocation(GLWindow.gl, "light_map");
@@ -388,14 +434,13 @@ namespace MvkClient.Renderer
             int y = chunkY << 4;
             int z = chunkPos.y << 4;
 
+            vec3 pos = ClientMain.Player.Position + ClientMain.Player.PositionCamera;
+
             shader.SetUniform3(GLWindow.gl, "pos",
                 x - World.RenderEntityManager.CameraOffset.x,
                 y - World.RenderEntityManager.CameraOffset.y,
                 z - World.RenderEntityManager.CameraOffset.z);
-            shader.SetUniform3(GLWindow.gl, "camera",
-                ClientMain.Player.Position.x - x,
-                ClientMain.Player.Position.y - y,
-                ClientMain.Player.Position.z - z);
+            shader.SetUniform3(GLWindow.gl, "camera", pos.x - x, pos.y - y, pos.z - z);
         }
 
         private void DrawEntities2(MapListEntity[] entities, float timeIndex)

@@ -22,13 +22,25 @@
         /// </summary>
         Turf,
         /// <summary>
+        /// Трава, цветы
+        /// </summary>
+        Grass,
+        /// <summary>
         /// Вода
         /// </summary>
         Water,
         /// <summary>
+        /// Лава
+        /// </summary>
+        Lava,
+        /// <summary>
         /// Стекло
         /// </summary>
         Glass,
+        /// <summary>
+        /// Нефть
+        /// </summary>
+        Oil,
 
         Brol,
         /// <summary>

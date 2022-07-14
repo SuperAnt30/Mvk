@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace MvkClient.Util
@@ -41,17 +42,20 @@ namespace MvkClient.Util
         /// <summary>
         /// Занести в память массив из float
         /// </summary>
-        public void ConvertByte(byte[] data)
+        public void ConvertByte(List<byte> data)
         {
-            if (data.Length == 0)
+            if (data.Count == 0)
             {
                 Free();
             }
             else
             {
-                size = data.Length * sizeof(byte);
+                //GCHandle handle = GCHandle.Alloc(data);
+                //this.data = (IntPtr)handle;
+                //handle.Free();
+                size = data.Count * sizeof(byte);
                 this.data = Marshal.AllocHGlobal(size);
-                Marshal.Copy(data, 0, this.data, data.Length);
+                Marshal.Copy(data.ToArray(), 0, this.data, data.Count);
                 body = true;
             }
         }

@@ -66,7 +66,7 @@ namespace MvkServer.Entity.Player
             if (!world.IsRemote)
             {
                 Inventory.SetInventorySlotContents(1, new MvkServer.Item.ItemStack(Blocks.GetBlockCache(EnumBlock.Dirt), 64));
-                Inventory.SetInventorySlotContents(2, new MvkServer.Item.ItemStack(Blocks.GetBlockCache(EnumBlock.Log), 64));
+                Inventory.SetInventorySlotContents(2, new MvkServer.Item.ItemStack(Blocks.GetBlockCache(EnumBlock.LogOak), 64));
                 Inventory.SetInventorySlotContents(3, new MvkServer.Item.ItemStack(Blocks.GetBlockCache(EnumBlock.Cobblestone), 16));
                 Inventory.SetInventorySlotContents(4, new MvkServer.Item.ItemStack(Blocks.GetBlockCache(EnumBlock.TallGrass), 64));
                 Inventory.SetInventorySlotContents(5, new MvkServer.Item.ItemStack(Blocks.GetBlockCache(EnumBlock.Glass), 64));
@@ -206,7 +206,7 @@ namespace MvkServer.Entity.Player
         /// <summary>
         /// Есть ли звуковой эффект шага
         /// </summary>
-        public override bool IsSampleStep() => true;
+        public override bool IsSampleStep(BlockBase blockDown) => blockDown.IsSampleStep();
 
         /// <summary>
         /// Семпл хотьбы

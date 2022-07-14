@@ -99,10 +99,10 @@ namespace MvkServer.Entity.Item
                 base.Update();
                 if (delayBeforeCanPickup > 0 && delayBeforeCanPickup != 32767) delayBeforeCanPickup --;
 
-                bool isWater = IsInWater();
+                bool isLiquid = IsInWater() || IsInLava() || IsInOil();
 
                 PositionPrev = Position;
-                Motion += new vec3(0, isWater ? -.008f : -.04f, 0);
+                Motion += new vec3(0, isLiquid ? -.008f : -.04f, 0);
                 NoClip = PushOutOfBlocks(new vec3(Position.x, (BoundingBox.Min.y + BoundingBox.Max.y) / 2f, Position.z));
                 MoveEntity(Motion);
 
@@ -117,7 +117,7 @@ namespace MvkServer.Entity.Item
                 // высплываем
                 bool isSurface = false;
                 // Если в воде
-                if (isWater)
+                if (isLiquid)
                 {
                     if (delayBeforeSurface >= 20)
                     {
@@ -174,7 +174,7 @@ namespace MvkServer.Entity.Item
 
                 if (Age != -32768) Age++;
 
-                HandleWaterMovement();
+                HandleLiquidMovement();
 
                 // Если сущность живёт 5 мин или больше она умирает
                 if (!World.IsRemote && Age >= 6000) SetDead();

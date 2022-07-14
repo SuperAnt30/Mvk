@@ -111,6 +111,8 @@ namespace MvkServer.World
                 {
                     profiler.EndStartSection("TickChunk");
                     chunk.Update();
+                    profiler.EndStartSection("TickBlocks");
+                    // WorldServer # 423
                     profiler.EndStartSection("StartRecheckGaps");
                     chunk.Light.StartRecheckGaps();
                 }

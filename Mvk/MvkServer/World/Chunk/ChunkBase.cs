@@ -20,6 +20,10 @@ namespace MvkServer.World.Chunk
         /// </summary>
         public const int COUNT_HEIGHT = 16;
         /// <summary>
+        /// Количество псевдо чанков COUNT_HEIGHT - 1
+        /// </summary>
+        public const int COUNT_HEIGHT15 = 15;
+        /// <summary>
         /// Количество блоков в высоту
         /// </summary>
         public const int COUNT_HEIGHT_BLOCK = 255;

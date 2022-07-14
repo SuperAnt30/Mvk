@@ -15,27 +15,30 @@ namespace MvkServer.World.Block
         /// Массив всех кэш блоков
         /// </summary>
         private static Dictionary<EnumBlock, BlockBase> blocks = new Dictionary<EnumBlock, BlockBase>();
-        public static Dictionary<int, BlockBase> BlocksInt = new Dictionary<int, BlockBase>();
+        //public static Dictionary<int, BlockBase> BlocksInt = new Dictionary<int, BlockBase>();
+        public static BlockBase[] BlocksInt;
 
         private static BlockBase ToBlock(EnumBlock eBlock)
         {
             switch (eBlock)
             {
-                case EnumBlock.None: return new BlockAir(true);
+              //  case EnumBlock.None: return new BlockAir(true);
                 case EnumBlock.Air: return new BlockAir();
                 case EnumBlock.Stone: return new BlockStone();
                 case EnumBlock.Cobblestone: return new BlockCobblestone();
                 case EnumBlock.Dirt: return new BlockDirt();
                 case EnumBlock.Turf: return new BlockTurf();
                 case EnumBlock.Water: return new BlockWater();
+                case EnumBlock.Lava: return new BlockLava();
+                case EnumBlock.Oil: return new BlockOil();
                 case EnumBlock.Glass: return new BlockGlass();
-                case EnumBlock.GlassRed: return new BlockGlassRed();
+               // case EnumBlock.GlassRed: return new BlockGlassRed();
                 case EnumBlock.Brol: return new BlockBrol();
-                case EnumBlock.Log: return new BlockLog();
+                case EnumBlock.LogOak: return new BlockLogOak();
                 case EnumBlock.TallGrass: return new BlockTallGrass();
             }
 
-            return null;
+            return new BlockAir(true);
         }
 
         /// <summary>
@@ -43,6 +46,15 @@ namespace MvkServer.World.Block
         /// </summary>
         public static void Initialized()
         {
+            BlocksInt = new BlockBase[BlocksCount.COUNT + 1];
+
+            for (int i = 0; i < BlocksCount.COUNT + 1; i++)
+            {
+                BlockBase block = ToBlock((EnumBlock)i);
+                block.SetEnumBlock((EnumBlock)i);
+                BlocksInt[i] = block;
+            }
+
             foreach (EnumBlock eBlock in Enum.GetValues(typeof(EnumBlock)))
             {
                 BlockBase block = ToBlock(eBlock);
@@ -50,7 +62,7 @@ namespace MvkServer.World.Block
                 {
                     block.SetEnumBlock(eBlock);
                     blocks.Add(eBlock, block);
-                    BlocksInt.Add((int)eBlock, block);
+                   // BlocksInt.Add((int)eBlock, block);
                 }
             }
         }
@@ -86,7 +98,7 @@ namespace MvkServer.World.Block
         /// <summary>
         /// Получить объект блока воздуха c защитой на столкновение
         /// </summary>
-        public static BlockBase GetNone() => BlocksInt[-1];
+        //public static BlockBase GetNone() => BlocksInt[-1];
 
         /// <summary>
         /// Создать объект блока воздуха с позицией

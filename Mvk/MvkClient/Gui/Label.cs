@@ -43,7 +43,9 @@ namespace MvkClient.Gui
                 int h = 0;
                 foreach (string str in strs)
                 {
-                    FontRenderer.RenderString(GetXAlight(str, 0), 14 + h, color, str, size);
+                    int x = GetXAlight(str, 0);
+                    FontRenderer.RenderString(x + 2, 15 + h, new vec4(0, 0, 0, 1f), str, size);
+                    FontRenderer.RenderString(x, 14 + h, color, str, size);
                     h += FontAdvance.VertAdvance[(int)size] + 4;
                 }
             }

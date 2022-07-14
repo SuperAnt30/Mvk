@@ -60,8 +60,8 @@ namespace MvkClient
         /// <summary>
         /// Время рендера чанка в мс, среднее из последних 8
         /// </summary>
-        //public static float RenderChunckTime8 = 0;
-        //public static float RenderChunckTime = 0;
+        public static float RenderChunckTime8 = 0;
+        public static float RenderChunckTime = 0;
         public static int DInt = 0;
         public static long DLong = 0;
         public static float DFloat = 0;
@@ -85,8 +85,8 @@ namespace MvkClient
         protected static string ToStringDebug()
         {
             string s = strServer == "" ? "" : "Server " + strServer + "\r\n";
-            string c = strClient == "" ? "" : "Client " + strClient + "\r\n";
-                    //+ "RenderChunk8 ms:" + RenderChunckTime8.ToString("0.00") + " | " + RenderChunckTime.ToString("0.00") + "\r\n";
+            string c = strClient == "" ? "" : "Client " + strClient + "\r\n"
+                    + "RenderChunk8 ms:" + RenderChunckTime8.ToString("0.00") + "\r\n";
             
             return version + "\r\n"
                 + strTpsFps + "\r\n"

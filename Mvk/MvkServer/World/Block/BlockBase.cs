@@ -330,6 +330,16 @@ namespace MvkServer.World.Block
         public AssetsSample SampleStep(WorldBase worldIn) => samplesStep[worldIn.Rand.Next(samplesStep.Length)];
 
         /// <summary>
+        /// Есть ли звуковой эффект шага
+        /// </summary>
+        public bool IsSampleStep() => samplesStep.Length > 0;
+
+        /// <summary>
+        /// Случайный эффект частички и/или звука на блоке только для клиента
+        /// </summary>
+        public virtual void RandomDisplayTick(WorldBase world, BlockPos blockPos, BlockState blockState, Random random) { }
+
+        /// <summary>
         /// Строка
         /// </summary>
         public override string ToString() => EBlock.ToString();
@@ -341,11 +351,11 @@ namespace MvkServer.World.Block
         public enum EnumRenderType
         {
             /// <summary>
-            /// Все стороны принудительно
+            /// Все стороны принудительно, пример: трава, стекло, вода, лава
             /// </summary>
-            AllSide = 1,
+            AllSideForcibly = 1,
             /// <summary>
-            /// Сторону рисуем с двух сторон, пример вода
+            /// Сторону рисуем с двух сторон, пример: вода, лава
             /// </summary>
             BackSide = 2,
             /// <summary>
@@ -353,13 +363,17 @@ namespace MvkServer.World.Block
             /// </summary>
             АmbientOcclusion = 4,
             /// <summary>
-            /// Нет бокового затемнения, трава, цветы
+            /// Нет бокового затемнения, пример: трава, цветы
             /// </summary>
             NoSideDimming = 8,
             /// <summary>
-            /// Может ли быть тень сущности на блоке
+            /// Может ли быть тень сущности на блоке, только для целых блоков
             /// </summary>
-            Shadow = 16
+            Shadow = 16,
+            /// <summary>
+            /// Не однотипные блоки, пример: трава, цветы, кактус
+            /// </summary>
+            BlocksNotSame = 32
         }
     }
 }

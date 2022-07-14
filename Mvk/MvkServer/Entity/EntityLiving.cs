@@ -356,13 +356,26 @@ namespace MvkServer.Entity
         protected void EntityUpdateLocation()
         {
             // метод проверки нахождения по кализии в воде ли мы, и меняем статус IsWater
-            HandleWaterMovement();
+            HandleLiquidMovement();
 
             // определяем в лаве ли мы по кализии
             // ... func_180799_ab
+            if (IsInLava())
+            {
+                // надо поджечь
+                //AttackEntityFrom(EnumDamageSource.Lava, 4f);
+                fallDistance *= .5f;
+            }
+            if (IsInOil())
+            {
+                fallDistance *= .5f;
+            }
 
             // если мы ниже -128 по Y убиваем игрока
-            if (Position.y < -128) Kill();
+            if (Position.y < -128)
+            {
+                AttackEntityFrom(EnumDamageSource.OutOfWorld, 100f);
+            }
         }
 
         protected void EntityUpdate()
@@ -410,7 +423,7 @@ namespace MvkServer.Entity
         /// </summary>
         protected void DrownServer()
         {
-            if (IsEntityAlive() && IsInsideOfMaterial(EnumMaterial.Water))
+            if (IsEntityAlive() && (IsInsideOfMaterial(EnumMaterial.Water) || IsInsideOfMaterial(EnumMaterial.Oil)))
             {
                 //if (!this.canBreatheUnderwater() && !this.isPotionActive(Potion.waterBreathing.id) && !var7)
                 {
@@ -429,7 +442,7 @@ namespace MvkServer.Entity
                         //    this.worldObj.spawnParticle(EnumParticleTypes.WATER_BUBBLE, this.posX + (double)var4, this.posY + (double)var5, this.posZ + (double)var6, this.motionX, this.motionY, this.motionZ, new int[0]);
                         //}
                         //this.attackEntityFrom(DamageSource.drown, 2.0F);
-                        AttackEntityFrom(2f);
+                        AttackEntityFrom(EnumDamageSource.Drown, 2f);
                     }
                 }
 
@@ -456,7 +469,7 @@ namespace MvkServer.Entity
         /// </summary>
         /// <param name="amount">сила урона</param>
         /// <returns>true - урон был нанесён</returns>
-        public bool AttackEntityFrom(float amount)
+        public bool AttackEntityFrom(EnumDamageSource source, float amount, string name = "")
         {
             if (World.IsRemote) return false;
             entityAge = 0;
@@ -465,6 +478,7 @@ namespace MvkServer.Entity
             Health -= amount;
             if (World is WorldServer worldServer)
             {
+                if (Health <= 0f) worldServer.ServerMain.Log.Log("{1} {0}", source, this.name);
                 worldServer.ResponseHealth(this);
             }
             
@@ -494,12 +508,9 @@ namespace MvkServer.Entity
             else if (IsJumping)
             {
                 // для воды свои правила, плыть вверх
-                if (IsInWater()) 
-                {
-                    WaterUp();
-                }
-                // для лавы свои
-                //... func_180466_bG
+                if (IsInWater()) WaterUp();
+                else if (IsInLava()) LavaUp();
+                else if (IsInOil()) OilUp();
                 // Для прыжка надо стоять на земле, и чтоб счётик прыжка был = 0
                 else if (OnGround && jumpTicks == 0)
                 {
@@ -511,9 +522,11 @@ namespace MvkServer.Entity
             {
                 jumpTicks = 0;
                 // для воды свои правила, плыть вниз
-                if (Input.HasFlag(EnumInput.Down) && IsInWater())
+                if (Input.HasFlag(EnumInput.Down))
                 {
-                    WaterDown();
+                    if (IsInWater()) WaterDown();
+                    else if (IsInLava()) LavaDown();
+                    else if (IsInOil()) OilDown();
                 }
             }
 
@@ -681,6 +694,22 @@ namespace MvkServer.Entity
                     motion.y = 0.600001f; 
                 }
             }
+            else if (IsInLava() || IsInOil())
+            {
+                // Lava или нефть
+                float posY = Position.y;
+                motion = MotionAngle(strafe, forward, .02f);
+                MoveEntity(motion);
+                motion *= .5f;
+                motion.y -= .008f;
+                // дополнительный прыжок, возле обрыва, если хотим вылести с воды на берег
+                if (IsCollidedHorizontally && IsOffsetPositionInLiquid(new vec3(motion.x, motion.y + .6f - Position.y + posY, motion.z)))
+                {
+                    // при 0.6 запрыгиваем на блок над водой
+                    // при 0.3 запрыгиваем на блок в ровень с водой
+                    motion.y = 0.600001f;
+                }
+            }
             else
             // расматриваем остальное
             {
@@ -775,10 +804,30 @@ namespace MvkServer.Entity
         /// </summary>
         protected void WaterUp() => Motion = new vec3(Motion.x, Motion.y + .048f, Motion.z);
         /// <summary>
-        /// Плывём вниз
+        /// Плывём вниз в воде
         /// настроено на скорость 2 м/с
         /// </summary>
         protected void WaterDown() => Motion = new vec3(Motion.x, Motion.y - .032f, Motion.z);
+        /// <summary>
+        /// Плыввёем вверх в лаве
+        /// настроено на скорость 2 м/с
+        /// </summary>
+        protected void LavaUp() => Motion = new vec3(Motion.x, Motion.y + .048f, Motion.z);
+        /// <summary>
+        /// Плывём вниз в лаве
+        /// настроено на скорость 2 м/с
+        /// </summary>
+        protected void LavaDown() => Motion = new vec3(Motion.x, Motion.y - .032f, Motion.z);
+        /// <summary>
+        /// Плыввёем вверх в нефте
+        /// настроено на скорость 2 м/с
+        /// </summary>
+        protected void OilUp() => Motion = new vec3(Motion.x, Motion.y + .048f, Motion.z);
+        /// <summary>
+        /// Плывём вниз в нефте
+        /// настроено на скорость 2 м/с
+        /// </summary>
+        protected void OilDown() => Motion = new vec3(Motion.x, Motion.y - .032f, Motion.z);
 
         /// <summary>
         /// Определение вращения
@@ -882,28 +931,67 @@ namespace MvkServer.Entity
             if (IsInWater())
             {
                 // Звук в воде
-                float xx = Position.x - PositionPrev.x;
-                float yy = Position.y - PositionPrev.y;
-                float zz = Position.z - PositionPrev.z;
-                // В зависимости от скорости перемещения вводе меняем звук
-                float volume = Mth.Sqrt(xx * xx * .2f + yy * yy + zz * zz * .2f) * .35f;
-                // 0.03 - 0.2 когда плыву, 0.4 - 0.7 когда ныряю
-                if (volume > 1f) volume = 1f;
-
-                World.PlaySound(this, Blocks.GetBlockCache(EnumBlock.Water).SampleStep(World), Position, volume,
-                    1f + (float)(rand.NextDouble() - rand.NextDouble()) * .4f);
+                SoundEffectWater(Blocks.GetBlockCache(EnumBlock.Water).SampleStep(World), .35f);
             }
-            else if (!IsSneaking() && blockDown.Material != EnumMaterial.Water && IsSampleStep())
+            else if (!IsSneaking() && blockDown.Material != EnumMaterial.Water && IsSampleStep(blockDown))
             {
                 // Звук шага
                 World.PlaySound(this, SampleStep(World, blockDown), Position, .25f, 1f);
             }
         }
 
+        private void SoundEffectWater(AssetsSample assetsSample, float volumeFX)
+        {
+            // Звук в воде
+            float xx = Position.x - PositionPrev.x;
+            float yy = Position.y - PositionPrev.y;
+            float zz = Position.z - PositionPrev.z;
+            // В зависимости от скорости перемещения вводе меняем звук
+            float volume = Mth.Sqrt(xx * xx * .2f + yy * yy + zz * zz * .2f) * volumeFX;
+            // 0.03 - 0.2 когда плыву, 0.4 - 0.7 когда ныряю
+            if (volume > 1f) volume = 1f;
+
+            World.PlaySound(this, assetsSample, Position, volume, 1f + (float)(rand.NextDouble() - rand.NextDouble()) * .4f);
+        }
+
+        /// <summary>
+        /// Эффект попадания в воду
+        /// </summary>
+        protected override void EffectsFallingIntoWater()
+        {
+            SoundEffectWater(Blocks.GetBlockCache(EnumBlock.Water).SampleBreak(World), .2f);
+            vec3 pos = new vec3(0, BoundingBox.Min.y + 1f, 0);
+            vec3 motion = Motion;
+            float width = Width * 2f;
+            for(int i = 0; i < 10; i++)
+            {
+                motion.y = Motion.y - (float)rand.NextDouble() * .2f;
+                pos.x = Position.x + ((float)rand.NextDouble() * 2f - 1f) * width;
+                pos.z = Position.z + ((float)rand.NextDouble() * 2f - 1f) * width;
+                World.SpawnParticle(EnumParticle.Test, pos, motion);
+            }
+            for (int i = 0; i < 10; i++)
+            {
+                motion.y = Motion.y - (float)rand.NextDouble() * .2f;
+                pos.x = Position.x + ((float)rand.NextDouble() * 2f - 1f) * width;
+                pos.z = Position.z + ((float)rand.NextDouble() * 2f - 1f) * width;
+                World.SpawnParticle(EnumParticle.Digging, pos, motion, 1);
+            }
+        }
+
+        /// <summary>
+        /// Воздействия при нахождении в воде
+        /// </summary>
+        protected override void EffectsContactWithWater()
+        {
+            fallDistance = 0f;
+            //fire = 0;
+        }
+
         /// <summary>
         /// Есть ли звуковой эффект шага
         /// </summary>
-        public virtual bool IsSampleStep() => samplesStep.Length > 0;
+        public virtual bool IsSampleStep(BlockBase blockDown) => samplesStep.Length > 0;
 
         /// <summary>
         /// Семпл хотьбы
@@ -1083,7 +1171,7 @@ namespace MvkServer.Entity
         {
             if (!IsInWater())
             {
-                HandleWaterMovement();
+                HandleLiquidMovement();
             }
 
             if (y < 0f) fallDistance -= y;
@@ -1202,7 +1290,6 @@ namespace MvkServer.Entity
             }
         }
 
-
         /// <summary>
         /// Частички при беге блока
         /// </summary>
@@ -1248,36 +1335,7 @@ namespace MvkServer.Entity
             }
         }
 
-        /// <summary>
-        /// Воздействия при нахождении в воде
-        /// </summary>
-        protected override void EffectsContactWithWater()
-        {
-            fallDistance = 0f;
-            //fire = 0;
-        }
-
-        /// <summary>
-        /// Эффект попадания в воду
-        /// </summary>
-        //protected override void EffectsFallingIntoWater()
-        //{
-
-        //    //BlockBase blockDown = World.GetBlockState(new BlockPos(Position.x, Position.y - 0.20002f, Position.z)).GetBlock();
-        //    //if (blockDown.Material == EnumMaterial.Water)
-        //    //World.PlaySound(this, Blocks.GetBlockCache(EnumBlock.Water).SampleBreak(World), Position, .25f, 1f);
-        //}
-
-        /// <summary>
-        /// Эффект выхода из воды
-        /// </summary>
-        //protected override void EffectsGettingOutWater()
-        //{
-        //    //BlockBase blockDown = World.GetBlockState(new BlockPos(Position.x, Position.y - 0.20002f, Position.z)).GetBlock();
-        //    //if (blockDown.Material == EnumMaterial.Water)
-
-        //        //World.PlaySound(this, Blocks.GetBlockCache(EnumBlock.Water).SampleStep(World), Position, .25f, 1f);
-        //}
+        
 
         /// <summary>
         /// Проверяет, находится ли смещенная позиция от текущей позиции объекта внутри жидкости

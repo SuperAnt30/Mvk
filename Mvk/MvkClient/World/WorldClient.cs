@@ -62,7 +62,7 @@ namespace MvkClient.World
         /// <summary>
         /// Объект времени c последнего тпс
         /// </summary>
-       // protected InterpolationTime interpolation = new InterpolationTime();
+        // protected InterpolationTime interpolation = new InterpolationTime();
         /// <summary>
         /// фиксатор чистки мира
         /// </summary>
@@ -590,18 +590,39 @@ namespace MvkClient.World
         /// <summary>
         /// Проиграть звуковой эффект, глобальная координата
         /// </summary>
-        public override void PlaySound(EntityLiving entity, AssetsSample key, vec3 pos, float volume, float pitch)
-        {
-            entity = ClientMain.Player;
+        public override void PlaySound(EntityLiving entity, AssetsSample key, vec3 pos, float volume, float pitch) 
+            => PlaySound(key, pos, volume, pitch);
 
-            if (entity is EntityPlayer entityPlayer)
+        /// <summary>
+        /// Проиграть звуковой эффект только для клиента
+        /// </summary>
+        public override void PlaySound(AssetsSample key, vec3 pos, float volume, float pitch)
+        {
+            pos -= ClientMain.Player.Position;
+            pos = pos.rotateYaw(ClientMain.Player.RotationYawHead);
+            ClientMain.Sample.PlaySound(key, pos, volume, pitch);
+        }
+
+        /// <summary>
+        /// Обработка ближайших блоков для эффектов звуков и анимации, только у клиента
+        /// </summary>
+        /// <param name="playerPos">Позиция игрока</param>
+        public void DoVoidFogParticles(vec3i playerPos)
+        {
+            int distance = 32;
+            Random random = new Random();
+            BlockPos blockPos = new BlockPos();
+            BlockState blockState;
+            for (int i = 0; i < 1000; i++)
             {
-                pos -= entityPlayer.Position;
-                pos = pos.rotateYaw(entityPlayer.RotationYawHead);
-                ClientMain.Sample.PlaySound(key, pos, volume, pitch);
+                blockPos.X = playerPos.x + random.Next(distance) - random.Next(distance);
+                blockPos.Y = playerPos.y + random.Next(distance) - random.Next(distance);
+                blockPos.Z = playerPos.z + random.Next(distance) - random.Next(distance);
+                blockState = GetBlockState(blockPos);
+                blockState.GetBlock().RandomDisplayTick(this, blockPos, blockState, random);
             }
         }
-            
+
 
         /// <summary>
         /// Строка для дебага

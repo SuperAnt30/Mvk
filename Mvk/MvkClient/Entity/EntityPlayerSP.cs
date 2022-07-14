@@ -84,6 +84,10 @@ namespace MvkClient.Entity
         /// Позиция камеры
         /// </summary>
         public vec3 PositionCamera { get; private set; }
+        /// <summary>
+        /// Для эффекта где находяться глаза
+        /// </summary>
+        public WhereEyes WhereEyesEff { get; private set; } = WhereEyes.Air;
 
         /// <summary>
         /// Массив по длинам используя квадратный корень для всей видимости в объёме для обновление чанков в объёме
@@ -468,6 +472,7 @@ namespace MvkClient.Entity
 
         private string ToBlockDebug(ChunkBase chunk, vec3i pos)
         {
+            if (pos.y > ChunkBase.COUNT_HEIGHT_BLOCK) return "";
             ChunkStorage chunkStorage = chunk.StorageArrays[pos.y >> 4];
            // if (!chunkStorage.IsEmptyData())
             {
@@ -563,6 +568,17 @@ namespace MvkClient.Entity
             {
                 // Если имеется вращение камеры или было перемещение, то запускаем расчёт FrustumCulling
                 InitFrustumCulling();
+
+                // Определяем где глаза
+                vec3 posCam = Position + PositionCamera;
+                BlockBase block = World.GetBlockState(new BlockPos(posCam)).GetBlock();
+                switch (block.Material)
+                {
+                    case EnumMaterial.Lava: WhereEyesEff = WhereEyes.Lava; break;
+                    case EnumMaterial.Oil: WhereEyesEff = WhereEyes.Oil; break;
+                    case EnumMaterial.Water: WhereEyesEff = WhereEyes.Water; break;
+                    default: WhereEyesEff = WhereEyes.Air; break;
+                }
             }
         }
 
@@ -960,6 +976,8 @@ namespace MvkClient.Entity
         #endregion
 
 
+
+
         /// <summary>
         /// Действие рук
         /// </summary>
@@ -978,5 +996,17 @@ namespace MvkClient.Entity
             /// </summary>
             Right
         }
+
+        /// <summary>
+        /// Где глаза
+        /// </summary>
+        public enum WhereEyes
+        {
+            Air,
+            Water,
+            Lava,
+            Oil
+        }
+
     }
 }
