@@ -74,6 +74,8 @@
     <Compile Include="Entity\EntityPlayerMP.cs" />
     <Compile Include="Entity\EntityPlayerSP.cs" />
     <Compile Include="Entity\EnumViewCamera.cs" />
+    <Compile Include="Entity\Particle\EntitySuspendFX.cs" />
+    <Compile Include="Entity\Particle\EntitySmokeFX.cs" />
     <Compile Include="Entity\Particle\EntityTestFX.cs" />
     <Compile Include="Entity\Particle\EntityDiggingFX.cs" />
     <Compile Include="Entity\Particle\EntityFX.cs" />
@@ -102,6 +104,7 @@
     <Compile Include="Loading.cs" />
     <Compile Include="Network\ProcessClientPackets.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Renderer\Block\BlockAlphaRender.cs" />
     <Compile Include="Renderer\Block\BlockGuiRender.cs" />
     <Compile Include="Renderer\Block\BlockSide.cs" />
     <Compile Include="Renderer\Block\BlockFaceUV.cs" />
@@ -110,6 +113,7 @@
     <Compile Include="Renderer\Block\BlockVertex.cs" />
     <Compile Include="Renderer\Chunk\ChunkMesh.cs" />
     <Compile Include="Renderer\Chunk\ChunkRender.cs" />
+    <Compile Include="Renderer\Chunk\ChunkRenderQueue.cs" />
     <Compile Include="Renderer\EffectRenderer.cs" />
     <Compile Include="Renderer\Entity\Layers\ILayerRenderer.cs" />
     <Compile Include="Renderer\Entity\Layers\LayerHeldItem.cs" />

@@ -12,6 +12,14 @@
         /// <summary>
         /// Частицы когда стучим по блоку и его ломаем
         /// </summary>
-        Digging
+        Digging,
+        /// <summary>
+        /// Дым
+        /// </summary>
+        Smoke,
+        /// <summary>
+        /// Висюльки почти без движения
+        /// </summary>
+        Suspend
     }
 }

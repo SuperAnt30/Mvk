@@ -1,5 +1,4 @@
-﻿using MvkClient.Util;
-using MvkServer.Glm;
+﻿using MvkServer.Glm;
 using MvkServer.Util;
 using System;
 
@@ -8,9 +7,9 @@ namespace MvkClient.Renderer.Block
     /// <summary>
     /// Построение блока с разных сторон
     /// </summary>
-    public struct BlockSide
+    public class BlockSide
     {
-        public ByteBuffer BufferByte;
+        public ListMvk<byte> buffer;
 
         public float v1x;
         public float v1y;
@@ -23,7 +22,9 @@ namespace MvkClient.Renderer.Block
         public float u2x;
         public float u2y;
 
-        public vec3[] colors;
+        public byte[] colorsr;
+        public byte[] colorsg;
+        public byte[] colorsb;
         public byte[] lights;
         public int yawUV;
         public float yaw;
@@ -44,28 +45,6 @@ namespace MvkClient.Renderer.Block
         /// </summary>
         public bool cullFace;
 
-        //public BlockSide(vec3[] colors, byte[] lights, vec3 vec1, vec3 vec2, vec2 uv1, vec2 uv2, byte animationFrame, byte animationPause)
-        //{
-        //    this.colors = colors;
-        //    v1 = vec1;
-        //    v2 = vec2;
-        //    u1 = uv1;
-        //    u2 = uv2;
-        //    this.animationFrame = animationFrame;
-        //    this.animationPause = animationPause;
-
-        //    this.lights = lights;
-        //    yawUV = 0;
-        //    yaw = 0f;
-        //    pitch = 0f;
-        //    isRotate = false;
-        //    translate = new vec3(0);
-        //    isTranslate = false;
-        //    posCenter = new vec3();
-        //    cullFace = true;
-        //    BufferByte = new ByteBuffer();
-        //}
-
         /// <summary>
         /// Ввернуть сторону блока, без проверки вращения 
         /// </summary>
@@ -73,77 +52,14 @@ namespace MvkClient.Renderer.Block
         {
             switch (pole)
             {
-                case 0: Up(); break;
-                case 1: Down(); break;
-                case 2: East(); break;
-                case 3: West(); break;
-                case 4: North(); break;
-                case 5: South(); break;
+                case 0: BufferSide(v1x, v2y, v1z, v1x, v2y, v2z, v2x, v2y, v2z, v2x, v2y, v1z); break;
+                case 1: BufferSide(v2x, v1y, v1z, v2x, v1y, v2z, v1x, v1y, v2z, v1x, v1y, v1z); break;
+                case 2: BufferSide(v2x, v1y, v1z, v2x, v2y, v1z, v2x, v2y, v2z, v2x, v1y, v2z); break;
+                case 3: BufferSide(v1x, v1y, v2z, v1x, v2y, v2z, v1x, v2y, v1z, v1x, v1y, v1z); break;
+                case 4: BufferSide(v1x, v1y, v1z, v1x, v2y, v1z, v2x, v2y, v1z, v2x, v1y, v1z); break;
+                case 5: BufferSide(v2x, v1y, v2z, v2x, v2y, v2z, v1x, v2y, v2z, v1x, v1y, v2z); break;
             }
         }
-
-        /// <summary>
-        /// Вращение блок если это надо
-        /// </summary>
-        //private byte[] Rotate(byte[] buffer)
-        //{
-        //    if (radY != 0f || radP != 0f)
-        //    {
-        //        vec3 vY = new vec3(0, 1f, 0);
-        //        vec3 vP = new vec3(1f, 0, 0);
-        //        for (int i = 0; i < buffer.Length; i += 28)
-        //        {
-        //            float x = BitConverter.ToSingle(buffer, i);
-        //            float y = BitConverter.ToSingle(buffer, i + 4);
-        //            float z = BitConverter.ToSingle(buffer, i + 8);
-        //            vec3 r = new vec3(x, y, z) - posCenter;
-        //            if (radP != 0f) r = glm.rotate(r, radP, vP);
-        //            if (radY != 0f) r = glm.rotate(r, radY, vY);
-        //            r += posCenter;
-        //            byte[] vs = BitConverter.GetBytes(r.x);
-        //            Buffer.BlockCopy(vs, 0, buffer, i, 4);
-        //            vs = BitConverter.GetBytes(r.y);
-        //            Buffer.BlockCopy(vs, 0, buffer, i + 4, 4);
-        //            vs = BitConverter.GetBytes(r.z);
-        //            Buffer.BlockCopy(vs, 0, buffer, i + 8, 4);
-        //        }
-        //    }
-        //    return buffer;
-        //}
-
-        //private vec3 Rotate(vec3 v)
-        //{
-        //    vec3 r = v - posCenter;
-        //    if (radP != 0f) r = glm.rotate(r, radP, new vec3(1f, 0, 0));
-        //    if (radY != 0f) r = glm.rotate(r, radY, new vec3(0, 1f, 0));
-        //    r += posCenter;
-        //    return r;
-        //}
-
-        /// <summary>
-        /// Вверх
-        /// </summary>
-        private void Up() => BufferSide(v1x, v2y, v1z, v1x, v2y, v2z, v2x, v2y, v2z, v2x, v2y, v1z);
-        /// <summary>
-        /// Низ
-        /// </summary>
-        private void Down() => BufferSide(v2x, v1y, v1z, v2x, v1y, v2z, v1x, v1y, v2z, v1x, v1y, v1z);
-        /// <summary>
-        /// Восточная сторона
-        /// </summary>
-        private void East() => BufferSide(v2x, v1y, v1z, v2x, v2y, v1z, v2x, v2y, v2z, v2x, v1y, v2z);
-        /// <summary>
-        /// Западная сторона
-        /// </summary>
-        private void West() => BufferSide(v1x, v1y, v2z, v1x, v2y, v2z, v1x, v2y, v1z, v1x, v1y, v1z);
-        /// <summary>
-        /// Южная сторона
-        /// </summary>
-        private void North() => BufferSide(v1x, v1y, v1z, v1x, v2y, v1z, v2x, v2y, v1z, v2x, v1y, v1z);
-        /// <summary>
-        /// Северная сторона
-        /// </summary>
-        private void South() => BufferSide(v2x, v1y, v2z, v2x, v2y, v2z, v1x, v2y, v2z, v1x, v1y, v2z);
 
         private void BufferSide(float pos1x, float pos1y, float pos1z,
             float pos2x, float pos2y, float pos2z,
@@ -182,71 +98,64 @@ namespace MvkClient.Renderer.Block
                 u4 = u1x; v4 = u1y;
             }
 
-            GetBufferSide(new BlockVertex[] {
-                new BlockVertex(pos1x, pos1y, pos1z, u1, v1, colors[0].x, colors[0].y, colors[0].z, lights[0]),
-                new BlockVertex(pos2x, pos2y, pos2z, u2, v2, colors[1].x, colors[1].y, colors[1].z, lights[1]),
-                new BlockVertex(pos3x, pos3y, pos3z, u3, v3, colors[2].x, colors[2].y, colors[2].z, lights[2]),
-                new BlockVertex(pos4x, pos4y, pos4z, u4, v4, colors[3].x, colors[3].y, colors[3].z, lights[3])
-            });
-        }
-
-        /// <summary>
-        /// Сгенерировать буфер сетки одной стороны
-        /// </summary>
-        /// <param name="blockVertex">массив вершин</param>
-        private void GetBufferSide(BlockVertex[] blockVertex)
-        {
             if (cullFace)
             {
-                AddVertex(blockVertex[0]);
-                AddVertex(blockVertex[1]);
-                AddVertex(blockVertex[2]);
-                AddVertex(blockVertex[0]);
-                AddVertex(blockVertex[2]);
-                AddVertex(blockVertex[3]);
+                AddVertex(pos1x, pos1y, pos1z, u1, v1, colorsr[0], colorsg[0], colorsb[0], lights[0]);
+                AddVertex(pos2x, pos2y, pos2z, u2, v2, colorsr[1], colorsg[1], colorsb[1], lights[1]);
+                AddVertex(pos3x, pos3y, pos3z, u3, v3, colorsr[2], colorsg[2], colorsb[2], lights[2]);
+                AddVertex(pos1x, pos1y, pos1z, u1, v1, colorsr[0], colorsg[0], colorsb[0], lights[0]);
+                AddVertex(pos3x, pos3y, pos3z, u3, v3, colorsr[2], colorsg[2], colorsb[2], lights[2]);
+                AddVertex(pos4x, pos4y, pos4z, u4, v4, colorsr[3], colorsg[3], colorsb[3], lights[3]);
             }
             else
             {
-                AddVertex(blockVertex[2]);
-                AddVertex(blockVertex[1]);
-                AddVertex(blockVertex[0]);
-                AddVertex(blockVertex[3]);
-                AddVertex(blockVertex[2]);
-                AddVertex(blockVertex[0]);
+                AddVertex(pos3x, pos3y, pos3z, u3, v3, colorsr[2], colorsg[2], colorsb[2], lights[2]);
+                AddVertex(pos2x, pos2y, pos2z, u2, v2, colorsr[1], colorsg[1], colorsb[1], lights[1]);
+                AddVertex(pos1x, pos1y, pos1z, u1, v1, colorsr[0], colorsg[0], colorsb[0], lights[0]);
+                AddVertex(pos4x, pos4y, pos4z, u4, v4, colorsr[3], colorsg[3], colorsb[3], lights[3]);
+                AddVertex(pos3x, pos3y, pos3z, u3, v3, colorsr[2], colorsg[2], colorsb[2], lights[2]);
+                AddVertex(pos1x, pos1y, pos1z, u1, v1, colorsr[0], colorsg[0], colorsb[0], lights[0]);
             }
         }
 
         /// <summary>
         /// Добавить вершину
         /// </summary>
-        private void AddVertex(BlockVertex blockVertex)
+        private void AddVertex(float x, float y, float z, float u, float v, byte r, byte g, byte b, byte light)
         {
             // pos.x, pos.y, pos.z, uv.x, uv.y
-            float[] buf = blockVertex.GetArrayPosUV();
-
             if (isRotate)
             {
-                vec3 r = new vec3(buf[0] - posCenterX, buf[1] - posCenterY, buf[2] - posCenterZ);
-                if (pitch != 0f) r = glm.rotate(r, pitch, new vec3(1f, 0, 0));
-                if (yaw != 0f) r = glm.rotate(r, yaw, new vec3(0, 1f, 0));
-                r.x += posCenterX;
-                r.y += posCenterY;
-                r.z += posCenterZ;
-                buf[0] = r.x;
-                buf[1] = r.y;
-                buf[2] = r.z;
-                
+                vec3 vec = new vec3(x - posCenterX, y - posCenterY, z - posCenterZ);
+                if (pitch != 0f) vec = glm.rotate(vec, pitch, new vec3(1f, 0, 0));
+                if (yaw != 0f) vec = glm.rotate(vec, yaw, new vec3(0, 1f, 0));
+                vec.x += posCenterX;
+                vec.y += posCenterY;
+                vec.z += posCenterZ;
+                x = vec.x;
+                y = vec.y;
+                z = vec.z;
+
             }
             if (isTranslate)
             {
-                buf[0] += translateX;
-                buf[1] += translateY;
-                buf[2] += translateZ;
+                x += translateX;
+                y += translateY;
+                z += translateZ;
             }
 
-            BufferByte.ArrayFloat(buf);
-            BufferByte.ArrayByte(blockVertex.GetArrayColorLight());
-            BufferByte.ArrayByte(new byte[] { animationFrame, animationPause, 0, 0 });
+            buffer.AddRange(BitConverter.GetBytes(x));
+            buffer.AddRange(BitConverter.GetBytes(y));
+            buffer.AddRange(BitConverter.GetBytes(z));
+            buffer.AddRange(BitConverter.GetBytes(u));
+            buffer.AddRange(BitConverter.GetBytes(v));
+            buffer.buffer[buffer.count++] = r;
+            buffer.buffer[buffer.count++] = g;
+            buffer.buffer[buffer.count++] = b;
+            buffer.buffer[buffer.count++] = light;
+            buffer.buffer[buffer.count++] = animationFrame;
+            buffer.buffer[buffer.count++] = animationPause;
+            buffer.count += 2;
         }
     }
 }

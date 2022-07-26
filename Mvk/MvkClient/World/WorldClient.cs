@@ -265,10 +265,7 @@ namespace MvkClient.World
                 vec3i min = blockPos.ToVec3i() - 1;
                 vec3i max = blockPos.ToVec3i() + 1;
 
-                vec3i c0 = new vec3i(min.x >> 4, min.y >> 4, min.z >> 4);
-                vec3i c1 = new vec3i(max.x >> 4, max.y >> 4, max.z >> 4);
-
-                AreaModifiedToRender(c0, c1);
+                AreaModifiedToRender(min.x >> 4, min.y >> 4, min.z >> 4, max.x >> 4, max.y >> 4, max.z >> 4);
                 //}
             }
         }
@@ -294,9 +291,10 @@ namespace MvkClient.World
             //    MarkBlockForUpdate(blockPos);
             //}
 
-
+            long l = GLWindow.stopwatch.ElapsedTicks;
             bool result = base.SetBlockState(blockPos, blockState);
-
+            long l2 = GLWindow.stopwatch.ElapsedTicks;
+            Debug.DFloat = (l2 - l) / (float)MvkStatic.TimerFrequency;
             // Это если обновлять сразу!
             if (result)
             {
@@ -306,10 +304,7 @@ namespace MvkClient.World
                 vec3i min = blockPos.ToVec3i() - 1;
                 vec3i max = blockPos.ToVec3i() + 1;
 
-                vec3i c0 = new vec3i(min.x >> 4, min.y >> 4, min.z >> 4);
-                vec3i c1 = new vec3i(max.x >> 4, max.y >> 4, max.z >> 4);
-
-                AreaModifiedToRender(c0, c1);
+                AreaModifiedToRender(min.x >> 4, min.y >> 4, min.z >> 4, max.x >> 4, max.y >> 4, max.z >> 4);
             }
 
             return true;
@@ -319,44 +314,33 @@ namespace MvkClient.World
         /// <summary>
         /// Отметить блок для обновления
         /// </summary>
-        public override void MarkBlockForUpdate(BlockPos blockPos)
-        {
-            vec3i min = blockPos.ToVec3i() - 1;
-            vec3i max = blockPos.ToVec3i() + 1;
-
-            vec3i c0 = new vec3i(min.x >> 4, min.y >> 4, min.z >> 4);
-            vec3i c1 = new vec3i(max.x >> 4, max.y >> 4, max.z >> 4);
-
-            AreaModifiedToRender(c0, c1);
-        }
+        public override void MarkBlockForUpdate(int x, int y, int z) 
+            => AreaModifiedToRender((x - 1) >> 4, (y - 1) >> 4, (z - 1) >> 4,
+                (x + 1) >> 4, (y + 1) >> 4, (z + 1) >> 4);
 
         /// <summary>
         /// Отметить блоки для обновления
         /// </summary>
-        public override void MarkBlockRangeForRenderUpdate(int x0, int y0, int z0, int x1, int y1, int z1)
-        {
-            vec3i min = new vec3i(x0 - 1, y0 - 1, z0 - 1);
-            vec3i max = new vec3i(x0 + 1, y0 + 1, z0 + 1);
-
-            vec3i c0 = new vec3i(min.x >> 4, min.y >> 4, min.z >> 4);
-            vec3i c1 = new vec3i(max.x >> 4, max.y >> 4, max.z >> 4);
-
-            AreaModifiedToRender(c0, c1);
-        }
+        public override void MarkBlockRangeForRenderUpdate(int x0, int y0, int z0, int x1, int y1, int z1) 
+            => AreaModifiedToRender((x0 - 1) >> 4, (y0 - 1) >> 4, (z0 - 1) >> 4,
+                (x1 + 1) >> 4, (y1 + 1) >> 4, (z1 + 1) >> 4);
 
         /// <summary>
         /// Сделать запрос перерендера выбранной облости псевдочанков
         /// </summary>
-        public void AreaModifiedToRender(vec3i c0, vec3i c1)
+        public void AreaModifiedToRender(int c0x, int c0y, int c0z, int c1x, int c1y, int c1z)
         {
-            for (int x = c0.x; x <= c1.x; x++)
+            int x, y, z;
+            if (c0y < 0) c0y = 0;
+            if (c1y > ChunkBase.COUNT_HEIGHT15) c1y = ChunkBase.COUNT_HEIGHT15;
+            for (x = c0x; x <= c1x; x++)
             {
-                for (int z = c0.z; z <= c1.z; z++)
+                for (z = c0z; z <= c1z; z++)
                 {
                     ChunkRender chunk = ChunkPrClient.GetChunkRender(new vec2i(x, z));
-                    if (chunk != null && c0.y >= -1 && c1.y <= ChunkRender.COUNT_HEIGHT)
+                    if (chunk != null)
                     {
-                        for (int y = c0.y; y <= c1.y; y++)
+                        for (y = c0y; y <= c1y; y++)
                         {
                             chunk.ModifiedToRender(y);
                         }
@@ -609,7 +593,7 @@ namespace MvkClient.World
         /// <param name="playerPos">Позиция игрока</param>
         public void DoVoidFogParticles(vec3i playerPos)
         {
-            int distance = 32;
+            int distance = 24;
             Random random = new Random();
             BlockPos blockPos = new BlockPos();
             BlockState blockState;
@@ -623,6 +607,7 @@ namespace MvkClient.World
             }
         }
 
+        public override void DebugString(string logMessage, params object[] args) => Debug.DStr = string.Format(logMessage, args);
 
         /// <summary>
         /// Строка для дебага

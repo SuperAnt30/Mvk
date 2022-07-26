@@ -74,10 +74,10 @@ namespace MvkClient.Renderer.Chunk
         /// <summary>
         /// Буфер внесён
         /// </summary>
-        public void SetBuffer(List<byte> buffer)
+        public void SetBuffer(byte[] buffer)
         {
-            countPoligon = buffer.Count / 84;
-            countVertices = buffer.Count / 28;
+            countPoligon = buffer.Length / 84;
+            countVertices = buffer.Length / 28;
             //ByteBuffer byteBuffer = new ByteBuffer();
             //byteBuffer.ArrayFloat(buffer);
             //bufferData.ConvertByte(byteBuffer.ToArray());

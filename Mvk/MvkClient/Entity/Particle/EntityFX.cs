@@ -40,7 +40,7 @@ namespace MvkClient.Entity.Particle
         /// <summary>
         /// Цвет частицы
         /// </summary>
-        protected vec4 color = new vec4(1);
+        protected vec3 color = new vec3(1);
 
         /// <summary>
         /// Задать частицу с движением

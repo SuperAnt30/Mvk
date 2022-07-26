@@ -17,7 +17,10 @@ namespace MvkServer.World.Block.List
 
             Particle = 1;
             FullBlock = false;
-            RenderType = EnumRenderType.AllSideForcibly |  EnumRenderType.BlocksNotSame;
+            АmbientOcclusion = false;
+            Shadow = false;
+            AllSideForcibly = true;
+            BlocksNotSame = true;
             UseNeighborBrightness = true;
            // IsCollidable = false;
             IsReplaceable = true;
@@ -301,7 +304,7 @@ namespace MvkServer.World.Block.List
         public override bool Put(WorldBase worldIn, BlockPos blockPos, BlockState state, Pole side, vec3 facing)
         {
             return base.Put(worldIn, blockPos,
-                new BlockState(state.Id(), side == Pole.Up ? 1 : 0, state.light),
+                new BlockState(state.Id(), side == Pole.Up ? 1 : 0, state.lightBlock, state.lightSky),
                 side, facing);
         }
 

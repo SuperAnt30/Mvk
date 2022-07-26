@@ -5,6 +5,7 @@ using MvkServer.Sound;
 using MvkServer.Util;
 using MvkServer.World.Block;
 using MvkServer.World.Chunk;
+using MvkServer.World.Chunk.Light;
 using System;
 using System.Collections.Generic;
 
@@ -18,7 +19,7 @@ namespace MvkServer.World
         /// <summary>
         /// Радиус активных чанков во круг игрока
         /// </summary>
-        private const int RADIUS_ACTION_CHUNK = 5;
+        private const int RADIUS_ACTION_CHUNK = 9;
 
         /// <summary>
         /// Объект лога
@@ -27,7 +28,7 @@ namespace MvkServer.World
         /// <summary>
         /// Объект работы со светом
         /// </summary>
-        //public WorldLight Light { get; private set; }
+        public WorldLight Light { get; private set; }
 
         /// <summary>
         /// Объект отладки по задержке в лог
@@ -78,7 +79,7 @@ namespace MvkServer.World
             Log = new Logger();
             profiler = new Profiler(Log);
             Rand = new Random();
-           // Light = new WorldLight();
+            Light = new WorldLight(this);
         }
 
         public Profiler TheProfiler() => profiler;
@@ -546,10 +547,10 @@ namespace MvkServer.World
             BlockState blockStateTrue = chunk.SetBlockState(blockPos, blockState, true);
             if (blockStateTrue.IsEmpty()) return false;
 
-            BlockBase block = blockState.GetBlock();
-            BlockBase blockNew = blockStateTrue.GetBlock();
+            //BlockBase block = blockState.GetBlock();
+            //BlockBase blockNew = blockStateTrue.GetBlock();
 
-            MarkBlockForUpdate(blockPos);
+            //MarkBlockForUpdate(blockPos);
 
             //if (block.LightOpacity != blockNew.LightOpacity || block.LightValue != blockNew.LightValue)
             //{
@@ -607,7 +608,7 @@ namespace MvkServer.World
                 if (chunk != null)
                 {
                     chunk.SetEBlock(blockPos.GetPosition0(), enumBlock);
-                    MarkBlockForUpdate(blockPos);
+                    MarkBlockForUpdate(blockPos.X, blockPos.Y, blockPos.Z);
                 }
             }
         }
@@ -615,13 +616,11 @@ namespace MvkServer.World
         /// <summary>
         /// Отметить блок для обновления
         /// </summary>
-        public virtual void MarkBlockForUpdate(BlockPos blockPos) { }
+        public virtual void MarkBlockForUpdate(int x, int y, int z) { }
         /// <summary>
         /// Отметить блоки для обновления
         /// </summary>
         public virtual void MarkBlockRangeForRenderUpdate(int x0, int y0, int z0, int x1, int y1, int z1) { }
-
-
 
         /// <summary>
         /// Возвращает все объекты указанного типа класса, которые пересекаются с AABB кроме переданного в него
@@ -874,9 +873,10 @@ namespace MvkServer.World
             TheProfiler().StartSection("buildList");
             for (int i = 0; i < PlayerEntities.Count; i++)
             {
-                EntityBase entity = PlayerEntities.GetAt(i);
+                EntityPlayer entity = PlayerEntities.GetAt(i) as EntityPlayer;
+                int overviewChunk = entity.OverviewChunk;
                 vec2i chPos = entity.PositionChunk;
-                int dist = RADIUS_ACTION_CHUNK; // радиус активных чанков
+                int dist = Mth.Min(overviewChunk, RADIUS_ACTION_CHUNK); // радиус активных чанков
 
                 for (int x = -dist; x <= dist; x++)
                 {
@@ -909,5 +909,17 @@ namespace MvkServer.World
         /// Проиграть звуковой эффект только для клиента
         /// </summary>
         public virtual void PlaySound(AssetsSample key, vec3 pos, float volume, float pitch) { }
+
+        /// <summary>
+        /// Блок имеет твердую непрозрачную поверхность
+        /// </summary>
+        public bool DoesBlockHaveSolidTopSurface(BlockPos blockPos)
+        {
+            BlockState blockState = GetBlockState(blockPos);
+            BlockBase block = blockState.GetBlock();
+            return block.IsNotTransparent() && block.FullBlock;
+        }
+
+        public virtual void DebugString(string logMessage, params object[] args) { }
     }
 }

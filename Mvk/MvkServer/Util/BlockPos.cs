@@ -40,6 +40,11 @@ namespace MvkServer.Util
         private BlockPos Plus(int x, int y, int z) => new BlockPos(X + x, Y + y, Z + z);
         private BlockPos Plus(vec3i v) => new BlockPos(X + v.x, Y + v.y, Z + v.z);
 
+        
+        /// <summary>
+        /// Позиция соседнего блока
+        /// </summary>
+        public BlockPos Offset(int i) => Plus(MvkStatic.ArraOne3d6[i]);
         /// <summary>
         /// Позиция соседнего блока
         /// </summary>

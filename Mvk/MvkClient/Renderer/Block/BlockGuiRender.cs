@@ -1,4 +1,5 @@
-﻿using MvkServer.Glm;
+﻿using MvkClient.Util;
+using MvkServer.Glm;
 using MvkServer.Util;
 using MvkServer.World.Block;
 using SharpGL;
@@ -31,7 +32,7 @@ namespace MvkClient.Renderer.Block
         /// <summary>
         /// Буфер всех блоков чанка
         /// </summary>
-        private List<byte> buffer;
+        private ListMvk<byte> buffer;
 
         /// <summary>
         /// Создание блока генерации для GUI
@@ -75,13 +76,19 @@ namespace MvkClient.Renderer.Block
             float v2 = cFace.v2;
 
             vec3 color = cFace.isColor ? cFace.color : new vec3(1f);
-            float lightPole = block.RenderType.HasFlag(BlockBase.EnumRenderType.NoSideDimming) ? 0f : 1f - LightPole();
+            float lightPole = block.NoSideDimming ? 0f : 1f - LightPole();
             color.x -= lightPole; if (color.x < 0) color.x = 0;
             color.y -= lightPole; if (color.y < 0) color.y = 0;
             color.z -= lightPole; if (color.z < 0) color.z = 0;
+            byte cr = (byte)(color.x * 255);
+            byte cg = (byte)(color.y * 255);
+            byte cb = (byte)(color.z * 255);
+
             BlockSide blockUV = new BlockSide()
             {
-                colors = new vec3[] { color, color, color, color },
+                colorsr = new byte[] { cr, cr, cr, cr },
+                colorsg = new byte[] { cg, cg, cg, cg },
+                colorsb = new byte[] { cb, cb, cb, cb },
                 lights = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF },
                 v1x = cBox.From.x,
                 v1y = cBox.From.y,
@@ -116,7 +123,7 @@ namespace MvkClient.Renderer.Block
                 blockUV.isRotate = true;
             }
 
-            blockUV.BufferByte.buffer = buffer;
+            blockUV.buffer = buffer;
             blockUV.SideRotate(cSide);
         }
 
@@ -141,7 +148,7 @@ namespace MvkClient.Renderer.Block
         /// </summary>
         public void RenderVBOtoDL()
         {
-            buffer = new List<byte>();
+            buffer = new ListMvk<byte>(4032);
             RenderMeshBlock();
             byte[] buffer2 = buffer.ToArray();
 

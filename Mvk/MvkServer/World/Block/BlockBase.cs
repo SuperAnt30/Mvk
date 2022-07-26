@@ -35,10 +35,34 @@ namespace MvkServer.World.Block
 
         /// <summary>
         /// Флаг, если блок должен использовать самое яркое значение соседнего света как свое собственное
+        /// Пример: трава, вода, стекло, но только не лава и нефть
         /// VE LightingYourself
         /// </summary>
         public bool UseNeighborBrightness { get; protected set; } = false;
-
+        /// <summary>
+        /// Все стороны принудительно, пример: трава, стекло, вода, лава
+        /// </summary>
+        public bool AllSideForcibly { get; protected set; } = false;
+        /// <summary>
+        /// Сторону рисуем с двух сторон, пример: вода, лава
+        /// </summary>
+        public bool BackSide { get; protected set; } = false;
+        /// <summary>
+        /// Обрабатывается блок эффектом АmbientOcclusion
+        /// </summary>
+        public bool АmbientOcclusion { get; protected set; } = true;
+        /// <summary>
+        /// Нет бокового затемнения, пример: трава, цветы
+        /// </summary>
+        public bool NoSideDimming { get; protected set; } = false;
+        /// <summary>
+        /// Может ли быть тень сущности на блоке, только для целых блоков
+        /// </summary>
+        public bool Shadow { get; protected set; } = true;
+        /// <summary>
+        /// Не однотипные блоки, пример: трава, цветы, кактус
+        /// </summary>
+        public bool BlocksNotSame { get; protected set; } = false;
         /// <summary>
         /// Сколько ударов требуется, чтобы сломать блок в тактах (20 тактов = 1 секунда)
         /// </summary>
@@ -69,7 +93,7 @@ namespace MvkServer.World.Block
         /// <summary>
         /// Вся ли прорисовка, аналог кактус, забор...
         /// </summary>
-        public EnumRenderType RenderType { get; protected set; } = EnumRenderType.АmbientOcclusion | EnumRenderType.Shadow;
+        //public EnumRenderType RenderType { get; protected set; } = EnumRenderType.АmbientOcclusion | EnumRenderType.Shadow;
 
         /// <summary>
         /// Получить тип блока
@@ -328,6 +352,10 @@ namespace MvkServer.World.Block
         /// Семпл хотьбы по блоку
         /// </summary>
         public AssetsSample SampleStep(WorldBase worldIn) => samplesStep[worldIn.Rand.Next(samplesStep.Length)];
+        /// <summary>
+        /// Тон сэмпла сломанного блока,
+        /// </summary>
+        public virtual float SampleBreakPitch(Random random) => 1f;
 
         /// <summary>
         /// Есть ли звуковой эффект шага

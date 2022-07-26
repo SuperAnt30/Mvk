@@ -451,15 +451,16 @@ namespace MvkClient.Entity
                 string s1 = ToBlockDebug(chunk, new vec3i(pos.x, pos.y, pos.z));
                 string s2 = ToBlockDebug(chunk, new vec3i(pos.x, pos.y + 1, pos.z));
                 Debug.BlockFocus = string.Format(
-                    "Block: {0} L:{1} L+1:{2}\r\n",// H:{3}|{4} #{6}\r\n",
+                    "Block: {0} L:{1} L+1:{2}\r\n{3}\r\n",// H:{3}|{4} #{6}\r\n",
                     MovingObject.Block,
-                    s1, s2//,
+                    s1, s2,
                     //chunk.Light.GetHeight(pos.x, pos.z),
                     ////"*",//chunk.Light.GetHeight(moving.Block.Position.X & 15, moving.Block.Position.Z & 15),
                     //    //chunk.Light.HeightMapMax
                     //chunk.GetTopFilledSegment(),
+
                     //"",
-                    //chunk.GetDebugAllSegment()
+                    chunk.GetDebugAllSegment()
                 );
                 //Debug.DStr = "";
             } else
@@ -473,12 +474,11 @@ namespace MvkClient.Entity
         private string ToBlockDebug(ChunkBase chunk, vec3i pos)
         {
             if (pos.y > ChunkBase.COUNT_HEIGHT_BLOCK) return "";
-            ChunkStorage chunkStorage = chunk.StorageArrays[pos.y >> 4];
+            ChunkStorage storage = chunk.StorageArrays[pos.y >> 4];
            // if (!chunkStorage.IsEmptyData())
             {
-                int ls = chunkStorage.GetLightSky(pos.x, pos.y & 15, pos.z);
-                int lb = chunkStorage.GetLightBlock(pos.x, pos.y & 15, pos.z);
-                return string.Format("s{0} b{1}", ls, lb); //, chunkStorage.ToString());
+                int index = (pos.y & 15) << 8 | pos.z << 4 | pos.x;
+                return string.Format("b{0} s{1}", storage.lightBlock[index], storage.lightSky[index]); //, chunkStorage.ToString());
             }
             //return "@-@";
         }

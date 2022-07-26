@@ -23,12 +23,12 @@ namespace MvkClient.Entity.Particle
             enumBlock = eBlock;
             particleGravity = 1f;
             particleScale /= 2f;
-            color = new vec4(.8f, .8f, .8f, 1f);
+            color = new vec3(.8f);
 
             BlockBase block = Blocks.GetBlockCache(eBlock);
 
             // пробуем цвет травы подкрасить
-            color *= new vec4(block.Color, 1f);
+            color *= block.Color;
 
             int u = block.Particle % 64;
             int v = block.Particle / 64;

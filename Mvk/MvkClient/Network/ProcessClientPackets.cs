@@ -388,7 +388,8 @@ namespace MvkClient.Network
 
         private void Handle29SoundEffect(PacketS29SoundEffect packet)
         {
-            ClientMain.World.PlaySound(ClientMain.Player, packet.GetAssetsSample(), packet.GetPosition(), packet.GetVolume(), 1);
+            ClientMain.World.PlaySound(ClientMain.Player, packet.GetAssetsSample(), 
+                packet.GetPosition(), packet.GetVolume(), packet.GetPitch());
         }
 
         /// <summary>

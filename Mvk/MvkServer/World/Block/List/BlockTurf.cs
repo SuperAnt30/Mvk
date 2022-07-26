@@ -40,7 +40,7 @@ namespace MvkServer.World.Block.List
             int sideInt = (int)side - 2;
             if (sideInt < 0) sideInt = 0;
 
-            return base.Put(worldIn, blockPos, new BlockState(state.Id(), sideInt, state.light), side, facing);
+            return base.Put(worldIn, blockPos, new BlockState(state.Id(), sideInt, state.lightBlock, state.lightSky), side, facing);
         }
 
         /// <summary>

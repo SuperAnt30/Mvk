@@ -178,6 +178,12 @@
   <data name="DigWood4" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\DigWood4.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="Fire" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\Fire.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="FireFizz" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\FireFizz.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="LiquidSplash1" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\LiquidSplash1.ogg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>

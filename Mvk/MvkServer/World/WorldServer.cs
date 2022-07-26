@@ -118,6 +118,7 @@ namespace MvkServer.World
                 }
                 profiler.EndSection();
             }
+
         }
 
         //private void UpdateActiveChunks()
@@ -140,23 +141,30 @@ namespace MvkServer.World
         /// <summary>
         /// Отметить блок для обновления 
         /// </summary>
-        public override void MarkBlockForUpdate(BlockPos blockPos) => Players.FlagChunkForUpdate(blockPos);
-
+        public override void MarkBlockForUpdate(int x, int y, int z) => Players.FlagBlockForUpdate(x, y, z);
         /// <summary>
-        /// Отметить блоки для обновления
+        /// Отметить  блоки для обновления
         /// </summary>
         public override void MarkBlockRangeForRenderUpdate(int x0, int y0, int z0, int x1, int y1, int z1)
         {
-            vec3i min = new vec3i(x0 - 1, y0 - 1, z0 - 1);
-            vec3i max = new vec3i(x0 + 1, y0 + 1, z0 + 1);
-
-            for (int x = min.x; x <= max.x; x++)
+            int c0x = (x0 - 1) >> 4;
+            int c0y = (y0 - 1) >> 4;
+            if (c0y < 0) c0y = 0;
+            int c0z = (z0 - 1) >> 4;
+            int c1x = (x1 + 1) >> 4;
+            int c1y = (y1 + 1) >> 4;
+            if (c1y > ChunkBase.COUNT_HEIGHT15) c1y = ChunkBase.COUNT_HEIGHT15;
+            int c1z = (z1 + 1) >> 4;
+            vec2i ch;
+            int x, y, z;
+            for (x = c0x; x <= c1x; x++)
             {
-                for (int y = min.y; y <= max.y; y++)
+                for (z = c0z; z <= c1z; z++)
                 {
-                    for (int z = min.z; z <= max.z; z++)
+                    ch = new vec2i(x, z);
+                    for (y = c0y; y <= c1y; y++)
                     {
-                        MarkBlockForUpdate(new BlockPos(x, y, z));
+                        Players.FlagChunkForUpdate(ch, y);
                     }
                 }
             }
@@ -251,7 +259,7 @@ namespace MvkServer.World
         /// </summary>
         public override void PlaySound(EntityLiving entity, AssetsSample key, vec3 pos, float volume, float pitch)
         {
-            Tracker.SendToAllTrackingEntity(entity, new PacketS29SoundEffect(key, pos, 1f));
+            Tracker.SendToAllTrackingEntity(entity, new PacketS29SoundEffect(key, pos, volume, pitch));
         }
 
         /// <summary>

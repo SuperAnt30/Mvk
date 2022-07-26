@@ -19,7 +19,11 @@ namespace MvkServer.World.Block.List
             Particle = 11;
             FullBlock = false;
             Color = new vec3(.56f, .73f, .35f);
-            RenderType = EnumRenderType.AllSideForcibly | EnumRenderType.NoSideDimming | EnumRenderType.BlocksNotSame;
+            АmbientOcclusion = false;
+            Shadow = false;
+            AllSideForcibly = true;
+            NoSideDimming = true;
+            BlocksNotSame = true;
             IsReplaceable = true;
             LightOpacity = 0;
             IsCollidable = false;

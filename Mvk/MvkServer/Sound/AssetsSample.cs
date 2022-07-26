@@ -27,6 +27,9 @@
         DigWood3,
         DigWood4,
 
+        Fire,
+        FireFizz,
+
         LiquidSplash1,
         LiquidSplash2,
         LiquidSwim1,

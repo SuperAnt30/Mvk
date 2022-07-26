@@ -263,6 +263,26 @@ namespace MvkAssets {
         /// <summary>
         ///   Поиск локализованного ресурса типа System.Byte[].
         /// </summary>
+        internal static byte[] Fire {
+            get {
+                object obj = ResourceManager.GetObject("Fire", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Byte[].
+        /// </summary>
+        internal static byte[] FireFizz {
+            get {
+                object obj = ResourceManager.GetObject("FireFizz", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Byte[].
+        /// </summary>
         internal static byte[] LiquidSplash1 {
             get {
                 object obj = ResourceManager.GetObject("LiquidSplash1", resourceCulture);

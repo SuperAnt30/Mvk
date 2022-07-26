@@ -17,8 +17,8 @@ namespace MvkServer.World.Block.List
             IsAction = false;
             IsCollidable = collidable;
             IsParticle = false;
-            RenderType ^= EnumRenderType.АmbientOcclusion;
-            RenderType ^= EnumRenderType.Shadow;
+            АmbientOcclusion = false;
+            Shadow = false;
             IsReplaceable = true;
             LightOpacity = 0;
         }

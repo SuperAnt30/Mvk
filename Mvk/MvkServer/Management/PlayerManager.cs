@@ -633,8 +633,8 @@ namespace MvkServer.Management
                 for (int i = 0; i < players.Count; i++)
                 {
                     EntityPlayerServer player = players[i];
-                    // Количество чанков для загрузки или генерации за такт
-                    int load = 5;
+                    //TODO::Количество чанков для загрузки или генерации за такт, было 5
+                    int load = 10;
                     // Всего проверки чанков за такт
                     int all = 100;
                     while (player.LoadingChunks.Count > 0 && load > 0 && all > 0)
@@ -755,12 +755,38 @@ namespace MvkServer.Management
         /// <summary>
         /// Флаг блока который был изменён
         /// </summary>
-        public void FlagChunkForUpdate(BlockPos blockPos)
+        public void FlagBlockForUpdate(BlockPos blockPos)
         {
             PlayerInstance playerInstance = GetPlayerInstance(blockPos.GetPositionChunk(), false);
             if (playerInstance != null)
             {
-                playerInstance.FlagChunkForUpdate(blockPos.GetPosition0());
+                playerInstance.FlagBlockForUpdate(blockPos.GetPosition0());
+            }
+        }
+
+        /// <summary>
+        /// Флаг блока который был изменён
+        /// </summary>
+        public void FlagBlockForUpdate(int x, int y, int z)
+        {
+            PlayerInstance playerInstance = GetPlayerInstance(new vec2i(x >> 4, z >> 4), false);
+            if (playerInstance != null)
+            {
+                playerInstance.FlagBlockForUpdate(new vec3i(x & 15, y, z & 15));
+            }
+        }
+
+        /// <summary>
+        /// Флаг псевдочанка который был изменён
+        /// </summary>
+        /// <param name="ch">координаты чанка</param>
+        /// <param name="y">координата псевдочанка</param>
+        public void FlagChunkForUpdate(vec2i ch, int y)
+        {
+            PlayerInstance playerInstance = GetPlayerInstance(ch, false);
+            if (playerInstance != null)
+            {
+                playerInstance.FlagChunkForUpdate(y);
             }
         }
 

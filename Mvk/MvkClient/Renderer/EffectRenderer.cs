@@ -49,6 +49,9 @@ namespace MvkClient.Renderer
             {
                 case EnumParticle.Test: AddEffect(new EntityTestFX(World, pos, motion)); break;
                 case EnumParticle.Digging: AddEffect(new EntityDiggingFX(World, pos, motion, (EnumBlock)items[0])); break;
+                case EnumParticle.Smoke: AddEffect(new EntitySmokeFX(World, pos, motion, items[0])); break;
+                case EnumParticle.Suspend: AddEffect(new EntitySuspendFX(World, pos, motion)); break;
+                    
             }
         }
 

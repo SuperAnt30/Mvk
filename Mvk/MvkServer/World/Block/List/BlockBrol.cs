@@ -17,7 +17,7 @@ namespace MvkServer.World.Block.List
         {
             LightValue = 15;
             Particle = 8;
-            RenderType ^= EnumRenderType.АmbientOcclusion;
+            АmbientOcclusion = false;
             Hardness = 5;
             Material = EnumMaterial.Brol;
             samplesBreak = new AssetsSample[] { AssetsSample.DigGlass1, AssetsSample.DigGlass2, AssetsSample.DigGlass3 };

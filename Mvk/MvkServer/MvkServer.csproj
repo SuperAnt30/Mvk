@@ -102,6 +102,8 @@
     <Compile Include="Network\Packets\Server\PacketS03TimeUpdate.cs" />
     <Compile Include="Util\ArrayDistance.cs" />
     <Compile Include="Util\AxisAlignedBB.cs" />
+    <Compile Include="Util\FastBuffer.cs" />
+    <Compile Include="Util\ListMvk.cs" />
     <Compile Include="Util\MapListKeyId.cs" />
     <Compile Include="Util\MapListId.cs" />
     <Compile Include="Util\MapListVec2i.cs" />
@@ -140,6 +142,7 @@
     <Compile Include="World\Block\List\BlockDebug.cs" />
     <Compile Include="World\Block\List\BlockCobblestone.cs" />
     <Compile Include="World\Block\List\BlockBrol.cs" />
+    <Compile Include="World\Block\List\BlockFire.cs" />
     <Compile Include="World\Block\List\BlockOil.cs" />
     <Compile Include="World\Block\List\BlockLogOak.cs" />
     <Compile Include="World\Block\List\BlockTallGrass.cs" />
@@ -182,15 +185,19 @@
     <Compile Include="World\Chunk\ChunkProviderServer.cs" />
     <Compile Include="World\Chunk\ChunkProvider.cs" />
     <Compile Include="World\Chunk\ChunkStorage.cs" />
+    <Compile Include="World\Chunk\Light\ChunkLight2.cs" />
     <Compile Include="World\Chunk\Light\ChunkLight.cs" />
     <Compile Include="World\Chunk\Light\LightStruct.cs" />
     <Compile Include="World\Chunk\Light\MapLight.cs" />
     <Compile Include="World\Chunk\Light\WorkingLight.cs" />
+    <Compile Include="World\Chunk\Light\WorldLight.cs" />
     <Compile Include="World\CollisionBase.cs" />
     <Compile Include="World\WorldBase.cs" />
     <Compile Include="World\WorldBaseSky.cs" />
     <Compile Include="World\WorldServer.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="ClassDiagramLight.cd" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

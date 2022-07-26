@@ -112,7 +112,7 @@ namespace MvkServer.Management
         /// Флаг блока который был изменён
         /// </summary>
         /// <param name="pos">локальные координаты 0..15</param>
-        public void FlagChunkForUpdate(vec3i pos)
+        public void FlagBlockForUpdate(vec3i pos)
         {
             if (numBlocksToUpdate == 0)
             {
@@ -129,6 +129,21 @@ namespace MvkServer.Management
                 }
                 locationOfBlockChange[numBlocksToUpdate++] = pos;
             }
+        }
+
+        /// <summary>
+        /// Флаг псевдочанка который был изменён
+        /// </summary>
+        /// <param name="y"></param>
+        public void FlagChunkForUpdate(int y)
+        {
+            if (numBlocksToUpdate == 0)
+            {
+                playerManager.PlayerInstancesToUpdateAdd(this);
+            }
+
+            numBlocksToUpdate = 64;
+            flagsYAreasToUpdate |= 1 << y;
         }
 
         /// <summary>

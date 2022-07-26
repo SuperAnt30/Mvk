@@ -205,9 +205,8 @@ namespace MvkClient.World
               //  chunkListing.Set(addChunks[0]);
                 vec2i pos = addChunks[0].Position;
                 // надо соседние чанки попросить перерендерить
-                vec3i c0 = new vec3i(pos.x - 1, 0, pos.y - 1);
-                vec3i c1 = new vec3i(pos.x + 1, ChunkRender.COUNT_HEIGHT - 1, pos.y + 1);
-                ClientWorld.AreaModifiedToRender(c0, c1);
+
+                ClientWorld.AreaModifiedToRender(pos.x - 1, 0, pos.y - 1, pos.x + 1, ChunkRender.COUNT_HEIGHT - 1, pos.y + 1);
 
                 addChunks.RemoveAt(0);
                 count--;

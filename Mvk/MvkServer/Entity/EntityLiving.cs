@@ -411,10 +411,10 @@ namespace MvkServer.Entity
         /// <summary>
         /// Уменьшает подачу воздуха сущности под водой
         /// </summary>
-        protected int DecreaseAirSupply(int oldAir)
+        protected int DecreaseAirSupply(int oldAir, bool isOil)
         {
             //int air = 1; // TODO:: тут чара, броня и прочее в будущем для воды
-            return oldAir - 1;
+            return oldAir - (isOil ? 2 : 1);
             //return air > 0 && rand.Next(air + 1) > 0 ? oldAir : oldAir - 1;
         }
 
@@ -423,43 +423,48 @@ namespace MvkServer.Entity
         /// </summary>
         protected void DrownServer()
         {
-            if (IsEntityAlive() && (IsInsideOfMaterial(EnumMaterial.Water) || IsInsideOfMaterial(EnumMaterial.Oil)))
+            if (IsEntityAlive())
             {
-                //if (!this.canBreatheUnderwater() && !this.isPotionActive(Potion.waterBreathing.id) && !var7)
+                bool isWater = IsInsideOfMaterial(EnumMaterial.Water);
+                bool isOil = IsInsideOfMaterial(EnumMaterial.Oil);
+                if (isWater || isOil)
                 {
-                    SetAir(DecreaseAirSupply(GetAir()));
-
-                    if (GetAir() == -20)
+                    //if (!this.canBreatheUnderwater() && !this.isPotionActive(Potion.waterBreathing.id) && !var7)
                     {
-                        SetAir(0);
+                        SetAir(DecreaseAirSupply(GetAir(), isOil));
 
-                        // эффект раз в секунду, и урон
-                        //for (int var3 = 0; var3 < 8; ++var3)
-                        //{
-                        //    float var4 = this.rand.nextFloat() - this.rand.nextFloat();
-                        //    float var5 = this.rand.nextFloat() - this.rand.nextFloat();
-                        //    float var6 = this.rand.nextFloat() - this.rand.nextFloat();
-                        //    this.worldObj.spawnParticle(EnumParticleTypes.WATER_BUBBLE, this.posX + (double)var4, this.posY + (double)var5, this.posZ + (double)var6, this.motionX, this.motionY, this.motionZ, new int[0]);
-                        //}
-                        //this.attackEntityFrom(DamageSource.drown, 2.0F);
-                        AttackEntityFrom(EnumDamageSource.Drown, 2f);
+                        if (GetAir() == -20)
+                        {
+                            SetAir(0);
+
+                            // эффект раз в секунду, и урон
+                            //for (int var3 = 0; var3 < 8; ++var3)
+                            //{
+                            //    float var4 = this.rand.nextFloat() - this.rand.nextFloat();
+                            //    float var5 = this.rand.nextFloat() - this.rand.nextFloat();
+                            //    float var6 = this.rand.nextFloat() - this.rand.nextFloat();
+                            //    this.worldObj.spawnParticle(EnumParticleTypes.WATER_BUBBLE, this.posX + (double)var4, this.posY + (double)var5, this.posZ + (double)var6, this.motionX, this.motionY, this.motionZ, new int[0]);
+                            //}
+                            //this.attackEntityFrom(DamageSource.drown, 2.0F);
+                            AttackEntityFrom(EnumDamageSource.Drown, 2f);
+                        }
                     }
-                }
 
-                //if (!World.IsRemote && this.IsRiding() && this.ridingEntity instanceof EntityLivingBase)
-                //{
-                //    this.mountEntity((Entity)null);
-                //}
-            }
-            else
-            {
-                int air = GetAir();
-                if (air < 300)
+                    //if (!World.IsRemote && this.IsRiding() && this.ridingEntity instanceof EntityLivingBase)
+                    //{
+                    //    this.mountEntity((Entity)null);
+                    //}
+                }
+                else
                 {
-                    // воссстановление кислорода в 2 раза быстрее
-                    air += 2;
-                    if (air > 300) air = 300;
-                    SetAir(air);
+                    int air = GetAir();
+                    if (air < 300)
+                    {
+                        // воссстановление кислорода в 2 раза быстрее
+                        air += 2;
+                        if (air > 300) air = 300;
+                        SetAir(air);
+                    }
                 }
             }
         }
@@ -963,13 +968,13 @@ namespace MvkServer.Entity
             vec3 pos = new vec3(0, BoundingBox.Min.y + 1f, 0);
             vec3 motion = Motion;
             float width = Width * 2f;
-            for(int i = 0; i < 10; i++)
-            {
-                motion.y = Motion.y - (float)rand.NextDouble() * .2f;
-                pos.x = Position.x + ((float)rand.NextDouble() * 2f - 1f) * width;
-                pos.z = Position.z + ((float)rand.NextDouble() * 2f - 1f) * width;
-                World.SpawnParticle(EnumParticle.Test, pos, motion);
-            }
+            //for(int i = 0; i < 10; i++)
+            //{
+            //    motion.y = Motion.y - (float)rand.NextDouble() * .2f;
+            //    pos.x = Position.x + ((float)rand.NextDouble() * 2f - 1f) * width;
+            //    pos.z = Position.z + ((float)rand.NextDouble() * 2f - 1f) * width;
+            //    World.SpawnParticle(EnumParticle.Suspend, pos, motion);
+            //}
             for (int i = 0; i < 10; i++)
             {
                 motion.y = Motion.y - (float)rand.NextDouble() * .2f;

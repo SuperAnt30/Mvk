@@ -17,7 +17,10 @@ namespace MvkServer.World.Block.List
             Translucent = true; 
             IsAction = false;
             IsCollidable = false;
-            RenderType = EnumRenderType.BackSide | EnumRenderType.AllSideForcibly;
+            АmbientOcclusion = false;
+            Shadow = false;
+            BackSide = true;
+            AllSideForcibly = true;
             IsReplaceable = true;
             Hardness = 2;
             IsParticle = false;

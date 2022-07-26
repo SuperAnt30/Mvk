@@ -618,22 +618,25 @@ namespace MvkServer.Entity
         public vec2 GetBrightnessForRender()
         {
             BlockPos blockPos = new BlockPos(Position.x, Position.y + Height * .85f, Position.z);
-            byte light = 0x0F;
+            byte lightBlock = 0;
+            byte lightSky = 0xF;
             if (blockPos.IsValid())
             {
                 ChunkBase chunk = World.GetChunk(blockPos.GetPositionChunk());
                 if (chunk != null)
                 {
                     ChunkStorage chunkStorage = chunk.StorageArrays[blockPos.Y >> 4];
-                    if (chunkStorage.IsSky())
+                    if (chunkStorage.sky)
                     {
-                        light = chunkStorage.GetLightsFor(blockPos.X & 15, blockPos.Y & 15, blockPos.Z & 15);
+                        int index = (blockPos.Y & 15) << 8 | (blockPos.Z & 15) << 4 | (blockPos.X & 15);
+                        lightBlock = chunkStorage.lightBlock[index];
+                        lightSky = chunkStorage.lightSky[index];
                     }
                 }
             }
             return new vec2(
-                ((light & 0xF0) >> 4) / 16f + .03125f, // sky
-                (light & 0xF) / 16f + .03125f // block
+                lightBlock / 16f + .03125f,
+                lightSky / 16f + .03125f
             );
         }
 

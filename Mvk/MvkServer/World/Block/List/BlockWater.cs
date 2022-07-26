@@ -18,8 +18,12 @@ namespace MvkServer.World.Block.List
             Translucent = true;
             IsAction = false;
             IsCollidable = false;
-            RenderType = EnumRenderType.BackSide | EnumRenderType.AllSideForcibly;
+            АmbientOcclusion = false;
+            Shadow = false;
+            BackSide = true;
+            AllSideForcibly = true;
             IsReplaceable = true;
+            UseNeighborBrightness = true;
             Hardness = 2;
             LightOpacity = 1;
             IsParticle = false;
@@ -62,15 +66,16 @@ namespace MvkServer.World.Block.List
         /// </summary>
         public override void RandomDisplayTick(WorldBase world, BlockPos blockPos, BlockState blockState, Random random)
         {
-            if (random.Next(64) == 0)
+            //if (random.Next(64) == 0)
+            //{
+            //    world.PlaySound(AssetsSample.MobChickenPlop, blockPos.ToVec3() + .5f, (float)random.NextDouble() * .25f + .75f, (float)random.NextDouble() * 1.0f + .5f);
+            //}
+            //else 
+            if (random.Next(10) == 0)
             {
-                world.PlaySound(AssetsSample.MobChickenPlop, blockPos.ToVec3() + .5f, (float)random.NextDouble() * .25f + .75f, (float)random.NextDouble() * 1.0f + .5f);
-            }
-            else if (random.Next(10) == 0)
-            {
-                world.SpawnParticle(Entity.EnumParticle.Test,
+                world.SpawnParticle(Entity.EnumParticle.Suspend,
                     new vec3(blockPos.X + (float)random.NextDouble(), blockPos.Y + (float)random.NextDouble(), blockPos.Z + (float)random.NextDouble()),
-                    new vec3(0), new int[0]);
+                    new vec3(0));
             }
         }
     }

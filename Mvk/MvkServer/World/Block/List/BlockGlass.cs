@@ -16,7 +16,10 @@ namespace MvkServer.World.Block.List
         public BlockGlass()
         {
             Translucent = true;
-            RenderType = EnumRenderType.AllSideForcibly;
+            АmbientOcclusion = false;
+            Shadow = false;
+            AllSideForcibly = true;
+            UseNeighborBrightness = true;
             Particle = 5;
             Hardness = 10;
             LightOpacity = 2;

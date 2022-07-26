@@ -56,6 +56,8 @@ namespace MvkServer.Network.Packets.Server
                 }
                 buffer = new byte[CountBuffer() * storages.Count];
                 int count = 0;
+                ushort data;
+                int index;
                 while (storages.Count > 0)
                 {
                     bool emptyData = storages[0].IsEmptyData();
@@ -66,6 +68,7 @@ namespace MvkServer.Network.Packets.Server
                         {
                             for (int z = 0; z < 16; z++)
                             {
+                                index = y << 8 | z << 4 | x;
                                 if (emptyData)
                                 {
                                     buffer[count++] = 0;
@@ -74,12 +77,14 @@ namespace MvkServer.Network.Packets.Server
                                 }
                                 else
                                 {
-                                    ushort data = storages[0].GetData(x, y, z);
+                                    data = storages[0].data[index];
                                     buffer[count++] = (byte)(data & 0xFF);
                                     buffer[count++] = (byte)(data >> 8);
                                    // buffer[count++] = storages[0].GetLightsFor(x, y, z);
                                 }
-                                buffer[count++] = storages[0].GetLightsFor(x, y, z);
+                                //buffer[count++] = storages[0].light[y << 8 | z << 4 | x];
+                                buffer[count++] = (byte)(storages[0].lightBlock[index] << 4 | storages[0].lightSky[index] & 0xF);
+
                             }
                         }
                     }

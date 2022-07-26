@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace MvkClient.Util
@@ -21,41 +20,21 @@ namespace MvkClient.Util
         /// имеется ли тело
         /// </summary>
         public bool body;
-        /// <summary>
-        /// Количество полигонов
-        /// </summary>
-        //public int CountPoligon { get; private set; } = 0;
-
-
 
         /// <summary>
         /// Занести в память массив из float
         /// </summary>
-        //public void ConvertFloat(float[] data)
-        //{
-        //    Size = data.Length * sizeof(float);
-        //    Data = Marshal.AllocHGlobal(Size);
-        //    Marshal.Copy(data, 0, Data, data.Length);
-        //    IsEmpty = false;
-        //}
-
-        /// <summary>
-        /// Занести в память массив из float
-        /// </summary>
-        public void ConvertByte(List<byte> data)
+        public void ConvertByte(byte[] data)
         {
-            if (data.Count == 0)
+            if (data.Length == 0)
             {
                 Free();
             }
             else
             {
-                //GCHandle handle = GCHandle.Alloc(data);
-                //this.data = (IntPtr)handle;
-                //handle.Free();
-                size = data.Count * sizeof(byte);
+                size = data.Length * sizeof(byte);
                 this.data = Marshal.AllocHGlobal(size);
-                Marshal.Copy(data.ToArray(), 0, this.data, data.Count);
+                Marshal.Copy(data, 0, this.data, data.Length);
                 body = true;
             }
         }

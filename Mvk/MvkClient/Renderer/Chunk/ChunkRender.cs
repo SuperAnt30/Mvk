@@ -42,7 +42,8 @@ namespace MvkClient.Renderer.Chunk
         /// <summary>
         /// Соседние чанки, заполняются перед рендером
         /// </summary>
-        private Hashtable chunks = new Hashtable(); 
+        private ChunkBase[] chunks = new ChunkBase[8];
+        private bool isChunksAll = false;
 
         public ChunkRender(WorldClient worldIn, vec2i pos) :base (worldIn, pos)
         {
@@ -103,26 +104,24 @@ namespace MvkClient.Renderer.Chunk
         {
             meshDense[y].StatusRendering();
             meshAlpha[y].StatusRendering();
-            foreach (vec2i pos in MvkStatic.AreaOne8)
+
+            if (!isChunksAll)
             {
-                vec2i pos2 = Position + pos;
-                if (chunks.ContainsKey(pos2))
+                int c = 0;
+                for (int i = 0; i < 8; i++)
                 {
-                    if (chunks[pos2] == null) chunks[pos2] = World.ChunkPr.GetChunk(pos2);
+                    vec2i pos = Position + MvkStatic.AreaOne8[i];
+                    if (chunks[i] == null) chunks[i] = World.ChunkPr.GetChunk(pos);
+                    else c++;
                 }
-                else
-                {
-                    chunks.Add(pos2, World.ChunkPr.GetChunk(pos2));
-                }
+                if (c == 8) isChunksAll = true;
             }
-            return;
         }
 
-        public ChunkBase Chunk(vec2i pos)
-        {
-            if (chunks.ContainsKey(pos)) return chunks[pos] as ChunkBase;
-            return null;
-        }
+        /// <summary>
+        /// Получить соседний чанк, где x и y -1..1
+        /// </summary>
+        public ChunkBase Chunk(int x, int y) => chunks[MvkStatic.GetAreaOne8(x, y)];
 
         /// <summary>
         /// Рендер псевдо чанка, сплошных и альфа блоков
@@ -131,26 +130,26 @@ namespace MvkClient.Renderer.Chunk
         {
             try
             {
-                long timeBegin = GLWindow.stopwatch.ElapsedTicks;
+                long timeBegin, timeEnd;
+                timeBegin = GLWindow.stopwatch.ElapsedTicks;
 
                 ChunkStorage chunkStorage = StorageArrays[chY];
                 // буфер альфа блоков
                 List<BlockBuffer> alphas = new List<BlockBuffer>();
                 vec3i posPlayer = ClientWorld.ClientMain.Player.PositionAlphaBlock;
-                BlockState blockState = new BlockState().Empty();
-                BlockRender blockRender = new BlockRender(this);
-                BlockBase block;
-                ushort id;
+                ushort id = 0;
                 int cbX = Position.x << 4;
                 int cbY = chY << 4;
                 int cbZ = Position.y << 4;
-                blockRender.cbX = cbX;
-                blockRender.cbY = cbY;
-                blockRender.cbZ = cbZ;
-                int realY;
-                int realZ;
 
-                byte[] buffer = new byte[0];
+                BlockAlphaRender blockAlphaRender = new BlockAlphaRender(this, cbX, cbY, cbZ);
+                blockAlphaRender.blockUV.buffer = ClientWorld.WorldRender.bufferAlphaCache;
+
+                BlockRender blockRender = new BlockRender(this, cbX, cbY, cbZ);
+                blockRender.blockUV.buffer = ClientWorld.WorldRender.buffer;
+
+                int realY, realZ, i;
+
                 for (int y = 0; y < 16; y++)
                 {
                     realY = cbY | y;
@@ -159,39 +158,57 @@ namespace MvkClient.Renderer.Chunk
                     for (int z = 0; z < 16; z++)
                     {
                         blockRender.posChunkZ = z;
-                        realZ = cbZ | z;
                         for (int x = 0; x < 16; x++)
                         {
-                            id = chunkStorage.data[y, x, z];
+                            i = y << 8 | z << 4 | x;
+                            id = chunkStorage.data[i];
                             if (id == 0 || id == 4096) continue;
-                            blockState.data = id;
-                            blockState.light = chunkStorage.light[y, x, z];
-                            blockRender.posChunkX = x;
-                            block = Blocks.BlocksInt[id & 0xFFF];
-                            blockRender.blockState = blockState;
-                            blockRender.block = block;
+                            blockRender.block = Blocks.blocksInt[id & 0xFFF];
 
-                            blockRender.DamagedBlocksValue = GetDestroyBlocksValue(x, realY, z);
-
-                            blockRender.RenderMesh();
-
-                            if (block.Translucent && blockRender.bufferAlpha.Count > 0)
+                            if (blockRender.block.Translucent)
                             {
-                                alphas.Add(new BlockBuffer()
+                                // Альфа!
+                                blockAlphaRender.blockState.data = id;
+                                blockAlphaRender.blockState.lightBlock = chunkStorage.lightBlock[i];
+                                blockAlphaRender.blockState.lightSky = chunkStorage.lightSky[i];
+                                blockAlphaRender.posChunkX = x;
+                                blockAlphaRender.posChunkY = realY;
+                                blockAlphaRender.posChunkZ = z;
+                                realZ = cbZ | z;
+                                blockAlphaRender.posChunkY0 = y;
+                                blockAlphaRender.block = Blocks.blocksInt[id & 0xFFF];
+                                blockAlphaRender.DamagedBlocksValue = GetDestroyBlocksValue(x, realY, z);
+                                blockAlphaRender.RenderMesh();
+                                if (blockAlphaRender.blockUV.buffer.count > 0)
                                 {
-                                    buffer = blockRender.bufferAlpha.ToArray(),
-                                    distance = glm.distance(posPlayer, new vec3i(cbX | x, realY, realZ))
-                                });
-                                blockRender.bufferAlpha.Clear();
+                                    alphas.Add(new BlockBuffer()
+                                    {
+                                        buffer = blockAlphaRender.blockUV.buffer.ToArray(),
+                                        distance = glm.distance(posPlayer, new vec3i(cbX | x, realY, realZ))
+                                    });
+                                    blockAlphaRender.blockUV.buffer.Clear();
+                                }
+                            }
+                            else
+                            {
+                                blockRender.blockState.data = id;
+                                blockRender.blockState.lightBlock = chunkStorage.lightBlock[i];
+                                blockRender.blockState.lightSky = chunkStorage.lightSky[i];
+                                blockRender.posChunkX = x;
+                                blockRender.DamagedBlocksValue = GetDestroyBlocksValue(x, realY, z);
+                                blockRender.RenderMesh();
                             }
                         }
                     }
                 }
-                
+                //timeEnd = GLWindow.stopwatch.ElapsedTicks;
+                meshDense[chY].SetBuffer(ClientWorld.WorldRender.buffer.ToArray());
+                ClientWorld.WorldRender.buffer.Clear();
+                timeEnd = GLWindow.stopwatch.ElapsedTicks;
                 countAlpha[chY] = alphas.Count;
-                meshAlpha[chY].SetBuffer(ToBufferAlphaY(alphas));
-                meshDense[chY].SetBuffer(blockRender.buffer);
-                long timeEnd = GLWindow.stopwatch.ElapsedTicks;
+                ToBufferAlphaY(alphas);
+                meshAlpha[chY].SetBuffer(ClientWorld.WorldRender.bufferAlpha.ToArray());
+                //timeEnd = GLWindow.stopwatch.ElapsedTicks;
                 float time = (timeEnd - timeBegin) / (float)MvkStatic.TimerFrequency;
                 Debug.RenderChunckTime8 = (Debug.RenderChunckTime8 * 15f + time) / 16f;
             }
@@ -204,20 +221,18 @@ namespace MvkClient.Renderer.Chunk
         /// <summary>
         /// Вернуть массив буфера альфа
         /// </summary>
-        public List<byte> ToBufferAlphaY(List<BlockBuffer> alphas)
-        { 
+        public void ToBufferAlphaY(List<BlockBuffer> alphas)
+        {
+            ClientWorld.WorldRender.bufferAlpha.Clear();
             int count = alphas.Count;
             if (count > 0)
             {
                 alphas.Sort();
-                List<byte> buffer = new List<byte>();
                 for (int i = count - 1; i >= 0; i--)
                 {
-                    buffer.AddRange(alphas[i].buffer);
+                    ClientWorld.WorldRender.bufferAlpha.AddRange(alphas[i].buffer);
                 }
-                return buffer;
             }
-            return new List<byte>();
         }
 
         /// <summary>

@@ -3,6 +3,7 @@ using MvkServer.Util;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace MvkServer.World.Chunk
 {
@@ -148,13 +149,18 @@ namespace MvkServer.World.Chunk
                                     else
                                     {
                                         stop = true;
-                                        if (y <= 16) chunk.SetEBlock(new vec3i(x, y, z), Block.EnumBlock.Water);
+                                        if (y <= 16)
+                                        {
+                                            chunk.SetEBlock(new vec3i(x, y, z), Block.EnumBlock.Water);
+                                            //chunk.StorageArrays[y >> 4].lightBlock[(y & 15) << 8 | (z & 15) << 4 | (x & 15)] = 15;
+                                        }
                                         else
                                         {
                                             chunk.SetEBlock(new vec3i(x, y, z), Block.EnumBlock.Turf, chunk.World.Rand.Next(0, 4));
-                                            if (grassNoise[count] > .71f)
+                                            if (grassNoise[count] > .61f)
                                             {
-                                              //  chunk.SetEBlock(new vec3i(x, y + 1, z), Block.EnumBlock.Brol);
+                                                //chunk.SetEBlock(new vec3i(x, y + 1, z), Block.EnumBlock.Brol);
+                                                //chunk.StorageArrays[(y + 1) >> 4].lightBlock[((y + 1) & 15) << 8 | (z & 15) << 4 | (x & 15)] = 15;
                                             }
                                             else if (grassNoise[count] > .1f)
                                             {
@@ -184,12 +190,14 @@ namespace MvkServer.World.Chunk
                             chunk.SetEBlock(new vec3i(11, y + stolb, 7), Block.EnumBlock.Lava);
                             chunk.SetEBlock(new vec3i(12, y + stolb, 7), Block.EnumBlock.LogOak);
                         }
-                        for (int y = 16; y <= 216; y++) // 196 еррор на 5 мире
-                        {
-                            chunk.SetEBlock(new vec3i(3, y + stolb, 7), Block.EnumBlock.Dirt);
-                        }
+                        //for (int y = 16; y <= 216; y++)
+                        //{
+                        //    chunk.SetEBlock(new vec3i(12, y + stolb, 7), Block.EnumBlock.LogOak);
+                        //    //chunk.SetEBlock(new vec3i(3, y + stolb, 7), Block.EnumBlock.Dirt);
+                        //}
+                        
                         //chunk.SetEBlock(new vec3i(5, 2 + stolb, 5), Block.EnumBlock.Brol);
-                        // TODO::2022-06-30 надо уметь осветить блоки при генерации
+
                     }
 
                     if (pos.x == -3 && pos.y == 0)
@@ -203,7 +211,7 @@ namespace MvkServer.World.Chunk
                         {
                             chunk.SetEBlock(new vec3i(x, stolb + y, z), Block.EnumBlock.Dirt);
                         }
-
+                        chunk.SetEBlock(new vec3i(2, 32 + stolb, 2), Block.EnumBlock.Dirt);
                         //for (int x = 0; x < 16; x++)
                         //{
                         //    for (int z = 0; z < 16; z++)
@@ -287,6 +295,9 @@ namespace MvkServer.World.Chunk
         /// </summary>
         private void Cave(ChunkBase chunk, int yMax)
         {
+            //Stopwatch stopwatch = new Stopwatch();
+            //stopwatch.Start();
+
             int count = 0;
             float[] noise = new float[4096];
             for (int y0 = 0; y0 <= yMax; y0++)
@@ -315,6 +326,10 @@ namespace MvkServer.World.Chunk
                     }
                 }
             }
+            //long le1 = stopwatch.ElapsedTicks;
+            //worldServer.Log.Log("Cave t:{0:0.00}ms",
+            //        le1 / (float)MvkStatic.TimerFrequency);
+            
         }
 
         /// <summary>

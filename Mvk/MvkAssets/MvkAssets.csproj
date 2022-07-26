@@ -107,6 +107,8 @@
     <None Include="Resources\DigWood2.ogg" />
     <None Include="Resources\DigWood3.ogg" />
     <None Include="Resources\DigWood4.ogg" />
+    <None Include="Resources\Fire.ogg" />
+    <None Include="Resources\FireFizz.ogg" />
     <None Include="Resources\LiquidSplash1.ogg" />
     <None Include="Resources\LiquidSplash2.ogg" />
     <None Include="Resources\LiquidSwim1.ogg" />

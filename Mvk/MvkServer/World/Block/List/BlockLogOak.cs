@@ -38,7 +38,7 @@ namespace MvkServer.World.Block.List
             if (side == Pole.East || side == Pole.West) met = 1;
             else if (side == Pole.South || side == Pole.North) met = 2;
 
-            return base.Put(worldIn, blockPos, new BlockState(state.Id(), met, state.light), side, facing);
+            return base.Put(worldIn, blockPos, new BlockState(state.Id(), met, state.lightBlock, state.lightSky), side, facing);
         }
 
         /// <summary>

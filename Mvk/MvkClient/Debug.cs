@@ -86,7 +86,7 @@ namespace MvkClient
         {
             string s = strServer == "" ? "" : "Server " + strServer + "\r\n";
             string c = strClient == "" ? "" : "Client " + strClient + "\r\n"
-                    + "RenderChunk8 ms:" + RenderChunckTime8.ToString("0.00") + "\r\n";
+                    + "RenderChunk8 ms:" + RenderChunckTime8.ToString("0.000") + "\r\n";
             
             return version + "\r\n"
                 + strTpsFps + "\r\n"

@@ -415,7 +415,8 @@ namespace MvkClient
             {
                 locServer.StartServer(slot);
                 BeginWorld();
-                OpenNet();
+                // TODO::2022-07-20 запуск сети по умолчанию
+                //OpenNet();
             }
             catch (Exception ex)
             {
@@ -476,6 +477,8 @@ namespace MvkClient
             Screen.ScreenProcess(Language.T("gui.saving"));
             // отправялем на сервер, выход мира, с возможной ошибкой
             locServer.ExitingWorld(error);
+            // Очстановка потока рендера
+            World.WorldRender.StopRender();
             IsGamePlay = false;
             World.StopWorldDelete();
             EffectRender = null;

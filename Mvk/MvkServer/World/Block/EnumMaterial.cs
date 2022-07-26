@@ -33,6 +33,8 @@
         /// Лава
         /// </summary>
         Lava,
+        //Огонь
+        Fire,
         /// <summary>
         /// Стекло
         /// </summary>

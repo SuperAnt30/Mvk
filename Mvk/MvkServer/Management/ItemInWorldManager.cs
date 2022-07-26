@@ -185,7 +185,7 @@ namespace MvkServer.Management
                     {
                         // Уничтожение блока
                         if (world is WorldServer worldServer)
-                        { 
+                        {
                             BlockState blockState = world.GetBlockState(BlockPosDestroy);
                             BlockBase block = blockState.GetBlock();
                             if (!entityPlayer.IsCreativeMode)
@@ -194,7 +194,12 @@ namespace MvkServer.Management
                             }
                             world.SetBlockState(BlockPosDestroy, new BlockState(EnumBlock.Air));
                             worldServer.Tracker.SendToAllTrackingEntityCurrent(entityPlayer,
-                                new PacketS29SoundEffect(block.SampleBreak(worldServer), BlockPosDestroy.ToVec3(), 1f));
+                                new PacketS29SoundEffect(block.SampleBreak(worldServer), BlockPosDestroy.ToVec3(), 1f, block.SampleBreakPitch(worldServer.Rand)));
+                        }
+                        else
+                        {
+                            // для клиента, чтоб не ждать
+                            world.SetBlockState(BlockPosDestroy, new BlockState(EnumBlock.Air));
                         }
                     }
                     else if (durabilityRemainingOnBlock == (int)Status.Put)

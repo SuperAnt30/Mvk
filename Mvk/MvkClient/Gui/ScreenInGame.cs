@@ -298,7 +298,7 @@ namespace MvkClient.Gui
             else if (ClientMain.Player.WhereEyesEff == EntityPlayerSP.WhereEyes.Water)
             {
                 enable = true;
-                color = new vec4(colorWaterEff, .7f);
+                color = new vec4(colorWaterEff, .4f);
             }
             else if (ClientMain.Player.WhereEyesEff == EntityPlayerSP.WhereEyes.Lava)
             {

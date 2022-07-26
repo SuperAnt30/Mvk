@@ -12,7 +12,7 @@ namespace MvkClient.Entity.Particle
         {
             particleGravity = .02f;
             textureUV = new vec2i(0, 9);
-            color = new vec4((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), 1);
+            color = new vec3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble());
             particleMaxAge *= 2;
         }
 

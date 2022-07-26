@@ -13,25 +13,31 @@ namespace MvkServer.World.Block
         /// </summary>
         public ushort data;
         /// <summary>
-        /// Освещение блока
-        /// 4 bit свет блока и 4 bit свет от неба
+        /// Освещение блочное, 4 bit используется
         /// </summary>
-        public byte light;
+        public byte lightBlock;
+        /// <summary>
+        /// Освещение небесное, 4 bit используется
+        /// </summary>
+        public byte lightSky;
 
-        public BlockState(ushort data, byte light)
+        public BlockState(ushort data, byte lightBlock, byte lightSky)
         {
             this.data = data;
-            this.light = light;
+            this.lightBlock = lightBlock;
+            this.lightSky = lightSky;
         }
-        public BlockState(int id, int met, byte light)
+        public BlockState(int id, int met, byte lightBlock, byte lightSky)
         {
             data = (ushort)(id & 0xFFF | met << 12);
-            this.light = light;
+            this.lightBlock = lightBlock;
+            this.lightSky = lightSky;
         }
         public BlockState(EnumBlock eBlock)
         {
             data = (ushort)eBlock;
-            light = 0;
+            lightBlock = 0;
+            lightSky = 0;
         }
 
         /// <summary>
@@ -73,7 +79,8 @@ namespace MvkServer.World.Block
         public void WriteStream(StreamBase stream)
         {
             stream.WriteUShort(data);
-            stream.WriteByte(light);
+            stream.WriteByte(lightBlock);
+            stream.WriteByte(lightSky);
         }
 
         /// <summary>
@@ -82,7 +89,8 @@ namespace MvkServer.World.Block
         public void ReadStream(StreamBase stream)
         {
             data = stream.ReadUShort();
-            light = stream.ReadByte();
+            lightBlock = stream.ReadByte();
+            lightSky = stream.ReadByte();
         }
 
         public override bool Equals(object obj)
@@ -90,12 +98,12 @@ namespace MvkServer.World.Block
             if (obj.GetType() == typeof(BlockState))
             {
                 var vec = (BlockState)obj;
-                if (data == vec.data && light == vec.light) return true;
+                if (data == vec.data && lightBlock == vec.lightBlock && lightSky == vec.lightSky) return true;
             }
             return false;
         }
 
-        public override int GetHashCode() => data ^ light;
+        public override int GetHashCode() => data ^ lightBlock ^ lightSky;
 
         public override string ToString()
         {

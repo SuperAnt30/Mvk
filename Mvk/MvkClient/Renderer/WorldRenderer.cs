@@ -8,17 +8,13 @@ using MvkClient.World;
 using MvkServer;
 using MvkServer.Entity;
 using MvkServer.Glm;
-using MvkServer.Item;
-using MvkServer.Item.List;
 using MvkServer.Util;
 using MvkServer.World;
 using MvkServer.World.Block;
 using SharpGL;
-using SharpGL.Enumerations;
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace MvkClient.Renderer
 {
@@ -41,14 +37,23 @@ namespace MvkClient.Renderer
         public ScreenInGame ScreenGame { get; private set; }
 
         /// <summary>
+        /// Буфер сплошных блоков
+        /// </summary>
+        public ListMvk<byte> buffer = new ListMvk<byte>(2064384);
+        /// <summary>
+        /// Буфер альфа блоков
+        /// </summary>
+        public ListMvk<byte> bufferAlpha = new ListMvk<byte>(2064384);
+        /// <summary>
+        /// Буефр одного альфа блока
+        /// </summary>
+        public ListMvk<byte> bufferAlphaCache = new ListMvk<byte>(2016);
+
+        /// <summary>
         /// Дополнительный счётчик, для повторной проверки, если камера не двигается, а чанки догружаются
         /// Возможноcть обрабатывать только структуру чанка чтоб догрузить в FC чанк
         /// </summary>
         private int addInitFrustumCulling = 0;
-        /// <summary>
-        /// DL курсора прицела
-        /// </summary>
-        //private RenderAim renderAim;
         /// <summary>
         /// DL курсора блока
         /// </summary>
@@ -62,15 +67,6 @@ namespace MvkClient.Renderer
         /// id DL звёзд
         /// </summary>
         private uint dlStar = 0;
-        /// <summary>
-        /// id DL облака неба
-        /// </summary>
-        //private uint dlSky = 0;
-
-        /// <summary>
-        /// Массив всех блоков для GUI
-        /// </summary>
-        //private readonly RenderBlockGui[] listBlocksGui = new RenderBlockGui[BlocksCount.COUNT + 1];
         /// <summary>
         /// Карта всех блоков для GUI
         /// </summary>
@@ -92,19 +88,23 @@ namespace MvkClient.Renderer
         /// Текстурная карта освещения
         /// </summary>
         private TextureLightMap textureLightMap = new TextureLightMap();
+
         /// <summary>
-        /// Массив потоков для рендера
+        /// Флаг потока рендера чанков
         /// </summary>
-        private Task[] tasksRender = new Task[6];
+        private bool renderLoopRunning = false;
+        /// <summary>
+        /// Массив очередей чанков для рендера
+        /// </summary>
+        private List<ChunkRenderQueue> renderQueues = new List<ChunkRenderQueue>();
+        /// <summary>
+        /// Объект заглушка
+        /// </summary>
+        private object locker = new object();
+        
 
         public WorldRenderer(WorldClient world)
         {
-            for (int i = 0; i < tasksRender.Length; i++)
-            {
-                tasksRender[i] = new Task(() => { });
-                tasksRender[i].Start();
-            }
-            
             World = world;
             ClientMain = world.ClientMain;
             ScreenGame = new ScreenInGame(ClientMain);
@@ -125,12 +125,47 @@ namespace MvkClient.Renderer
             RenderStar();
             // создаём DL неба
             //RenderClouds();
-            
+
+            // Запускаем отдельный поток для рендера
+            renderLoopRunning = true;
+            Thread myThread = new Thread(RenderLoop);
+            myThread.Start();
         }
 
+        /// <summary>
+        /// Остановить поток рендера чанков
+        /// </summary>
+        public void StopRender() => renderLoopRunning = false;
 
-        
-
+        /// <summary>
+        /// Поток рендера чанков
+        /// </summary>
+        private void RenderLoop()
+        {
+            try
+            {
+                while (renderLoopRunning)
+                {
+                    while(renderQueues.Count > 0)
+                    {
+                        ChunkRenderQueue renderQueue = renderQueues[0];
+                        lock (locker)
+                        {
+                            renderQueues.RemoveAt(0);
+                        }
+                        if (renderQueue.chunk != null && renderQueue.chunk.IsChunkLoaded)
+                        {
+                            renderQueue.chunk.Render(renderQueue.y);
+                        }
+                    }
+                    Thread.Sleep(1);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Crach(ex);
+            }
+        }
         
         /// <summary>
         /// Прорисовка мира
@@ -224,21 +259,16 @@ namespace MvkClient.Renderer
                 GLWindow.gl.PolygonMode(OpenGL.GL_FRONT_AND_BACK, OpenGL.GL_FILL);
             }
 
-            long time = Client.Time();
+            //long time = Client.Time();
             ShaderVoxel shader = VoxelsBegin(timeIndex);
-            int countRender = MvkGlobal.COUNT_RENDER_CHUNK_FRAME;
-            bool fastTime = Client.Time() - time <= MvkGlobal.COUNT_RENDER_CHUNK_FRAME;
+            //int countRender = MvkGlobal.COUNT_RENDER_CHUNK_FRAME;
             List<ChunkRender> chunks = new List<ChunkRender>();
 
             int count = ClientMain.Player.ChunkFC.Length - 1;
-            
-            
-          //  float frequency = Stopwatch.Frequency / 1000f;
+
             // Пробегаем по всем чанкам которые видим FrustumCulling
             for (int i = 0; i <= count; i++)
             {
-                bool fast = fastTime || countRender == MvkGlobal.COUNT_RENDER_CHUNK_FRAME;
-                
                 FrustumStruct fs = ClientMain.Player.ChunkFC[i];
                 if (fs.IsChunk())
                 {
@@ -248,7 +278,6 @@ namespace MvkClient.Renderer
                     foreach(int y in vs)
                     {
                         bool isDense = chunk.IsModifiedRender(y);
-                        //if (chunk.StorageArrays[y].IsEmpty())
                         if (chunk.StorageArrays[y].IsEmptyData())
                         {
                             // Удаление
@@ -256,7 +285,7 @@ namespace MvkClient.Renderer
                             continue;
                         }
                         // Проверяем надо ли рендер для псевдо чанка, и возможно ли по времени
-                        if ((isDense || chunk.IsModifiedRenderAlpha(y)) && fast && countRender > 0)
+                        if ((isDense || chunk.IsModifiedRenderAlpha(y)) && renderQueues.Count < MvkGlobal.COUNT_RENDER_CHUNK_FRAME)
                         {
                             // Проверяем занят ли чанк уже рендером
                             if (chunk.IsMeshDenseWait(y) && chunk.IsMeshAlphaWait(y))
@@ -269,31 +298,18 @@ namespace MvkClient.Renderer
                                 else
                                 {
                                     // Обновление рендера псевдочанка
-                                    for (int j = 0; j < tasksRender.Length; j++)
+                                    Debug.CountUpdateChunck++;
+                                    chunk.StartRendering(y);
+                                    lock (locker)
                                     {
-                                        if (tasksRender[j].IsCompleted)
-                                        {
-                                            Debug.CountUpdateChunck++;
-                                            chunk.StartRendering(y);
-                                            countRender--;
-                                            int chY = y;
-
-                                            tasksRender[j] = new Task(() => { chunk.Render(chY); });
-                                            tasksRender[j].Start();
-                                            break;
-                                        }
+                                        renderQueues.Add(new ChunkRenderQueue() { chunk = chunk, y = y });
                                     }
-
-                                    // в отдельном потоке рендер
-                                    //Task.Factory.StartNew(() => {
-                                    //chunk.Render(chY);
-                                    //});
                                 }
                             }
                         }
 
                         // Занести буфер сплошных блоков псевдо чанка если это требуется
-                        if (fast && chunk.IsMeshDenseBinding(y)) chunk.BindBufferDense(y);
+                        if (chunk.IsMeshDenseBinding(y)) chunk.BindBufferDense(y);
 
                         // Прорисовка сплошных блоков псевдо чанка
                         if (chunk.NotNullMeshDense(y))
